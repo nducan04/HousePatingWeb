@@ -1,0 +1,19 @@
+{
+  "name": "vtsc-blockchain",
+  "version": "1.0.0",
+  "description": "VTSC Smart Contract — Escrow & Penalty on Sepolia Testnet",
+  "scripts": {
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "deploy:sepolia": "npx hardhat run scripts/deploy.js --network sepolia",
+    "deploy:local": "npx hardhat run scripts/deploy.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.0"
+  }
+}
