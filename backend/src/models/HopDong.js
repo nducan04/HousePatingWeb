@@ -1,0 +1,90 @@
+const mongoose = require('mongoose');
+
+/**
+ * Collection: HopDong (Hợp đồng nguyên tắc B2B Blockchain)
+ * Theo đặc tả: Lưu trữ văn bản pháp lý phân tán và điều khoản dự án lớn.
+ *
+ * Cơ chế Tham chiếu (Reference):
+ *   - CustomerID → KhachHang (Đối tác B2B)
+ *   - EmployeeID → NhanVien (Nhân viên quản lý dự án)
+ *
+ * Cơ chế Nhúng (Embedding):
+ *   - ChiTietHopDong: Mảng sản phẩm, khối lượng, đơn giá, yêu cầu KT
+ *
+ * Liên kết phi tập trung (Decentralized Reference):
+ *   - SmartContractAddress → Sepolia Blockchain
+ *   - IPFSCID → IPFS/Pinata
+ *   - TransactionHash → Sepolia TX
+ */
+
+// Embedded sub-document: Chi tiết Hợp đồng (sản phẩm, khối lượng, đơn giá)
+const chiTietHopDongSchema = new mongoose.Schema({
+  productName: { type: String, required: true },     // Tên sản phẩm / Dòng sơn
+  colorCode: { type: String, default: '' },           // Mã màu sơn
+  quantity: { type: Number, required: true },          // Khối lượng (Kg)
+  unitPrice: { type: Number, required: true },         // Đơn giá (VNĐ/Kg)
+  technicalReqs: { type: String, default: '' }         // Yêu cầu kỹ thuật đặc thù
+}, { _id: false });
+
+const hopDongSchema = new mongoose.Schema({
+  MaHopDong: {
+    type: String,
+    required: [true, 'Vui lòng nhập mã hợp đồng'],
+    unique: true,
+    trim: true,
+  },
+  title: {
+    type: String,
+    required: [true, 'Vui lòng nhập tiêu đề hợp đồng'],
+    trim: true,
+  },
+  // Tham chiếu KhachHang (Đối tác B2B)
+  CustomerID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'KhachHang',
+    required: [true, 'Vui lòng chọn khách hàng B2B'],
+  },
+  // Tham chiếu NhanVien (Nhân viên phụ trách)
+  EmployeeID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'NhanVien',
+  },
+  NgayLap: {
+    type: Date,
+    default: Date.now,
+  },
+  TongGiaTri: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  // === Điều khoản SLA ===
+  TrangThai: {
+    type: String,
+    enum: ['draft', 'created', 'signed', 'delivering', 'completed', 'disputed', 'cancelled'],
+    default: 'draft',
+  },
+  slaDeadline: { type: Date },
+  terms: {
+    sla: { type: String, default: '' },
+    penalty: { type: String, default: '' },
+    duration: { type: String, default: '' },
+  },
+  // === Khóa Web3 — Liên kết phi tập trung ===
+  SmartContractAddress: { type: String, default: '' },
+  DocumentHash: { type: String, default: '' },       // Mã băm SHA-256 của file PDF gốc
+  IPFSCID: { type: String, default: '' },             // Mã CID trên IPFS (Pinata)
+  TransactionHash: { type: String, default: '' },     // Mã giao dịch ký số qua MetaMask
+  // === Địa chỉ ví ===
+  vtscAddress: { type: String, default: '' },
+  clientAddress: { type: String, default: '' },
+  // === Chữ ký ===
+  vtscSignature: { type: String, default: '' },
+  clientSignature: { type: String, default: '' },
+  // === Embedded: Chi tiết sản phẩm ===
+  ChiTietHopDong: [chiTietHopDongSchema],
+}, {
+  timestamps: true,
+});
+
+module.exports = mongoose.model('HopDong', hopDongSchema, 'HopDongs');

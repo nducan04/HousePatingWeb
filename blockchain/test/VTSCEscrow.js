@@ -1,140 +1,205 @@
 const { expect } = require("chai");
 const hre = require("hardhat");
 
-describe("VTSCEscrow", function () {
+describe("VTSCEscrow — Hợp đồng Nguyên tắc B2B", function () {
   let vtscEscrow;
-  let owner; // VTSC
-  let client;
+  let owner;  // VTSC Admin
+  let client; // Khách hàng B2B
+  let other;  // Bên thứ ba (unauthorized)
+
   const contractId = "CTR-2024-001";
-  const docHash = "QmTestHash123456789";
-  
-  const value = hre.ethers.parseEther("5.0");
-  const escrowAmount = hre.ethers.parseEther("1.0");
+  const docHash = "0xabc123def456789012345678901234567890123456789012345678901234abcd";
+  const ipfsCid = "QmTestIPFSCid123456789";
+  const value = hre.ethers.parseUnits("500000000", 0); // 500M VNĐ (ghi nhận, không chuyển ETH)
 
   beforeEach(async function () {
-    [owner, client] = await hre.ethers.getSigners();
+    [owner, client, other] = await hre.ethers.getSigners();
     const VTSCEscrowFactory = await hre.ethers.getContractFactory("VTSCEscrow");
     vtscEscrow = await VTSCEscrowFactory.deploy();
   });
 
-  describe("Contract Creation", function () {
-    it("Should create a new contract successfully", async function () {
-      const deadline = Math.floor(Date.now() / 1000) + 86400; // +1 day
-      
-      await expect(vtscEscrow.createContract(contractId, client.address, value, escrowAmount, deadline, docHash))
+  // ═══════════════════════════════════════════════════════
+  // 1. TẠO HỢP ĐỒNG
+  // ═══════════════════════════════════════════════════════
+  describe("1. Tạo Hợp đồng (createContract)", function () {
+    it("Tạo hợp đồng thành công với đầy đủ thông tin", async function () {
+      const deadline = Math.floor(Date.now() / 1000) + 86400;
+
+      await expect(vtscEscrow.createContract(contractId, client.address, value, deadline, docHash))
         .to.emit(vtscEscrow, "ContractCreated")
         .withArgs(contractId, owner.address, client.address, value);
 
-      const contractData = await vtscEscrow.getContract(contractId);
-      expect(contractData.id).to.equal(contractId);
-      expect(contractData.vtsc).to.equal(owner.address);
-      expect(contractData.status).to.equal(0); // Created
+      const data = await vtscEscrow.getContract(contractId);
+      expect(data.id).to.equal(contractId);
+      expect(data.vtsc).to.equal(owner.address);
+      expect(data.client).to.equal(client.address);
+      expect(data.value).to.equal(value);
+      expect(data.documentHash).to.equal(docHash);
+      expect(data.status).to.equal(0); // Created
+      expect(data.signedBy).to.equal(hre.ethers.ZeroAddress);
+      expect(data.signedAt).to.equal(0);
     });
 
-    it("Should prevent creating duplicate contracts", async function () {
+    it("Từ chối tạo hợp đồng trùng mã", async function () {
       const deadline = Math.floor(Date.now() / 1000) + 86400;
-      await vtscEscrow.createContract(contractId, client.address, value, escrowAmount, deadline, docHash);
-      
+      await vtscEscrow.createContract(contractId, client.address, value, deadline, docHash);
+
       await expect(
-        vtscEscrow.createContract(contractId, client.address, value, escrowAmount, deadline, docHash)
+        vtscEscrow.createContract(contractId, client.address, value, deadline, docHash)
       ).to.be.revertedWith("Contract already exists");
     });
+
+    it("Từ chối địa chỉ client = address(0)", async function () {
+      const deadline = Math.floor(Date.now() / 1000) + 86400;
+      await expect(
+        vtscEscrow.createContract(contractId, hre.ethers.ZeroAddress, value, deadline, docHash)
+      ).to.be.revertedWith("Invalid client address");
+    });
   });
 
-  describe("Escrow Funding & Signing", function () {
+  // ═══════════════════════════════════════════════════════
+  // 2. KÝ SỐ HỢP ĐỒNG (signDocument — 0 ETH, gas-only)
+  // ═══════════════════════════════════════════════════════
+  describe("2. Ký số Hợp đồng (signDocument)", function () {
     let deadline;
 
     beforeEach(async function () {
       deadline = Math.floor(Date.now() / 1000) + 86400;
-      await vtscEscrow.createContract(contractId, client.address, value, escrowAmount, deadline, docHash);
+      await vtscEscrow.createContract(contractId, client.address, value, deadline, docHash);
     });
 
-    it("Should allow client to fund the escrow", async function () {
-      await expect(vtscEscrow.connect(client).fundEscrow(contractId, { value: escrowAmount }))
-        .to.emit(vtscEscrow, "EscrowFunded")
-        .withArgs(contractId, escrowAmount);
+    it("Client ký thành công — ghi documentHash + ipfsCid on-chain", async function () {
+      await expect(vtscEscrow.connect(client).signDocument(contractId, docHash, ipfsCid))
+        .to.emit(vtscEscrow, "DocumentSigned")
+        .withArgs(contractId, client.address, docHash, ipfsCid);
 
-      const contractData = await vtscEscrow.getContract(contractId);
-      expect(contractData.status).to.equal(1); // Funded
+      const data = await vtscEscrow.getContract(contractId);
+      expect(data.status).to.equal(1); // Signed
+      expect(data.documentHash).to.equal(docHash);
+      expect(data.ipfsCid).to.equal(ipfsCid);
+      expect(data.signedBy).to.equal(client.address);
+      expect(data.signedAt).to.be.gt(0);
     });
 
-    it("Should reject incorrect escrow amount", async function () {
-      const wrongAmount = hre.ethers.parseEther("0.5");
+    it("VTSC Admin ký thành công (cũng là party)", async function () {
+      await expect(vtscEscrow.connect(owner).signDocument(contractId, docHash, ipfsCid))
+        .to.emit(vtscEscrow, "DocumentSigned");
+
+      const data = await vtscEscrow.getContract(contractId);
+      expect(data.status).to.equal(1); // Signed
+      expect(data.signedBy).to.equal(owner.address);
+    });
+
+    it("Bên thứ ba KHÔNG được phép ký", async function () {
       await expect(
-        vtscEscrow.connect(client).fundEscrow(contractId, { value: wrongAmount })
-      ).to.be.revertedWith("Must send exact escrow amount");
+        vtscEscrow.connect(other).signDocument(contractId, docHash, ipfsCid)
+      ).to.be.revertedWith("Only contract parties can perform this action");
     });
 
-    it("Should allow client to sign after funding", async function () {
-      await vtscEscrow.connect(client).fundEscrow(contractId, { value: escrowAmount });
-      
-      await expect(vtscEscrow.connect(client).signContract(contractId))
-        .to.emit(vtscEscrow, "ContractSigned")
-        .withArgs(contractId);
+    it("Từ chối ký khi status != Created", async function () {
+      await vtscEscrow.connect(client).signDocument(contractId, docHash, ipfsCid);
 
-      const contractData = await vtscEscrow.getContract(contractId);
-      expect(contractData.status).to.equal(2); // Signed
-    });
-
-    it("Should reject signing before funding", async function () {
+      // Thử ký lần 2 → revert
       await expect(
-        vtscEscrow.connect(client).signContract(contractId)
-      ).to.be.revertedWith("Escrow must be funded first");
+        vtscEscrow.connect(client).signDocument(contractId, docHash, ipfsCid)
+      ).to.be.revertedWith("Contract must be in Created state");
     });
   });
 
-  describe("Delivery Confirmation", function () {
-    let deadline;
-
+  // ═══════════════════════════════════════════════════════
+  // 3. CẬP NHẬT TRẠNG THÁI GIAO HÀNG
+  // ═══════════════════════════════════════════════════════
+  describe("3. Cập nhật trạng thái (Delivery & Completion)", function () {
     beforeEach(async function () {
-      deadline = Math.floor(Date.now() / 1000) + 86400;
-      await vtscEscrow.createContract(contractId, client.address, value, escrowAmount, deadline, docHash);
-      await vtscEscrow.connect(client).fundEscrow(contractId, { value: escrowAmount });
-      await vtscEscrow.connect(client).signContract(contractId);
+      const deadline = Math.floor(Date.now() / 1000) + 86400;
+      await vtscEscrow.createContract(contractId, client.address, value, deadline, docHash);
+      await vtscEscrow.connect(client).signDocument(contractId, docHash, ipfsCid);
     });
 
-    it("Should release escrow to VTSC on delivery confirmation", async function () {
-      const initialVtscBalance = await hre.ethers.provider.getBalance(owner.address);
+    it("VTSC cập nhật trạng thái Delivering", async function () {
+      await expect(vtscEscrow.updateDeliveryStatus(contractId))
+        .to.emit(vtscEscrow, "StatusUpdated");
 
-      await expect(vtscEscrow.connect(client).confirmDelivery(contractId))
-        .to.emit(vtscEscrow, "DeliveryConfirmed")
-        .withArgs(contractId);
+      const data = await vtscEscrow.getContract(contractId);
+      expect(data.status).to.equal(2); // Delivering
+    });
 
-      const finalVtscBalance = await hre.ethers.provider.getBalance(owner.address);
-      expect(finalVtscBalance).to.be.gt(initialVtscBalance);
-      
-      const contractData = await vtscEscrow.getContract(contractId);
-      expect(contractData.status).to.equal(4); // Completed
+    it("Client KHÔNG được cập nhật delivery", async function () {
+      await expect(
+        vtscEscrow.connect(client).updateDeliveryStatus(contractId)
+      ).to.be.revertedWith("Only VTSC can perform this action");
+    });
+
+    it("Xác nhận hoàn tất giao hàng → Completed", async function () {
+      await vtscEscrow.updateDeliveryStatus(contractId);
+
+      await expect(vtscEscrow.connect(client).confirmCompletion(contractId))
+        .to.emit(vtscEscrow, "StatusUpdated");
+
+      const data = await vtscEscrow.getContract(contractId);
+      expect(data.status).to.equal(3); // Completed
     });
   });
 
-  describe("Penalty Mechanism", function () {
-    it("Should return escrow to client when SLA violated", async function () {
-      // Create contract with deadline in the past
-      const pastDeadline = Math.floor(Date.now() / 1000) - 100;
-      await vtscEscrow.createContract(contractId, client.address, value, escrowAmount, pastDeadline, docHash);
-      await vtscEscrow.connect(client).fundEscrow(contractId, { value: escrowAmount });
-      await vtscEscrow.connect(client).signContract(contractId);
+  // ═══════════════════════════════════════════════════════
+  // 4. TRANH CHẤP (raiseDispute — khi vi phạm SLA)
+  // ═══════════════════════════════════════════════════════
+  describe("4. Tranh chấp SLA (raiseDispute)", function () {
+    it("Phát hiện vi phạm khi quá hạn SLA deadline", async function () {
+      const pastDeadline = Math.floor(Date.now() / 1000) - 100; // Quá hạn
+      await vtscEscrow.createContract(contractId, client.address, value, pastDeadline, docHash);
+      await vtscEscrow.connect(client).signDocument(contractId, docHash, ipfsCid);
 
-      const initialClientBalance = await hre.ethers.provider.getBalance(client.address);
+      await expect(vtscEscrow.connect(client).raiseDispute(contractId))
+        .to.emit(vtscEscrow, "StatusUpdated");
 
-      await expect(vtscEscrow.connect(client).triggerPenalty(contractId))
-        .to.emit(vtscEscrow, "PenaltyApplied")
-        .withArgs(contractId, escrowAmount);
-
-      const contractData = await vtscEscrow.getContract(contractId);
-      expect(contractData.status).to.equal(6); // Penalized
+      const data = await vtscEscrow.getContract(contractId);
+      expect(data.status).to.equal(4); // Disputed
     });
 
-    it("Should reject penalty before SLA deadline", async function () {
+    it("Từ chối tranh chấp khi SLA chưa hết hạn", async function () {
       const futureDeadline = Math.floor(Date.now() / 1000) + 86400;
-      await vtscEscrow.createContract(contractId, client.address, value, escrowAmount, futureDeadline, docHash);
-      await vtscEscrow.connect(client).fundEscrow(contractId, { value: escrowAmount });
-      await vtscEscrow.connect(client).signContract(contractId);
+      await vtscEscrow.createContract(contractId, client.address, value, futureDeadline, docHash);
+      await vtscEscrow.connect(client).signDocument(contractId, docHash, ipfsCid);
 
       await expect(
-        vtscEscrow.connect(client).triggerPenalty(contractId)
+        vtscEscrow.connect(client).raiseDispute(contractId)
       ).to.be.revertedWith("SLA deadline not yet reached");
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // 5. HỦY HỢP ĐỒNG
+  // ═══════════════════════════════════════════════════════
+  describe("5. Hủy hợp đồng (cancelContract)", function () {
+    it("VTSC hủy hợp đồng ở trạng thái Created", async function () {
+      const deadline = Math.floor(Date.now() / 1000) + 86400;
+      await vtscEscrow.createContract(contractId, client.address, value, deadline, docHash);
+
+      await expect(vtscEscrow.cancelContract(contractId))
+        .to.emit(vtscEscrow, "StatusUpdated");
+
+      const data = await vtscEscrow.getContract(contractId);
+      expect(data.status).to.equal(5); // Cancelled
+    });
+
+    it("Từ chối hủy khi hợp đồng đã ký", async function () {
+      const deadline = Math.floor(Date.now() / 1000) + 86400;
+      await vtscEscrow.createContract(contractId, client.address, value, deadline, docHash);
+      await vtscEscrow.connect(client).signDocument(contractId, docHash, ipfsCid);
+
+      await expect(
+        vtscEscrow.cancelContract(contractId)
+      ).to.be.revertedWith("Can only cancel Created contracts");
+    });
+
+    it("Client KHÔNG được phép hủy (chỉ VTSC)", async function () {
+      const deadline = Math.floor(Date.now() / 1000) + 86400;
+      await vtscEscrow.createContract(contractId, client.address, value, deadline, docHash);
+
+      await expect(
+        vtscEscrow.connect(client).cancelContract(contractId)
+      ).to.be.revertedWith("Only VTSC can perform this action");
     });
   });
 });

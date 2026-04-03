@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { getChatbotResponse, getChatHistory } = require('../controllers/chatbotController');
+const { protect, authorize } = require('../middleware/authMiddleware');
+const { getChatbotResponse, getChatHistory, getTickets, replyTicket } = require('../controllers/chatbotController');
 
-// POST /api/chatbot/message
+// Public: chat message + history (session-based, no auth needed for B2C portal)
 router.post('/message', getChatbotResponse);
-
-// GET /api/chatbot/history/:sessionId
 router.get('/history/:sessionId', getChatHistory);
+
+// Protected: ticket management (CSKH / Admin)
+router.get('/tickets', protect, authorize('Admin', 'NhanVien'), getTickets);
+router.post('/tickets/:ticketId/reply', protect, authorize('Admin', 'NhanVien'), replyTicket);
 
 module.exports = router;

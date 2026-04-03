@@ -1,37 +1,46 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+/**
+ * @title VTSCEscrow - Quản lý Hợp đồng Nguyên tắc B2B trên Blockchain
+ * @notice Hệ thống VTSC sử dụng cơ chế công nợ truyền thống (fiat).
+ *         Smart Contract này chỉ ghi nhận bằng chứng pháp lý bất biến,
+ *         KHÔNG xử lý chuyển tiền ETH giữa các bên.
+ */
 contract VTSCEscrow {
     address public owner;
 
-    enum ContractStatus { Created, Funded, Signed, Delivering, Completed, Disputed, Penalized }
+    enum ContractStatus { Created, Signed, Delivering, Completed, Disputed, Cancelled }
 
     struct ContractData {
         string id;
         address vtsc;
         address client;
-        uint256 value;
-        uint256 escrowAmount;
-        string documentHash;
-        uint256 slaDeadline;
+        uint256 value;          // Giá trị hợp đồng (đơn vị: Wei, dùng cho ghi nhận, không chuyển tiền)
+        string documentHash;    // Mã băm SHA-256 của file PDF gốc
+        string ipfsCid;         // Mã CID trên IPFS (Pinata)
+        uint256 slaDeadline;    // Hạn SLA giao hàng (Unix timestamp)
         ContractStatus status;
+        address signedBy;       // Địa chỉ ví đã ký xác nhận
+        uint256 signedAt;       // Thời điểm ký (block.timestamp)
     }
 
     mapping(string => ContractData) public contracts;
 
     event ContractCreated(string id, address vtsc, address client, uint256 value);
-    event EscrowFunded(string id, uint256 amount);
-    event ContractSigned(string id);
-    event DeliveryConfirmed(string id);
-    event PenaltyApplied(string id, uint256 penaltyAmount);
+    event DocumentSigned(string id, address signer, string documentHash, string ipfsCid);
+    event StatusUpdated(string id, ContractStatus newStatus);
 
     modifier onlyVTSC(string memory _id) {
         require(msg.sender == contracts[_id].vtsc, "Only VTSC can perform this action");
         _;
     }
 
-    modifier onlyClient(string memory _id) {
-        require(msg.sender == contracts[_id].client, "Only Client can perform this action");
+    modifier onlyParty(string memory _id) {
+        require(
+            msg.sender == contracts[_id].vtsc || msg.sender == contracts[_id].client,
+            "Only contract parties can perform this action"
+        );
         _;
     }
 
@@ -40,84 +49,107 @@ contract VTSCEscrow {
     }
 
     /**
-     * @dev Create a new contract
+     * @dev VTSC Admin tạo hợp đồng mới trên Blockchain.
+     *      Value chỉ để ghi nhận giá trị, KHÔNG chuyển ETH.
      */
     function createContract(
         string memory _id,
         address _client,
         uint256 _value,
-        uint256 _escrowAmount,
         uint256 _slaDeadline,
         string memory _documentHash
     ) external {
         require(contracts[_id].vtsc == address(0), "Contract already exists");
-        
+        require(_client != address(0), "Invalid client address");
+
         contracts[_id] = ContractData({
             id: _id,
             vtsc: msg.sender,
             client: _client,
             value: _value,
-            escrowAmount: _escrowAmount,
             documentHash: _documentHash,
+            ipfsCid: "",
             slaDeadline: _slaDeadline,
-            status: ContractStatus.Created
+            status: ContractStatus.Created,
+            signedBy: address(0),
+            signedAt: 0
         });
 
         emit ContractCreated(_id, msg.sender, _client, _value);
     }
 
     /**
-     * @dev Client funds the escrow to proceed
+     * @dev Ký xác nhận hợp đồng on-chain (state-changing, 0 ETH value).
+     *      Giao dịch này tốn Gas để ghi dữ liệu lên Blockchain,
+     *      nhưng Value chuyển đi = 0 ETH.
+     *      TX Hash sinh ra là bằng chứng pháp lý bất biến trên Sepolia.
+     *
+     * @param _id Mã hợp đồng nội bộ
+     * @param _documentHash Mã băm SHA-256 của bản PDF hợp đồng gốc
+     * @param _ipfsCid Mã CID trả về từ IPFS/Pinata
      */
-    function fundEscrow(string memory _id) external payable onlyClient(_id) {
+    function signDocument(
+        string memory _id,
+        string memory _documentHash,
+        string memory _ipfsCid
+    ) external onlyParty(_id) {
         require(contracts[_id].status == ContractStatus.Created, "Contract must be in Created state");
-        require(msg.value == contracts[_id].escrowAmount, "Must send exact escrow amount");
 
-        contracts[_id].status = ContractStatus.Funded;
-        emit EscrowFunded(_id, msg.value);
-    }
-
-    /**
-     * @dev Client signs indicating agreement with terms and readiness for delivery
-     */
-    function signContract(string memory _id) external onlyClient(_id) {
-        require(contracts[_id].status == ContractStatus.Funded, "Escrow must be funded first");
-        
+        contracts[_id].documentHash = _documentHash;
+        contracts[_id].ipfsCid = _ipfsCid;
         contracts[_id].status = ContractStatus.Signed;
-        emit ContractSigned(_id);
+        contracts[_id].signedBy = msg.sender;
+        contracts[_id].signedAt = block.timestamp;
+
+        emit DocumentSigned(_id, msg.sender, _documentHash, _ipfsCid);
     }
 
     /**
-     * @dev Client confirms delivery, releasing funds to VTSC
+     * @dev VTSC cập nhật trạng thái giao hàng
      */
-    function confirmDelivery(string memory _id) external onlyClient(_id) {
-        require(contracts[_id].status == ContractStatus.Signed || contracts[_id].status == ContractStatus.Delivering, "Invalid status for confirmation");
-        
+    function updateDeliveryStatus(string memory _id) external onlyVTSC(_id) {
+        require(contracts[_id].status == ContractStatus.Signed, "Contract must be Signed first");
+        contracts[_id].status = ContractStatus.Delivering;
+        emit StatusUpdated(_id, ContractStatus.Delivering);
+    }
+
+    /**
+     * @dev Xác nhận hoàn tất giao hàng & nghiệm thu
+     */
+    function confirmCompletion(string memory _id) external onlyParty(_id) {
+        require(
+            contracts[_id].status == ContractStatus.Signed || contracts[_id].status == ContractStatus.Delivering,
+            "Invalid status for completion"
+        );
         contracts[_id].status = ContractStatus.Completed;
-        
-        // Transfer escrow to VTSC
-        payable(contracts[_id].vtsc).transfer(contracts[_id].escrowAmount);
-        
-        emit DeliveryConfirmed(_id);
+        emit StatusUpdated(_id, ContractStatus.Completed);
     }
 
     /**
-     * @dev Trigger penalty if VTSC misses SLA. Escrow is returned to client.
+     * @dev Đánh dấu hợp đồng tranh chấp khi vi phạm SLA
      */
-    function triggerPenalty(string memory _id) external onlyClient(_id) {
-        require(contracts[_id].status == ContractStatus.Signed || contracts[_id].status == ContractStatus.Delivering, "Invalid status for penalty");
+    function raiseDispute(string memory _id) external onlyParty(_id) {
+        require(
+            contracts[_id].status == ContractStatus.Signed || contracts[_id].status == ContractStatus.Delivering,
+            "Invalid status for dispute"
+        );
         require(block.timestamp > contracts[_id].slaDeadline, "SLA deadline not yet reached");
 
-        contracts[_id].status = ContractStatus.Penalized;
-        
-        // Return escrow to client as penalty against VTSC
-        payable(contracts[_id].client).transfer(contracts[_id].escrowAmount);
-        
-        emit PenaltyApplied(_id, contracts[_id].escrowAmount);
+        contracts[_id].status = ContractStatus.Disputed;
+        emit StatusUpdated(_id, ContractStatus.Disputed);
     }
 
     /**
-     * @dev Get contract summary
+     * @dev Hủy hợp đồng (chỉ khi chưa ký)
+     */
+    function cancelContract(string memory _id) external onlyVTSC(_id) {
+        require(contracts[_id].status == ContractStatus.Created, "Can only cancel Created contracts");
+        contracts[_id].status = ContractStatus.Cancelled;
+        emit StatusUpdated(_id, ContractStatus.Cancelled);
+    }
+
+    /**
+     * @dev Truy xuất dữ liệu hợp đồng on-chain
      */
     function getContract(string memory _id) external view returns (ContractData memory) {
         return contracts[_id];

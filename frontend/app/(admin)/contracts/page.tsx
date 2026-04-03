@@ -1,13 +1,54 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
-import { FileSignature, ExternalLink, Clock, CheckCircle2, Edit3, Download } from 'lucide-react';
-import { contracts } from '@/lib/data/contracts-data';
+import { FileSignature, ExternalLink, Clock, CheckCircle2, Edit3, Plus, Loader2 } from 'lucide-react';
+import { useContractStore } from '@/lib/store/contractStore';
+
+const statusLabels: Record<string, string> = {
+  draft: 'Bản nháp',
+  created: 'Chờ ký',
+  signed: 'Đã ký',
+  delivering: 'Đang giao',
+  completed: 'Hoàn tất',
+  disputed: 'Tranh chấp',
+  cancelled: 'Đã hủy'
+};
+
+const statusBadgeClass: Record<string, string> = {
+  draft: 'draft',
+  created: 'pending',
+  signed: 'signed',
+  delivering: 'testing',
+  completed: 'approved',
+  disputed: 'rejected',
+  cancelled: 'rejected'
+};
 
 export default function ContractsPage() {
+  const { contracts, loading, fetchContracts } = useContractStore();
+
+  useEffect(() => {
+    fetchContracts();
+  }, [fetchContracts]);
+
+  const countByStatus = (statuses: string[]) =>
+    contracts.filter(c => statuses.includes(c.status)).length;
+
   return (
     <div>
-      {/* Summary */}
+      {/* Header Actions */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-lg)' }}>
+        <div>
+          <h2 style={{ fontSize: 'var(--font-2xl)', fontWeight: 800 }}>Quản lý Hợp đồng B2B</h2>
+          <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-sm)' }}>Ký và quản lý hợp đồng trên Blockchain (Sepolia Testnet)</p>
+        </div>
+        <Link href="/contracts/create" className="btn btn-primary">
+          <Plus size={16} /> Tạo Hợp đồng mới
+        </Link>
+      </div>
+
+      {/* Summary KPIs */}
       <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><FileSignature size={22} /></div>
@@ -17,17 +58,17 @@ export default function ContractsPage() {
         <div className="kpi-card emerald">
           <div className="kpi-icon"><CheckCircle2 size={22} /></div>
           <div className="kpi-label">Đã Ký</div>
-          <div className="kpi-value">{contracts.filter(c => c.status === 'signed' || c.status === 'active').length}</div>
+          <div className="kpi-value">{countByStatus(['signed', 'delivering', 'completed'])}</div>
         </div>
         <div className="kpi-card amber">
           <div className="kpi-icon"><Clock size={22} /></div>
           <div className="kpi-label">Chờ ký</div>
-          <div className="kpi-value">{contracts.filter(c => c.status === 'awaiting').length}</div>
+          <div className="kpi-value">{countByStatus(['created'])}</div>
         </div>
         <div className="kpi-card purple">
           <div className="kpi-icon"><Edit3 size={22} /></div>
           <div className="kpi-label">Bản nháp</div>
-          <div className="kpi-value">{contracts.filter(c => c.status === 'draft').length}</div>
+          <div className="kpi-value">{countByStatus(['draft'])}</div>
         </div>
       </div>
 
@@ -35,58 +76,69 @@ export default function ContractsPage() {
       <div className="glass-card" style={{ overflow: 'hidden' }}>
         <div style={{ padding: 'var(--spacing-lg)', borderBottom: '1px solid var(--border-color)' }}>
           <h3 className="section-title">Danh sách Hợp đồng Nguyên tắc B2B</h3>
-          <p className="section-subtitle">Ký và quản lý hợp đồng trên Blockchain (Sepolia Testnet)</p>
         </div>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Mã HĐ</th>
-              <th>Tiêu đề</th>
-              <th>Đối tác</th>
-              <th>Giá trị</th>
-              <th>Trạng thái</th>
-              <th>TX Hash</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {contracts.map(c => (
-              <tr key={c.id}>
-                <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{c.id}</td>
-                <td style={{ fontWeight: 600, color: 'var(--text-primary)', maxWidth: 250 }}>{c.title}</td>
-                <td>{c.party}</td>
-                <td style={{ fontWeight: 600, color: 'var(--accent-amber)' }}>{c.value}</td>
-                <td><span className={`badge ${c.status}`}>{c.status}</span></td>
-                <td>
-                  {c.txHash ? (
-                    <a href={`https://sepolia.etherscan.io/tx/${c.txHash}`} target="_blank" rel="noopener noreferrer"
-                       style={{ fontSize: 'var(--font-xs)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {c.txHash.substring(0, 10)}...
-                      <ExternalLink size={12} />
-                    </a>
-                  ) : (
-                    <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-xs)' }}>—</span>
-                  )}
-                </td>
-                <td>
-                  <div style={{ display: 'flex', gap: 'var(--spacing-xs)', alignItems: 'center' }}>
-                    <Link href={`/contracts/${c.id}`} className="btn btn-secondary btn-sm">
+
+        {loading ? (
+          <div style={{ padding: 'var(--spacing-2xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+            <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px' }} />
+            <div>Đang tải dữ liệu...</div>
+          </div>
+        ) : contracts.length === 0 ? (
+          <div style={{ padding: 'var(--spacing-2xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+            <FileSignature size={40} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
+            <div>Chưa có hợp đồng nào.</div>
+            <Link href="/contracts/create" className="btn btn-primary btn-sm" style={{ marginTop: 'var(--spacing-md)' }}>
+              <Plus size={14} /> Tạo hợp đồng đầu tiên
+            </Link>
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Mã HĐ</th>
+                <th>Tiêu đề</th>
+                <th>Đối tác</th>
+                <th>Giá trị</th>
+                <th>Trạng thái</th>
+                <th>TX Hash</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contracts.map(c => (
+                <tr key={c._id}>
+                  <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{c.contractId}</td>
+                  <td style={{ fontWeight: 600, color: 'var(--text-primary)', maxWidth: 250 }}>{c.title}</td>
+                  <td>{c.customer?.name || 'N/A'}</td>
+                  <td style={{ fontWeight: 600, color: 'var(--accent-amber)', whiteSpace: 'nowrap' }}>
+                    {c.value?.toLocaleString('vi-VN')} VNĐ
+                  </td>
+                  <td>
+                    <span className={`badge ${statusBadgeClass[c.status] || 'draft'}`}>
+                      {statusLabels[c.status] || c.status}
+                    </span>
+                  </td>
+                  <td>
+                    {c.txHash && c.txHash !== '' ? (
+                      <a href={`https://sepolia.etherscan.io/tx/${c.txHash}`} target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: 'var(--font-xs)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {c.txHash.substring(0, 10)}...
+                        <ExternalLink size={12} />
+                      </a>
+                    ) : (
+                      <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-xs)' }}>—</span>
+                    )}
+                  </td>
+                  <td>
+                    <Link href={`/contracts/${c._id}`} className="btn btn-secondary btn-sm">
                       Chi tiết
                     </Link>
-                    <a
-                      href={`http://localhost:5000/api/export/contracts/${c.id}/pdf`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="p-1.5 rounded-md hover:bg-[var(--accent-purple-soft)] hover:text-[var(--accent-purple)] transition-colors"
-                      title="Xuất Hợp Đồng PDF"
-                    >
-                      <Download size={16} />
-                    </a>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

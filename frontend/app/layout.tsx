@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import AuthProvider from '@/lib/components/AuthProvider';
 
 export const metadata: Metadata = {
   title: 'VTSC PaintPro | Quản lý Sơn Tĩnh Điện',
@@ -14,7 +15,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }
