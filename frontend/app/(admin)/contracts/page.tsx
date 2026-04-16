@@ -73,7 +73,7 @@ export default function ContractsPage() {
       </div>
 
       {/* Contract List */}
-      <div className="glass-card" style={{ overflow: 'hidden' }}>
+      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
         <div style={{ padding: 'var(--spacing-lg)', borderBottom: '1px solid var(--border-color)' }}>
           <h3 className="section-title">Danh sách Hợp đồng Nguyên tắc B2B</h3>
         </div>
