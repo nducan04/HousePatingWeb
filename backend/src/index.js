@@ -29,6 +29,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 // Routes — Module 2: Danh mục & Hỗ trợ
 // ═══════════════════════════════════════
 app.use('/api/san-pham-son', require('./routes/sanPhamSonRoutes'));
+app.use('/api/kho', require('./routes/khoRoutes'));
 app.use('/api/khach-hang', require('./routes/khachHangRoutes'));
 app.use('/api/nhan-vien', require('./routes/nhanVienRoutes'));
 app.use('/api/nha-cung-cap', require('./routes/nhaCungCapRoutes'));

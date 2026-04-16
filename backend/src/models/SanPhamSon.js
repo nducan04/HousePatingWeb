@@ -73,6 +73,12 @@ const sanPhamSonSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  // Thêm vào schema hiện tại của bạn
+  TonKho: {
+    type: Number,
+    default: 0,
+    min: [0, 'Tồn kho không được âm']
+  },
   // Mảng nhúng (Embedded) — DanhSachMaMau
   DanhSachMaMau: [maMauSchema],
 }, {

@@ -12,8 +12,8 @@ export default function RDTrackingPage() {
   const filteredRequests = rdRequests.filter(r => {
     const matchesFilter = filter === 'all' || r.status === filter;
     const matchesSearch = r.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          r.colorCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          r.id.toLowerCase().includes(searchQuery.toLowerCase());
+      r.colorCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.id.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -89,7 +89,7 @@ export default function RDTrackingPage() {
       </div>
 
       {/* Table */}
-      <div className="glass-card" style={{ overflow: 'hidden' }}>
+      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
         <table className="data-table">
           <thead>
             <tr>

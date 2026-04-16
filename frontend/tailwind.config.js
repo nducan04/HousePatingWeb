@@ -8,7 +8,21 @@ module.exports = {
     "./lib/**/*.{js,ts,jsx,tsx,mdx}"
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+      },
+      fontSize: {
+        'xs': '0.875rem',
+        'sm': '1rem',
+        'base': '1.125rem',
+        'lg': '1.375rem',
+        'xl': '1.625rem',
+        '2xl': '2rem',
+        '3xl': '2.5rem',
+        '4xl': '3.25rem',
+      },
+    },
   },
   plugins: [],
 }
