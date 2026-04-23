@@ -19,7 +19,7 @@ const khachHangSchema = new mongoose.Schema({
   },
   PhanLoai: {
     type: String,
-    enum: ['B2C', 'B2B'],
+    enum: ['B2C', 'B2B', 'Đại lý'],
     required: [true, 'Vui lòng chọn phân loại khách hàng'],
   },
   TenKhachHang: {
@@ -31,7 +31,9 @@ const khachHangSchema = new mongoose.Schema({
     type: String,
     trim: true,
     lowercase: true,
-    sparse: true,
+  },
+  NgaySinh: {
+    type: Date,
   },
   SDT: {
     type: String,
@@ -45,7 +47,11 @@ const khachHangSchema = new mongoose.Schema({
   WalletAddress: {
     type: String,
     trim: true,
-    sparse: true,
+  },
+  // Mã số thuế cá nhân — Chỉ dùng cho Đại lý
+  MaSoThueCaNhan: {
+    type: String,
+    trim: true,
   },
 }, {
   timestamps: true,

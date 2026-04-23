@@ -58,11 +58,16 @@ const sanPhamSonSchema = new mongoose.Schema({
   PhanLoai: {
     type: String,
     required: [true, 'Vui lòng chọn phân loại'],
-    enum: ['Sơn tĩnh điện', 'Sơn tàu biển', 'Sơn công nghiệp'],
+    enum: ['Sơn tĩnh điện', 'Sơn tàu biển', 'Sơn công nghiệp', 'Sơn nội thất'],
   },
   MoTa: {
     type: String,
     trim: true,
+  },
+  DonViTinh: {
+    type: String,
+    enum: ['Thùng', 'Kg'],
+    default: 'Thùng'
   },
   DonGiaCoSo: {
     type: Number,
@@ -79,6 +84,16 @@ const sanPhamSonSchema = new mongoose.Schema({
     default: 0,
     min: [0, 'Tồn kho không được âm']
   },
+  SoLuongDaBan: {
+    type: Number,
+    default: 0
+  },
+  DanhGia: [{
+    KhachHang: String,
+    SoSao: { type: Number, min: 1, max: 5 },
+    BinhLuan: String,
+    NgayDanhGia: { type: Date, default: Date.now }
+  }],
   // Mảng nhúng (Embedded) — DanhSachMaMau
   DanhSachMaMau: [maMauSchema],
 }, {

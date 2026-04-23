@@ -12,6 +12,7 @@ exports.getAll = async (req, res) => {
         { MaNCC: { $regex: search, $options: 'i' } },
         { TenNCC: { $regex: search, $options: 'i' } },
         { NguoiLienHe: { $regex: search, $options: 'i' } },
+        { MaSoThue: { $regex: search, $options: 'i' } },
       ];
     }
 

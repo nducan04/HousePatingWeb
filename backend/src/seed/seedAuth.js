@@ -21,6 +21,7 @@ const seedAuth = async () => {
     const adminAccount = await TaiKhoan.create({
       TenDangNhap: 'admin',
       MatKhau: '123456',
+      Email: 'admin@vtsc.vn',
       VaiTro: 'Admin',
       TrangThai: true,
     });
@@ -29,10 +30,10 @@ const seedAuth = async () => {
     await NhanVien.create({
       AccountID: adminAccount._id,
       MaNV: 'NV001',
-      HoTen: 'Phí Bình Minh',
-      Email: 'phibinhminh@vtsc.vn',
+      HoTen: 'admin',
+      Email: 'admin@vtsc.vn',
       SDT: '0901234567',
-      ChucVu: 'Trưởng phòng Kinh doanh Sơn',
+      ChucVu: 'Quản trị viên',
     });
 
     // === 2. TẠO TÀI KHOẢN NHÂN VIÊN ===
@@ -40,6 +41,7 @@ const seedAuth = async () => {
     const staffAccount = await TaiKhoan.create({
       TenDangNhap: 'staff',
       MatKhau: '123456',
+      Email: 'staff@vtsc.vn',
       VaiTro: 'NhanVien',
       TrangThai: true,
     });
@@ -58,6 +60,7 @@ const seedAuth = async () => {
     const b2bAccount = await TaiKhoan.create({
       TenDangNhap: 'khachhang_ncc',
       MatKhau: '123456',
+      Email: 'b2b@vtsc.vn',
       VaiTro: 'KhachHangB2B',
       TrangThai: true,
     });

@@ -99,10 +99,10 @@ export const trackingData = [
     product: 'INT-D2525 Silver Metallic',
     quantity: '2,500 kg',
     steps: [
-      { label: 'Đặt hàng', status: 'completed' as const, time: '01/06/2024' },
-      { label: 'Sản xuất', status: 'completed' as const, time: '05/06/2024' },
-      { label: 'QC Pass', status: 'completed' as const, time: '08/06/2024' },
-      { label: 'Đang giao', status: 'current' as const, time: '10/06/2024' },
+      { label: 'Đặt hàng', status: 'completed' as const, time: '01/04/2026' },
+      { label: 'Sản xuất', status: 'completed' as const, time: '05/04/2026' },
+      { label: 'QC Pass', status: 'completed' as const, time: '08/04/2026' },
+      { label: 'Đang giao', status: 'current' as const, time: '10/04/2026' },
       { label: 'Đã nhận', status: 'upcoming' as const, time: '' },
     ]
   },
@@ -112,9 +112,9 @@ export const trackingData = [
     product: 'INT-B7035 Charcoal Grey',
     quantity: '1,800 kg',
     steps: [
-      { label: 'Đặt hàng', status: 'completed' as const, time: '10/06/2024' },
-      { label: 'Sản xuất', status: 'completed' as const, time: '13/06/2024' },
-      { label: 'QC Pass', status: 'current' as const, time: '16/06/2024' },
+      { label: 'Đặt hàng', status: 'completed' as const, time: '10/03/2026' },
+      { label: 'Sản xuất', status: 'completed' as const, time: '13/03/2026' },
+      { label: 'QC Pass', status: 'current' as const, time: '16/03/2026' },
       { label: 'Đang giao', status: 'upcoming' as const, time: '' },
       { label: 'Đã nhận', status: 'upcoming' as const, time: '' },
     ]

@@ -32,8 +32,8 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   // Trong lúc chờ check token / redirect, hiện loading
   if (isLoading || (!isAuthenticated && !isAuthorized)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-600"></div>
       </div>
     );
   }

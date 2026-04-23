@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, Package, Layers, Droplet, Box } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, Layers, Droplet, Box, ShoppingCart, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
+import { useAuthStore } from '@/lib/store/authStore';
+import * as XLSX from 'xlsx';
 
 interface MaMau {
   _id: string;
@@ -10,6 +12,14 @@ interface MaMau {
   TenMau: string;
   HexCode: string;
   TrangThai: boolean;
+}
+
+interface DanhGia {
+  _id?: string;
+  KhachHang: string;
+  SoSao: number;
+  BinhLuan: string;
+  NgayDanhGia: string;
 }
 
 interface SanPham {
@@ -22,13 +32,29 @@ interface SanPham {
   MaMau: string;
   DanhSachMaMau?: MaMau[];
   MoTa?: string;
+  DonViTinh?: string;
+  TonKho?: number;
+  SoLuongDaBan?: number;
+  DanhGia?: DanhGia[];
+  HinhAnh?: string;
+  MoTaSanPham?: string;
 }
 
 export default function SanPhamPage() {
+  const { user } = useAuthStore();
+  const isAdminOrEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
+
   const [sanPhams, setSanPhams] = useState<SanPham[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [cartLoading, setCartLoading] = useState('');
+  const [cartMessage, setCartMessage] = useState({ id: '', text: '' });
+
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<SanPham | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -40,7 +66,13 @@ export default function SanPhamPage() {
     PhanLoai: 'Sơn tĩnh điện',
     DonGiaCoSo: 0,
     MoTa: '',
+    DonViTinh: 'Thùng',
+    TonKho: 0,
+    HinhAnh: '',
+    MoTaSanPham: '',
   });
+
+  const [isUploading, setIsUploading] = useState(false);
 
   const fetchSanPhams = async () => {
     try {
@@ -48,10 +80,13 @@ export default function SanPhamPage() {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (filterType !== 'all') params.append('phanLoai', filterType);
+      params.append('page', currentPage.toString());
+      params.append('limit', '10');
 
       const res = await api.get(`/san-pham-son?${params.toString()}`);
       if (res.data.success) {
         setSanPhams(res.data.data);
+        setTotalPages(res.data.totalPages || 1);
       }
     } catch (error) {
       console.error('Error fetching san pham:', error);
@@ -65,7 +100,25 @@ export default function SanPhamPage() {
       fetchSanPhams();
     }, 500);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, filterType]);
+  }, [searchTerm, filterType, currentPage]);
+
+  const addToCart = async (sp: SanPham) => {
+    setCartLoading(sp._id);
+    try {
+      const sessionId = user?.id || 'GUEST_SESSION';
+      const res = await api.post(`/gio-hang/${sessionId}`, { SanPhamId: sp._id, SoLuong: 1 });
+      if (res.data.success) {
+        setCartMessage({ id: sp._id, text: 'Đã thêm!' });
+        setTimeout(() => setCartMessage({ id: '', text: '' }), 2000);
+      }
+    } catch (err) {
+      console.error(err);
+      setCartMessage({ id: sp._id, text: 'Lỗi!' });
+      setTimeout(() => setCartMessage({ id: '', text: '' }), 2000);
+    } finally {
+      setCartLoading('');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,8 +131,9 @@ export default function SanPhamPage() {
       }
       setIsModalOpen(false);
       fetchSanPhams();
-    } catch (error) {
-      alert('Có lỗi xảy ra khi lưu!');
+    } catch (error: any) {
+      console.error(error);
+      alert(error.response?.data?.error || 'Có lỗi xảy ra khi lưu!');
     }
   };
 
@@ -104,6 +158,10 @@ export default function SanPhamPage() {
         PhanLoai: item.PhanLoai,
         DonGiaCoSo: item.DonGiaCoSo,
         MoTa: item.MoTa || '',
+        DonViTinh: item.DonViTinh || 'Thùng',
+        TonKho: item.TonKho || 0,
+        HinhAnh: item.HinhAnh || '',
+        MoTaSanPham: item.MoTaSanPham || '',
       });
     } else {
       setFormData({
@@ -115,9 +173,58 @@ export default function SanPhamPage() {
         PhanLoai: 'Sơn tĩnh điện',
         DonGiaCoSo: 0,
         MoTa: '',
+        DonViTinh: 'Thùng',
+        TonKho: 0,
+        HinhAnh: '',
+        MoTaSanPham: '',
       });
     }
     setIsModalOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const fileFormData = new FormData();
+    fileFormData.append('image', file);
+
+    try {
+      setIsUploading(true);
+      const res = await api.post('/files/upload-image', fileFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setFormData({ ...formData, HinhAnh: res.data.url });
+      }
+    } catch (error) {
+      console.error('Lỗi upload ảnh:', error);
+      alert('Không thể upload ảnh, vui lòng thử lại.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleViewProduct = (product: SanPham) => {
+    setSelectedProduct(product);
+    setIsViewOpen(true);
+  };
+
+  const exportToExcel = () => {
+    const dataToExport = sanPhams.map(sp => ({
+      'Mã SP': sp.MaSanPham,
+      'Tên Dòng Sơn': sp.TenDongSon,
+      'Thương Hiệu': sp.ThuongHieu,
+      'Phân Loại': sp.PhanLoai,
+      'Đơn Giá': sp.DonGiaCoSo,
+      'Tồn Kho': sp.TonKho || 0,
+      'Đơn Vị Tính': sp.DonViTinh || 'Thùng'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "San-Pham");
+    XLSX.writeFile(workbook, `VTSC_Danh_Sach_San_Pham_${new Date().toLocaleDateString().replace(/\//g, '_')}.xlsx`);
   };
 
   const STATS = {
@@ -130,54 +237,49 @@ export default function SanPhamPage() {
   return (
     <div>
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><Package size={22} /></div>
-          <div className="kpi-label">Tổng Sản Phẩm</div>
-          <div className="kpi-value">{STATS.total}</div>
-        </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><Layers size={22} /></div>
-          <div className="kpi-label">Sơn Tĩnh Điện</div>
-          <div className="kpi-value">{STATS.tinhDien}</div>
-        </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><Droplet size={22} /></div>
-          <div className="kpi-label">Sơn Tàu Biển</div>
-          <div className="kpi-value">{STATS.tauBien}</div>
-        </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><Box size={22} /></div>
-          <div className="kpi-label">Sơn Công Nghiệp</div>
-          <div className="kpi-value">{STATS.congNghiep}</div>
-        </div>
+      <div className="grid-4" style={{ marginBottom: 'var(--spacing-ms)', gap: 'var(--spacing-ms)' }}>
+        {[
+          { color: 'cyan', icon: <Package size={14} />, label: 'Tổng', value: STATS.total },
+          { color: 'emerald', icon: <Layers size={14} />, label: 'Tĩnh Điện', value: STATS.tinhDien },
+          { color: 'purple', icon: <Droplet size={14} />, label: 'Tàu Biển', value: STATS.tauBien },
+          { color: 'amber', icon: <Box size={14} />, label: 'Công Nghiệp', value: STATS.congNghiep },
+        ].map((item, idx) => (
+          <div key={idx} className={`kpi-card ${item.color}`} style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="kpi-icon" style={{ width: 24, height: 24, margin: 0, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.icon}</div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="kpi-label" style={{ fontSize: '10px', opacity: 0.8, margin: 0 }}>{item.label}</div>
+              <div className="kpi-value" style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>{item.value}</div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
+      <div className="glass-card" style={{ padding: 'var(--spacing-ms)', marginBottom: 'var(--spacing-md)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+            <div className="search-box" style={{ width: 140 }}>
+              <Search size={14} className="search-icon" />
               <input
                 type="text"
                 className="form-input"
-                placeholder="Tìm mã, loại..."
+                style={{ padding: '4px 8px 4px 30px', fontSize: '11px', height: 28 }}
+                placeholder="Tìm..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <div style={{ display: 'flex', gap: 4 }}>
+            <div style={{ display: 'flex', gap: 2 }}>
               {[
                 { id: 'all', label: 'Tất cả' },
-                { id: 'Sơn tĩnh điện', label: 'Sơn tĩnh điện' },
-                { id: 'Sơn tàu biển', label: 'Sơn tàu biển' },
-                { id: 'Sơn công nghiệp', label: 'Sơn CN' },
-                { id: 'Sơn nội thất', label: 'Sơn nội thất' }
+                { id: 'Sơn tĩnh điện', label: 'Tĩnh điện' },
+                { id: 'Sơn tàu biển', label: 'Tàu biển' },
+                { id: 'Sơn công nghiệp', label: 'Công nghiệp' }
               ].map(f => (
                 <button
                   key={f.id}
                   className={`btn btn-sm ${filterType === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  style={{ fontSize: '10px', height: 28, padding: '0 8px' }}
                   onClick={() => setFilterType(f.id)}
                 >
                   {f.label}
@@ -185,56 +287,98 @@ export default function SanPhamPage() {
               ))}
             </div>
           </div>
-          <button onClick={() => openForm()} className="btn btn-primary">
-            <Plus size={16} /> Thêm Dòng Sơn
-          </button>
+          <div style={{ display: 'flex', gap: 12 }}>
+            {isAdminOrEmployee && (
+              <>
+                <button onClick={exportToExcel} className="btn btn-ghost" style={{ border: '1px solid var(--border-color)', color: 'var(--accent-emerald)', fontSize: '10px', height: 28, padding: '0 8px' }}>
+                  <Download size={14} /> Xuất
+                </button>
+                <button onClick={() => openForm()} className="btn btn-primary" style={{ fontSize: '10px', height: 28, padding: '0 8px' }}>
+                  <Plus size={14} /> Thêm SP
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '0.5rem' }}>
         <table className="data-table">
           <thead>
-            <tr>
+            <tr style={{ fontSize: '11px' }}>
+              <th style={{ width: '40px', textAlign: 'center' }}>Ảnh</th>
               <th>Mã SP</th>
               <th>Tên Dòng Sơn</th>
               <th>Thương hiệu</th>
               <th>Phân loại</th>
-              <th>Đơn giá (đ/kg)</th>
-              <th>Số Mã Màu</th>
-              <th style={{ textAlign: 'right' }}>Thao tác</th>
+              <th>Đơn giá</th>
+              <th>ĐVT</th>
+              <th>Tồn Kho</th>
+              <th>Màu</th>
+              <th style={{ textAlign: 'right' }}>Action</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Đang tải...</td>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Đang tải...</td>
               </tr>
             ) : sanPhams.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Không tìm thấy sản phẩm.</td>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Không tìm thấy sản phẩm.</td>
               </tr>
             ) : (
               sanPhams.map(sp => (
-                <tr key={sp._id}>
-                  <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{sp.MaSanPham}</td>
+                <tr key={sp._id} style={{ fontSize: 'var(--font-xs)' }}>
+                  <td style={{ padding: '2px', textAlign: 'center' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '3px', overflow: 'hidden', backgroundColor: 'var(--bg-color)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)' }}>
+                      {sp.HinhAnh ? (
+                        <img src={`http://localhost:5000${sp.HinhAnh}`} alt="SP" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <Package size={14} color="var(--text-secondary)" />
+                      )}
+                    </div>
+                  </td>
+                  <td
+                    style={{ fontWeight: 700, color: 'var(--accent-cyan)', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => handleViewProduct(sp)}
+                    title="Xem chi tiết sản phẩm"
+                  >
+                    {sp.MaSanPham}
+                  </td>
                   <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{sp.TenDongSon}</td>
                   <td>{sp.ThuongHieu}</td>
                   <td>{sp.PhanLoai}</td>
                   <td style={{ color: 'var(--accent-emerald)', fontWeight: 600 }}>{sp.DonGiaCoSo.toLocaleString()} ₫</td>
-                  <td>
-                    <span className="badge testing">
+                  <td style={{ fontWeight: 600 }}>{sp.DonViTinh || 'Thùng'}</td>
+                  <td style={{ fontWeight: 600, color: (sp.TonKho || 0) > 0 ? 'var(--accent-cyan)' : 'var(--accent-rose)' }}>{sp.TonKho || 0}</td>
+                  <td style={{ padding: '4px 8px' }}>
+                    <span className="badge testing" style={{ fontSize: '10px', padding: '2px 6px' }}>
                       {sp.DanhSachMaMau?.length || 0} Màu
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-                      <button onClick={() => openForm(sp)} className="btn btn-ghost btn-sm">
-                        <Edit size={16} />
+                      <button 
+                        onClick={() => addToCart(sp)} 
+                        className="btn btn-ghost btn-sm" 
+                        title="Thêm vào giỏ hàng"
+                        style={{ color: 'var(--accent-emerald)' }}
+                        disabled={(sp.TonKho || 0) <= 0}
+                      >
+                        <ShoppingCart size={16} />
                       </button>
-                      <button onClick={() => handleDelete(sp._id)} className="btn btn-ghost btn-sm">
-                        <Trash2 size={16} color="var(--accent-rose)" />
-                      </button>
+                      {isAdminOrEmployee && (
+                        <>
+                          <button onClick={() => openForm(sp)} className="btn btn-ghost btn-sm">
+                            <Edit size={16} />
+                          </button>
+                          <button onClick={() => handleDelete(sp._id)} className="btn btn-ghost btn-sm">
+                            <Trash2 size={16} color="var(--accent-rose)" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -242,6 +386,41 @@ export default function SanPhamPage() {
             )}
           </tbody>
         </table>
+
+        {/* Pagination Controls */}
+        <div style={{ padding: '8px var(--spacing-md)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.1)' }}>
+          <div style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
+            Trang {currentPage} / {totalPages}
+          </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button 
+              className="btn btn-ghost btn-sm" 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              style={{ height: 24, width: 24, padding: 0 }}
+            >
+              <ChevronLeft size={14} />
+            </button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(page => (
+              <button 
+                key={page} 
+                className={`btn btn-sm ${currentPage === page ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setCurrentPage(page)}
+                style={{ minWidth: '24px', height: 24, padding: 0, fontSize: '10px' }}
+              >
+                {page}
+              </button>
+            ))}
+            <button 
+              className="btn btn-ghost btn-sm" 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              style={{ height: 24, width: 24, padding: 0 }}
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Modal */}
@@ -252,27 +431,40 @@ export default function SanPhamPage() {
               <h3 style={{ fontSize: 'var(--font-lg)', fontWeight: 700 }}>{formData._id ? 'Chỉnh sửa' : 'Thêm Sản Phẩm'}</h3>
             </div>
             <div style={{ padding: 'var(--spacing-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', maxHeight: '70vh', overflowY: 'auto' }}>
-              
+
+              {/* Upload Ảnh Sản Phẩm */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <div style={{ width: '150px', height: '150px', borderRadius: '8px', border: '2px dashed #ccc', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
+                  {formData.HinhAnh ? (
+                    <img src={`http://localhost:5000${formData.HinhAnh}`} alt="HinhAnh" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '13px', color: '#888', textAlign: 'center' }}>Chưa có ảnh<br />sản phẩm</span>
+                  )}
+                </div>
+                <input type="file" accept="image/*" onChange={handleImageUpload} disabled={isUploading} style={{ fontSize: '13px', color: '#dddddd' }} />
+                {isUploading && <span style={{ color: '#1100f8ff', fontSize: '13px' }}>Đang tải lên...</span>}
+              </div>
+
               <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: 8, fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Mã Sản Phẩm *</label>
-                  <input type="text" required className="form-input" value={formData.MaSanPham} onChange={(e) => setFormData({...formData, MaSanPham: e.target.value})} />
+                  <input type="text" required className="form-input" value={formData.MaSanPham} onChange={(e) => setFormData({ ...formData, MaSanPham: e.target.value })} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: 8, fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Thương hiệu</label>
-                  <input type="text" className="form-input" value={formData.ThuongHieu} onChange={(e) => setFormData({...formData, ThuongHieu: e.target.value})} />
+                  <input type="text" className="form-input" value={formData.ThuongHieu} onChange={(e) => setFormData({ ...formData, ThuongHieu: e.target.value })} />
                 </div>
               </div>
 
               <div>
                 <label style={{ display: 'block', marginBottom: 8, fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Tên Dòng Sơn *</label>
-                <input type="text" required className="form-input" value={formData.TenDongSon} onChange={(e) => setFormData({...formData, TenDongSon: e.target.value})} />
+                <input type="text" required className="form-input" value={formData.TenDongSon} onChange={(e) => setFormData({ ...formData, TenDongSon: e.target.value })} />
               </div>
 
               <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: 8, fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Phân loại</label>
-                  <select className="form-input" value={formData.PhanLoai} onChange={(e) => setFormData({...formData, PhanLoai: e.target.value})}>
+                  <select className="form-input" value={formData.PhanLoai} onChange={(e) => setFormData({ ...formData, PhanLoai: e.target.value })}>
                     <option value="Sơn tĩnh điện">Sơn tĩnh điện</option>
                     <option value="Sơn tàu biển">Sơn tàu biển</option>
                     <option value="Sơn công nghiệp">Sơn công nghiệp</option>
@@ -281,14 +473,115 @@ export default function SanPhamPage() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: 8, fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Đơn giá (VNĐ)</label>
-                  <input type="number" className="form-input" value={formData.DonGiaCoSo} onChange={(e) => setFormData({...formData, DonGiaCoSo: Number(e.target.value)})} />
+                  <input type="number" className="form-input" value={formData.DonGiaCoSo} onChange={(e) => setFormData({ ...formData, DonGiaCoSo: Number(e.target.value) })} />
                 </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: 8, fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Đơn vị tính</label>
+                  <select className="form-input" value={formData.DonViTinh} onChange={(e) => setFormData({ ...formData, DonViTinh: e.target.value })}>
+                    <option value="Thùng">Thùng</option>
+                    <option value="Kg">Kg</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: 8, fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Tồn kho hệ thống</label>
+                  <input type="number" className="form-input" value={formData.TonKho} onChange={(e) => setFormData({ ...formData, TonKho: Number(e.target.value) })} />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Mô tả sản phẩm</label>
+                <textarea style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none', minHeight: '80px', resize: 'vertical' }} value={formData.MoTa} onChange={e => setFormData({ ...formData, MoTa: e.target.value })}></textarea>
               </div>
 
             </div>
             <div style={{ padding: 'var(--spacing-md) var(--spacing-lg)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost">Đóng</button>
               <button onClick={handleSubmit} className="btn btn-primary">Lưu thay đổi</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Modal */}
+      {isViewOpen && selectedProduct && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', overflowY: 'auto' }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '700px', padding: 0, margin: '2rem auto', background: 'var(--surface-color)' }}>
+            <div style={{ padding: 'var(--spacing-lg)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--accent-cyan)' }}>Chi Tiết Sản Phẩm: {selectedProduct.MaSanPham}</h3>
+              <button onClick={() => setIsViewOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
+            </div>
+
+            <div style={{ padding: 'var(--spacing-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', maxHeight: '70vh', overflowY: 'auto' }}>
+
+              {selectedProduct.HinhAnh && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                  <img src={`http://localhost:5000${selectedProduct.HinhAnh}`} alt={selectedProduct.TenDongSon} style={{ width: '200px', height: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', backgroundColor: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
+                <div>
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)', marginBottom: '4px' }}>Tên Dòng Sơn</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{selectedProduct.TenDongSon}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)', marginBottom: '4px' }}>Thương Hiệu</div>
+                  <div style={{ fontWeight: 'bold' }}>{selectedProduct.ThuongHieu}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)', marginBottom: '4px' }}>Phân Loại (Loại sơn)</div>
+                  <div style={{ fontWeight: 'bold', color: 'var(--accent-purple)' }}>{selectedProduct.PhanLoai}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)', marginBottom: '4px' }}>Đơn Giá / Định Lượng</div>
+                  <div style={{ fontWeight: 'bold', color: 'var(--accent-emerald)' }}>{selectedProduct.DonGiaCoSo?.toLocaleString()} đ / {selectedProduct.DonViTinh}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)', marginBottom: '4px' }}>Tồn Kho Thực Tế</div>
+                  <div style={{ fontWeight: 'bold' }}>{selectedProduct.TonKho || 0} {selectedProduct.DonViTinh}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)', marginBottom: '4px' }}>Số Lượng Đã Bán</div>
+                  <div style={{ fontWeight: 'bold', color: 'var(--accent-amber)' }}>{selectedProduct.SoLuongDaBan || 0} {selectedProduct.DonViTinh}</div>
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: '1rem', fontWeight: 600, borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '12px' }}>Mô Tả Thuộc Tính Chi Tiết</h4>
+                <div style={{ whiteSpace: 'pre-line', fontSize: '0.95rem', lineHeight: '1.6', color: 'var(--text-primary)', backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '8px' }}>
+                  {selectedProduct.MoTa || 'Chưa có thông tin mô tả chi tiết cho sản phẩm này.'}
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: '1rem', fontWeight: 600, borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '12px' }}>Đánh Giá Của Khách Hàng</h4>
+                {selectedProduct.DanhGia && selectedProduct.DanhGia.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {selectedProduct.DanhGia.map((dg, idx) => (
+                      <div key={idx} style={{ backgroundColor: 'var(--bg-color)', padding: '12px', borderRadius: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                          <span style={{ fontWeight: 'bold', color: 'var(--accent-cyan)' }}>{dg.KhachHang}</span>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{new Date(dg.NgayDanhGia).toLocaleDateString()}</span>
+                        </div>
+                        <div style={{ color: 'var(--accent-amber)', marginBottom: '6px', fontSize: '1rem' }}>
+                          {'★'.repeat(dg.SoSao)}{'☆'.repeat(5 - dg.SoSao)}
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{dg.BinhLuan}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '2rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                    Chưa có đánh giá nào cho sản phẩm này.
+                  </div>
+                )}
+              </div>
+
+            </div>
+            <div style={{ padding: 'var(--spacing-md) var(--spacing-lg)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={() => setIsViewOpen(false)} className="btn btn-primary" style={{ padding: '10px 30px' }}>Đóng hồ sơ sản phẩm</button>
             </div>
           </div>
         </div>

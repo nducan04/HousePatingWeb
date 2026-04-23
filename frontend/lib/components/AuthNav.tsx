@@ -8,15 +8,15 @@ export default function AuthNav() {
   const { isAuthenticated, user, isLoading } = useAuthStore();
 
   if (isLoading) {
-    return <div className="w-24 h-8 bg-slate-800 animate-pulse rounded-lg"></div>;
+    return <div className="w-24 h-8 bg-slate-100 animate-pulse rounded-lg"></div>;
   }
 
   if (isAuthenticated && user) {
     return (
-      <div className="flex items-center gap-4 border-l border-slate-700 pl-4 ml-2">
+      <div className="flex items-center gap-4 border-l border-slate-200 pl-4 ml-2">
         <Link 
           href={user.role === 'Admin' || user.role === 'NhanVien' ? '/dashboard' : '/dashboard'} 
-          className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+          className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
         >
           <LayoutDashboard className="w-4 h-4" />
           <span>Bảng điều khiển</span>
@@ -29,7 +29,7 @@ export default function AuthNav() {
   }
 
   return (
-    <div className="flex items-center gap-4 border-l border-slate-700 pl-4 ml-2">
+    <div className="flex items-center gap-4 border-l border-slate-200 pl-4 ml-2">
       <Link 
         href="/login" 
         className="flex items-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors shadow-lg shadow-blue-500/20"

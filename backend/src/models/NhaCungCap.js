@@ -35,6 +35,19 @@ const nhaCungCapSchema = new mongoose.Schema({
     trim: true,
     lowercase: true,
   },
+  MaSoThue: {
+    type: String,
+    trim: true,
+  },
+  PhanLoai: {
+    type: String,
+    enum: ['Đối Tác Chính', 'Đối Tác Phụ'],
+    default: 'Đối Tác Chính',
+  },
+  CongNo: {
+    type: Number,
+    default: 0,
+  },
 }, {
   timestamps: true,
 });

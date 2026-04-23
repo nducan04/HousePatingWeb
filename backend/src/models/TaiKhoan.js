@@ -14,6 +14,13 @@ const taiKhoanSchema = new mongoose.Schema({
     minlength: 6,
     select: false, // Không trả về mật khẩu khi query mặc định
   },
+  Email: {
+    type: String,
+    required: [true, 'Vui lòng nhập email'],
+    unique: true,
+    trim: true,
+    lowercase: true,
+  },
   VaiTro: {
     type: String,
     enum: ['Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C', 'NhaCungCap'],

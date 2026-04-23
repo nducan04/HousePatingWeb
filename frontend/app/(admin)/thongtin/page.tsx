@@ -1,146 +1,287 @@
 'use client';
 
-import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Building, Briefcase, Camera, Shield, Key, Save } from 'lucide-react';
-import { useAuthStore } from '@/lib/store/authStore';
+import React, { useState, useEffect } from 'react';
+import {
+  User as UserIcon, Phone, Mail, MapPin, Calendar, Lock, Save, Loader2, Camera, Wallet
+} from 'lucide-react';
+import { useAuthStore, type User } from '@/lib/store/authStore';
+import api from '@/lib/utils/axiosAuth';
 
 export default function ThongTinCaNhanPage() {
-  const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
+  const { user, loginState } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const profile = {
-    HoTen: user?.profile?.HoTen || user?.profile?.TenKhachHang || 'Nguyễn Văn Admin',
-    Email: user?.profile?.Email || 'admin@vtsc.vn',
-    SDT: user?.profile?.SDT || '0987.654.321',
-    DiaChi: user?.profile?.DiaChi || '123 Đường Hải Phòng, Lê Chân, Hải Phòng',
-    ChucVu: user?.profile?.ChucVu || (user?.role === 'Admin' ? 'Quản trị viên Hệ thống' : 'Người dùng'),
-    BoPhan: 'Ban Giám Đốc',
+  const [formData, setFormData] = useState({
+    displayName: '',
+    email: '',
+    phone: '',
+    address: '',
+    dob: '',
+    wallet: '',
+    jobTitle: '',
+    department: '',
+  });
+
+  useEffect(() => {
+    if (user && user.profile) {
+      const p = user.profile;
+      const isEmployee = user.role === 'Admin' || user.role === 'NhanVien';
+
+      setFormData({
+        displayName: isEmployee ? p.HoTen : p.TenKhachHang,
+        email: p.Email || '',
+        phone: p.SDT || '',
+        address: p.DiaChi || '',
+        dob: p.NgaySinh ? new Date(p.NgaySinh).toISOString().split('T')[0] : '',
+        wallet: p.WalletAddress || '',
+        jobTitle: p.ChucVu || '',
+        department: p.BoPhan || '',
+      });
+    }
+  }, [user]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const isEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
+      const endpoint = isEmployee ? `/nhan-vien/${user?.profile?._id}` : `/khach-hang/${user?.profile?._id}`;
+
+      const payload: any = {
+        SDT: formData.phone,
+        DiaChi: formData.address,
+        NgaySinh: formData.dob,
+        Email: formData.email,
+      };
+
+      if (isEmployee) {
+        payload.HoTen = formData.displayName;
+      } else {
+        payload.TenKhachHang = formData.displayName;
+        payload.WalletAddress = formData.wallet;
+      }
+
+      const res = await api.put(endpoint, payload);
+
+      if (res.data.success) {
+        // Update local store with new profile data
+        const updatedUser: User = { ...user!, profile: res.data.data };
+        // We use loginState to sync store, but we need the token too. 
+        // Assuming we can get it from storage or just keep existing one.
+        const token = localStorage.getItem('accessToken') || '';
+        loginState(updatedUser, token);
+
+        setSuccess('Cập nhật thông tin thành công!');
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Có lỗi xảy ra khi cập nhật thông tin.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!user) return <div className="p-8 text-center">Đang tải thông tin...</div>;
+
+  const isEmployee = user.role === 'Admin' || user.role === 'NhanVien';
+
   return (
-    <div className="max-w-none mx-auto px-6 py-8 space-y-10">
-      {/* Header Profile */}
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 border border-white/10 shadow-2xl">
-        <div className="h-64 relative flex items-end px-8 pb-8">
-          <div className="flex items-end gap-6 w-full">
-            {/* Avatar bên trái */}
-            <div className="relative group">
-              <div className="w-36 h-36 rounded-3xl border-4 border-white bg-slate-800 flex items-center justify-center text-6xl font-bold text-white shadow-2xl overflow-hidden">
-                {profile.HoTen.split(' ').map(w => w[0]).join('').slice(-2).toUpperCase()}
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
-                  <Camera className="w-9 h-9 text-white" />
-                </div>
-              </div>
-              <div className="absolute bottom-3 right-3 w-7 h-7 bg-emerald-500 border-4 border-white rounded-full"></div>
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      <div className="glass-card overflow-hidden">
+        {/* Header/Cover Profile Style */}
+        <div className="h-32 bg-gradient-to-r from-blue-100 to-indigo-100 relative">
+          <div className="absolute -bottom-16 left-8">
+            <div className="w-32 h-32 rounded-2xl bg-white border-4 border-white overflow-hidden shadow-2xl flex items-center justify-center text-4xl font-bold text-blue-600 uppercase" style={{ background: 'linear-gradient(135deg, #f0f9ff, #e0e7ff)' }}>
+              {formData.displayName[0] || '?'}
             </div>
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold text-white tracking-tight">{profile.HoTen}</h1>
-              <p className="text-blue-300 flex items-center gap-2 font-medium mt-1">
-                <Shield className="w-5 h-5" /> {user?.role || 'Admin'}
+            <button className="absolute bottom-1 right-1 p-2 bg-blue-600 rounded-lg text-white shadow-lg hover:bg-blue-500 transition-colors">
+              <Camera size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div className="pt-20 pb-8 px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+            <div>
+              <h1 className="text-3xl font-extrabold text-slate-900 mb-1">{formData.displayName}</h1>
+              <p className="text-slate-500 flex items-center gap-2">
+                <span className="badge testing uppercase">{user.role}</span>
+                {isEmployee && <span>• {formData.department}</span>}
+                {!isEmployee && <span>• {user.profile?.MaKH}</span>}
               </p>
             </div>
-
-
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col lg:flex-row gap-10">
-        {/* Sidebar Menu */}
-        <div className="w-full lg:w-72 shrink-0">
-          <div className="bg-slate-900 border border-white/10 rounded-3xl p-3 sticky top-6">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`w-full flex items-center gap-3 px-6 py-5 rounded-2xl text-base font-medium transition-all ${activeTab === 'profile' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10'}`}
-            >
-              <User className="w-5 h-5" />
-              Hồ sơ cá nhân
-            </button>
-            <button
-              onClick={() => setActiveTab('security')}
-              className={`w-full flex items-center gap-3 px-6 py-5 rounded-2xl text-base font-medium transition-all ${activeTab === 'security' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10'}`}
-            >
-              <Key className="w-5 h-5" />
-              Bảo mật & Mật khẩu
-            </button>
-          </div>
-        </div>
-
-        {/* Content - 2 Card Full Width */}
-        <div className="flex-1 space-y-8">
-          {activeTab === 'profile' ? (
-            <>
-              {/* Card 1: Thông tin liên hệ - FULL RỘNG */}
-              <div className="bg-[#1e2937] border border-slate-700 rounded-3xl p-8 shadow-2xl w-full">
-                <h3 className="text-2xl font-bold text-white mb-6">Thông tin liên hệ</h3>
-                <p className="text-slate-400 mb-8">Cập nhật thông tin để hệ thống và đồng nghiệp dễ dàng liên hệ với bạn.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-base font-medium text-slate-300">Họ và tên</label>
-                    <input type="text" defaultValue={profile.HoTen} className="w-full bg-slate-800 border-none rounded-2xl px-6 py-4 text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-base font-medium text-slate-300">Địa chỉ Email</label>
-                    <input type="email" defaultValue={profile.Email} className="w-full bg-slate-800 border-none rounded-2xl px-6 py-4 text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-base font-medium text-slate-300">Số điện thoại</label>
-                    <input type="text" defaultValue={profile.SDT} className="w-full bg-slate-800 border-none rounded-2xl px-6 py-4 text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-base font-medium text-slate-300">Địa chỉ</label>
-                    <input type="text" defaultValue={profile.DiaChi} className="w-full bg-slate-800 border-none rounded-2xl px-6 py-4 text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2: Công tác chuyên môn - FULL RỘNG */}
-              <div className="bg-[#1e2937] border border-slate-700 rounded-3xl p-8 shadow-2xl w-full">
-                <h3 className="text-2xl font-bold text-white mb-6">Công tác chuyên môn</h3>
-                <p className="text-slate-400 mb-8">Thông tin chức vụ theo cơ cấu tổ chức.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-base font-medium text-slate-300">Chức vụ</label>
-                    <input type="text" defaultValue={profile.ChucVu} className="w-full bg-slate-800 border-none rounded-2xl px-6 py-4 text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-base font-medium text-slate-300">Bộ phận / Phòng ban</label>
-                    <input type="text" defaultValue={profile.BoPhan} className="w-full bg-slate-800 border-none rounded-2xl px-6 py-4 text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                  </div>
-                </div>
-              </div>
-              <button className="flex items-center gap-3 px-8 py-4 bg-white text-slate-900 font-semibold text-lg rounded-3xl shadow-xl transition-all active:scale-25">
-                <Save className="w-5 h-5" />
-                Lưu thay đổi
+            <div className="flex gap-3">
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="btn btn-primary px-6 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+              >
+                {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
               </button>
-            </>
-          ) : (
-            <div className="space-y-8">
-              <div>
-                <h3 className="text-2xl font-bold text-white mb-2">Đổi mật khẩu</h3>
-                <p className="text-slate-400 mb-6">Mật khẩu mới phải chứa tối thiểu 8 ký tự, bao gồm chữ và số.</p>
-                <div className="max-w-md space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-base font-medium text-slate-300">Mật khẩu hiện tại</label>
-                    <input type="password" placeholder="••••••••" className="w-full bg-slate-800 border-none rounded-2xl px-6 py-4 text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-base font-medium text-slate-300">Mật khẩu mới</label>
-                    <input type="password" placeholder="••••••••" className="w-full bg-slate-800 border-none rounded-2xl px-6 py-4 text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-base font-medium text-slate-300">Xác nhận mật khẩu mới</label>
-                    <input type="password" placeholder="••••••••" className="w-full bg-slate-800 border-none rounded-2xl px-6 py-4 text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                  </div>
-                  <button className="mt-8 w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl text-white font-semibold transition-all">
-                    Cập nhật mật khẩu
-                  </button>
-                </div>
-              </div>
+            </div>
+          </div>
+
+          {success && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-xl mb-6 animate-in fade-in slide-in-from-top-2">
+              {success}
             </div>
           )}
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl mb-6">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                <UserIcon size={18} className="text-blue-600" /> Thông tin cơ bản
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 mb-1">Họ tên / Tên khách hàng</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="displayName"
+                      className="form-input pl-10"
+                      value={formData.displayName}
+                      onChange={handleChange}
+                    />
+                    <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 mb-1">Ngày sinh</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      name="dob"
+                      className="form-input pl-10"
+                      value={formData.dob}
+                      onChange={handleChange}
+                    />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
+                  </div>
+                </div>
+
+                {isEmployee && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-500 mb-1">Phòng ban</label>
+                      <input
+                        type="text"
+                        className="form-input opacity-70"
+                        value={formData.department}
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-500 mb-1">Chức vụ</label>
+                      <input
+                        type="text"
+                        className="form-input opacity-70"
+                        value={formData.jobTitle}
+                        readOnly
+                      />
+                    </div>
+                  </>
+                )}
+
+                {!isEmployee && user.role === 'KhachHangB2B' && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-500 mb-1">Địa chỉ Ví Web3 (Blockchain)</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="wallet"
+                        className="form-input pl-10 font-mono text-xs"
+                        value={formData.wallet}
+                        onChange={handleChange}
+                        placeholder="0x..."
+                      />
+                      <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                <Phone size={18} className="text-blue-600" /> Liên hệ & Địa chỉ
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 mb-1">Số điện thoại</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="phone"
+                      className="form-input pl-10"
+                      value={formData.phone}
+                      onChange={handleChange}
+                    />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 mb-1">Email</label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      name="email"
+                      className="form-input pl-10"
+                      value={formData.email}
+                      onChange={handleChange}
+                    />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 mb-1">Địa chỉ hiện tại</label>
+                  <div className="relative">
+                    <textarea
+                      name="address"
+                      className="form-input pl-10 py-3 min-h-[100px]"
+                      value={formData.address}
+                      onChange={handleChange}
+                    ></textarea>
+                    <MapPin className="absolute left-3 top-4 text-slate-600" size={16} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-slate-100">
+                <button type="button" className="text-blue-600 hover:text-blue-500 flex items-center gap-2 text-sm font-semibold transition-colors">
+                  <Lock size={14} /> Đổi mật khẩu đăng nhập
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
+
+      <p className="mt-8 text-center text-slate-500 text-sm">
+        VTSC PaintPro System — Thông tin này được bảo mật và chỉ dùng cho mục đích quản lý nội bộ/đối tác.
+      </p>
     </div>
   );
 }
