@@ -39,8 +39,8 @@ export default function NewRDRequestPage() {
 
       <div className="glass-card" style={{ padding: 'var(--spacing-xl)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 'var(--spacing-xl)' }}>
-          <div style={{ 
-            width: 48, height: 48, borderRadius: 'var(--radius-md)', 
+          <div style={{
+            width: 48, height: 48, borderRadius: 'var(--radius-md)',
             background: 'var(--accent-purple-soft)', color: 'var(--accent-purple)',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
@@ -108,7 +108,7 @@ export default function NewRDRequestPage() {
           {/* File Upload */}
           <div style={{ marginTop: 'var(--spacing-lg)' }}>
             <label className="form-label" style={{ marginBottom: 'var(--spacing-sm)', display: 'block' }}>Ảnh/Tài liệu Đính kèm</label>
-            <div 
+            <div
               className={`upload-zone ${dragOver ? 'dragover' : ''}`}
               onDragOver={e => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
@@ -122,7 +122,7 @@ export default function NewRDRequestPage() {
               <p style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', marginTop: 4 }}>
                 PNG, JPG, PDF — Tối đa 10MB
               </p>
-              <input id="file-input" type="file" multiple accept="image/*,.pdf" style={{ display: 'none' }} 
+              <input id="file-input" type="file" multiple accept="image/*,.pdf" style={{ display: 'none' }}
                 onChange={e => {
                   const names = Array.from(e.target.files || []).map(f => f.name);
                   setFiles(prev => [...prev, ...names]);

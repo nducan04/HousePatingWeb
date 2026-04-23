@@ -55,51 +55,42 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full relative flex items-center justify-center overflow-hidden bg-slate-950 font-sans">
-      {/* Immersive Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="/login-bg.png"
-          alt="Background"
-          className="w-full h-full object-cover opacity-60 scale-105 animate-pulse-soft"
-        />
-        <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-950/40 to-transparent"></div>
+    <div className="min-h-screen flex text-slate-100 font-sans" style={{ background: '#0B0F19' }}>
+      
+      {/* Left side: Animated branding background (Hide on small screens) */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12">
+        {/* Animated gradients */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/30 rounded-full mix-blend-screen filter blur-[100px] opacity-70 animate-pulse" style={{ animationDuration: '8s' }}></div>
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[120px] opacity-60 animate-pulse" style={{ animationDuration: '10s' }}></div>
+        
+        <div className="relative z-10 max-w-lg">
+          <Link href="/" className="inline-flex items-center gap-3 mb-10 hover:opacity-80 transition-opacity">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/20" style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}>
+              V
+            </div>
+            <span className="text-2xl font-bold tracking-tight">VTSC PaintPro</span>
+          </Link>
+          <h1 className="text-5xl font-extrabold leading-tight mb-6">
+            Khóa Không Gian Sinh Thái <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+              Công Nghiệp Số
+            </span>
+          </h1>
+          <p className="text-xl text-slate-400 leading-relaxed font-light">
+            Nền tảng quản lý dự án B2B, Hợp đồng Blockchain & Theo dõi pha chế chuẩn AkzoNobel. Truy cập để kiểm soát rủi ro và tăng tốc kinh doanh.
+          </p>
+        </div>
+        
+        {/* Subtle geometric patterns overlays */}
+        <div className="absolute inset-0 z-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
       </div>
 
-      {/* Animated Ambient Blobs */}
-      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-blue-500/20 rounded-full blur-[120px] animate-float z-10"></div>
-      <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-purple-500/20 rounded-full blur-[100px] animate-float z-10" style={{ animationDelay: '-5s' }}></div>
-
-      <main className="relative z-20 w-full max-w-5xl px-6 py-12 flex flex-col lg:flex-row items-center justify-between gap-12">
-
-        {/* Left Side: Branding & Value Prop */}
-        <div className="flex-1 text-white space-y-6 max-w-xl hidden lg:block animate-in fade-in slide-in-from-left duration-1000">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 backdrop-blur-md">
-            <Sparkles className="text-blue-400" size={14} />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-300">VTSC Digital Ecosystem</span>
-          </div>
-
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
-            Nâng tầm <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Quản trị</span> <br />
-            Sơn tĩnh điện
-          </h1>
-
-          <p className="text-lg text-slate-300 leading-relaxed max-w-md">
-            Giải pháp thông minh tích hợp Dashboard, R&D Tracking và Portal cho doanh nghiệp sơn tĩnh điện hiện đại.
-          </p>
-
-          <div className="grid grid-cols-2 gap-6 pt-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-                <ShieldCheck className="text-blue-400" size={20} />
-              </div>
-              <span className="text-sm font-medium text-slate-200">Bảo mật tuyệt đối</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-                <TrendingUp className="text-cyan-400" size={20} />
-              </div>
-              <span className="text-sm font-medium text-slate-200">Tối ưu hiệu suất</span>
+      {/* Right side: Modern Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12" style={{ background: '#0F1523', borderLeft: '1px solid rgba(255,255,255,0.05)', boxShadow: '-20px 0 50px rgba(0,0,0,0.5)' }}>
+        <div className="w-full max-w-md">
+          <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
+             <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-black shadow-lg" style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}>
+              V
             </div>
           </div>
         </div>
@@ -193,8 +184,14 @@ export default function LoginPage() {
                     Yêu cầu cấp tài khoản mới
                   </button>
                 </div>
-              </form>
-            </div>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-10 pt-6 border-t border-slate-800 text-center">
+             <p className="text-sm text-slate-500">
+               Chưa có tài khoản Doanh nghiệp? <Link href="/" className="text-blue-400 hover:text-blue-300 transition-colors">Liên hệ VTSC</Link>
+             </p>
           </div>
         </div>
       </main>
