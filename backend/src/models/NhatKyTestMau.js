@@ -7,11 +7,8 @@ const lichSuPhienBanSchema = new mongoose.Schema({
   result: { type: String, enum: ['pass', 'fail', 'pending'], default: 'pending' },
   parameters: { type: String, required: true },
   feedback: { type: String },
-  inputWeight: { type: Number, default: 0 }, // Khối lượng đầu vào (kg)
-  outputWeight: { type: Number, default: 0 }, // Khối lượng thực thu (kg)
   images: [{ type: String }], // Mảng URL ảnh (để sau này gắn ImageKit)
-  tester: { type: String, required: true },
-  testerCode: { type: String, default: '' }
+  tester: { type: String, required: true }
 }, { _id: false });
 
 const nhatKyTestMauSchema = new mongoose.Schema({

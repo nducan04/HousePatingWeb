@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   AreaChart, Area, ComposedChart, Bar, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import {
-  BarChart3, Users, Package, TrendingUp, Activity, FileSpreadsheet, TrendingDown,
-  Calendar, Filter, Loader2
+  BarChart3, Users, Package, AlertTriangle, TrendingUp, Filter, CheckCircle2,
+  Calendar, Info, ArrowUpRight, ArrowDownRight, Activity, Zap, FileSpreadsheet, TrendingDown
 } from 'lucide-react';
-import api from '@/lib/utils/axiosAuth';
+import { monthlyData, topCustomers, kpiSummary } from '@/lib/data/dashboard-data';
 
 function KPICard({ data, color, icon: Icon }: {
   data: { value: number; unit: string; change: number; label: string };
@@ -61,44 +61,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function DashboardPage() {
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await api.get('/dashboard/stats');
-        if (res.data.success) {
-          setStats(res.data.data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch dashboard stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStats();
-  }, []);
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16 }}>
-        <Loader2 className="animate-spin text-[var(--accent-cyan)]" size={40} />
-        <p style={{ color: 'var(--text-secondary)' }}>Đang tổng hợp dữ liệu thời gian thực...</p>
-      </div>
-    );
-  }
-
-  if (!stats) return <div>Lỗi tải dữ liệu.</div>;
+  const [activeChart, setActiveChart] = useState<'revenue' | 'production'>('revenue');
 
   return (
     <div>
       {/* KPI Cards */}
       <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
-        <KPICard data={stats.kpi.totalRevenue} color="cyan" icon={Activity} />
-        <KPICard data={stats.kpi.totalProduction} color="purple" icon={Package} />
-        <KPICard data={stats.kpi.customerCount} color="emerald" icon={Users} />
-        <KPICard data={stats.kpi.avgOrderValue} color="amber" icon={BarChart3} />
+        <KPICard data={kpiSummary.totalRevenue} color="cyan" icon={Activity} />
+        <KPICard data={kpiSummary.totalProduction} color="purple" icon={Package} />
+        <KPICard data={kpiSummary.customerCount} color="emerald" icon={Users} />
+        <KPICard data={kpiSummary.avgOrderValue} color="amber" icon={BarChart3} />
       </div>
 
       {/* Charts Section */}
@@ -108,12 +80,12 @@ export default function DashboardPage() {
           <div className="section-header">
             <div>
               <h3 className="section-title">Doanh thu Thực tế vs Kế hoạch</h3>
-              <p className="section-subtitle">Đơn vị: Triệu VNĐ — Dữ liệu thời gian thực</p>
+              <p className="section-subtitle">Đơn vị: Triệu VNĐ — Năm 2024</p>
             </div>
           </div>
           <div style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
-              <AreaChart data={stats.monthlyTrends}>
+              <AreaChart data={monthlyData}>
                 <defs>
                   <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.3} />
@@ -124,13 +96,13 @@ export default function DashboardPage() {
                     <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
-                <XAxis dataKey="month" stroke="var(--text-secondary)" fontSize={12} tickLine={false} />
-                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="month" stroke="var(--text-tertiary)" fontSize={12} tickLine={false} />
+                <YAxis stroke="var(--text-tertiary)" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
-                <Area type="monotone" dataKey="revenuePlan" name="Kế hoạch" stroke="#6366f1" fill="url(#gradPlan)" strokeWidth={2} dot={false} />
-                <Area type="monotone" dataKey="revenueActual" name="Thực tế" stroke="#2563eb" fill="url(#gradActual)" strokeWidth={2.5} dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} />
+                <Area type="monotone" dataKey="revenuePlan" name="Kế hoạch" stroke="#8b5cf6" fill="url(#gradPlan)" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="revenueActual" name="Thực tế" stroke="#00d4ff" fill="url(#gradActual)" strokeWidth={2.5} dot={{ r: 3, fill: '#00d4ff' }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -141,19 +113,19 @@ export default function DashboardPage() {
           <div className="section-header">
             <div>
               <h3 className="section-title">Sản lượng Thực tế vs Kế hoạch</h3>
-              <p className="section-subtitle">Đơn vị: kg — Dữ liệu thời gian thực</p>
+              <p className="section-subtitle">Đơn vị: kg — Năm 2024</p>
             </div>
           </div>
           <div style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
-              <ComposedChart data={stats.monthlyTrends}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
-                <XAxis dataKey="month" stroke="var(--text-secondary)" fontSize={12} tickLine={false} />
-                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+              <ComposedChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="month" stroke="var(--text-tertiary)" fontSize={12} tickLine={false} />
+                <YAxis stroke="var(--text-tertiary)" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
-                <Bar dataKey="prodActual" name="Thực tế" fill="#2563eb" radius={[4, 4, 0, 0]} opacity={0.9} />
-                <Line type="monotone" dataKey="prodPlan" name="Kế hoạch" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 4, fill: '#f59e0b', strokeWidth: 2, stroke: '#fff' }} strokeDasharray="6 3" />
+                <Bar dataKey="prodActual" name="Thực tế" fill="#00d4ff" radius={[4, 4, 0, 0]} opacity={0.8} />
+                <Line type="monotone" dataKey="prodPlan" name="Kế hoạch" stroke="#ff9f43" strokeWidth={2.5} dot={{ r: 3, fill: '#ff9f43' }} strokeDasharray="6 3" />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -164,15 +136,15 @@ export default function DashboardPage() {
       <div className="glass-card" style={{ padding: 'var(--spacing-lg)' }}>
         <div className="section-header">
           <div>
-            <h3 className="section-title">Top Khách hàng theo Sản lượng thực</h3>
-            <p className="section-subtitle">Dựa trên đơn hàng & hợp đồng đã ký kết</p>
+            <h3 className="section-title">Top Khách hàng theo Sản lượng</h3>
+            <p className="section-subtitle">Tiến độ đạt Target của Hãng — 2024</p>
           </div>
 
           <div className="flex gap-2 w-full md:w-auto">
-            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }}>
+            <button className="btn btn-outline btn-sm bg-white" style={{ flex: 1 }}>
               <Calendar size={14} /> Tuần này
             </button>
-            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }}>
+            <button className="btn btn-outline btn-sm bg-white" style={{ flex: 1 }}>
               <Filter size={14} /> Bộ lọc
             </button>
             <a
@@ -180,7 +152,7 @@ export default function DashboardPage() {
               className="btn btn-sm"
               style={{
                 flex: 1,
-                background: 'var(--accent-emerald)',
+                background: 'var(--accent-green)',
                 color: 'white',
                 border: 'none',
                 marginLeft: '8px'
@@ -197,29 +169,29 @@ export default function DashboardPage() {
               <th>Khách hàng</th>
               <th>Phân khúc</th>
               <th>Sản lượng (kg)</th>
-              <th>Doanh thu (VNĐ)</th>
-              <th>Tiến độ Target</th>
+              <th>Target (kg)</th>
+              <th>Tiến độ</th>
               <th>Trạng thái</th>
             </tr>
           </thead>
           <tbody>
-            {stats.topCustomers.map((c: any, i: number) => {
-              const pct = Math.round((c.volume / (c.target || 2500)) * 100);
+            {topCustomers.map((c, i) => {
+              const pct = Math.round((c.volume / c.target) * 100);
               return (
                 <tr key={c.name}>
                   <td style={{ fontWeight: 700, color: 'var(--text-tertiary)' }}>{i + 1}</td>
                   <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</td>
                   <td>{c.segment}</td>
                   <td style={{ fontWeight: 600 }}>{c.volume.toLocaleString('vi-VN')}</td>
-                  <td style={{ fontWeight: 500 }}>{c.revenue.toLocaleString('vi-VN')}</td>
+                  <td>{c.target.toLocaleString('vi-VN')}</td>
                   <td style={{ minWidth: 160 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div className="progress-bar" style={{ flex: 1 }}>
-                        <div className="progress-fill" style={{
+                        <div className="progress-fill" style={{ 
                           width: `${Math.min(pct, 100)}%`,
                           background: pct >= 90 ? 'linear-gradient(90deg, var(--accent-emerald), #34d399)' :
-                            pct >= 70 ? 'linear-gradient(90deg, var(--accent-amber), #fbbf24)' :
-                              'linear-gradient(90deg, var(--accent-rose), #fb7185)'
+                                     pct >= 70 ? 'linear-gradient(90deg, var(--accent-amber), #fbbf24)' :
+                                     'linear-gradient(90deg, var(--accent-rose), #fb7185)'
                         }} />
                       </div>
                       <span style={{ fontSize: 'var(--font-xs)', fontWeight: 700, minWidth: 38 }}>{pct}%</span>
@@ -233,9 +205,6 @@ export default function DashboardPage() {
                 </tr>
               );
             })}
-            {stats.topCustomers.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>Chưa có dữ liệu giao dịch thực tế.</td></tr>
-            )}
           </tbody>
         </table>
       </div>

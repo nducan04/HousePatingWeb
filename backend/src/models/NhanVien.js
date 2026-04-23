@@ -9,6 +9,7 @@ const nhanVienSchema = new mongoose.Schema({
   AccountID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'TaiKhoan',
+    required: true,
   },
   MaNV: {
     type: String,
@@ -25,28 +26,12 @@ const nhanVienSchema = new mongoose.Schema({
   NgaySinh: {
     type: Date,
   },
-  GioiTinh: {
-    type: String,
-    enum: ['Nam', 'Nữ', 'Khác'],
-  },
   Email: {
     type: String,
     trim: true,
     lowercase: true,
   },
-  Avatar: {
-    type: String,
-    trim: true,
-  },
   SDT: {
-    type: String,
-    trim: true,
-  },
-  DiaChi: {
-    type: String,
-    trim: true,
-  },
-  BoPhan: {
     type: String,
     trim: true,
   },
@@ -55,24 +40,10 @@ const nhanVienSchema = new mongoose.Schema({
     required: [true, 'Vui lòng nhập chức vụ'],
     trim: true,
   },
-  MoTaCongViec: {
-    type: String,
-    trim: true,
-  },
-  TrangThai: {
-    type: String,
-    enum: ['Đang làm', 'Đang nghỉ phép', 'Đã nghỉ việc'],
-    default: 'Đang làm'
-  },
   HieuSuatKPI: {
     diemKPI: { type: Number, default: 0 },
     tyLeMotDon: { type: Number, default: 0 },
     tyLeTestMau: { type: Number, default: 0 },
-    // Chi tiết KPI theo nghiệp vụ
-    soDonDaBan: { type: Number, default: 0 },     // Cho NV Kinh doanh
-    soMauDaPha: { type: Number, default: 0 },      // Cho NV Kỹ thuật
-    soDonDaGiao: { type: Number, default: 0 },    // Cho NV Giao nhận / Kho
-    diemDanhGia: { type: Number, default: 0 },    // Điểm đánh giá trung bình (0-100)
   },
 }, {
   timestamps: true,

@@ -24,9 +24,9 @@ export default function ColorsPage() {
     <div>
       {/* Hero Banner */}
       <div style={{ 
-        background: 'linear-gradient(135deg, #eff6ff, #eef2ff)',
+        background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(139, 92, 246, 0.08))',
         borderRadius: 'var(--radius-xl)', padding: 'var(--spacing-2xl)',
-        marginBottom: 'var(--spacing-xl)', border: '1px solid #dbeafe',
+        marginBottom: 'var(--spacing-xl)', border: '1px solid var(--border-color)',
         textAlign: 'center'
       }}>
         <Palette size={48} style={{ color: 'var(--accent-cyan)', margin: '0 auto var(--spacing-md)' }} />

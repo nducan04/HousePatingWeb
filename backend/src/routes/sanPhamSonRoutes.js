@@ -2,7 +2,7 @@ const express = require('express');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const {
   getAll, getById, create, update, remove,
-  addColor, updateColor, removeColor, updatePrice
+  addColor, updateColor, removeColor,
 } = require('../controllers/sanPhamSonController');
 
 const router = express.Router();
@@ -14,7 +14,6 @@ router.get('/:id', getById);
 // Protected: chỉ Admin/NhanVien quản lý CRUD
 router.post('/', protect, authorize('Admin', 'NhanVien'), create);
 router.put('/:id', protect, authorize('Admin', 'NhanVien'), update);
-router.put('/:id/price', protect, authorize('Admin', 'NhanVien'), updatePrice);
 router.delete('/:id', protect, authorize('Admin', 'NhanVien'), remove);
 
 // Sub-document: quản lý mã màu trong sản phẩm

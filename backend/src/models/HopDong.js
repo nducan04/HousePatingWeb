@@ -38,35 +38,12 @@ const hopDongSchema = new mongoose.Schema({
     required: [true, 'Vui lòng nhập tiêu đề hợp đồng'],
     trim: true,
   },
-  // Tham chiếu KhachHang
+  // Tham chiếu KhachHang (Đối tác B2B)
   CustomerID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'KhachHang',
-    required: [true, 'Vui lòng chọn khách hàng'],
+    required: [true, 'Vui lòng chọn khách hàng B2B'],
   },
-  // Nhóm phân loại hợp đồng (B2B, Đại lý, B2C)
-  LoaiHopDong: {
-    type: String,
-    enum: ['B2B', 'Đại lý', 'B2C'],
-    default: 'B2B',
-  },
-  // Đối với Đại lý
-  TaxCode: {
-    type: String,
-    trim: true,
-  },
-  // Đối với B2B
-  MetamaskAddress: {
-    type: String,
-    trim: true,
-  },
-  // === Thông tin chi tiết Bên B ===
-  partyBAddress: { type: String, trim: true },
-  partyBTaxCode: { type: String, trim: true },
-  partyBBankAccount: { type: String, trim: true },
-  partyBBankName: { type: String, trim: true },
-  partyBRepresentative: { type: String, trim: true },
-  partyBPosition: { type: String, trim: true },
   // Tham chiếu NhanVien (Nhân viên phụ trách)
   EmployeeID: {
     type: mongoose.Schema.Types.ObjectId,
@@ -81,11 +58,6 @@ const hopDongSchema = new mongoose.Schema({
     required: true,
     min: 0,
   },
-  DaThanhToan: {
-    type: Number,
-    default: 0,
-    min: 0,
-  },
   // === Điều khoản SLA ===
   TrangThai: {
     type: String,
@@ -97,20 +69,6 @@ const hopDongSchema = new mongoose.Schema({
     sla: { type: String, default: '' },
     penalty: { type: String, default: '' },
     duration: { type: String, default: '' },
-  },
-  // === 11 Điều khoản Pháp lý ===
-  articles: {
-    article1: { type: String, default: '' },
-    article2: { type: String, default: '' },
-    article3: { type: String, default: '' },
-    article4: { type: String, default: '' },
-    article5: { type: String, default: '' },
-    article6: { type: String, default: '' },
-    article7: { type: String, default: '' },
-    article8: { type: String, default: '' },
-    article9: { type: String, default: '' },
-    article10: { type: String, default: '' },
-    article11: { type: String, default: '' },
   },
   // === Khóa Web3 — Liên kết phi tập trung ===
   SmartContractAddress: { type: String, default: '' },
