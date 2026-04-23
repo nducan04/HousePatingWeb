@@ -20,10 +20,6 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Serve static files from 'uploads' directory
-const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-
 // ═══════════════════════════════════════
 // Routes — Module 1: Hệ thống & Xác thực
 // ═══════════════════════════════════════
@@ -33,31 +29,15 @@ app.use('/api/auth', require('./routes/authRoutes'));
 // Routes — Module 2: Danh mục & Hỗ trợ
 // ═══════════════════════════════════════
 app.use('/api/san-pham-son', require('./routes/sanPhamSonRoutes'));
-app.use('/api/kho', require('./routes/khoRoutes'));
 app.use('/api/khach-hang', require('./routes/khachHangRoutes'));
 app.use('/api/nhan-vien', require('./routes/nhanVienRoutes'));
 app.use('/api/nha-cung-cap', require('./routes/nhaCungCapRoutes'));
 app.use('/api/chatbot', require('./routes/chatbotRoutes'));
-app.use('/api/tai-khoan', require('./routes/taiKhoanRoutes'));
 
 // ═══════════════════════════════════════
 // Routes — Module 3: Kinh doanh & Hợp đồng
 // ═══════════════════════════════════════
 app.use('/api/contracts', require('./routes/contractRoutes'));
-app.use('/api/tin-tuc', require('./routes/tinTucRoutes'));
-app.use('/api/don-hang', require('./routes/donHangRoutes'));
-app.use('/api/khuyen-mai', require('./routes/khuyenMaiRoutes'));
-app.use('/api/gio-hang', require('./routes/gioHangRoutes'));
-app.use('/api/thanh-toan', require('./routes/paymentRoutes'));
-app.use('/api/van-chuyen', require('./routes/vanChuyenRoutes'));
-app.use('/api/hieu-suat', require('./routes/hieuSuatRoutes'));
-app.use('/api/doi-tra', require('./routes/doiTraRoutes'));
-app.use('/api/bao-hanh', require('./routes/baoHanhRoutes'));
-app.use('/api/dashboard', require('./routes/dashboardRoutes'));
-app.use('/api/rd-tracking', require('./routes/rdRoutes'));
-app.use('/api/formulas', require('./routes/congThucRoutes'));
-app.use('/api/packaging', require('./routes/packagingRoutes'));
-app.use('/api/production', require('./routes/productionRoutes'));
 
 // ═══════════════════════════════════════
 // Routes — Legacy (giữ lại cho tương thích)

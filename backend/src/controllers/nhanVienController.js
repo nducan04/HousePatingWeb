@@ -84,15 +84,3 @@ exports.remove = async (req, res) => {
     res.status(400).json({ success: false, error: error.message });
   }
 };
-
-// @desc    Lấy chi tiết nhân viên qua AccountID
-// @route   GET /api/nhan-vien/account/:accountId
-exports.getByAccountId = async (req, res) => {
-  try {
-    const item = await NhanVien.findOne({ AccountID: req.params.accountId }).populate('AccountID', 'TenDangNhap VaiTro TrangThai');
-    if (!item) return res.status(404).json({ success: false, error: 'Không tìm thấy thông tin nhân viên cho tài khoản này' });
-    res.status(200).json({ success: true, data: item });
-  } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
-  }
-};
