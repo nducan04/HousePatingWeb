@@ -65,7 +65,7 @@ export default function PhanQuyenPage() {
       <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <h1 style={{ margin: 0, fontSize: 'var(--font-xl)', color: 'var(--text-primary)', fontWeight: 700 }}>Ma trận Phân quyền</h1>
+            <h1 style={{ margin: 0, fontSize: 'var(--font-xl)', color: 'var(--text-primary)', fontWeight: 700 }}>Phân quyền tài khoản</h1>
           </div>
           <button
             onClick={handleSave}
@@ -110,10 +110,10 @@ export default function PhanQuyenPage() {
                         onClick={() => togglePermission(perm.id, role.id as keyof Permission['roles'])}
                         className="btn btn-ghost"
                         style={{
-                           padding: 8,
-                           cursor: isAdmin ? 'not-allowed' : 'pointer',
-                           opacity: isAdmin ? 0.5 : 1,
-                           color: isGranted ? role.color : 'var(--text-tertiary)'
+                          padding: 8,
+                          cursor: isAdmin ? 'not-allowed' : 'pointer',
+                          opacity: isAdmin ? 0.5 : 1,
+                          color: isGranted ? role.color : 'var(--text-tertiary)'
                         }}
                         title={isAdmin ? 'Quyền Admin là bắt buộc' : 'Thay đổi quyền truy cập'}
                       >

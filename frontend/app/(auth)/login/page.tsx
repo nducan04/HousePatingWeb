@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Loader2, ArrowRight, FlaskConical, ShieldCheck, TrendingUp, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
 import api from '@/lib/utils/axiosAuth';
 import Link from 'next/link';
@@ -35,7 +35,9 @@ export default function LoginPage() {
         loginState(response.data.user, response.data.accessToken);
 
         const role = response.data.user.role;
-        if (role === 'Admin' || role === 'NhanVien') {
+        const systemRoles = ['Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C', 'NhaCungCap'];
+
+        if (systemRoles.includes(role)) {
           router.push('/dashboard');
         } else {
           router.push('/');
@@ -53,137 +55,156 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex text-slate-100 font-sans" style={{ background: '#0B0F19' }}>
+    <div className="min-h-screen w-full relative flex items-center justify-center overflow-hidden bg-slate-950 font-sans">
+      {/* Immersive Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/login-bg.png"
+          alt="Background"
+          className="w-full h-full object-cover opacity-60 scale-105 animate-pulse-soft"
+        />
+        <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-950/40 to-transparent"></div>
+      </div>
 
-      {/* Left side: Animated branding background */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/30 rounded-full mix-blend-screen filter blur-[100px] opacity-70 animate-pulse" style={{ animationDuration: '8s' }}></div>
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[120px] opacity-60 animate-pulse" style={{ animationDuration: '10s' }}></div>
+      {/* Animated Ambient Blobs */}
+      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-blue-500/20 rounded-full blur-[120px] animate-float z-10"></div>
+      <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-purple-500/20 rounded-full blur-[100px] animate-float z-10" style={{ animationDelay: '-5s' }}></div>
 
-        <div className="relative z-10 max-w-lg">
-          <Link href="/" className="inline-flex items-center gap-3 mb-10 hover:opacity-80 transition-opacity">
-            {/* <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/20" style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}>
-              V
-            </div>
-            <span className="text-2xl font-bold tracking-tight justify-center">VTSC PaintPro</span> */}
-          </Link>
-          <h1 className="text-4xl font-extrabold leading-tight mb-6 text-center">
-            Công ty Cổ phần <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-              Thương mại và Dịch vụ VOSCO.<br />
-            </span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-              <p className="text-xl font-extrabold text-slate-400 leading-relaxed font-light">
-                Nền tảng quản lý dự án B2B, Hợp đồng Blockchain & Theo dõi pha chế chuẩn AkzoNobel. Truy cập để kiểm soát rủi ro và tăng tốc kinh doanh của Công ty Cổ phần Thương mại và Dịch vụ VOSCO.
-              </p>
-            </span>
+      <main className="relative z-20 w-full max-w-5xl px-6 py-12 flex flex-col lg:flex-row items-center justify-between gap-12">
+
+        {/* Left Side: Branding & Value Prop */}
+        <div className="flex-1 text-white space-y-6 max-w-xl hidden lg:block animate-in fade-in slide-in-from-left duration-1000">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 backdrop-blur-md">
+            <Sparkles className="text-blue-400" size={14} />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-300">VTSC Digital Ecosystem</span>
+          </div>
+
+          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
+            Nâng tầm <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Quản trị</span> <br />
+            Sơn tĩnh điện
           </h1>
-        </div>
 
-        <div className="absolute inset-0 z-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
-      </div>
+          <p className="text-lg text-slate-300 leading-relaxed max-w-md">
+            Giải pháp thông minh tích hợp Dashboard, R&D Tracking và Portal cho doanh nghiệp sơn tĩnh điện hiện đại.
+          </p>
 
-      {/* Right side: Modern Login Form */}
-      <div className="w-full lg:w-1/2 relative flex items-center justify-center p-6 sm:p-12" style={{ background: '#0F1523', borderLeft: '1px solid rgba(255,255,255,0.05)', boxShadow: '-20px 0 50px rgba(0,0,0,0.5)' }}>
-
-        {/* Logo at Top Right corner */}
-        <div className="absolute top-8 right-8 w-40 md:w-56 h-auto">
-          <a href="/dashboard" style={{ display: 'block' }}>
-            <img src="/vtsc.png" alt="VTSC Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          </a>
-        </div>
-
-        <div className="w-full max-w-lg mt-16 lg:mt-0">
-          <div className="mb-12 text-center">
-            <h2 className="text-4xl lg:text-5xl font-extrabold mb-4 tracking-tight">Chào mừng trở lại</h2>
-            <p className="text-slate-400 text-lg">Đăng nhập vào tài khoản của bạn để tiếp tục quản lý dự án và hợp đồng một cách hiệu quả.</p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-6">
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3 backdrop-blur-sm shadow-inner overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-                <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                <p className="text-base text-red-200">{error}</p>
+          <div className="grid grid-cols-2 gap-6 pt-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+                <ShieldCheck className="text-blue-400" size={20} />
               </div>
-            )}
-
-            <div className="space-y-5">
-              {/* Input Tên đăng nhập - Phong cách giống ảnh cậu gửi */}
-              <div className="group">
-                <label className="block text-base font-medium text-slate-300 mb-2">Tên đăng nhập</label>
-                <div className="flex bg-transparent border-none rounded-3xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 transition-all">
-                  {/* Icon - Nền trắng */}
-                  <div className="flex items-center justify-center w-14 bg-transparent rounded-l-3xl">
-                    <Mail className="h-5 w-5 text-slate-700" />
-                  </div>
-                  {/* Textbox */}
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="flex-1 bg-white px-5 py-5 text-slate-900 placeholder-slate-400 focus:outline-none text-xl font-medium"
-                    placeholder="Nhập tên đăng nhập"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Input Mật khẩu - Phong cách giống ảnh cậu gửi */}
-              <div className="group">
-                <label className="block text-base font-medium text-slate-300 mb-2">Mật khẩu</label>
-                <div className="flex bg-transparent border-none rounded-3xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 transition-all shadow-sm">
-                  {/* Icon phần - Background trắng */}
-                  <div className="flex items-center justify-center w-14 bg-transparent border-r border-slate-200">
-                    <Lock className="h-5 w-5 text-slate-600" />
-                  </div>
-                  {/* Textbox - Background trắng */}
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="flex-1 bg-white px-5 py-5 text-slate-900 placeholder-slate-400 focus:outline-none text-xl font-medium"
-                    placeholder="Nhập mật khẩu"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-base py-1">
-                <label className="flex items-center text-slate-400 cursor-pointer hover:text-slate-200 transition-colors">
-                  <input type="checkbox" className="mr-2.5 w-4 h-4 rounded border-slate-600 bg-slate-800 focus:ring-blue-500 checked:bg-blue-500" />
-                  Ghi nhớ thiết bị
-                </label>
-                <a href="#" className="font-medium text-blue-400 hover:text-blue-300 transition-colors">
-                  Quên mật khẩu?
-                </a>
-              </div>
+              <span className="text-sm font-medium text-slate-200">Bảo mật tuyệt đối</span>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex items-center justify-center py-4 px-4 border border-transparent text-lg font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0F1523] focus:ring-blue-500 transition-all shadow-lg shadow-blue-500/25 disabled:opacity-70 disabled:cursor-not-allowed hover:shadow-blue-500/40 transform active:scale-[0.98]"
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Đang đăng nhập...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span>Truy cập hệ thống</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              )}
-            </button>
-          </form>
-
-          <div className="mt-10 pt-6 border-t border-slate-800 text-center">
-            <p className="text-base text-slate-500">
-              Chưa có tài khoản Doanh nghiệp? <Link href="/sign-up" className="text-blue-400 hover:text-blue-300 transition-colors">Liên hệ VTSC</Link>
-            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+                <TrendingUp className="text-cyan-400" size={20} />
+              </div>
+              <span className="text-sm font-medium text-slate-200">Tối ưu hiệu suất</span>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Right Side: Login Card */}
+        <div className="w-full max-w-md animate-in fade-in zoom-in slide-in-from-bottom-10 duration-700">
+          <div className="glass-morphism rounded-3xl p-8 md:p-10 shadow-2xl border border-white/10 relative overflow-hidden backdrop-blur-3xl">
+            {/* Subtle glow effect */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-800/20 rounded-full blur-[60px]"></div>
+
+            <div className="relative z-10">
+              <div className="flex justify-between items-end mb-8">
+                <div>
+                  <h2 className="text-2xl font-bold text-black mb-1">Đăng nhập</h2>
+                  <p className="text-black text-sm">Chào mừng trở lại với VTSC</p>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-2xl font-black text-white/20 tracking-tighter italic">VTSC</span>
+                  <span className="text-[8px] font-bold text-blue-500 tracking-[0.2em] uppercase -mt-1">PaintPro</span>
+                </div>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-5">
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                    <AlertCircle className="text-red-400 shrink-0" size={18} />
+                    <span className="text-xs font-medium text-red-300">{error}</span>
+                  </div>
+                )}
+
+                <div className="space-y-1.5 transition-transform">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Tài khoản</label>
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors" size={18} />
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none text-white placeholder:text-slate-600 transition-all text-base"
+                      placeholder="Email hoặc số điện thoại"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 transition-transform">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Mật khẩu</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors" size={18} />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none text-white placeholder:text-slate-600 transition-all text-base"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <a href="#" className="text-xs text-slate-400 hover:text-blue-400 transition-colors font-medium">Quên mật khẩu?</a>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold rounded-2xl transition-all disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 active:scale-[0.98]"
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin" size={20} />
+                  ) : (
+                    <>
+                      Đăng nhập <ArrowRight size={18} />
+                    </>
+                  )}
+                </button>
+
+                <div className="pt-6 flex flex-col items-center gap-4">
+                  <div className="w-full flex items-center gap-3">
+                    <div className="h-px flex-1 bg-white/10"></div>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Hoặc</span>
+                    <div className="h-px flex-1 bg-white/10"></div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="text-sm text-slate-300 hover:text-white transition-colors font-semibold"
+                    onClick={() => alert('Vui lòng liên hệ quản trị viên để tạo tài khoản mới.')}
+                  >
+                    Yêu cầu cấp tài khoản mới
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="absolute bottom-6 w-full text-center z-20">
+        <p className="text-[10px] text-slate-500 font-medium tracking-wide uppercase">
+          VTSC PaintPro © 2024 — Industrial Intelligence Solution
+        </p>
+      </footer>
     </div>
   );
 }

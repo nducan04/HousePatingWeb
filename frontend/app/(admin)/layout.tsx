@@ -10,7 +10,7 @@ import {
   BarChart3, FlaskConical, FileSignature, Palette,
   QrCode, Settings, Clock, Bell, User, ChevronRight, ChevronDown, Package, MessageSquare, FileUp, CloudSync, QrCodeIcon,
   LogOut, Loader2, ClipboardList, PackageOpen, DollarSign, ShoppingCart, ListOrdered, PanelsRightBottomIcon, SignalHighIcon, TrainFrontIcon,
-  Users,
+  Users, Shield,
   ReceiptRussianRubleIcon
 } from 'lucide-react';
 
@@ -35,7 +35,7 @@ const allNavItems = [
   },
   {
     section: 'Quản lý danh mục', items: [
-      { href: '/san-pham', label: 'Sản phẩm Sơn', icon: Package, roles: ['Admin', 'NhanVien'] },
+      { href: '/san-pham', label: 'Sản phẩm Sơn', icon: Package, roles: ['Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C'] },
       { href: '/colors', label: 'Tra cứu Mã Màu', icon: Palette, roles: ['Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C'] },
       { href: '/gia-thanh', label: 'Quản lý giá thành', icon: DollarSign, roles: ['Admin'] },
       { href: '/kho', label: 'Quản lý kho', icon: ClipboardList, roles: ['Admin', 'NhanVien'] },
@@ -50,12 +50,13 @@ const allNavItems = [
   {
     section: 'Quản lý kinh doanh sơn', items: [
       { href: '/tin-tuc', label: 'Quảng bá sản phẩm', icon: Package, roles: ['Admin', 'NhanVien'] },
-      { href: '/tracking', label: 'Quản lý đơn hàng', icon: ListOrdered, roles: ['Admin', 'NhanVien', 'KhachHangB2C', 'KhachHangB2B'] },
+      { href: '/don-hang', label: 'Quản lý đơn hàng', icon: ListOrdered, roles: ['Admin', 'NhanVien', 'KhachHangB2C', 'KhachHangB2B'] },
       { href: '/giohang', label: 'Quản lý giỏ hàng', icon: ShoppingCart, roles: ['Admin', 'NhanVien', 'KhachHangB2C', 'KhachHangB2B'] },
       { href: '/thanh-toan', label: 'Quản lý thanh toán', icon: QrCodeIcon, roles: ['Admin', 'NhanVien', 'KhachHangB2C', 'KhachHangB2B'] },
       { href: '/van-chuyen', label: 'Theo dõi vận chuyển', icon: TrainFrontIcon, roles: ['Admin', 'NhanVien', 'KhachHangB2C', 'KhachHangB2B'] },
       { href: '/hieu-suat', label: 'Theo dõi hiệu suất', icon: SignalHighIcon, roles: ['Admin', 'NhanVien'] },
       { href: '/doi-tra', label: 'Quản lý đổi trả', icon: ReceiptRussianRubleIcon, roles: ['Admin', 'NhanVien'] },
+      { href: '/bao-hanh', label: 'Bảo hành & Hậu mãi', icon: Shield, roles: ['Admin', 'NhanVien'] },
       { href: '/khuyen-mai', label: 'Quản lý khuyến mãi', icon: PanelsRightBottomIcon, roles: ['Admin', 'NhanVien'] },
       { href: '/chatbot', label: 'AI Hỗ trợ khách hàng', icon: MessageSquare, roles: ['Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C'] },
     ]
@@ -65,7 +66,7 @@ const allNavItems = [
       { href: '/contracts', label: 'Hợp đồng pha chế', icon: FileSignature, roles: ['Admin', 'NhanVien', 'KhachHangB2B'] },
       { href: '/rd-tracking', label: 'R&D Tracking', icon: FlaskConical, roles: ['Admin', 'NhanVien'] },
       { href: '/quy-trinh', label: 'Quản lý quy trình gói đơn hàng', icon: QrCodeIcon, roles: ['Admin', 'NhanVien', 'KhachHangB2C', 'KhachHangB2B'] },
-      { href: '/thanh-toan', label: 'Quản lý thanh toán', icon: QrCodeIcon, roles: ['Admin', 'NhanVien', 'KhachHangB2C', 'KhachHangB2B'] },
+      { href: '/thanh-toan-hd', label: 'Thanh toán & Công nợ HĐ', icon: DollarSign, roles: ['Admin', 'NhanVien', 'KhachHangB2B'] },
     ]
   },
   {
@@ -244,21 +245,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div style={{
             padding: 'var(--spacing-md)',
             borderTop: '1px solid var(--border-color)',
+            background: 'var(--bg-primary)',
             display: 'flex', alignItems: 'center', gap: '12px'
           }}>
             <div style={{
-              width: 36, height: 36, borderRadius: 'var(--radius-full)',
-              background: 'linear-gradient(135deg, var(--accent-amber), var(--accent-rose))',
+              width: 38, height: 38, borderRadius: 'var(--radius-md)',
+              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: 'var(--font-sm)', color: '#fff',
+              fontWeight: 700, fontSize: '13px', color: '#fff',
               flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
             }}>{initials}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 'var(--font-sm)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</div>
+              <div style={{ fontSize: 'var(--font-sm)', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</div>
               <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)' }}>{displayRole}</div>
             </div>
-            <button onClick={handleLogout} className="btn btn-ghost btn-sm" style={{ padding: 4, flexShrink: 0 }} title="Đăng xuất">
-              <LogOut size={16} />
+            <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Đăng xuất">
+              <LogOut size={18} />
             </button>
           </div>
         </aside>
@@ -276,6 +279,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {pathname?.startsWith('/contracts') && '📝 Hợp đồng B2B'}
               {pathname === '/colors' && '🎨 Tra cứu Mã Màu'}
               {pathname === '/tracking' && '📦 QR Tracking'}
+              {pathname === '/don-hang' && '📋 Quản lý Đơn hàng'}
               {pathname === '/chatbot' && '🤖 AI Hỗ trợ Khách hàng'}
               {pathname === '/import' && '📤 Nhập Dữ Liệu (Excel/CSV)'}
             </div>
