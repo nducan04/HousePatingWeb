@@ -377,10 +377,10 @@ export default function ContractsPage() {
             {/* Stepper Indication */}
             <div className="no-print" style={{ padding: '12px 24px', background: 'rgba(255,255,255,0.02)', display: 'flex', gap: 40, borderBottom: '1px solid var(--border-color)' }}>
               {[
-                { step: 1, label: 'Bên B (Người mua)', icon: Building },
-                { step: 2, label: 'Hàng hóa & Giá', icon: Package },
-                { step: 3, label: '11 Điều khoản', icon: ClipboardList },
-                { step: 4, label: 'Xem trước', icon: Eye }
+                { step: 1, label: 'Thông tin cá nhân Bên B (Người mua)', icon: Building },
+                { step: 2, label: 'Thông tin Hàng hóa & Giá', icon: Package },
+                { step: 3, label: 'Điều khoản hợp đồng', icon: ClipboardList },
+                { step: 4, label: 'Xem trước hợp đồng', icon: Eye }
               ].map(s => (
                 <div key={s.step} style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: currentStep === s.step ? 1 : 0.4 }}>
                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: currentStep >= s.step ? 'var(--accent-cyan)' : 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800 }}>

@@ -16,13 +16,60 @@ interface Permission {
 }
 
 const mockPermissions: Permission[] = [
-  { id: '1', module: 'Quản lý Hệ thống & Tài khoản', description: 'Toàn quyền cấu hình người dùng, profile và cấp phát vai trò', roles: { Admin: true, NhanVien: false, KhachHangB2B: false, KhachHangB2C: false } },
-  { id: '2', module: 'Dashboard & Thống kê', description: 'Truy cập vào bảng tin tổng hợp và các chỉ số đo lường', roles: { Admin: true, NhanVien: true, KhachHangB2B: false, KhachHangB2C: false } },
-  { id: '3', module: 'Quản lý Kho & Sản phẩm', description: 'Điều chỉnh danh mục, giá thành, và logic nghiệp vụ Nhập/Xuất kho', roles: { Admin: true, NhanVien: true, KhachHangB2B: false, KhachHangB2C: false } },
-  { id: '4', module: 'Hợp đồng pha chế', description: 'Trình ký hợp đồng và lưu trữ văn bản pháp lý', roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: false } },
-  { id: '5', module: 'Theo dõi đơn hàng & R&D', description: 'Tra cứu tiến độ sản xuất và công thức R&D', roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: true } },
-  { id: '6', module: 'Tra cứu Mục lục Sơn (B2C)', description: 'Tự do tra cứu thẻ màu, giá thành tham chiếu', roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: true } },
-  { id: '7', module: 'Tích hợp AI Bot', description: 'Nhắn tin cấu hình và hỏi đáp với AI Model lõi', roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: true } },
+  {
+    id: '1',
+    module: 'Quản trị Hệ thống & Bảo mật',
+    description: 'Toàn quyền cấu hình máy chủ, phân quyền người dùng và quản lý nhật ký hệ thống (System Logs)',
+    roles: { Admin: true, NhanVien: false, KhachHangB2B: false, KhachHangB2C: false }
+  },
+  {
+    id: '2',
+    module: 'Bảng điều khiển BI & Analytics',
+    description: 'Truy cập các biểu đồ doanh thu, hiệu suất sản xuất và dự báo thị trường AI',
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: false }
+  },
+  {
+    id: '3',
+    module: 'Quản lý Kho & Chuỗi cung ứng',
+    description: 'Quản lý danh mục sản phẩm, kiểm kê tồn kho, và điều phối nhập xuất nguyên vật liệu',
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: false }
+  },
+  {
+    id: '4',
+    module: 'Quản trị Đối tác & Hợp đồng (B2B)',
+    description: 'Quản lý hồ sơ doanh nghiệp, trình ký hợp đồng điện tử và hạn mức tín dụng',
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: true }
+  },
+  {
+    id: '5',
+    module: 'Phòng Lab R&D & Công thức Sơn',
+    description: 'Quản lý công thức pha chế, quy trình thử nghiệm mẫu mới và tiêu chuẩn kỹ thuật',
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: false }
+  },
+  {
+    id: '6',
+    module: 'Lệnh sản xuất & Quy trình MES',
+    description: 'Điều hành dây chuyền sản xuất, gán việc cho kỹ thuật viên và theo dõi tiến độ MES',
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: false, KhachHangB2C: false }
+  },
+  {
+    id: '7',
+    module: 'Đơn hàng & Theo dõi Logistics',
+    description: 'Tạo đơn hàng mới, tra cứu trạng thái vận chuyển và xử lý khiếu nại/đổi trả',
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: true }
+  },
+  {
+    id: '8',
+    module: 'Catalog Sơn & Visualizer AI',
+    description: 'Tra cứu bảng màu thực tế, xem giá niêm yết và trải nghiệm mô phỏng không gian 3D',
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: true }
+  },
+  {
+    id: '9',
+    module: 'Trung tâm Hỗ trợ & Trợ lý AI',
+    description: 'Tương tác với AI Chatbot hỗ trợ kỹ thuật và gửi yêu cầu hỗ trợ trực tiếp (Ticket)',
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: true }
+  },
 ];
 
 const ROLES = [

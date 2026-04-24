@@ -89,4 +89,8 @@ const donHangSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Optimization Indexes
+donHangSchema.index({ KhachHang: 1, createdAt: -1 }); // Fast lookup for user's order history
+donHangSchema.index({ TrangThai: 1 }); // Fast filtering by status
+
 module.exports = mongoose.model('DonHang', donHangSchema, 'DonHangs');

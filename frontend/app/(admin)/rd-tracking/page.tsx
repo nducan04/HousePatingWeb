@@ -12,17 +12,8 @@ export default function RDTrackingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
 
-  // Create Log Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [contracts, setContracts] = useState<any[]>([]);
-  const [selectedContract, setSelectedContract] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
-  const [availableColors, setAvailableColors] = useState<string[]>([]);
-  const [creating, setCreating] = useState(false);
-
   useEffect(() => {
     fetchLogs();
-    fetchContracts();
   }, []);
 
   const fetchLogs = async () => {
@@ -36,52 +27,6 @@ export default function RDTrackingPage() {
       console.error('Failed to fetch R&D logs:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchContracts = async () => {
-    try {
-      const res = await api.get('/contracts');
-      if (res.data.success) {
-        setContracts(res.data.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch contracts:', err);
-    }
-  };
-
-  const handleContractChange = (contractId: string) => {
-    setSelectedContract(contractId);
-    const contract = contracts.find(c => c._id === contractId);
-    if (contract && contract.chiTietHopDong) {
-      const colors = contract.chiTietHopDong.map((item: any) => item.colorCode).filter(Boolean);
-      setAvailableColors(Array.from(new Set(colors)));
-    } else {
-      setAvailableColors([]);
-    }
-    setSelectedColor('');
-  };
-
-  const handleCreateLog = async () => {
-    if (!selectedContract || !selectedColor) {
-      alert('Vui lòng chọn hợp đồng và mã màu!');
-      return;
-    }
-    try {
-      setCreating(true);
-      const res = await api.post('/rd-tracking', {
-        ContractID: selectedContract,
-        MaMauYeuCau: selectedColor
-      });
-      if (res.data.success) {
-        setIsModalOpen(false);
-        fetchLogs();
-        alert('✅ Đã tạo Log R&D mới thành công!');
-      }
-    } catch (err) {
-      alert('❌ Lỗi khi tạo log mới');
-    } finally {
-      setCreating(false);
     }
   };
 
@@ -163,103 +108,11 @@ export default function RDTrackingPage() {
               ))}
             </div>
           </div>
-          <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+          <Link href="/rd-tracking/new" className="btn btn-primary">
             <Plus size={16} /> Tạo Log R&D Mới
-          </button>
+          </Link>
         </div>
       </div>
-
-      {/* Create Log Modal */}
-      {isModalOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)'
-        }}>
-          <div className="glass-card" style={{ width: 500, padding: 30, border: '1px solid var(--accent-cyan)' }}>
-            <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Beaker className="text-[var(--accent-cyan)]" /> KHỞI TẠO LOG TRUY XUẤT R&D
-            </h3>
-
-            <div style={{ display: 'grid', gap: 20 }}>
-              <div className="form-group">
-                <label className="form-label">Chọn Hợp đồng Kinh doanh/Gia công</label>
-                <select
-                  className="form-input"
-                  value={selectedContract}
-                  onChange={(e) => handleContractChange(e.target.value)}
-                  style={{ background: 'var(--bg-card)' }}
-                >
-                  <option value="">-- Chọn hợp đồng --</option>
-                  {contracts.map(c => (
-                    <option key={c._id} value={c._id}>{c.contractId || c.MaHopDong} - {c.title}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Mã màu yêu cầu pha chế</label>
-                <select
-                  className="form-input"
-                  value={selectedColor}
-                  onChange={(e) => setSelectedColor(e.target.value)}
-                  disabled={!selectedContract}
-                  style={{ background: 'var(--bg-card)' }}
-                >
-                  <option value="">-- Chọn mã màu --</option>
-                  {availableColors.map(color => {
-                    const info = paintColors.find(c => c.code === color);
-                    return (
-                      <option key={color} value={color}>
-                        {color} {info ? `- ${info.name}` : ''}
-                      </option>
-                    );
-                  })}
-                </select>
-
-                {selectedColor && (
-                  <div style={{
-                    marginTop: 12, padding: 12, borderRadius: 8, background: 'rgba(255,255,255,0.03)',
-                    display: 'flex', alignItems: 'center', gap: 12, border: '1px solid rgba(255,255,255,0.05)'
-                  }}>
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 6,
-                      background: paintColors.find(c => c.code === selectedColor)?.hex || '#333'
-                    }} />
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>
-                        {paintColors.find(c => c.code === selectedColor)?.name || 'Custom Color'}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                        {selectedColor} | {paintColors.find(c => c.code === selectedColor)?.category || 'Mixed'}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {!selectedContract && <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>* Vui lòng chọn hợp đồng trước</p>}
-              </div>
-
-              <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
-                <button
-                  className="btn btn-ghost flex-1"
-                  onClick={() => setIsModalOpen(false)}
-                  disabled={creating}
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  className="btn btn-primary flex-1"
-                  onClick={handleCreateLog}
-                  disabled={creating || !selectedContract || !selectedColor}
-                >
-                  {creating ? 'Đang tạo...' : 'Xác nhận Khởi tạo'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Table */}
       <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>

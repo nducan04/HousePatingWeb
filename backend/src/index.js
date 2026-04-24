@@ -2,6 +2,11 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const compression = require('compression');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
 const connectDB = require('./utils/db');
 
 // Load env vars
@@ -12,12 +17,30 @@ connectDB();
 
 const app = express();
 
-// Middleware
+// Security & Performance Middleware
+app.use(helmet()); // Set security HTTP headers
+app.use(compression()); // Compress response bodies
+app.use(mongoSanitize()); // Prevent NoSQL injection
+app.use(morgan('dev')); // Request logging
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to auth routes only to avoid blocking normal usage
+app.use('/api/auth', limiter);
+
+// Standard Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10kb' })); // Body parser, limit size
 app.use(cookieParser());
 
 // Serve static files from 'uploads' directory
@@ -68,6 +91,16 @@ app.use('/api/export', require('./routes/exportRoutes'));
 
 app.get('/', (req, res) => {
   res.send('VTSC PaintPro Backend API is running...');
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || 500;
+  res.status(statusCode).json({
+    status: 'error',
+    message: err.message || 'Internal Server Error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  });
 });
 
 // Start Cron Jobs
