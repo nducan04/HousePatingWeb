@@ -263,14 +263,14 @@ export default function ContractsPage() {
       {/* Background decoration removed as per prism removal request */}
 
       <div className="no-print" style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
           Quản Lý Hợp Đồng Pháp Lý
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginTop: '0.25rem' }}>Số hóa và quản lý điều khoản thương mại VTSC</p>
+        <p style={{ color: '#475569', fontSize: '1.1rem', marginTop: '0.25rem' }}>Số hóa và quản lý điều khoản thương mại VTSC</p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid-4 no-print" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 no-print" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><FileSignature size={22} /></div>
           <div className="kpi-label">Tổng Hợp Đồng</div>
@@ -294,23 +294,23 @@ export default function ContractsPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card no-print" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
-              <input type="text" className="form-input" placeholder="Tìm mã HĐ, tên khách hàng..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden no-print" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Tìm mã HĐ, tên khách hàng..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
               {[{ id: 'all', label: 'Tất cả' }, { id: 'active', label: 'Đang chạy' }, { id: 'pending', label: 'Bản nháp' }].map(f => (
-                <button key={f.id} className={`btn btn-sm ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilter(f.id)}>{f.label}</button>
+                <button key={f.id} className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilter(f.id)}>{f.label}</button>
               ))}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
-            <button className="btn btn-ghost" onClick={fetchData}><History size={16} /> Lịch sử</button>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" onClick={fetchData}><History size={16} /> Lịch sử</button>
             {isAdminOrEmployee && (
-              <button onClick={openForm} className="btn btn-primary">
+              <button onClick={openForm} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
                 <Plus size={16} /> Soạn Thảo Hợp Đồng Mới
               </button>
             )}
@@ -319,8 +319,8 @@ export default function ContractsPage() {
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none no-print" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none no-print" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>Mã Hợp Đồng</th>
@@ -336,9 +336,9 @@ export default function ContractsPage() {
               <tr><td colSpan={6} style={{ textAlign: 'center', padding: '3rem' }}><FileSignature className="animate-pulse" style={{ display: 'inline' }} /> Đang tải cơ sở dữ liệu pháp lý...</td></tr>
             ) : filteredData.map(item => (
               <tr key={item._id}>
-                <td style={{ fontWeight: 800, color: 'var(--accent-cyan)' }}>#{item.contractId}</td>
+                <td style={{ fontWeight: 800, color: '#2563eb' }}>#{item.contractId}</td>
                 <td style={{ fontWeight: 600 }}>{item.customer?.name}</td>
-                <td style={{ fontWeight: 800, color: 'var(--accent-emerald)' }}>{item.value.toLocaleString()} ₫</td>
+                <td style={{ fontWeight: 800, color: '#059669' }}>{item.value.toLocaleString()} ₫</td>
                 <td>
                   <span className={`badge ${['signed', 'completed'].includes(item.status) ? 'approved' : 'warning'}`}>
                     {item.status.toUpperCase()}
@@ -347,8 +347,8 @@ export default function ContractsPage() {
                 <td>{new Date(item.createdAt).toLocaleDateString()}</td>
                 <td style={{ textAlign: 'right' }}>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button className="btn btn-ghost btn-sm" title="Xem chi tiết" onClick={() => viewContract(item)}><Eye size={16} /></button>
-                    <button className="btn btn-ghost btn-sm" title="In hợp đồng" onClick={() => viewContract(item)}><Printer size={16} /></button>
+                    <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" title="Xem chi tiết" onClick={() => viewContract(item)}><Eye size={16} /></button>
+                    <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" title="In hợp đồng" onClick={() => viewContract(item)}><Printer size={16} /></button>
                   </div>
                 </td>
               </tr>
@@ -360,22 +360,22 @@ export default function ContractsPage() {
       {/* Advanced 4-Step Wizard Modal */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.92)' }}>
-          <div className="glass-card" style={{ width: '95%', maxWidth: '1000px', height: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', animation: 'slideUp 0.3s', background: 'var(--bg-card)' }}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '95%', maxWidth: '1000px', height: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', animation: 'slideUp 0.3s', background: '#ffffff' }}>
 
             {/* Modal Header */}
-            <div className="no-print" style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="no-print" style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ padding: 10, background: 'var(--accent-cyan-soft)', borderRadius: '12px' }}><Scale className="text-[var(--accent-cyan)]" /></div>
+                <div style={{ padding: 10, background: 'rgba(37, 99, 235, 0.08)', borderRadius: '12px' }}><Scale className="text-[#2563eb]" /></div>
                 <div>
                   <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>Soạn Thảo Hợp Đồng Nguyên Tắc</h3>
-                  <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>Mã số: {formData.contractId}</span>
+                  <span style={{ color: '#2563eb', fontWeight: 700 }}>Mã số: {formData.contractId}</span>
                 </div>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost"><X size={24} /></button>
+              <button onClick={() => setIsModalOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"><X size={24} /></button>
             </div>
 
             {/* Stepper Indication */}
-            <div className="no-print" style={{ padding: '12px 24px', background: 'rgba(255,255,255,0.02)', display: 'flex', gap: 40, borderBottom: '1px solid var(--border-color)' }}>
+            <div className="no-print" style={{ padding: '12px 24px', background: 'rgba(255,255,255,0.02)', display: 'flex', gap: 40, borderBottom: '1px solid #e2e8f0' }}>
               {[
                 { step: 1, label: 'Bên B (Người mua)', icon: Building },
                 { step: 2, label: 'Hàng hóa & Giá', icon: Package },
@@ -383,7 +383,7 @@ export default function ContractsPage() {
                 { step: 4, label: 'Xem trước', icon: Eye }
               ].map(s => (
                 <div key={s.step} style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: currentStep === s.step ? 1 : 0.4 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: currentStep >= s.step ? 'var(--accent-cyan)' : 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: currentStep >= s.step ? '#2563eb' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800 }}>
                     {currentStep > s.step ? <Check size={14} /> : s.step}
                   </div>
                   <span style={{ fontWeight: 700, fontSize: 14 }}>{s.label}</span>
@@ -397,53 +397,53 @@ export default function ContractsPage() {
               {/* STEP 1: Parties Info */}
               {currentStep === 1 && (
                 <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
-                  <div className="glass-card" style={{ padding: 24, background: 'rgba(255,255,255,0.02)' }}>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: 'var(--accent-cyan)' }}><Globe size={18} /> Đại diện Bên B (Người Mua)</h4>
-                    <div className="grid-2">
+                  <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, background: 'rgba(255,255,255,0.02)' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#2563eb' }}><Globe size={18} /> Đại diện Bên B (Người Mua)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="form-label">Chọn Khách hàng (Đối tác)</label>
-                        <select className="form-input" style={{ width: '100%', background: 'var(--bg-input)' }} value={formData.customer} onChange={e => handleCustomerSelect(e.target.value)}>
+                        <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%', background: '#f1f5f9' }} value={formData.customer} onChange={e => handleCustomerSelect(e.target.value)}>
                           <option value="">-- Chọn khách hàng --</option>
                           {customers.map(c => <option key={c._id} value={c._id}>{c.TenKhachHang} ({c.PhanLoai})</option>)}
                         </select>
                       </div>
                       <div>
                         <label className="form-label">Tên Hợp đồng</label>
-                        <input type="text" className="form-input" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
                       </div>
                       <div>
                         <label className="form-label">Mã số thuế</label>
-                        <input type="text" className="form-input" value={formData.partyBTaxCode} onChange={e => setFormData({ ...formData, partyBTaxCode: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.partyBTaxCode} onChange={e => setFormData({ ...formData, partyBTaxCode: e.target.value })} />
                       </div>
                       <div>
                         <label className="form-label">Người đại diện</label>
-                        <input type="text" className="form-input" value={formData.partyBRepresentative} onChange={e => setFormData({ ...formData, partyBRepresentative: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.partyBRepresentative} onChange={e => setFormData({ ...formData, partyBRepresentative: e.target.value })} />
                       </div>
                       <div>
                         <label className="form-label">Chức vụ</label>
-                        <input type="text" className="form-input" placeholder="VD: Giám đốc" value={formData.partyBPosition} onChange={e => setFormData({ ...formData, partyBPosition: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="VD: Giám đốc" value={formData.partyBPosition} onChange={e => setFormData({ ...formData, partyBPosition: e.target.value })} />
                       </div>
                       <div>
                         <label className="form-label">Địa chỉ trụ sở</label>
-                        <input type="text" className="form-input" value={formData.partyBAddress} onChange={e => setFormData({ ...formData, partyBAddress: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.partyBAddress} onChange={e => setFormData({ ...formData, partyBAddress: e.target.value })} />
                       </div>
                     </div>
                   </div>
 
-                  <div className="glass-card" style={{ padding: 24, background: 'rgba(255,255,255,0.02)' }}>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: 'var(--accent-purple)' }}><CreditCard size={18} /> Thông tin Thanh toán & Ví Số</h4>
-                    <div className="grid-2">
+                  <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, background: 'rgba(255,255,255,0.02)' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#7c3aed' }}><CreditCard size={18} /> Thông tin Thanh toán & Ví Số</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="form-label">Số tài khoản ngân hàng</label>
-                        <input type="text" className="form-input" placeholder="1903..." value={formData.partyBBankAccount} onChange={e => setFormData({ ...formData, partyBBankAccount: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="1903..." value={formData.partyBBankAccount} onChange={e => setFormData({ ...formData, partyBBankAccount: e.target.value })} />
                       </div>
                       <div>
                         <label className="form-label">Tại ngân hàng</label>
-                        <input type="text" className="form-input" placeholder="Techcombank..." value={formData.partyBBankName} onChange={e => setFormData({ ...formData, partyBBankName: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Techcombank..." value={formData.partyBBankName} onChange={e => setFormData({ ...formData, partyBBankName: e.target.value })} />
                       </div>
                       <div style={{ gridColumn: 'span 2' }}>
                         <label className="form-label">Địa chỉ ví SmartContract (Tùy chọn cho B2B)</label>
-                        <input type="text" className="form-input" placeholder="0x..." value={formData.clientAddress} onChange={e => setFormData({ ...formData, clientAddress: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="0x..." value={formData.clientAddress} onChange={e => setFormData({ ...formData, clientAddress: e.target.value })} />
                       </div>
                     </div>
                   </div>
@@ -453,9 +453,9 @@ export default function ContractsPage() {
               {/* STEP 2: Products Table */}
               {currentStep === 2 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                  <div className="glass-card" style={{ padding: '24px', border: '1px solid var(--accent-cyan-soft)', background: 'rgba(2, 103, 255, 0.05)' }}>
+                  <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '24px', border: '1px solid rgba(37, 99, 235, 0.08)', background: 'rgba(2, 103, 255, 0.05)' }}>
                     <h4 style={{ marginBottom: '20px', fontWeight: 900, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Package size={22} className="text-[var(--accent-cyan)]" /> THÊM DÒNG HÀNG HÓA (ĐIỀU 1)
+                      <Package size={22} className="text-[#2563eb]" /> THÊM DÒNG HÀNG HÓA (ĐIỀU 1)
                     </h4>
 
                     {/* Premium Entry Row */}
@@ -465,8 +465,8 @@ export default function ContractsPage() {
                         <div style={{ position: 'relative' }}>
                           <FileText size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }} />
                           <select
-                            className="form-input-premium"
-                            style={{ paddingLeft: 32, background: 'var(--bg-input)' }}
+                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            style={{ paddingLeft: 32, background: '#f1f5f9' }}
                             value={newItem.productCode}
                             onChange={e => handleProductSelection(e.target.value)}
                           >
@@ -481,7 +481,7 @@ export default function ContractsPage() {
                         <label className="form-label-mini">Tên hàng / Dòng sơn</label>
                         <div style={{ position: 'relative' }}>
                           <Package size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }} />
-                          <input type="text" className="form-input-premium" placeholder="VD: Interpon D1036" value={newItem.productName} readOnly />
+                          <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="VD: Interpon D1036" value={newItem.productName} readOnly />
                         </div>
                       </div>
                       <div className="input-group-premium">
@@ -491,7 +491,7 @@ export default function ContractsPage() {
                           <input
                             type="text"
                             list="color-suggestions"
-                            className="form-input-premium"
+                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                             style={{ paddingLeft: 32 }}
                             placeholder="Chọn hoặc gõ mã..."
                             value={newItem.colorCode}
@@ -510,28 +510,28 @@ export default function ContractsPage() {
                       </div>
                       <div className="input-group-premium">
                         <label className="form-label-mini">Số lượng (Kg)</label>
-                        <input type="number" className="form-input-premium" placeholder="0" value={newItem.quantity} onChange={e => setNewItem({ ...newItem, quantity: Number(e.target.value) })} />
+                        <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="0" value={newItem.quantity} onChange={e => setNewItem({ ...newItem, quantity: Number(e.target.value) })} />
                       </div>
                       <div className="input-group-premium">
                         <label className="form-label-mini">Đơn giá (VNĐ)</label>
-                        <input type="number" className="form-input-premium" placeholder="0" value={newItem.unitPrice} onChange={e => setNewItem({ ...newItem, unitPrice: Number(e.target.value) })} />
+                        <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="0" value={newItem.unitPrice} onChange={e => setNewItem({ ...newItem, unitPrice: Number(e.target.value) })} />
                       </div>
-                      <button onClick={addProductItem} className="btn-add-row">
+                      <button onClick={addProductItem} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm bg-blue-600 text-white hover:bg-blue-700 cursor-pointer border-none transition-all">
                         <Plus size={20} /> THÊM DÒNG
                       </button>
                     </div>
 
                     <div style={{ padding: '0 5px' }}>
                       <label className="form-label-mini">Yêu cầu kỹ thuật đi kèm (Tùy chọn)</label>
-                      <input type="text" className="form-input-premium" style={{ width: '100%' }} placeholder="VD: Chịu nhiệt cao, bền màu 10 năm..." value={newItem.technicalReqs} onChange={e => setNewItem({ ...newItem, technicalReqs: e.target.value })} />
+                      <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} placeholder="VD: Chịu nhiệt cao, bền màu 10 năm..." value={newItem.technicalReqs} onChange={e => setNewItem({ ...newItem, technicalReqs: e.target.value })} />
                     </div>
                   </div>
 
                   {/* Products Table */}
-                  <div className="glass-card" style={{ padding: 0, borderRadius: 12, overflow: 'hidden' }}>
-                    <table className="data-table">
+                  <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 0, borderRadius: 12, overflow: 'hidden' }}>
+                    <table className="w-full text-left text-sm">
                       <thead>
-                        <tr style={{ background: 'var(--bg-secondary)' }}>
+                        <tr style={{ background: '#ffffff' }}>
                           <th style={{ paddingLeft: 24 }}>Mã SP</th>
                           <th>Tên Hàng Hóa</th>
                           <th>Mã Màu</th>
@@ -544,17 +544,17 @@ export default function ContractsPage() {
                       <tbody>
                         {formData.chiTietHopDong.map((item: any, idx: number) => (
                           <tr key={idx} className="hover-row">
-                            <td style={{ paddingLeft: 24, fontWeight: 700, color: 'var(--accent-cyan)', fontSize: 13 }}>{item.productCode || '---'}</td>
+                            <td style={{ paddingLeft: 24, fontWeight: 700, color: '#2563eb', fontSize: 13 }}>{item.productCode || '---'}</td>
                             <td>
                               <div style={{ fontWeight: 800, fontSize: 14 }}>{item.productName}</div>
                               {item.technicalReqs && <div style={{ fontSize: 11, opacity: 0.5 }}>{item.technicalReqs}</div>}
                             </td>
-                            <td><span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent-purple)' }}>{item.colorCode}</span></td>
+                            <td><span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#7c3aed' }}>{item.colorCode}</span></td>
                             <td><span style={{ fontWeight: 700 }}>{item.quantity}</span> <span style={{ opacity: 0.5 }}>Kg</span></td>
                             <td>{item.unitPrice.toLocaleString()} ₫</td>
-                            <td><span style={{ fontWeight: 900, color: 'var(--accent-cyan)' }}>{(item.quantity * item.unitPrice).toLocaleString()}</span> ₫</td>
+                            <td><span style={{ fontWeight: 900, color: '#2563eb' }}>{(item.quantity * item.unitPrice).toLocaleString()}</span> ₫</td>
                             <td style={{ textAlign: 'right', paddingRight: 24 }}>
-                              <button className="btn btn-ghost btn-sm" onClick={() => removeProductItem(idx)}><X size={16} className="text-rose-500" /></button>
+                              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" onClick={() => removeProductItem(idx)}><X size={16} className="text-rose-500" /></button>
                             </td>
                           </tr>
                         ))}
@@ -566,7 +566,7 @@ export default function ContractsPage() {
                         <tfoot>
                           <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
                             <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700, padding: '16px 24px' }}>TỔNG GIÁ TRỊ DỰ KIÊN:</td>
-                            <td style={{ fontWeight: 900, color: 'var(--accent-emerald)', fontSize: '1.2rem', padding: '16px 24px' }}>
+                            <td style={{ fontWeight: 900, color: '#059669', fontSize: '1.2rem', padding: '16px 24px' }}>
                               {formData.chiTietHopDong.reduce((sum: number, it: any) => sum + (it.quantity * it.unitPrice), 0).toLocaleString()} ₫
                             </td>
                             <td></td>
@@ -712,9 +712,9 @@ export default function ContractsPage() {
             </div>
 
             {/* Modal Footer Controls */}
-            <div className="no-print" style={{ padding: '24px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
+            <div className="no-print" style={{ padding: '24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between' }}>
               <button
-                className="btn btn-ghost"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 disabled={currentStep === 1}
                 onClick={() => setCurrentStep(prev => prev - 1)}
               >
@@ -723,16 +723,16 @@ export default function ContractsPage() {
 
               <div style={{ display: 'flex', gap: 12 }}>
                 {currentStep === 4 && (
-                  <button className="btn btn-ghost" onClick={handlePrint} style={{ background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" onClick={handlePrint} style={{ background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Printer size={18} /> IN & XUẤT PDF
                   </button>
                 )}
                 {currentStep < 4 ? (
-                  <button className="btn btn-primary" onClick={() => setCurrentStep(prev => prev + 1)}>
+                  <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => setCurrentStep(prev => prev + 1)}>
                     Tiếp theo <ChevronRight size={20} />
                   </button>
                 ) : (
-                  <button className="btn btn-primary" disabled={isSubmitting} style={{ background: 'var(--accent-emerald)', border: 'none' }} onClick={handleSubmit}>
+                  <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" disabled={isSubmitting} style={{ background: '#059669', border: 'none' }} onClick={handleSubmit}>
                     {isSubmitting ? <Loader2 className="animate-spin" /> : <ShieldCheck size={20} />}XÁC NHẬN
                   </button>
                 )}
@@ -746,28 +746,28 @@ export default function ContractsPage() {
       <style jsx>{`
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text-secondary); }
-        .form-label-mini { display: block; font-size: 11px; font-weight: 800; margin-bottom: 6px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #475569; }
+        .form-label-mini { display: block; font-size: 11px; font-weight: 800; margin-bottom: 6px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
         .hover-row:hover { background: rgba(255,255,255,0.03); }
         
         .form-input-premium {
-          background: var(--bg-input);
-          border: 1px solid var(--border-color);
+          background: #f1f5f9;
+          border: 1px solid #e2e8f0;
           border-radius: 8px;
           padding: 10px 12px 10px 32px;
-          color: var(--text-primary);
+          color: #0f172a;
           width: 100%;
           outline: none;
           transition: all 0.3s;
         }
         .form-input-premium:focus {
-          border-color: var(--accent-cyan);
+          border-color: #2563eb;
           background: rgba(0, 212, 255, 0.05);
           box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
         }
         .btn-add-row {
           height: 44px;
-          background: linear-gradient(135deg, var(--accent-cyan), #0066cc);
+          background: linear-gradient(135deg, #2563eb, #0066cc);
           color: white;
           border: none;
           border-radius: 8px;
@@ -827,26 +827,26 @@ export default function ContractsPage() {
         }
         
         .article-card-premium {
-          background: var(--bg-card);
-          border: 1px solid var(--border-color);   
+          background: #ffffff;
+          border: 1px solid #e2e8f0;   
           border-radius: 12px;
           overflow: hidden;
           transition: all 0.3s;
         }
         .article-card-premium:hover {
-          border-color: var(--accent-cyan-soft);
+          border-color: rgba(37, 99, 235, 0.08);
           background: rgba(2, 103, 255, 0.03);
         }
         .article-header {
           padding: 16px;
-          background: var(--bg-primary);
+          background: #f8fafc;
           display: flex;
           align-items: center;
           gap: 12px;
-          border-bottom: 1px solid var(--border-color);
+          border-bottom: 1px solid #e2e8f0;
         }
         .article-number {
-          background: var(--accent-cyan);
+          background: #2563eb;
           color: white;
           width: 24px;
           height: 24px;
@@ -860,7 +860,7 @@ export default function ContractsPage() {
         .article-title {
           font-weight: 800;
           font-size: 14px;
-          color: var(--text-primary);
+          color: #0f172a;
         }
         .article-content-area {
           padding: 16px;
@@ -868,10 +868,10 @@ export default function ContractsPage() {
         .article-textarea {
           width: 100%;
           min-height: 100px;
-          background: var(--bg-input);
-          border: 1px solid var(--border-color);
+          background: #f1f5f9;
+          border: 1px solid #e2e8f0;
           border-radius: 8px;
-          color: var(--text-primary);
+          color: #0f172a;
           padding: 12px;
           font-size: 13px;
           line-height: 1.6;
@@ -880,8 +880,8 @@ export default function ContractsPage() {
           transition: border-color 0.3s;
         }
         .article-textarea:focus {
-          border-color: var(--accent-cyan);
-          color: var(--text-primary);
+          border-color: #2563eb;
+          color: #0f172a;
         }
       `}</style>
     </div>

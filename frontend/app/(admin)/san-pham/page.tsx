@@ -256,7 +256,7 @@ export default function SanPhamPage() {
     <div>
       {/* Summary Cards */}
       <div
-        className="grid-4"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
         style={{ marginBottom: "var(--spacing-ms)", gap: "var(--spacing-ms)" }}
       >
         {[
@@ -329,10 +329,10 @@ export default function SanPhamPage() {
 
       {/* Toolbar */}
       <div
-        className="glass-card"
+        className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden"
         style={{
           padding: "var(--spacing-ms)",
-          marginBottom: "var(--spacing-md)",
+          marginBottom: "1.125rem",
         }}
       >
         <div
@@ -341,21 +341,21 @@ export default function SanPhamPage() {
             alignItems: "center",
             justifyContent: "space-between",
             flexWrap: "wrap",
-            gap: "var(--spacing-md)",
+            gap: "1.125rem",
           }}
         >
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "var(--spacing-md)",
+              gap: "1.125rem",
             }}
           >
-            <div className="search-box" style={{ width: 140 }}>
-              <Search size={14} className="search-icon" />
+            <div className="relative" style={{ width: 140 }}>
+              <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 style={{
                   padding: "4px 8px 4px 30px",
                   fontSize: "11px",
@@ -375,7 +375,7 @@ export default function SanPhamPage() {
               ].map((f) => (
                 <button
                   key={f.id}
-                  className={`btn btn-sm ${filterType === f.id ? "btn-primary" : "btn-ghost"}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filterType === f.id ? "btn-primary" : "btn-ghost"}`}
                   style={{ fontSize: "10px", height: 28, padding: "0 8px" }}
                   onClick={() => setFilterType(f.id)}
                 >
@@ -389,10 +389,10 @@ export default function SanPhamPage() {
               <>
                 <button
                   onClick={exportToExcel}
-                  className="btn btn-ghost"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                   style={{
-                    border: "1px solid var(--border-color)",
-                    color: "var(--accent-emerald)",
+                    border: "1px solid #e2e8f0",
+                    color: "#059669",
                     fontSize: "10px",
                     height: 28,
                     padding: "0 8px",
@@ -402,7 +402,7 @@ export default function SanPhamPage() {
                 </button>
                 <button
                   onClick={() => openForm()}
-                  className="btn btn-primary"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                   style={{ fontSize: "10px", height: 28, padding: "0 8px" }}
                 >
                   <Plus size={14} /> Thêm SP
@@ -415,10 +415,10 @@ export default function SanPhamPage() {
 
       {/* Table */}
       <div
-        className="glass-card rounded-none"
+        className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none"
         style={{ overflow: "hidden", borderRadius: 0, marginTop: "0.5rem" }}
       >
-        <table className="data-table">
+        <table className="w-full text-left text-sm">
           <thead>
             <tr style={{ fontSize: "11px" }}>
               <th style={{ width: "40px", textAlign: "center" }}>Ảnh</th>
@@ -441,7 +441,7 @@ export default function SanPhamPage() {
                   style={{
                     textAlign: "center",
                     padding: "2rem",
-                    color: "var(--text-secondary)",
+                    color: "#475569",
                   }}
                 >
                   Đang tải...
@@ -454,7 +454,7 @@ export default function SanPhamPage() {
                   style={{
                     textAlign: "center",
                     padding: "2rem",
-                    color: "var(--text-secondary)",
+                    color: "#475569",
                   }}
                 >
                   Không tìm thấy sản phẩm.
@@ -462,7 +462,7 @@ export default function SanPhamPage() {
               </tr>
             ) : (
               sanPhams.map((sp) => (
-                <tr key={sp._id} style={{ fontSize: "var(--font-xs)" }}>
+                <tr key={sp._id} style={{ fontSize: "0.875rem" }}>
                   <td style={{ padding: "2px", textAlign: "center" }}>
                     <div
                       style={{
@@ -474,7 +474,7 @@ export default function SanPhamPage() {
                         display: "inline-flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        border: "1px solid var(--border-color)",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       {sp.HinhAnh ? (
@@ -488,14 +488,14 @@ export default function SanPhamPage() {
                           }}
                         />
                       ) : (
-                        <Package size={14} color="var(--text-secondary)" />
+                        <Package size={14} color="#475569" />
                       )}
                     </div>
                   </td>
                   <td
                     style={{
                       fontWeight: 700,
-                      color: "var(--accent-cyan)",
+                      color: "#2563eb",
                       cursor: "pointer",
                       textDecoration: "underline",
                     }}
@@ -504,13 +504,13 @@ export default function SanPhamPage() {
                   >
                     {sp.MaSanPham}
                   </td>
-                  <td style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                  <td style={{ fontWeight: 600, color: "#0f172a" }}>
                     {sp.TenDongSon}
                   </td>
                   <td>{sp.ThuongHieu}</td>
                   <td>{sp.PhanLoai}</td>
                   <td
-                    style={{ color: "var(--accent-emerald)", fontWeight: 600 }}
+                    style={{ color: "#059669", fontWeight: 600 }}
                   >
                     {sp.DonGiaCoSo.toLocaleString()} ₫
                   </td>
@@ -520,15 +520,15 @@ export default function SanPhamPage() {
                       fontWeight: 600,
                       color:
                         (sp.TonKho || 0) > 0
-                          ? "var(--accent-cyan)"
-                          : "var(--accent-rose)",
+                          ? "#2563eb"
+                          : "#e11d48",
                     }}
                   >
                     {sp.TonKho || 0}
                   </td>
                   <td style={{ padding: "4px 8px" }}>
                     <span
-                      className="badge testing"
+                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700"
                       style={{ fontSize: "10px", padding: "2px 6px" }}
                     >
                       {sp.DanhSachMaMau?.length || 0} Màu
@@ -545,9 +545,9 @@ export default function SanPhamPage() {
                     >
                       <button
                         onClick={() => addToCart(sp)}
-                        className="btn btn-ghost btn-sm"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                         title="Thêm vào giỏ hàng"
-                        style={{ color: "var(--accent-emerald)" }}
+                        style={{ color: "#059669" }}
                         disabled={(sp.TonKho || 0) <= 0}
                       >
                         <ShoppingCart size={16} />
@@ -556,15 +556,15 @@ export default function SanPhamPage() {
                         <>
                           <button
                             onClick={() => openForm(sp)}
-                            className="btn btn-ghost btn-sm"
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                           >
                             <Edit size={16} />
                           </button>
                           <button
                             onClick={() => handleDelete(sp._id)}
-                            className="btn btn-ghost btn-sm"
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                           >
-                            <Trash2 size={16} color="var(--accent-rose)" />
+                            <Trash2 size={16} color="#e11d48" />
                           </button>
                         </>
                       )}
@@ -579,20 +579,20 @@ export default function SanPhamPage() {
         {/* Pagination Controls */}
         <div
           style={{
-            padding: "8px var(--spacing-md)",
-            borderTop: "1px solid var(--border-color)",
+            padding: "8px 1.125rem",
+            borderTop: "1px solid #e2e8f0",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             background: "rgba(0,0,0,0.1)",
           }}
         >
-          <div style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>
+          <div style={{ fontSize: "10px", color: "#94a3b8" }}>
             Trang {currentPage} / {totalPages}
           </div>
           <div style={{ display: "flex", gap: 4 }}>
             <button
-              className="btn btn-ghost btn-sm"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
               style={{ height: 24, width: 24, padding: 0 }}
@@ -605,7 +605,7 @@ export default function SanPhamPage() {
             ).map((page) => (
               <button
                 key={page}
-                className={`btn btn-sm ${currentPage === page ? "btn-primary" : "btn-ghost"}`}
+                className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${currentPage === page ? "btn-primary" : "btn-ghost"}`}
                 onClick={() => setCurrentPage(page)}
                 style={{
                   minWidth: "24px",
@@ -618,7 +618,7 @@ export default function SanPhamPage() {
               </button>
             ))}
             <button
-              className="btn btn-ghost btn-sm"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
               onClick={() =>
                 setCurrentPage((prev) => Math.min(totalPages, prev + 1))
               }
@@ -646,27 +646,27 @@ export default function SanPhamPage() {
           }}
         >
           <div
-            className="glass-card"
+            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden"
             style={{ width: "100%", maxWidth: "600px", padding: 0 }}
           >
             <div
               style={{
-                padding: "var(--spacing-lg)",
-                borderBottom: "1px solid var(--border-color)",
+                padding: "1.75rem",
+                borderBottom: "1px solid #e2e8f0",
                 display: "flex",
                 justifyContent: "space-between",
               }}
             >
-              <h3 style={{ fontSize: "var(--font-lg)", fontWeight: 700 }}>
+              <h3 style={{ fontSize: "1.375rem", fontWeight: 700 }}>
                 {formData._id ? "Chỉnh sửa" : "Thêm Sản Phẩm"}
               </h3>
             </div>
             <div
               style={{
-                padding: "var(--spacing-lg)",
+                padding: "1.75rem",
                 display: "flex",
                 flexDirection: "column",
-                gap: "var(--spacing-md)",
+                gap: "1.125rem",
                 maxHeight: "70vh",
                 overflowY: "auto",
               }}
@@ -732,14 +732,14 @@ export default function SanPhamPage() {
                 )}
               </div>
 
-              <div style={{ display: "flex", gap: "var(--spacing-md)" }}>
+              <div style={{ display: "flex", gap: "1.125rem" }}>
                 <div style={{ flex: 1 }}>
                   <label
                     style={{
                       display: "block",
                       marginBottom: 8,
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                     }}
                   >
                     Mã Sản Phẩm *
@@ -747,7 +747,7 @@ export default function SanPhamPage() {
                   <input
                     type="text"
                     required
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={formData.MaSanPham}
                     onChange={(e) =>
                       setFormData({ ...formData, MaSanPham: e.target.value })
@@ -759,15 +759,15 @@ export default function SanPhamPage() {
                     style={{
                       display: "block",
                       marginBottom: 8,
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                     }}
                   >
                     Thương hiệu
                   </label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={formData.ThuongHieu}
                     onChange={(e) =>
                       setFormData({ ...formData, ThuongHieu: e.target.value })
@@ -781,8 +781,8 @@ export default function SanPhamPage() {
                   style={{
                     display: "block",
                     marginBottom: 8,
-                    fontSize: "var(--font-xs)",
-                    color: "var(--text-secondary)",
+                    fontSize: "0.875rem",
+                    color: "#475569",
                   }}
                 >
                   Tên Dòng Sơn *
@@ -790,7 +790,7 @@ export default function SanPhamPage() {
                 <input
                   type="text"
                   required
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   value={formData.TenDongSon}
                   onChange={(e) =>
                     setFormData({ ...formData, TenDongSon: e.target.value })
@@ -798,20 +798,20 @@ export default function SanPhamPage() {
                 />
               </div>
 
-              <div style={{ display: "flex", gap: "var(--spacing-md)" }}>
+              <div style={{ display: "flex", gap: "1.125rem" }}>
                 <div style={{ flex: 1 }}>
                   <label
                     style={{
                       display: "block",
                       marginBottom: 8,
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                     }}
                   >
                     Phân loại
                   </label>
                   <select
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={formData.PhanLoai}
                     onChange={(e) =>
                       setFormData({ ...formData, PhanLoai: e.target.value })
@@ -828,15 +828,15 @@ export default function SanPhamPage() {
                     style={{
                       display: "block",
                       marginBottom: 8,
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                     }}
                   >
                     Đơn giá (VNĐ)
                   </label>
                   <input
                     type="number"
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={formData.DonGiaCoSo}
                     onChange={(e) =>
                       setFormData({
@@ -848,20 +848,20 @@ export default function SanPhamPage() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "var(--spacing-md)" }}>
+              <div style={{ display: "flex", gap: "1.125rem" }}>
                 <div style={{ flex: 1 }}>
                   <label
                     style={{
                       display: "block",
                       marginBottom: 8,
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                     }}
                   >
                     Đơn vị tính
                   </label>
                   <select
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={formData.DonViTinh}
                     onChange={(e) =>
                       setFormData({ ...formData, DonViTinh: e.target.value })
@@ -876,15 +876,15 @@ export default function SanPhamPage() {
                     style={{
                       display: "block",
                       marginBottom: 8,
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                     }}
                   >
                     Tồn kho hệ thống
                   </label>
                   <input
                     type="number"
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={formData.TonKho}
                     onChange={(e) =>
                       setFormData({
@@ -926,8 +926,8 @@ export default function SanPhamPage() {
             </div>
             <div
               style={{
-                padding: "var(--spacing-md) var(--spacing-lg)",
-                borderTop: "1px solid var(--border-color)",
+                padding: "1.125rem 1.75rem",
+                borderTop: "1px solid #e2e8f0",
                 display: "flex",
                 justifyContent: "flex-end",
                 gap: 8,
@@ -935,11 +935,11 @@ export default function SanPhamPage() {
             >
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="btn btn-ghost"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
               >
                 Đóng
               </button>
-              <button onClick={handleSubmit} className="btn btn-primary">
+              <button onClick={handleSubmit} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
                 Lưu thay đổi
               </button>
             </div>
@@ -963,7 +963,7 @@ export default function SanPhamPage() {
           }}
         >
           <div
-            className="glass-card"
+            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden"
             style={{
               width: "100%",
               maxWidth: "700px",
@@ -974,8 +974,8 @@ export default function SanPhamPage() {
           >
             <div
               style={{
-                padding: "var(--spacing-lg)",
-                borderBottom: "1px solid var(--border-color)",
+                padding: "1.75rem",
+                borderBottom: "1px solid #e2e8f0",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
@@ -983,9 +983,9 @@ export default function SanPhamPage() {
             >
               <h3
                 style={{
-                  fontSize: "var(--font-lg)",
+                  fontSize: "1.375rem",
                   fontWeight: 700,
-                  color: "var(--accent-cyan)",
+                  color: "#2563eb",
                 }}
               >
                 Chi Tiết Sản Phẩm: {selectedProduct.MaSanPham}
@@ -995,7 +995,7 @@ export default function SanPhamPage() {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "var(--text-secondary)",
+                  color: "#475569",
                   cursor: "pointer",
                   fontSize: "1.5rem",
                 }}
@@ -1006,10 +1006,10 @@ export default function SanPhamPage() {
 
             <div
               style={{
-                padding: "var(--spacing-lg)",
+                padding: "1.75rem",
                 display: "flex",
                 flexDirection: "column",
-                gap: "var(--spacing-md)",
+                gap: "1.125rem",
                 maxHeight: "70vh",
                 overflowY: "auto",
               }}
@@ -1030,7 +1030,7 @@ export default function SanPhamPage() {
                       height: "200px",
                       objectFit: "cover",
                       borderRadius: "8px",
-                      border: "1px solid var(--border-color)",
+                      border: "1px solid #e2e8f0",
                     }}
                   />
                 </div>
@@ -1049,8 +1049,8 @@ export default function SanPhamPage() {
                 <div>
                   <div
                     style={{
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                       marginBottom: "4px",
                     }}
                   >
@@ -1063,8 +1063,8 @@ export default function SanPhamPage() {
                 <div>
                   <div
                     style={{
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                       marginBottom: "4px",
                     }}
                   >
@@ -1077,8 +1077,8 @@ export default function SanPhamPage() {
                 <div>
                   <div
                     style={{
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                       marginBottom: "4px",
                     }}
                   >
@@ -1087,7 +1087,7 @@ export default function SanPhamPage() {
                   <div
                     style={{
                       fontWeight: "bold",
-                      color: "var(--accent-purple)",
+                      color: "#7c3aed",
                     }}
                   >
                     {selectedProduct.PhanLoai}
@@ -1096,8 +1096,8 @@ export default function SanPhamPage() {
                 <div>
                   <div
                     style={{
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                       marginBottom: "4px",
                     }}
                   >
@@ -1106,7 +1106,7 @@ export default function SanPhamPage() {
                   <div
                     style={{
                       fontWeight: "bold",
-                      color: "var(--accent-emerald)",
+                      color: "#059669",
                     }}
                   >
                     {selectedProduct.DonGiaCoSo?.toLocaleString()} đ /{" "}
@@ -1116,8 +1116,8 @@ export default function SanPhamPage() {
                 <div>
                   <div
                     style={{
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                       marginBottom: "4px",
                     }}
                   >
@@ -1130,15 +1130,15 @@ export default function SanPhamPage() {
                 <div>
                   <div
                     style={{
-                      fontSize: "var(--font-xs)",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                      color: "#475569",
                       marginBottom: "4px",
                     }}
                   >
                     Số Lượng Đã Bán
                   </div>
                   <div
-                    style={{ fontWeight: "bold", color: "var(--accent-amber)" }}
+                    style={{ fontWeight: "bold", color: "#d97706" }}
                   >
                     {selectedProduct.SoLuongDaBan || 0}{" "}
                     {selectedProduct.DonViTinh}
@@ -1151,7 +1151,7 @@ export default function SanPhamPage() {
                   style={{
                     fontSize: "1rem",
                     fontWeight: 600,
-                    borderBottom: "1px solid var(--border-color)",
+                    borderBottom: "1px solid #e2e8f0",
                     paddingBottom: "8px",
                     marginBottom: "12px",
                   }}
@@ -1163,7 +1163,7 @@ export default function SanPhamPage() {
                     whiteSpace: "pre-line",
                     fontSize: "0.95rem",
                     lineHeight: "1.6",
-                    color: "var(--text-primary)",
+                    color: "#0f172a",
                     backgroundColor: "var(--bg-color)",
                     padding: "1rem",
                     borderRadius: "8px",
@@ -1179,7 +1179,7 @@ export default function SanPhamPage() {
                   style={{
                     fontSize: "1rem",
                     fontWeight: 600,
-                    borderBottom: "1px solid var(--border-color)",
+                    borderBottom: "1px solid #e2e8f0",
                     paddingBottom: "8px",
                     marginBottom: "12px",
                   }}
@@ -1214,14 +1214,14 @@ export default function SanPhamPage() {
                           <span
                             style={{
                               fontWeight: "bold",
-                              color: "var(--accent-cyan)",
+                              color: "#2563eb",
                             }}
                           >
                             {dg.KhachHang}
                           </span>
                           <span
                             style={{
-                              color: "var(--text-secondary)",
+                              color: "#475569",
                               fontSize: "0.85rem",
                             }}
                           >
@@ -1230,7 +1230,7 @@ export default function SanPhamPage() {
                         </div>
                         <div
                           style={{
-                            color: "var(--accent-amber)",
+                            color: "#d97706",
                             marginBottom: "6px",
                             fontSize: "1rem",
                           }}
@@ -1242,7 +1242,7 @@ export default function SanPhamPage() {
                           style={{
                             margin: 0,
                             fontSize: "0.9rem",
-                            color: "var(--text-primary)",
+                            color: "#0f172a",
                           }}
                         >
                           {dg.BinhLuan}
@@ -1257,7 +1257,7 @@ export default function SanPhamPage() {
                       padding: "2rem",
                       backgroundColor: "var(--bg-color)",
                       borderRadius: "8px",
-                      color: "var(--text-secondary)",
+                      color: "#475569",
                     }}
                   >
                     Chưa có đánh giá nào cho sản phẩm này.
@@ -1267,8 +1267,8 @@ export default function SanPhamPage() {
             </div>
             <div
               style={{
-                padding: "var(--spacing-md) var(--spacing-lg)",
-                borderTop: "1px solid var(--border-color)",
+                padding: "1.125rem 1.75rem",
+                borderTop: "1px solid #e2e8f0",
                 display: "flex",
                 justifyContent: "flex-end",
                 gap: 8,
@@ -1276,7 +1276,7 @@ export default function SanPhamPage() {
             >
               <button
                 onClick={() => setIsViewOpen(false)}
-                className="btn btn-primary"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                 style={{ padding: "10px 30px" }}
               >
                 Đóng hồ sơ sản phẩm

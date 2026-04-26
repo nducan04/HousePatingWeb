@@ -130,7 +130,7 @@ export default function BaoHanhPage() {
   return (
     <div>
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><Shield size={22} /></div>
           <div className="kpi-label">Tổng Lệnh Hỗ Trợ Kỹ Thuật B2B (BH)</div>
@@ -154,14 +154,14 @@ export default function BaoHanhPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tra cứu Report ID, Name..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -175,7 +175,7 @@ export default function BaoHanhPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`btn btn-sm ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -183,15 +183,15 @@ export default function BaoHanhPage() {
               ))}
             </div>
           </div>
-          <button onClick={openCreateModal} className="btn btn-primary">
+          <button onClick={openCreateModal} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
             <Plus size={16} /> Tạo Log BH Khách Hàng Gọi Gấp
           </button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>ID </th>
@@ -211,11 +211,11 @@ export default function BaoHanhPage() {
               <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Không có log bảo hành nào.</td></tr>
             ) : filteredData.map(item => (
               <tr key={item._id}>
-                <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{item.MaBaoHanh}</td>
-                <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.KhachHang?.TenKhachHang || 'N/A'}</td>
-                <td style={{ color: 'var(--text-secondary)' }}>{item.SanPham}</td>
+                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaBaoHanh}</td>
+                <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.KhachHang?.TenKhachHang || 'N/A'}</td>
+                <td style={{ color: '#475569' }}>{item.SanPham}</td>
                 <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.NoiDungLoi}>{item.NoiDungLoi}</td>
-                <td style={{ fontWeight: 600, color: 'var(--text-tertiary)' }}>{item.KyThuatKCS ? `${item.KyThuatKCS.MaNV} - ${item.KyThuatKCS.HoTen}` : 'Chưa gán'}</td>
+                <td style={{ fontWeight: 600, color: '#94a3b8' }}>{item.KyThuatKCS ? `${item.KyThuatKCS.MaNV} - ${item.KyThuatKCS.HoTen}` : 'Chưa gán'}</td>
                 <td>{item.HanBaoHanh ? new Date(item.HanBaoHanh).toLocaleDateString() : '---'}</td>
                 <td>
                   <span className={`badge ${item.TrangThai === 'Đã khắc phục' ? 'approved' : item.TrangThai === 'Hết hạn BH' ? 'rejected' : 'testing'}`}>
@@ -223,7 +223,7 @@ export default function BaoHanhPage() {
                   </span>
                 </td>
                 <td style={{ textAlign: 'right' }}>
-                  <button onClick={() => openDetail(item._id)} className="btn btn-ghost btn-sm"><Eye size={16} /></button>
+                  <button onClick={() => openDetail(item._id)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Eye size={16} /></button>
                 </td>
               </tr>
             ))}
@@ -234,16 +234,16 @@ export default function BaoHanhPage() {
       {/* Create Ticket Modal */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', padding: '20px' }}>
-          <div style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', position: 'relative', color: 'var(--text-primary)', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ width: '100%', maxWidth: '500px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', position: 'relative', color: '#0f172a', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: 'bold' }}>Tạo Log Bảo Hành Mới</h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={24} /></button>
+              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}><X size={24} /></button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Chọn Khách Hàng *</label>
-                <select className="form-input" style={{ width: '100%' }} value={formData.KhachHang} onChange={e => setFormData({ ...formData, KhachHang: e.target.value })}>
+                <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} value={formData.KhachHang} onChange={e => setFormData({ ...formData, KhachHang: e.target.value })}>
                   <option value="">-- Chọn khách hàng --</option>
                   {customers.map(c => <option key={c._id} value={c._id}>{c.MaKH} - {c.TenKhachHang}</option>)}
                 </select>
@@ -251,17 +251,17 @@ export default function BaoHanhPage() {
 
               <div>
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Mã Sơn / Loại Sản Phẩm</label>
-                <input type="text" className="form-input" style={{ width: '100%' }} placeholder="Vd: Sơn Tĩnh Điện PE Ngoài..." value={formData.SanPham} onChange={e => setFormData({ ...formData, SanPham: e.target.value })} />
+                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} placeholder="Vd: Sơn Tĩnh Điện PE Ngoài..." value={formData.SanPham} onChange={e => setFormData({ ...formData, SanPham: e.target.value })} />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Nội Dung Lỗi / Khiếu Nại *</label>
-                <textarea className="form-input" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }} value={formData.NoiDungLoi} onChange={e => setFormData({ ...formData, NoiDungLoi: e.target.value })} />
+                <textarea className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }} value={formData.NoiDungLoi} onChange={e => setFormData({ ...formData, NoiDungLoi: e.target.value })} />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Kỹ Thuật Viên Phụ Trách</label>
-                <select className="form-input" style={{ width: '100%' }} value={formData.KyThuatKCS} onChange={e => setFormData({ ...formData, KyThuatKCS: e.target.value })}>
+                <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} value={formData.KyThuatKCS} onChange={e => setFormData({ ...formData, KyThuatKCS: e.target.value })}>
                   <option value="">-- Chọn kỹ thuật viên --</option>
                   {technicians.map(t => <option key={t._id} value={t._id}>{t.MaNV} - {t.HoTen}</option>)}
                 </select>
@@ -270,17 +270,17 @@ export default function BaoHanhPage() {
               <div style={{ display: 'flex', gap: 16 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Thời Hạn Bảo Hành *</label>
-                  <input type="date" className="form-input" style={{ width: '100%' }} value={formData.HanBaoHanh} onChange={e => setFormData({ ...formData, HanBaoHanh: e.target.value })} />
+                  <input type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} value={formData.HanBaoHanh} onChange={e => setFormData({ ...formData, HanBaoHanh: e.target.value })} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Ngày Mua Hàng</label>
-                  <input type="date" className="form-input" style={{ width: '100%' }} value={formData.NgayMua} onChange={e => setFormData({ ...formData, NgayMua: e.target.value })} />
+                  <input type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} value={formData.NgayMua} onChange={e => setFormData({ ...formData, NgayMua: e.target.value })} />
                 </div>
               </div>
             </div>
 
             <div style={{ marginTop: '32px' }}>
-              <button onClick={handleSubmit} className="btn btn-primary" style={{ width: '100%', padding: '12px', fontSize: '16px' }}>Lưu Lệnh Bảo Hành</button>
+              <button onClick={handleSubmit} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ width: '100%', padding: '12px', fontSize: '16px' }}>Lưu Lệnh Bảo Hành</button>
             </div>
           </div>
         </div>
@@ -289,48 +289,48 @@ export default function BaoHanhPage() {
       {/* Detail Modal */}
       {isDetailOpen && selectedTicket && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', padding: '20px' }}>
-          <div style={{ width: '100%', maxWidth: '750px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', position: 'relative', color: 'var(--text-primary)', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ width: '100%', maxWidth: '750px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '32px', position: 'relative', color: '#0f172a', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                  <h2 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: 'var(--accent-cyan)' }}>{selectedTicket.MaBaoHanh}</h2>
+                  <h2 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: '#2563eb' }}>{selectedTicket.MaBaoHanh}</h2>
                   <span className={`badge ${selectedTicket.TrangThai === 'Đã khắc phục' ? 'approved' : 'testing'}`}>{selectedTicket.TrangThai}</span>
                 </div>
-                <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ color: '#475569', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={14} /> Created: {selectedTicket.createdAt ? new Date(selectedTicket.createdAt).toLocaleString() : '---'}</span>
                 </div>
               </div>
-              <button onClick={() => setIsDetailOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={24} /></button>
+              <button onClick={() => setIsDetailOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}><X size={24} /></button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 32 }}>
-              <div className="glass-card" style={{ padding: 20 }}>
-                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><Bookmark size={18} /> Thông tin bảo hành</h4>
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><Bookmark size={18} /> Thông tin bảo hành</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div><label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Mã Sản Phẩm / Hệ Sơn</label><div style={{ fontWeight: 600 }}>{selectedTicket.SanPham}</div></div>
-                  <div><label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Ngày Mua</label><div style={{ fontWeight: 600 }}>{selectedTicket.NgayMua ? new Date(selectedTicket.NgayMua).toLocaleDateString() : '---'}</div></div>
-                  <div><label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Hết Hạn Bảo Hành</label><div style={{ fontWeight: 600, color: 'var(--accent-rose)' }}>{selectedTicket.HanBaoHanh ? new Date(selectedTicket.HanBaoHanh).toLocaleDateString() : '---'}</div></div>
+                  <div><label style={{ fontSize: 12, color: '#475569' }}>Mã Sản Phẩm / Hệ Sơn</label><div style={{ fontWeight: 600 }}>{selectedTicket.SanPham}</div></div>
+                  <div><label style={{ fontSize: 12, color: '#475569' }}>Ngày Mua</label><div style={{ fontWeight: 600 }}>{selectedTicket.NgayMua ? new Date(selectedTicket.NgayMua).toLocaleDateString() : '---'}</div></div>
+                  <div><label style={{ fontSize: 12, color: '#475569' }}>Hết Hạn Bảo Hành</label><div style={{ fontWeight: 600, color: '#e11d48' }}>{selectedTicket.HanBaoHanh ? new Date(selectedTicket.HanBaoHanh).toLocaleDateString() : '---'}</div></div>
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: 20 }}>
-                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><User size={18} /> Khách hàng & Kỹ thuật</h4>
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><User size={18} /> Khách hàng & Kỹ thuật</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div><label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Khách Hàng</label><div style={{ fontWeight: 600 }}>{selectedTicket.KhachHang?.TenKhachHang || 'N/A'} ({selectedTicket.KhachHang?.MaKH || '---'})</div></div>
-                  <div><label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Địa chỉ khách hàng</label><div style={{ fontSize: 13 }}>{(selectedTicket.KhachHang as any)?.DiaChi || '---'}</div></div>
-                  <div><label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Kỹ thuật viên KCS</label><div style={{ fontWeight: 600, color: 'var(--accent-cyan)' }}>{selectedTicket.KyThuatKCS ? `${selectedTicket.KyThuatKCS.HoTen} (${selectedTicket.KyThuatKCS.MaNV})` : 'Chưa gán'}</div></div>
+                  <div><label style={{ fontSize: 12, color: '#475569' }}>Khách Hàng</label><div style={{ fontWeight: 600 }}>{selectedTicket.KhachHang?.TenKhachHang || 'N/A'} ({selectedTicket.KhachHang?.MaKH || '---'})</div></div>
+                  <div><label style={{ fontSize: 12, color: '#475569' }}>Địa chỉ khách hàng</label><div style={{ fontSize: 13 }}>{(selectedTicket.KhachHang as any)?.DiaChi || '---'}</div></div>
+                  <div><label style={{ fontSize: 12, color: '#475569' }}>Kỹ thuật viên KCS</label><div style={{ fontWeight: 600, color: '#2563eb' }}>{selectedTicket.KyThuatKCS ? `${selectedTicket.KyThuatKCS.HoTen} (${selectedTicket.KyThuatKCS.MaNV})` : 'Chưa gán'}</div></div>
                 </div>
               </div>
             </div>
 
-            <div className="glass-card" style={{ padding: 24, marginBottom: 24, borderLeft: '4px solid var(--accent-amber)' }}>
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, marginBottom: 24, borderLeft: '4px solid #d97706' }}>
               <h4 style={{ margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: 8 }}><FileText size={18} /> Log Sự Cố Lỗi Tóm Tắt</h4>
-              <p style={{ margin: 0, fontStyle: 'italic', color: 'var(--text-primary)' }}>{selectedTicket.NoiDungLoi}</p>
+              <p style={{ margin: 0, fontStyle: 'italic', color: '#0f172a' }}>{selectedTicket.NoiDungLoi}</p>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-              <button onClick={() => setIsDetailOpen(false)} className="btn btn-ghost">Đóng chi tiết</button>
-              <button className="btn btn-primary" onClick={() => alert('Chức năng In Ticket đang được phát triển')}>In Biên Bản Kỹ Thuật</button>
+              <button onClick={() => setIsDetailOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700">Đóng chi tiết</button>
+              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => alert('Chức năng In Ticket đang được phát triển')}>In Biên Bản Kỹ Thuật</button>
             </div>
           </div>
         </div>

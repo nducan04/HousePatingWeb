@@ -172,16 +172,16 @@ export default function GioHangPage() {
   const filteredProducts = products.filter(p => p.TenDongSon.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 7fr) minmax(0, 5fr)', gap: 'var(--spacing-xl)', minHeight: '80vh', padding: '10px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 7fr) minmax(0, 5fr)', gap: '2.25rem', minHeight: '80vh', padding: '10px' }}>
 
       {/* Cột trái: Sản phẩm */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
         <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'white' }}>Danh mục sản phẩm</h2>
-        <div className="search-box glass-card" style={{ padding: '0 15px', borderRadius: 12 }}>
-          <Search size={18} className="search-icon" />
+        <div className="relative bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '0 15px', borderRadius: 12 }}>
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="text"
-            className="form-input"
+            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
             style={{ background: 'transparent', border: 'none', padding: '15px 0' }}
             placeholder="Tìm kiếm dòng sơn..."
             value={searchTerm}
@@ -189,23 +189,23 @@ export default function GioHangPage() {
           />
         </div>
 
-        <div className="grid-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredProducts.map(sp => (
-            <div key={sp._id} className="glass-card transition-hover" style={{ padding: '15px', display: 'flex', gap: 15, alignItems: 'center' }}>
+            <div key={sp._id} className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden transition-hover" style={{ padding: '15px', display: 'flex', gap: 15, alignItems: 'center' }}>
               <div style={{ width: 70, height: 70, background: 'rgba(255,255,255,0.05)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {sp.HinhAnh ? <img src={`http://localhost:5000${sp.HinhAnh}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <Box size={24} color="#555" />}
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, fontSize: 14, color: 'white' }}>{sp.TenDongSon}</div>
-                <div style={{ color: 'var(--accent-cyan)', fontWeight: 800, fontSize: 14 }}>{(sp.DonGiaCoSo || 0).toLocaleString()} ₫</div>
-                <div style={{ fontSize: '11px', color: sp.TonKho > 0 ? 'var(--text-tertiary)' : 'var(--accent-rose)', marginTop: 4 }}>Tồn kho: {sp.TonKho || 0}</div>
+                <div style={{ color: '#2563eb', fontWeight: 800, fontSize: 14 }}>{(sp.DonGiaCoSo || 0).toLocaleString()} ₫</div>
+                <div style={{ fontSize: '11px', color: sp.TonKho > 0 ? '#94a3b8' : '#e11d48', marginTop: 4 }}>Tồn kho: {sp.TonKho || 0}</div>
               </div>
               <button
                 onClick={() => {
                   const existing = cartItems.find(i => i.SanPham?._id === sp._id);
                   updateQuantity(sp._id, existing ? existing.SoLuong + 1 : 1);
                 }}
-                className="btn btn-primary"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                 style={{ height: 35, padding: '0 12px', fontSize: 12 }}
                 disabled={sp.TonKho <= 0}
               >
@@ -217,13 +217,13 @@ export default function GioHangPage() {
       </div>
 
       {/* Cột phải: Checkout */}
-      <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', padding: 'var(--spacing-xl)', borderRadius: 16, border: '1px solid var(--border-color)', position: 'sticky', top: 20, height: 'fit-content' }}>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ display: 'flex', flexDirection: 'column', padding: '2.25rem', borderRadius: 16, border: '1px solid #e2e8f0', position: 'sticky', top: 20, height: 'fit-content' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 25 }}>
           <h2 style={{ fontSize: '24px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 12, color: 'white' }}>
-            <ShoppingCart size={28} className="text-[var(--accent-cyan)]" /> Giỏ Hàng
+            <ShoppingCart size={28} className="text-[#2563eb]" /> Giỏ Hàng
           </h2>
           {cartItems.length > 0 && (
-            <button className="btn btn-ghost btn-sm" onClick={clearCart} style={{ color: 'var(--accent-rose)' }}>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" onClick={clearCart} style={{ color: '#e11d48' }}>
               <Trash2 size={18} /> Xóa hết
             </button>
           )}
@@ -236,7 +236,7 @@ export default function GioHangPage() {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Chọn Khách Hàng</label>
               <div className="relative">
                 <select
-                  className="form-input pl-10"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                   style={{ background: '#fffefeff' }}
                   value={selectedCustomerId}
                   onChange={e => handleCustomerChange(e.target.value)}
@@ -265,7 +265,7 @@ export default function GioHangPage() {
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Địa chỉ giao hàng</label>
             <div className="relative">
               <textarea
-                className="form-input pl-10 py-3 min-h-[80px]"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10 py-3 min-h-[80px]"
                 placeholder="Nhập địa chỉ giao hàng chi tiết..."
                 value={shippingAddress}
                 onChange={e => setShippingAddress(e.target.value)}
@@ -287,12 +287,12 @@ export default function GioHangPage() {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, fontSize: 14, color: 'white', marginBottom: 2 }}>{item.SanPham?.TenDongSon}</div>
-                <div style={{ fontWeight: 700, color: 'var(--accent-cyan)', fontSize: 14 }}>{(item.SanPham?.DonGiaCoSo || 0).toLocaleString()} ₫</div>
+                <div style={{ fontWeight: 700, color: '#2563eb', fontSize: 14 }}>{(item.SanPham?.DonGiaCoSo || 0).toLocaleString()} ₫</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: 8 }}>
-                <button onClick={() => updateQuantity(item.SanPham._id, item.SoLuong - 1)} className="btn btn-ghost btn-xs text-slate-500 hover:text-white">-</button>
+                <button onClick={() => updateQuantity(item.SanPham._id, item.SoLuong - 1)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-2 py-1 rounded-md text-xs text-slate-500 hover:text-white">-</button>
                 <span style={{ fontSize: 15, fontWeight: 900, minWidth: 20, textAlign: 'center', color: 'white' }}>{item.SoLuong}</span>
-                <button onClick={() => updateQuantity(item.SanPham._id, item.SoLuong + 1)} className="btn btn-ghost btn-xs text-slate-500 hover:text-white">+</button>
+                <button onClick={() => updateQuantity(item.SanPham._id, item.SoLuong + 1)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-2 py-1 rounded-md text-xs text-slate-500 hover:text-white">+</button>
               </div>
             </div>
           ))}
@@ -305,12 +305,12 @@ export default function GioHangPage() {
         </div>
 
         {/* Voucher */}
-        <div style={{ padding: '20px 0', borderTop: '1px solid var(--border-color)' }}>
+        <div style={{ padding: '20px 0', borderTop: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', gap: 10 }}>
             <div className="relative flex-1">
               <input
                 type="text"
-                className="form-input pl-10"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                 style={{ textTransform: 'uppercase', fontSize: 12 }}
                 placeholder="NHẬP MÃ GIẢM GIÁ..."
                 value={discountCode}
@@ -320,38 +320,38 @@ export default function GioHangPage() {
             </div>
             <button
               onClick={handleApplyVoucher}
-              className="btn btn-ghost"
-              style={{ border: '1px solid var(--border-color)' }}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              style={{ border: '1px solid #e2e8f0' }}
               disabled={applyingDiscount || !discountCode}
             >
               Áp dụng
             </button>
           </div>
           {discountInfo && (
-            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--accent-emerald-soft)', padding: '8px 12px', borderRadius: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent-emerald)', fontSize: 13, fontWeight: 700 }}>
+            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(5, 150, 105, 0.08)', padding: '8px 12px', borderRadius: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#059669', fontSize: 13, fontWeight: 700 }}>
                 <CheckCircle2 size={16} />
                 <span>Giảm {discountInfo.DiscountAmount.toLocaleString()} ₫</span>
               </div>
-              <button onClick={() => { setDiscountInfo(null); setDiscountCode(''); }} style={{ color: 'var(--accent-rose)' }}><Trash size={14} /></button>
+              <button onClick={() => { setDiscountInfo(null); setDiscountCode(''); }} style={{ color: '#e11d48' }}><Trash size={14} /></button>
             </div>
           )}
         </div>
 
-        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
+        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Tạm tính:</span>
+            <span style={{ fontSize: 14, color: '#475569' }}>Tạm tính:</span>
             <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{cartTotal.toLocaleString()} ₫</span>
           </div>
           {discountInfo && (
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 14, color: 'var(--accent-rose)' }}>Giảm giá:</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent-rose)' }}>-{discountInfo.DiscountAmount.toLocaleString()} ₫</span>
+              <span style={{ fontSize: 14, color: '#e11d48' }}>Giảm giá:</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#e11d48' }}>-{discountInfo.DiscountAmount.toLocaleString()} ₫</span>
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, marginBottom: 25 }}>
             <span style={{ fontSize: 18, fontWeight: 900, color: 'white' }}>TỔNG CỘNG:</span>
-            <span style={{ fontSize: 24, fontWeight: 900, color: 'var(--accent-cyan)' }}>
+            <span style={{ fontSize: 24, fontWeight: 900, color: '#2563eb' }}>
               {(cartTotal - (discountInfo?.DiscountAmount || 0)).toLocaleString()} ₫
             </span>
           </div>
@@ -359,7 +359,7 @@ export default function GioHangPage() {
           <button
             onClick={handleCheckout}
             disabled={cartItems.length === 0 || isSubmitting}
-            className={`btn w-full h-14 text-white font-bold text-lg flex items-center justify-center gap-3 shadow-xl transition-all ${cartItems.length > 0 && !isSubmitting ? 'btn-primary shadow-blue-500/20' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline w-full h-14 text-white font-bold text-lg flex items-center justify-center gap-3 shadow-xl transition-all ${cartItems.length > 0 && !isSubmitting ? 'btn-primary shadow-blue-500/20' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
           >
             {isSubmitting ? <><Loader2 className="animate-spin" /> XỬ LÝ...</> : <><CheckCircle2 size={22} /> ĐẶT HÀNG NGAY</>}
           </button>
@@ -372,7 +372,7 @@ export default function GioHangPage() {
         }
         .transition-hover:hover {
           transform: translateY(-4px);
-          border-color: var(--accent-cyan-soft);
+          border-color: rgba(37, 99, 235, 0.08);
         }
         .Loader2 {
           animation: spin 1s linear infinite;

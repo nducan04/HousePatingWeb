@@ -97,7 +97,7 @@ export default function ThongTinCaNhanPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <div className="glass-card overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden overflow-hidden">
         {/* Header/Cover Profile Style */}
         <div className="h-32 bg-gradient-to-r from-blue-100 to-indigo-100 relative">
           <div className="absolute -bottom-16 left-8">
@@ -115,7 +115,7 @@ export default function ThongTinCaNhanPage() {
             <div>
               <h1 className="text-3xl font-extrabold text-slate-900 mb-1">{formData.displayName}</h1>
               <p className="text-slate-500 flex items-center gap-2">
-                <span className="badge testing uppercase">{user.role}</span>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 uppercase">{user.role}</span>
                 {isEmployee && <span>• {formData.department}</span>}
                 {!isEmployee && <span>• {user.profile?.MaKH}</span>}
               </p>
@@ -124,7 +124,7 @@ export default function ThongTinCaNhanPage() {
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="btn btn-primary px-6 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-6 flex items-center gap-2 shadow-lg shadow-blue-500/20"
               >
                 {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                 {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
@@ -157,7 +157,7 @@ export default function ThongTinCaNhanPage() {
                     <input
                       type="text"
                       name="displayName"
-                      className="form-input pl-10"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                       value={formData.displayName}
                       onChange={handleChange}
                     />
@@ -171,7 +171,7 @@ export default function ThongTinCaNhanPage() {
                     <input
                       type="date"
                       name="dob"
-                      className="form-input pl-10"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                       value={formData.dob}
                       onChange={handleChange}
                     />
@@ -185,7 +185,7 @@ export default function ThongTinCaNhanPage() {
                       <label className="block text-sm font-medium text-slate-500 mb-1">Phòng ban</label>
                       <input
                         type="text"
-                        className="form-input opacity-70"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all opacity-70"
                         value={formData.department}
                         readOnly
                       />
@@ -194,7 +194,7 @@ export default function ThongTinCaNhanPage() {
                       <label className="block text-sm font-medium text-slate-500 mb-1">Chức vụ</label>
                       <input
                         type="text"
-                        className="form-input opacity-70"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all opacity-70"
                         value={formData.jobTitle}
                         readOnly
                       />
@@ -209,7 +209,7 @@ export default function ThongTinCaNhanPage() {
                       <input
                         type="text"
                         name="wallet"
-                        className="form-input pl-10 font-mono text-xs"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10 font-mono text-xs"
                         value={formData.wallet}
                         onChange={handleChange}
                         placeholder="0x..."
@@ -233,7 +233,7 @@ export default function ThongTinCaNhanPage() {
                     <input
                       type="text"
                       name="phone"
-                      className="form-input pl-10"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                       value={formData.phone}
                       onChange={handleChange}
                     />
@@ -247,7 +247,7 @@ export default function ThongTinCaNhanPage() {
                     <input
                       type="email"
                       name="email"
-                      className="form-input pl-10"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                       value={formData.email}
                       onChange={handleChange}
                     />
@@ -260,7 +260,7 @@ export default function ThongTinCaNhanPage() {
                   <div className="relative">
                     <textarea
                       name="address"
-                      className="form-input pl-10 py-3 min-h-[100px]"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10 py-3 min-h-[100px]"
                       value={formData.address}
                       onChange={handleChange}
                     ></textarea>

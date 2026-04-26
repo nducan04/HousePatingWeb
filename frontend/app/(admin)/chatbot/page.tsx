@@ -312,14 +312,14 @@ export default function ChatbotPage() {
       {/* Background decorations removed as per prism removal request */}
 
       <div style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '2.8rem', fontWeight: 900, background: 'linear-gradient(to right, #0267ffff, var(--accent-cyan))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
+        <h1 style={{ fontSize: '2.8rem', fontWeight: 900, background: 'linear-gradient(to right, #0267ffff, #2563eb)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
           AI & Trung Tâm Hỗ Trợ
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginTop: '0.25rem' }}>Giám sát tương tác & xử lý khiếu nại khách hàng VTSC</p>
+        <p style={{ color: '#475569', fontSize: '1.1rem', marginTop: '0.25rem' }}>Giám sát tương tác & xử lý khiếu nại khách hàng VTSC</p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><RefreshCcw size={22} /></div>
           <div className="kpi-label">Tổng Sự Vụ Đổi Trả</div>
@@ -343,26 +343,26 @@ export default function ChatbotPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
-              <input type="text" className="form-input" placeholder="Tìm Mã #, Khách hàng..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Tìm Mã #, Khách hàng..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
               {[{ id: 'ALL', label: 'Tất cả' }, { id: 'PROBLEM', label: 'Hỗ trợ đặc biệt' }, { id: 'NORMAL', label: 'Vận hành chuẩn' }].map(tab => (
-                <button key={tab.id} className={`btn btn-sm ${activeTab === tab.id ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setActiveTab(tab.id as any)}>{tab.label}</button>
+                <button key={tab.id} className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${activeTab === tab.id ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setActiveTab(tab.id as any)}>{tab.label}</button>
               ))}
             </div>
           </div>
-          <button className="btn btn-ghost" onClick={fetchDashboardData}><RefreshCcw size={16} /> Làm mới dữ liệu</button>
+          <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" onClick={fetchDashboardData}><RefreshCcw size={16} /> Làm mới dữ liệu</button>
         </div>
       </div>
 
       {/* Main Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0 }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0 }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>Phân loại</th>
@@ -389,21 +389,21 @@ export default function ChatbotPage() {
                   <button
                     onClick={() => openOrderSpecs(entry.id, entry.type)}
                     className="hover:underline transition-all"
-                    style={{ fontWeight: 800, color: 'var(--accent-cyan)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    style={{ fontWeight: 800, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                   >
                     #{entry.refId}
                   </button>
                 </td>
                 <td>
-                  <button onClick={() => openCustomerDetails(entry.customerId, entry.customerName)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', fontWeight: 600 }} className="hover:text-[var(--accent-cyan)] transition-colors">
+                  <button onClick={() => openCustomerDetails(entry.customerId, entry.customerName)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', fontWeight: 600 }} className="hover:text-[#2563eb] transition-colors">
                     {entry.customerName}
                   </button>
                 </td>
                 <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={entry.issue}>{entry.issue}</td>
                 <td>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--accent-purple)', fontSize: 13 }}>{entry.staffName}</span>
-                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>ID: {entry.staffId}</span>
+                    <span style={{ fontWeight: 700, color: '#7c3aed', fontSize: 13 }}>{entry.staffName}</span>
+                    <span style={{ fontSize: 11, color: '#94a3b8' }}>ID: {entry.staffId}</span>
                   </div>
                 </td>
                 <td>
@@ -414,8 +414,8 @@ export default function ChatbotPage() {
                 <td>{new Date(entry.date).toLocaleDateString()}</td>
                 <td style={{ textAlign: 'right' }}>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button className="btn btn-ghost btn-sm" title="Quản lý & Giải quyết" onClick={() => openActionModal(entry)}><Settings size={16} /></button>
-                    <button className="btn btn-ghost btn-sm" title="Hỗ trợ AI" onClick={() => setIsChatOpen(true)}><Bot size={16} /></button>
+                    <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" title="Quản lý & Giải quyết" onClick={() => openActionModal(entry)}><Settings size={16} /></button>
+                    <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" title="Hỗ trợ AI" onClick={() => setIsChatOpen(true)}><Bot size={16} /></button>
                   </div>
                 </td>
               </tr>
@@ -427,16 +427,16 @@ export default function ChatbotPage() {
       {/* Specific Order Specs Modal */}
       {isSpecOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.9)' }}>
-          <div className="glass-card" style={{ width: '90%', maxWidth: '850px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', animation: 'slideUp 0.3s', background: 'var(--bg-card)' }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '90%', maxWidth: '850px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', animation: 'slideUp 0.3s', background: '#ffffff' }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ padding: 10, background: 'var(--accent-cyan-soft)', borderRadius: '12px' }}><ShoppingBag className="text-[var(--accent-cyan)]" /></div>
+                <div style={{ padding: 10, background: 'rgba(37, 99, 235, 0.08)', borderRadius: '12px' }}><ShoppingBag className="text-[#2563eb]" /></div>
                 <div>
                   <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>Chi Tiết Đơn Hàng Thành Phẩm</h3>
-                  {orderDetails && <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>Mã đơn: #{orderDetails.MaDonHang}</span>}
+                  {orderDetails && <span style={{ color: '#2563eb', fontWeight: 700 }}>Mã đơn: #{orderDetails.MaDonHang}</span>}
                 </div>
               </div>
-              <button onClick={() => { setIsSpecOpen(false); setOrderDetails(null); }} className="btn btn-ghost"><X size={24} /></button>
+              <button onClick={() => { setIsSpecOpen(false); setOrderDetails(null); }} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"><X size={24} /></button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
@@ -447,22 +447,22 @@ export default function ChatbotPage() {
               ) : (
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
-                    <div className="glass-card" style={{ padding: 16, background: 'rgba(50, 121, 121, 0.02)' }}>
+                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 16, background: 'rgba(50, 121, 121, 0.02)' }}>
                       <div style={{ fontSize: 11, opacity: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Tổng thanh toán</div>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent-cyan)' }}>{orderDetails.TongTien?.toLocaleString()} ₫</div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#2563eb' }}>{orderDetails.TongTien?.toLocaleString()} ₫</div>
                     </div>
-                    <div className="glass-card" style={{ padding: 16, background: 'rgba(255,255,255,0.02)' }}>
+                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 16, background: 'rgba(255,255,255,0.02)' }}>
                       <div style={{ fontSize: 11, opacity: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Phương thức</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}><CreditCard size={14} /> {orderDetails.PhuongThucThanhToan}</div>
                     </div>
-                    <div className="glass-card" style={{ padding: 16, background: 'rgba(255,255,255,0.02)' }}>
+                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 16, background: 'rgba(255,255,255,0.02)' }}>
                       <div style={{ fontSize: 11, opacity: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Trạng thái giao</div>
                       <div style={{ fontWeight: 600 }}><div className="badge approved">{orderDetails.TrangThai}</div></div>
                     </div>
                   </div>
 
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><ClipboardList size={20} /> Danh mục sản phẩm & Hệ màu</h4>
-                  <table className="data-table" style={{ fontSize: '0.9rem' }}>
+                  <table className="w-full text-left text-sm" style={{ fontSize: '0.9rem' }}>
                     <thead>
                       <tr>
                         <th>Tên Sản Phẩm / Dòng Sơn</th>
@@ -476,7 +476,7 @@ export default function ChatbotPage() {
                       {orderDetails.Items?.map((item: any, idx: number) => (
                         <tr key={idx}>
                           <td style={{ fontWeight: 600 }}>{item.SanPham?.TenDongSon || item.TenSanPham}</td>
-                          <td style={{ fontWeight: 700, color: 'var(--accent-purple)' }}>{item.MaMau}</td>
+                          <td style={{ fontWeight: 700, color: '#7c3aed' }}>{item.MaMau}</td>
                           <td>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <div style={{ width: 24, height: 24, borderRadius: '4px', background: item.HexCode || '#888', border: '1px solid rgba(255,255,255,0.1)' }}></div>
@@ -491,7 +491,7 @@ export default function ChatbotPage() {
                   </table>
 
                   {orderDetails.GhiChu && (
-                    <div style={{ marginTop: 20, padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 12, borderLeft: '4px solid var(--accent-amber)' }}>
+                    <div style={{ marginTop: 20, padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 12, borderLeft: '4px solid #d97706' }}>
                       <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Ghi chú kỹ thuật đơn hàng:</div>
                       <div style={{ fontSize: 13, opacity: 0.8 }}>{orderDetails.GhiChu}</div>
                     </div>
@@ -506,20 +506,20 @@ export default function ChatbotPage() {
       {/* Enhanced Action Modal */}
       {isActionOpen && targetEntry && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1400, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.92)' }}>
-          <div className="glass-card" style={{ width: '500px', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', animation: 'slideUp 0.3s', background: 'var(--bg-card)' }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '500px', display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', animation: 'slideUp 0.3s', background: '#ffffff' }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontWeight: 800 }}>Quản Lý & Giải Quyết</h3>
-              <button onClick={() => setIsActionOpen(false)} className="btn btn-ghost"><X size={20} /></button>
+              <button onClick={() => setIsActionOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"><X size={20} /></button>
             </div>
 
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
               {/* Staff Assignment */}
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--accent-cyan)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, marginBottom: 8, color: '#2563eb' }}>
                   <UserCheck size={16} /> Nhân viên phụ trách hỗ trợ (CSKH/Bảo hành)
                 </label>
                 <select
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   style={{ width: '100%', background: '#000000' }}
                   value={selectedStaffId}
                   onChange={e => setSelectedStaffId(e.target.value)}
@@ -533,11 +533,11 @@ export default function ChatbotPage() {
 
               {/* Resolution Plan */}
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--accent-cyan)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, marginBottom: 8, color: '#2563eb' }}>
                   <PenTool size={16} /> Phương án giải quyết & Thực thi
                 </label>
                 <textarea
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   style={{ width: '100%', minHeight: 120, resize: 'none' }}
                   placeholder="Ghi rõ các bước giải quyết cho khách hàng (Vd: Hoàn 50% tiền, Gửi mẫu sơn mới, KT xuống tận nhà...)"
                   value={resolutionPlan}
@@ -550,19 +550,19 @@ export default function ChatbotPage() {
                 <button
                   disabled={isUpdating}
                   onClick={() => updateEntryStatus(targetEntry.type === 'WARRANTY' ? 'Đang khảo sát' : targetEntry.type === 'ORDER' ? 'DANG_XU_LY' : 'Đang xử lý')}
-                  className="btn btn-ghost" style={{ justifyContent: 'center', height: 48, fontWeight: 700 }}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ justifyContent: 'center', height: 48, fontWeight: 700 }}
                 >Xử lý yêu cầu</button>
                 <button
                   disabled={isUpdating}
                   onClick={() => updateEntryStatus(targetEntry.type === 'WARRANTY' ? 'Đang khảo sát' : targetEntry.type === 'ORDER' ? 'DANG_GIAO' : 'Đang xử lý')}
-                  className="btn btn-ghost" style={{ justifyContent: 'center', height: 48, fontWeight: 700 }}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ justifyContent: 'center', height: 48, fontWeight: 700 }}
                 >Đang thực hiện...</button>
               </div>
 
               <button
                 disabled={isUpdating}
                 onClick={() => updateEntryStatus(targetEntry.type === 'WARRANTY' ? 'Đã khắc phục' : targetEntry.type === 'ORDER' ? 'DA_GIAO' : 'Đã hoàn tiền')}
-                className="btn btn-primary" style={{ width: '100%', height: 52, fontWeight: 800, background: 'var(--accent-emerald)', border: 'none' }}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ width: '100%', height: 52, fontWeight: 800, background: '#059669', border: 'none' }}
               >
                 <Check size={20} /> HOÀN TẤT & ĐÓNG SỰ VỤ
               </button>
@@ -574,22 +574,22 @@ export default function ChatbotPage() {
       {/* Customer Detail Modal (Order History) */}
       {isDetailOpen && selectedCustomer && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.9)' }}>
-          <div className="glass-card" style={{ width: '90%', maxWidth: '800px', height: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', animation: 'slideUp 0.3s', background: 'var(--bg-card)' }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '90%', maxWidth: '800px', height: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', animation: 'slideUp 0.3s', background: '#ffffff' }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontWeight: 800 }}>Lịch sử giao dịch: {selectedCustomer.name}</h3>
-              <button onClick={() => setIsDetailOpen(false)} className="btn btn-ghost"><X size={24} /></button>
+              <button onClick={() => setIsDetailOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"><X size={24} /></button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
               {isLoadingOrders ? <Loader2 className="animate-spin mx-auto" /> : customerOrders.map((o: any) => (
-                <div key={o._id} className="glass-card" style={{ padding: 16, marginBottom: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div key={o._id} className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 16, marginBottom: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ fontWeight: 800, color: 'var(--accent-cyan)' }}>#{o.MaDonHang}</span>
+                    <span style={{ fontWeight: 800, color: '#2563eb' }}>#{o.MaDonHang}</span>
                     <span className="badge approved">{o.TrangThai}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', fontSize: 12 }}>
                     <div>Ngày: {new Date(o.createdAt).toLocaleDateString()}</div>
                     <div>Tổng: {o.TongTien?.toLocaleString()} ₫</div>
-                    <button onClick={() => { setIsDetailOpen(false); openOrderSpecs(o._id, 'ORDER'); }} className="text-[var(--accent-cyan)] hover:underline" style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>Xem chi tiết hàng hóa</button>
+                    <button onClick={() => { setIsDetailOpen(false); openOrderSpecs(o._id, 'ORDER'); }} className="text-[#2563eb] hover:underline" style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>Xem chi tiết hàng hóa</button>
                   </div>
                 </div>
               ))}
@@ -599,27 +599,27 @@ export default function ChatbotPage() {
       )}
 
       {/* Floating Chat Bubble */}
-      <button onClick={() => setIsChatOpen(!isChatOpen)} style={{ position: 'fixed', bottom: '30px', right: '30px', width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-purple))', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', zIndex: 1000 }}>
+      <button onClick={() => setIsChatOpen(!isChatOpen)} style={{ position: 'fixed', bottom: '30px', right: '30px', width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', zIndex: 1000 }}>
         {isChatOpen ? <X size={28} color="white" /> : <Bot size={28} color="white" />}
       </button>
 
       {/* Chat Window */}
       {isChatOpen && (
-        <div className="glass-card" style={{ position: 'fixed', bottom: '100px', right: '30px', width: '400px', height: '550px', display: 'flex', flexDirection: 'column', zIndex: 999, overflow: 'hidden', padding: 0, background: 'var(--bg-card)' }}>
-          <div style={{ background: 'linear-gradient(to right, var(--accent-cyan), var(--accent-purple))', padding: '16px', color: 'white' }}>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ position: 'fixed', bottom: '100px', right: '30px', width: '400px', height: '550px', display: 'flex', flexDirection: 'column', zIndex: 999, overflow: 'hidden', padding: 0, background: '#ffffff' }}>
+          <div style={{ background: 'linear-gradient(to right, #2563eb, #7c3aed)', padding: '16px', color: 'white' }}>
             <Bot size={24} /> <span style={{ fontWeight: 800 }}>VTSC AI Support</span>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: 'rgba(0,0,0,0.2)' }}>
             {messages.map((msg) => (
               <div key={msg.id} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', marginBottom: 15 }}>
-                <div style={{ padding: '12px 16px', borderRadius: '16px', background: msg.role === 'user' ? 'var(--accent-cyan)' : 'var(--bg-card)', color: msg.role === 'user' ? 'white' : 'var(--text-primary)' }}>{msg.content}</div>
+                <div style={{ padding: '12px 16px', borderRadius: '16px', background: msg.role === 'user' ? '#2563eb' : '#ffffff', color: msg.role === 'user' ? 'white' : '#0f172a' }}>{msg.content}</div>
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
-          <form onSubmit={handleSubmitChat} style={{ padding: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: 10 }}>
-            <input type="text" className="form-input" style={{ flex: 1, borderRadius: '20px' }} placeholder="Hỏi AI..." value={input} onChange={e => setInput(e.target.value)} />
-            <button className="btn btn-primary" style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0 }}><Send size={18} /></button>
+          <form onSubmit={handleSubmitChat} style={{ padding: '16px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: 10 }}>
+            <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ flex: 1, borderRadius: '20px' }} placeholder="Hỏi AI..." value={input} onChange={e => setInput(e.target.value)} />
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0 }}><Send size={18} /></button>
           </form>
         </div>
       )}

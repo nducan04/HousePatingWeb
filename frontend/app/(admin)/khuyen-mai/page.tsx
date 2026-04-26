@@ -113,7 +113,7 @@ export default function KhuyenMaiPage() {
       <div style={{ position: 'fixed', top: '20%', left: '30%', width: '300px', height: '300px', background: '#0906c9ff', filter: 'blur(150px)', zIndex: -1, pointerEvents: 'none', opacity: 0.4 }}></div>
 
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><Ticket size={22} /></div>
           <div className="kpi-label">Tổng Chương Trình</div>
@@ -137,14 +137,14 @@ export default function KhuyenMaiPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tra cứu Mã Voucher..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -154,7 +154,7 @@ export default function KhuyenMaiPage() {
               {['all', 'active', 'ended'].map(f => (
                 <button
                   key={f}
-                  className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setFilter(f)}
                 >
                   {f === 'all' ? 'Tất cả' : f === 'active' ? 'Đang chạy' : 'Đã kết thúc'}
@@ -162,15 +162,15 @@ export default function KhuyenMaiPage() {
               ))}
             </div>
           </div>
-          <button className="btn btn-primary" onClick={() => { setFormData({ MaVoucher: '', LoaiGiamGia: 'PHAN_TRAM', MucGiam: 0, GiamToiDa: 0, DonHangToiThieu: 0, NgayBatDau: new Date().toISOString().split('T')[0], NgayHetHan: '', SoLuongToiDa: 100, GhiChu: '' }); setIsModalOpen(true); }}>
+          <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => { setFormData({ MaVoucher: '', LoaiGiamGia: 'PHAN_TRAM', MucGiam: 0, GiamToiDa: 0, DonHangToiThieu: 0, NgayBatDau: new Date().toISOString().split('T')[0], NgayHetHan: '', SoLuongToiDa: 100, GhiChu: '' }); setIsModalOpen(true); }}>
             <Plus size={16} /> Tạo Mã Khuyến Mãi
           </button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>Mã Voucher</th>
@@ -187,9 +187,9 @@ export default function KhuyenMaiPage() {
               <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40 }}>Đang tải khuyến mãi...</td></tr>
             ) : filteredData.map(item => (
               <tr key={item._id}>
-                <td style={{ fontWeight: 800, color: 'var(--accent-cyan)', letterSpacing: 1 }}>{item.MaVoucher}</td>
+                <td style={{ fontWeight: 800, color: '#2563eb', letterSpacing: 1 }}>{item.MaVoucher}</td>
                 <td>{item.LoaiGiamGia === 'PHAN_TRAM' ? 'Phần trăm' : item.LoaiGiamGia === 'GIAM_THANG' ? 'Giảm thẳng' : 'Tặng kèm'}</td>
-                <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                <td style={{ fontWeight: 700, color: '#0f172a' }}>
                   {item.MucGiam.toLocaleString()}{item.LoaiGiamGia === 'PHAN_TRAM' ? '%' : ' ₫'}
                 </td>
                 <td>{item.SoLuongDaDung} / {item.SoLuongToiDa} đơn</td>
@@ -203,8 +203,8 @@ export default function KhuyenMaiPage() {
                   </span>
                 </td>
                 <td style={{ textAlign: 'right' }}>
-                  <button className="btn btn-ghost btn-sm" onClick={() => openEdit(item)}><Edit size={16} /></button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(item._id)}><Trash2 size={16} color="var(--accent-rose)" /></button>
+                  <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" onClick={() => openEdit(item)}><Edit size={16} /></button>
+                  <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" onClick={() => handleDelete(item._id)}><Trash2 size={16} color="#e11d48" /></button>
                 </td>
               </tr>
             ))}
@@ -215,58 +215,58 @@ export default function KhuyenMaiPage() {
       {/* Modal Form */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', padding: 20 }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: 'var(--spacing-xl)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '100%', maxWidth: '500px', padding: '2.25rem', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <h3 style={{ margin: 0, fontSize: 24, fontWeight: 800, background: 'linear-gradient(to right, #0906c9ff, var(--accent-cyan))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <h3 style={{ margin: 0, fontSize: 24, fontWeight: 800, background: 'linear-gradient(to right, #0906c9ff, #2563eb)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 {formData._id ? 'Cập Nhật Voucher' : 'Thiết Lập Voucher'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost btn-sm" style={{ padding: 4 }}><Plus size={20} /></button>
+              <button onClick={() => setIsModalOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ padding: 4 }}><Plus size={20} /></button>
             </div>
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
               <div>
                 <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 5 }}>Mã Code (Public)</label>
-                <input type="text" className="form-input" required value={formData.MaVoucher} onChange={e => setFormData({ ...formData, MaVoucher: e.target.value })} placeholder="Vd: SUMMER2024" />
+                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" required value={formData.MaVoucher} onChange={e => setFormData({ ...formData, MaVoucher: e.target.value })} placeholder="Vd: SUMMER2024" />
               </div>
-              <div className="grid-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 5 }}>Loại giảm giá</label>
-                  <select className="form-input" style={{ background: '#000000ff' }} value={formData.LoaiGiamGia} onChange={e => setFormData({ ...formData, LoaiGiamGia: e.target.value })}>
+                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ background: '#000000ff' }} value={formData.LoaiGiamGia} onChange={e => setFormData({ ...formData, LoaiGiamGia: e.target.value })}>
                     <option value="PHAN_TRAM">Phần trăm (%)</option>
                     <option value="GIAM_THANG">Giảm tiền mặt (₫)</option>
                   </select>
                 </div>
                 <div>
                   <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 5 }}>Mức giảm</label>
-                  <input type="number" className="form-input" required value={formData.MucGiam} onChange={e => setFormData({ ...formData, MucGiam: Number(e.target.value) })} />
+                  <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" required value={formData.MucGiam} onChange={e => setFormData({ ...formData, MucGiam: Number(e.target.value) })} />
                 </div>
               </div>
-              <div className="grid-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 5 }}>Giảm tối đa (₫)</label>
-                  <input type="number" className="form-input" value={formData.GiamToiDa} onChange={e => setFormData({ ...formData, GiamToiDa: Number(e.target.value) })} placeholder="0 là không giới hạn" />
+                  <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.GiamToiDa} onChange={e => setFormData({ ...formData, GiamToiDa: Number(e.target.value) })} placeholder="0 là không giới hạn" />
                 </div>
                 <div>
                   <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 5 }}>Đơn tối thiểu (₫)</label>
-                  <input type="number" className="form-input" value={formData.DonHangToiThieu} onChange={e => setFormData({ ...formData, DonHangToiThieu: Number(e.target.value) })} />
+                  <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.DonHangToiThieu} onChange={e => setFormData({ ...formData, DonHangToiThieu: Number(e.target.value) })} />
                 </div>
               </div>
-              <div className="grid-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 5 }}>Ngày bắt đầu</label>
-                  <input type="date" className="form-input" value={formData.NgayBatDau} onChange={e => setFormData({ ...formData, NgayBatDau: e.target.value })} />
+                  <input type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.NgayBatDau} onChange={e => setFormData({ ...formData, NgayBatDau: e.target.value })} />
                 </div>
                 <div>
                   <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 5 }}>Ngày hết hạn</label>
-                  <input type="date" className="form-input" required value={formData.NgayHetHan} onChange={e => setFormData({ ...formData, NgayHetHan: e.target.value })} />
+                  <input type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" required value={formData.NgayHetHan} onChange={e => setFormData({ ...formData, NgayHetHan: e.target.value })} />
                 </div>
               </div>
               <div>
                 <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 5 }}>Số lượng phát hành</label>
-                <input type="number" className="form-input" required value={formData.SoLuongToiDa} onChange={e => setFormData({ ...formData, SoLuongToiDa: Number(e.target.value) })} />
+                <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" required value={formData.SoLuongToiDa} onChange={e => setFormData({ ...formData, SoLuongToiDa: Number(e.target.value) })} />
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-ghost" style={{ flex: 1 }}>Hủy</button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Lưu mã giảm giá</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ flex: 1 }}>Hủy</button>
+                <button type="submit" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ flex: 1 }}>Lưu mã giảm giá</button>
               </div>
             </form>
           </div>

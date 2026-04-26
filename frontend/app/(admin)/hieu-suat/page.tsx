@@ -14,11 +14,11 @@ import {
 
 // Mock data based on user diagram
 const TOP_SALES_DATA = [
-    { name: 'An', value: 1200, color: 'var(--accent-cyan)' },
-    { name: 'Bình', value: 950, color: 'var(--accent-purple)' },
-    { name: 'Chi', value: 780, color: 'var(--accent-amber)' },
-    { name: 'Dũng', value: 520, color: 'var(--accent-rose)' },
-    { name: 'Em', value: 340, color: 'var(--accent-emerald)' },
+    { name: 'An', value: 1200, color: '#2563eb' },
+    { name: 'Bình', value: 950, color: '#7c3aed' },
+    { name: 'Chi', value: 780, color: '#d97706' },
+    { name: 'Dũng', value: 520, color: '#e11d48' },
+    { name: 'Em', value: 340, color: '#059669' },
 ];
 
 const SKILLS_DATA = [
@@ -46,7 +46,7 @@ const TABS = [
 import api from '@/lib/utils/axiosAuth';
 
 // Chart colors for top sales
-const CHART_COLORS = ['var(--accent-cyan)', 'var(--accent-purple)', 'var(--accent-amber)', 'var(--accent-rose)', 'var(--accent-emerald)'];
+const CHART_COLORS = ['#2563eb', '#7c3aed', '#d97706', '#e11d48', '#059669'];
 
 export default function PerformanceDashboard() {
     const [activeTab, setActiveTab] = useState('performance');
@@ -81,9 +81,9 @@ export default function PerformanceDashboard() {
 
     if (loading) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', color: '#475569' }}>
                 <div style={{ textAlign: 'center' }}>
-                    <div className="btn-loader" style={{ marginBottom: 16 }}></div>
+                    <div className="w-6 h-6 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto" style={{ marginBottom: 16 }}></div>
                     <p>Đang tổng hợp dữ liệu hiệu suất thời gian thực...</p>
                 </div>
             </div>
@@ -106,10 +106,10 @@ export default function PerformanceDashboard() {
     }));
 
     return (
-        <div style={{ padding: 'var(--spacing-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)' }}>
+        <div style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '2.25rem' }}>
             
             {/* ═══ TOP NAVIGATION TABS ═══ */}
-            <div style={{ display: 'flex', gap: 10, borderBottom: '1px solid var(--border-color)', paddingBottom: 'var(--spacing-md)' }}>
+            <div style={{ display: 'flex', gap: 10, borderBottom: '1px solid #e2e8f0', paddingBottom: '1.125rem' }}>
                 {TABS.map(tab => (
                     <button
                         key={tab.id}
@@ -119,45 +119,45 @@ export default function PerformanceDashboard() {
                             padding: '10px 20px', borderRadius: 8,
                             border: 'none', cursor: 'pointer',
                             background: activeTab === tab.id ? 'rgba(0,212,255,0.1)' : 'transparent',
-                            color: activeTab === tab.id ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                            color: activeTab === tab.id ? '#2563eb' : '#475569',
                             fontWeight: activeTab === tab.id ? 700 : 400,
                             transition: 'all 0.2s'
                         }}
                     >
                         <tab.icon size={18} />
                         <span>{tab.label}</span>
-                        {activeTab === tab.id && <div style={{ height: 2, width: '100%', background: 'var(--accent-cyan)', position: 'absolute', bottom: -12, left: 0 }}></div>}
+                        {activeTab === tab.id && <div style={{ height: 2, width: '100%', background: '#2563eb', position: 'absolute', bottom: -12, left: 0 }}></div>}
                     </button>
                 ))}
             </div>
 
             {/* ═══ HEADER & FILTERS ═══ */}
-            <div className="glass-card" style={{ padding: 'var(--spacing-lg)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.125rem' }}>
                 <div>
-                    <h2 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: 1, color: 'var(--text-primary)' }}>
-                        PHÂN TÍCH HIỆU SUẤT NHÂN VIÊN — <span style={{ color: 'var(--accent-cyan)' }}>QUÝ II/2026</span>
+                    <h2 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: 1, color: '#0f172a' }}>
+                        PHÂN TÍCH HIỆU SUẤT NHÂN VIÊN — <span style={{ color: '#2563eb' }}>QUÝ II/2026</span>
                     </h2>
-                    <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 4 }}>Dữ liệu cập nhật thời gian thực từ hệ thống VTSC PaintPro</p>
+                    <p style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>Dữ liệu cập nhật thời gian thực từ hệ thống VTSC PaintPro</p>
                 </div>
                 
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <div className="search-box" style={{ width: 250 }}>
-                        <Search size={16} className="search-icon" />
+                    <div className="relative" style={{ width: 250 }}>
+                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                         <input 
                             type="text" 
-                            className="form-input" 
+                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
                             placeholder="Tìm tên nhân viên..." 
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
                     
-                    <div className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid var(--border-color)' }}>
+                    <div className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid #e2e8f0' }}>
                         <Calendar size={16} /> <span>Chọn kỳ báo cáo</span>
                     </div>
 
                     <select 
-                        className="form-input" 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
                         value={selectedDept}
                         onChange={e => setSelectedDept(e.target.value)}
                         style={{ background: 'transparent', minWidth: 160 }}
@@ -171,15 +171,15 @@ export default function PerformanceDashboard() {
             </div>
 
             {/* ═══ HIGHLIGHT HIGHLIGHTS (Top Cards) ═══ */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--spacing-lg)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.75rem' }}>
                 {/* Outstanding Employee Card */}
-                <div className="glass-card" style={{ padding: '24px', position: 'relative', overflow: 'hidden', borderLeft: '4px solid var(--accent-amber)' }}>
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '24px', position: 'relative', overflow: 'hidden', borderLeft: '4px solid #d97706' }}>
                     <div style={{ position: 'absolute', right: -20, top: -20, opacity: 0.1 }}>
-                        <Award size={120} color="var(--accent-amber)" />
+                        <Award size={120} color="#d97706" />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-amber), var(--accent-rose))', padding: 2 }}>
-                            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, #d97706, #e11d48)', padding: 2 }}>
+                            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                                 {summary.bestStaff?.avatar ? (
                                     <img 
                                         src={getAvatarUrl(summary.bestStaff.avatar)} 
@@ -190,56 +190,56 @@ export default function PerformanceDashboard() {
                                             target.style.display = 'none';
                                             const parent = target.parentElement;
                                             if (parent) {
-                                                parent.innerHTML = `<span style="font-size: 24px; font-weight: 800; color: var(--accent-amber)">${summary.bestStaff.name.split(' ').slice(-1)[0][0]}</span>`;
+                                                parent.innerHTML = `<span style="font-size: 24px; font-weight: 800; color: #d97706">${summary.bestStaff.name.split(' ').slice(-1)[0][0]}</span>`;
                                             }
                                         }}
                                     />
                                 ) : (
-                                    <User size={32} color="var(--accent-amber)" />
+                                    <User size={32} color="#d97706" />
                                 )}
                             </div>
                         </div>
                         <div>
-                            <div style={{ fontSize: 12, color: 'var(--accent-amber)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>NV Xuất Sắc Tháng</div>
+                            <div style={{ fontSize: 12, color: '#d97706', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>NV Xuất Sắc Tháng</div>
                             <div style={{ fontSize: 22, fontWeight: 800 }}>{summary.bestStaff?.name || 'N/A'}</div>
-                            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Bộ phận: <span style={{ color: 'var(--text-primary)' }}>{summary.bestStaff?.dept || 'N/A'}</span></div>
+                            <div style={{ fontSize: 13, color: '#475569' }}>Bộ phận: <span style={{ color: '#0f172a' }}>{summary.bestStaff?.dept || 'N/A'}</span></div>
                         </div>
                     </div>
                 </div>
 
                 {/* Total Revenue Card */}
-                <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 4, borderLeft: '4px solid var(--accent-cyan)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent-cyan)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 4, borderLeft: '4px solid #2563eb' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#2563eb', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>
                         <SignalHigh size={16} /> Tổng doanh số nhân sự
                     </div>
-                    <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--text-primary)' }}>{(summary.totalRevenue || 0).toLocaleString()} ₫</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--accent-emerald)' }}>
+                    <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a' }}>{(summary.totalRevenue || 0).toLocaleString()} ₫</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#059669' }}>
                         <TrendingUp size={14} /> <span>Dựa trên đơn hàng hoàn tất</span>
                     </div>
                 </div>
 
                 {/* Paint Error Rate Card */}
-                <div className="glass-card" style={{ padding: '24px', borderLeft: '4px solid var(--accent-rose)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent-rose)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '24px', borderLeft: '4px solid #e11d48' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#e11d48', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>
                         <AlertCircle size={16} /> Tỷ lệ lỗi sơn trung bình
                     </div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                         <span style={{ fontSize: 32, fontWeight: 900 }}>{summary.errorRate}%</span>
-                        <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Mức an toàn: &lt; 2.0%</span>
+                        <span style={{ fontSize: 13, color: '#94a3b8' }}>Mức an toàn: &lt; 2.0%</span>
                     </div>
                     <div style={{ height: 6, width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: 10, marginTop: 12, overflow: 'hidden' }}>
-                        <div style={{ width: '60%', height: '100%', background: 'linear-gradient(90deg, var(--accent-emerald), var(--accent-rose))' }}></div>
+                        <div style={{ width: '60%', height: '100%', background: 'linear-gradient(90deg, #059669, #e11d48)' }}></div>
                     </div>
                 </div>
             </div>
 
             {/* ═══ CHARTS SECTION (Bar & Radar) ═══ */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: 'var(--spacing-lg)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '1.75rem' }}>
                 {/* Bar Chart: Top 5 Sales */}
-                <div className="glass-card" style={{ padding: '24px', height: 400 }}>
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '24px', height: 400 }}>
                     <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <BarChart3 size={18} color="var(--accent-cyan)" /> BIỂU ĐỒ DOANH SỐ THEO NHÂN VIÊN (TOP 5)
-                        <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-tertiary)' }}>(Đơn vị: Triệu VNĐ)</span>
+                        <BarChart3 size={18} color="#2563eb" /> BIỂU ĐỒ DOANH SỐ THEO NHÂN VIÊN (TOP 5)
+                        <span style={{ fontSize: 12, fontWeight: 400, color: '#94a3b8' }}>(Đơn vị: Triệu VNĐ)</span>
                     </h3>
                     <ResponsiveContainer width="100%" height="90%">
                         <BarChart data={topSalesData} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
@@ -248,15 +248,15 @@ export default function PerformanceDashboard() {
                                 dataKey="name" 
                                 axisLine={false} 
                                 tickLine={false} 
-                                tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} 
+                                tick={{ fill: '#475569', fontSize: 12 }} 
                             />
                             <YAxis 
                                 axisLine={false} 
                                 tickLine={false} 
-                                tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} 
+                                tick={{ fill: '#94a3b8', fontSize: 11 }} 
                             />
                             <Tooltip 
-                                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 8, color: '#fff' }}
+                                contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8, color: '#fff' }}
                                 cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                             />
                             <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
@@ -269,21 +269,21 @@ export default function PerformanceDashboard() {
                 </div>
 
                 {/* Radar Chart: Skills & Attitude */}
-                <div className="glass-card" style={{ padding: '24px', height: 400 }}>
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '24px', height: 400 }}>
                     <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Radar size={18} color="var(--accent-purple)" /> BIỂU ĐỒ RADAR: KỸ NĂNG & THÁI ĐỘ
-                        <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-tertiary)' }}>(Dựa trên phản hồi khách hàng)</span>
+                        <Radar size={18} color="#7c3aed" /> BIỂU ĐỒ RADAR: KỸ NĂNG & THÁI ĐỘ
+                        <span style={{ fontSize: 12, fontWeight: 400, color: '#94a3b8' }}>(Dựa trên phản hồi khách hàng)</span>
                     </h3>
                     <ResponsiveContainer width="100%" height="90%">
                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={charts.radar}>
                             <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
+                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 12 }} />
                             <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
                             <RadarArea
                                 name="Điểm đánh giá"
                                 dataKey="A"
-                                stroke="var(--accent-cyan)"
-                                fill="var(--accent-cyan)"
+                                stroke="#2563eb"
+                                fill="#2563eb"
                                 fillOpacity={0.3}
                             />
                         </RadarChart>
@@ -292,16 +292,16 @@ export default function PerformanceDashboard() {
             </div>
 
             {/* ═══ KPI DETAILS TABLE ═══ */}
-            <div className="glass-card" style={{ overflow: 'hidden' }}>
-                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>CHI TIẾT CHỈ SỐ KPI VÀ HIỆU SUẤT</h3>
-                    <button className="btn btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Download size={14} /> Xuất báo cáo
                     </button>
                 </div>
                 
                 <div style={{ overflowX: 'auto' }}>
-                    <table className="data-table" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                    <table className="w-full text-left text-sm" style={{ borderCollapse: 'collapse', width: '100%' }}>
                         <thead>
                             <tr>
                                 <th style={{ textAlign: 'left', padding: '16px 24px' }}>Nhân viên</th>
@@ -317,7 +317,7 @@ export default function PerformanceDashboard() {
                                 <tr key={staff.id} style={{ borderTop: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }}>
                                     <td style={{ padding: '16px 24px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                                                 {staff.avatar ? (
                                                     <img 
                                                         src={getAvatarUrl(staff.avatar)} 
@@ -338,7 +338,7 @@ export default function PerformanceDashboard() {
                                         </div>
                                     </td>
                                     <td>
-                                        <div className="badge" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', textTransform: 'none' }}>
+                                        <div className="badge" style={{ background: 'rgba(255,255,255,0.05)', color: '#475569', textTransform: 'none' }}>
                                             {staff.dept}
                                         </div>
                                     </td>
@@ -348,13 +348,13 @@ export default function PerformanceDashboard() {
                                             : (['R&D Kỹ Thuật Máy', 'Kỹ thuật'].includes(staff.dept) ? staff.tests : staff.deliveries)} 
                                         {staff.dept === 'Kho / Logistics' ? ' Chuyến' : (['R&D Kỹ Thuật Máy', 'Kỹ thuật'].includes(staff.dept) ? ' Lô mẻ' : ' Đơn')}
                                     </td>
-                                    <td style={{ textAlign: 'right', fontWeight: 600, color: staff.revenue > 0 ? 'var(--accent-emerald)' : 'var(--text-tertiary)' }}>
+                                    <td style={{ textAlign: 'right', fontWeight: 600, color: staff.revenue > 0 ? '#059669' : '#94a3b8' }}>
                                         {staff.revenue > 0 ? staff.revenue.toLocaleString() + ' ₫' : '—'}
                                     </td>
                                     <td style={{ textAlign: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                                             <div style={{ flex: 1, maxWidth: 60, height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
-                                                <div style={{ width: `${staff.satisfaction}%`, height: '100%', background: staff.satisfaction >= 90 ? 'var(--accent-emerald)' : 'var(--accent-amber)', borderRadius: 2 }}></div>
+                                                <div style={{ width: `${staff.satisfaction}%`, height: '100%', background: staff.satisfaction >= 90 ? '#059669' : '#d97706', borderRadius: 2 }}></div>
                                             </div>
                                             <span style={{ fontSize: 13, fontWeight: 600 }}>{staff.satisfaction}%</span>
                                         </div>
@@ -372,16 +372,16 @@ export default function PerformanceDashboard() {
             </div>
 
             {/* ═══ FOOTER INFO ═══ */}
-            <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-tertiary)', paddingBottom: 20 }}>
+            <div style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8', paddingBottom: 20 }}>
                 Báo cáo tổng hợp bởi <strong>VTSC PaintPro Performance Engine</strong>. Bản quyền thuộc về © 2026.
             </div>
 
             <style jsx>{`
                 .glass-card {
-                    background: var(--bg-card);
+                    background: #ffffff;
                     backdrop-filter: blur(16px);
-                    border: 1px solid var(--border-color);
-                    border-radius: var(--radius-lg);
+                    border: 1px solid #e2e8f0;
+                    border-radius: 16px;
                     transition: transform 0.3s ease, box-shadow 0.3s ease;
                 }
                 .glass-card:hover {
@@ -392,8 +392,8 @@ export default function PerformanceDashboard() {
                     font-size: 11px;
                     text-transform: uppercase;
                     letter-spacing: 1px;
-                    color: var(--text-tertiary);
-                    border-bottom: 2px solid var(--border-color);
+                    color: #94a3b8;
+                    border-bottom: 2px solid #e2e8f0;
                     padding: 12px;
                 }
                 .btn-ghost:hover {
@@ -407,7 +407,7 @@ export default function PerformanceDashboard() {
                 .search-icon {
                     position: absolute;
                     left: 12px;
-                    color: var(--text-tertiary);
+                    color: #94a3b8;
                 }
                 .search-box input {
                     padding-left: 36px;

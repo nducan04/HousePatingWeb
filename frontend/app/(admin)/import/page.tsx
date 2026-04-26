@@ -68,26 +68,26 @@ export default function ImportPage() {
   return (
     <div>
       {/* Header Info */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <h2 style={{ fontSize: 'var(--font-lg)', fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Công cụ Đồng bộ Dữ liệu Toàn Hệ Thống</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-sm)', display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, marginBottom: 8, color: '#0f172a' }}>Công cụ Đồng bộ Dữ liệu Toàn Hệ Thống</h2>
+        <p style={{ color: '#475569', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 6 }}>
           <AlertCircle size={14} /> Hệ thống chấp nhận file định dạng .xlsx, .xls, .csv với dung lượng tối đa 50MB. <br />
           Tải hệ quy chiếu mẫu ở dưới đây để tránh xung đột Data Source.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 'var(--spacing-lg)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '1.75rem' }}>
 
         {/* Dropzone */}
-        <div className="glass-card" style={{ padding: 'var(--spacing-xl)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '2.25rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: 'var(--font-base)', fontWeight: 700 }}>Tải lên File Excel</h3>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Tải lên File Excel</h3>
             <div style={{ display: 'flex', gap: 10 }}>
               <select
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 value={importType}
                 onChange={(e) => setImportType(e.target.value as ImportType)}
-                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 6, padding: '4px 12px', fontSize: 13 }}
+                style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 6, padding: '4px 12px', fontSize: 13 }}
               >
                 <option value="products">Dữ liệu Sản phẩm</option>
                 <option value="materials">Kho Vật tư / NVL</option>
@@ -102,20 +102,20 @@ export default function ImportPage() {
             onDrop={handleDrop}
             onClick={() => document.getElementById('fileInput')?.click()}
             style={{
-              border: '2px dashed var(--border-color)',
-              borderRadius: 'var(--radius-lg)',
+              border: '2px dashed #e2e8f0',
+              borderRadius: '16px',
               padding: '60px 20px',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'var(--bg-card)',
+              background: '#ffffff',
               transition: 'all 0.2s ease',
               cursor: 'pointer'
             }}
-            onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--accent-cyan)'}
-            onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+            onMouseOver={(e) => e.currentTarget.style.borderColor = '#2563eb'}
+            onMouseOut={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
           >
             <input
               type="file"
@@ -125,41 +125,41 @@ export default function ImportPage() {
               onChange={handleFileSelect}
             />
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(0,212,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-              <FileUp size={32} color="var(--accent-cyan)" />
+              <FileUp size={32} color="#2563eb" />
             </div>
 
             {file ? (
               <div>
-                <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8, fontSize: 'var(--font-lg)' }}>{file.name}</p>
-                <p style={{ color: 'var(--accent-emerald)' }}>File hợp lệ • {(file.size / 1024).toFixed(2)} KB</p>
+                <p style={{ fontWeight: 600, color: '#0f172a', marginBottom: 8, fontSize: '1.375rem' }}>{file.name}</p>
+                <p style={{ color: '#059669' }}>File hợp lệ • {(file.size / 1024).toFixed(2)} KB</p>
               </div>
             ) : (
               <div>
-                <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8, fontSize: 'var(--font-lg)' }}>Kéo thả file vào đây hoặc nhấn để chọn thẻ tải lên</p>
-                <p style={{ color: 'var(--text-tertiary)' }}>Hỗ trợ: CSV, XLSX. Kích thước tối đa: 50MB</p>
+                <p style={{ fontWeight: 600, color: '#0f172a', marginBottom: 8, fontSize: '1.375rem' }}>Kéo thả file vào đây hoặc nhấn để chọn thẻ tải lên</p>
+                <p style={{ color: '#94a3b8' }}>Hỗ trợ: CSV, XLSX. Kích thước tối đa: 50MB</p>
               </div>
             )}
           </div>
 
           {result && (
-            <div className={`glass-card ${result.success ? 'border-emerald' : 'border-rose'}`} style={{ padding: 16, background: result.success ? 'rgba(16,185,129,0.05)' : 'rgba(239,68,68,0.05)', borderRadius: 8 }}>
+            <div className={`bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden ${result.success ? 'border-emerald' : 'border-rose'}`} style={{ padding: 16, background: result.success ? 'rgba(16,185,129,0.05)' : 'rgba(239,68,68,0.05)', borderRadius: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                {result.success ? <CheckCircle size={18} color="var(--accent-emerald)" /> : <XCircle size={18} color="var(--accent-rose)" />}
+                {result.success ? <CheckCircle size={18} color="#059669" /> : <XCircle size={18} color="#e11d48" />}
                 <span style={{ fontWeight: 700, fontSize: 14 }}>{result.success ? 'ĐỒNG BỘ THÀNH CÔNG' : 'CÓ LỖI XẢY RA'}</span>
               </div>
               {result.success ? (
-                <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                <div style={{ fontSize: 13, color: '#475569' }}>
                   <p>• Tổng số dòng xử lý: {result.totalProcessed}</p>
-                  <p>• Đã cập nhật/thêm mới: <span style={{ color: 'var(--accent-emerald)', fontWeight: 700 }}>{result.insertedCount}</span></p>
-                  <p>• Số dòng lỗi: <span style={{ color: 'var(--accent-rose)', fontWeight: 700 }}>{result.errorCount}</span></p>
+                  <p>• Đã cập nhật/thêm mới: <span style={{ color: '#059669', fontWeight: 700 }}>{result.insertedCount}</span></p>
+                  <p>• Số dòng lỗi: <span style={{ color: '#e11d48', fontWeight: 700 }}>{result.errorCount}</span></p>
                   {result.errors && result.errors.length > 0 && (
-                    <div style={{ marginTop: 8, color: 'var(--accent-rose)', fontSize: 11, fontStyle: 'italic' }}>
+                    <div style={{ marginTop: 8, color: '#e11d48', fontSize: 11, fontStyle: 'italic' }}>
                       Chi tiết lỗi (10 dòng đầu): {result.errors.join(', ')}
                     </div>
                   )}
                 </div>
               ) : (
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{result.message}</p>
+                <p style={{ fontSize: 13, color: '#475569' }}>{result.message}</p>
               )}
             </div>
           )}
@@ -167,7 +167,7 @@ export default function ImportPage() {
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
             <button
               onClick={handleSync}
-              className={`btn ${file ? 'btn-primary' : 'btn-ghost'}`}
+              className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${file ? 'btn-primary' : 'btn-ghost'}`}
               disabled={!file || loading}
               style={(!file || loading) ? { opacity: 0.5 } : {}}
             >
@@ -178,40 +178,40 @@ export default function ImportPage() {
         </div>
 
         {/* Templates Sidebar */}
-        <div className="glass-card" style={{ padding: 'var(--spacing-lg)' }}>
-          <h3 style={{ fontSize: 'var(--font-base)', fontWeight: 700, marginBottom: 'var(--spacing-md)' }}>Tải File Mẫu (Templates)</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1.125rem' }}>Tải File Mẫu (Templates)</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
 
-            <div className="kpi-card" style={{ padding: 'var(--spacing-md)' }}>
+            <div className="kpi-card" style={{ padding: '1.125rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, background: 'var(--bg-secondary)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Database size={16} /></div>
+                <div style={{ width: 36, height: 36, background: '#ffffff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Database size={16} /></div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 'var(--font-sm)' }}>Danh sách Sản phẩm</div>
-                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)' }}>san-pham-template.xlsx</div>
+                  <div style={{ fontWeight: 600, fontSize: '1rem' }}>Danh sách Sản phẩm</div>
+                  <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>san-pham-template.xlsx</div>
                 </div>
-                <button className="btn btn-ghost btn-sm" style={{ padding: '4px 8px' }}>Tải</button>
+                <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ padding: '4px 8px' }}>Tải</button>
               </div>
             </div>
 
-            <div className="kpi-card" style={{ padding: 'var(--spacing-md)' }}>
+            <div className="kpi-card" style={{ padding: '1.125rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, background: 'var(--bg-secondary)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Database size={16} /></div>
+                <div style={{ width: 36, height: 36, background: '#ffffff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Database size={16} /></div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 'var(--font-sm)' }}>Kho Vật Tư</div>
-                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)' }}>kho-template.xlsx</div>
+                  <div style={{ fontWeight: 600, fontSize: '1rem' }}>Kho Vật Tư</div>
+                  <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>kho-template.xlsx</div>
                 </div>
-                <button className="btn btn-ghost btn-sm" style={{ padding: '4px 8px' }}>Tải</button>
+                <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ padding: '4px 8px' }}>Tải</button>
               </div>
             </div>
 
-            <div className="kpi-card" style={{ padding: 'var(--spacing-md)' }}>
+            <div className="kpi-card" style={{ padding: '1.125rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, background: 'var(--bg-secondary)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Database size={16} /></div>
+                <div style={{ width: 36, height: 36, background: '#ffffff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Database size={16} /></div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 'var(--font-sm)' }}>Dữ liệu Đối tác B2B</div>
-                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)' }}>doitac-template.xlsx</div>
+                  <div style={{ fontWeight: 600, fontSize: '1rem' }}>Dữ liệu Đối tác B2B</div>
+                  <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>doitac-template.xlsx</div>
                 </div>
-                <button className="btn btn-ghost btn-sm" style={{ padding: '4px 8px' }}>Tải</button>
+                <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ padding: '4px 8px' }}>Tải</button>
               </div>
             </div>
           </div>

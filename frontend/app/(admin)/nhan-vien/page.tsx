@@ -236,15 +236,15 @@ export default function NhanVienPage() {
     <div style={{ position: 'relative' }}>
       <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <h1 style={{ fontSize: '3rem', fontWeight: 900, background: 'linear-gradient(to right, #fff, var(--accent-cyan))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '3rem', fontWeight: 900, background: 'linear-gradient(to right, #fff, #2563eb)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0, letterSpacing: '-0.02em' }}>
             Hệ Thống Nhân Sự
           </h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem', fontSize: '1.1rem' }}>Quản trị hiệu suất & thông tin nhân sự chiến lược</p>
+          <p style={{ color: '#475569', marginTop: '0.25rem', fontSize: '1.1rem' }}>Quản trị hiệu suất & thông tin nhân sự chiến lược</p>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><Users size={22} /></div>
           <div className="kpi-label">Tổng Nhân Sự Của Hệ Thống</div>
@@ -268,14 +268,14 @@ export default function NhanVienPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tìm mã NV, tên..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -292,7 +292,7 @@ export default function NhanVienPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`btn btn-sm ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -301,10 +301,10 @@ export default function NhanVienPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
-            <button onClick={exportToExcel} className="btn btn-ghost" style={{ border: '1px solid var(--border-color)', color: 'var(--accent-emerald)' }}>
+            <button onClick={exportToExcel} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ border: '1px solid #e2e8f0', color: '#059669' }}>
               <Download size={16} /> Xuất Excel
             </button>
-            <button className="btn btn-primary" onClick={() => openForm()}>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => openForm()}>
               <Plus size={16} /> Cấp mới Tài khoản
             </button>
           </div>
@@ -312,8 +312,8 @@ export default function NhanVienPage() {
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem', justifyContent: 'center', textAlign: 'center' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem', justifyContent: 'center', textAlign: 'center' }}>
+        <table className="w-full text-left text-sm">
           <thead style={{ justifyContent: 'justify-center' }}>
             <tr>
               <th style={{ width: '60px', textAlign: 'center' }}>Ảnh</th>
@@ -337,7 +337,7 @@ export default function NhanVienPage() {
             ) : filteredData.map(item => (
               <tr key={item._id}>
                 <td style={{ textAlign: 'center' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', backgroundColor: 'var(--bg-color)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', backgroundColor: 'var(--bg-color)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0' }}>
                     {item.Avatar ? (
                       <img
                         src={getAvatarUrl(item.Avatar)}
@@ -345,35 +345,35 @@ export default function NhanVienPage() {
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
-                          (e.target as HTMLImageElement).parentElement!.innerHTML = `<span style="color: var(--text-tertiary); font-weight: 700">${item.HoTen.charAt(0)}</span>`;
+                          (e.target as HTMLImageElement).parentElement!.innerHTML = `<span style="color: #94a3b8; font-weight: 700">${item.HoTen.charAt(0)}</span>`;
                         }}
                       />
                     ) : (
-                      <Users size={20} color="var(--text-secondary)" />
+                      <Users size={20} color="#475569" />
                     )}
                   </div>
                 </td>
-                <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{item.MaNV}</td>
+                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaNV}</td>
                 <td
-                  style={{ fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                  style={{ fontWeight: 600, color: '#0f172a', cursor: 'pointer', textDecoration: 'underline' }}
                   onClick={() => openView(item)}
                 >
                   {item.HoTen}
                 </td>
-                <td style={{ color: 'var(--text-secondary)' }}>{item.BoPhan}</td>
-                <td style={{ fontWeight: 600, color: 'var(--accent-purple)' }}>{item.ChucVu}</td>
+                <td style={{ color: '#475569' }}>{item.BoPhan}</td>
+                <td style={{ fontWeight: 600, color: '#7c3aed' }}>{item.ChucVu}</td>
                 <td>{item.Email}</td>
                 <td>{item.SDT}</td>
                 <td style={{ textAlign: 'right' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <div style={{ fontWeight: 800, color: 'var(--accent-cyan)', fontSize: '15px' }}>
+                    <div style={{ fontWeight: 800, color: '#2563eb', fontSize: '15px' }}>
                       {item.BoPhan === 'Kho / Logistics' && `${item.deliveries || 0} Chuyến`}
                       {item.BoPhan === 'R&D Kỹ Thuật Máy' && `${item.tests || 0} Lô hàng`}
                       {item.BoPhan === 'CSKH Bảo Hành' && `${item.customers || 0} Khách hàng`}
                       {(item.BoPhan === 'Sale / MKT' || item.BoPhan === 'Kinh doanh' || !['Kho / Logistics', 'R&D Kỹ Thuật Máy', 'CSKH Bảo Hành'].includes(item.BoPhan)) && (
                         <>
                           <span style={{ display: 'block' }}>{item.orders || 0} Đơn hàng</span>
-                          <span style={{ fontSize: '12px', color: 'var(--accent-emerald)', marginTop: '2px' }}>
+                          <span style={{ fontSize: '12px', color: '#059669', marginTop: '2px' }}>
                             {item.revenue ? item.revenue.toLocaleString() : 0} ₫
                           </span>
                         </>
@@ -387,8 +387,8 @@ export default function NhanVienPage() {
                   </span>
                 </td>
                 <td style={{ textAlign: 'right' }}>
-                  <button onClick={() => openForm(item)} className="btn btn-ghost btn-sm"><Edit size={16} /></button>
-                  <button onClick={() => handleDelete(item._id!)} className="btn btn-ghost btn-sm"><Trash2 size={16} color="var(--accent-rose)" /></button>
+                  <button onClick={() => openForm(item)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Edit size={16} /></button>
+                  <button onClick={() => handleDelete(item._id!)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Trash2 size={16} color="#e11d48" /></button>
                 </td>
               </tr>
             ))}
@@ -399,47 +399,47 @@ export default function NhanVienPage() {
       {/* Modal - Xem Chi Tiết Thông Tin Nhân Viên */}
       {isViewModalOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', padding: 20 }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: 'var(--spacing-xl)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-            <div style={{ textAlign: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: 20, marginBottom: 24 }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 800, background: 'linear-gradient(to right, #fff, var(--accent-cyan))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>HỒ SƠ NHÂN SỰ</h2>
-              <p style={{ margin: '8px 0 0 0', color: 'var(--text-secondary)', fontWeight: 600 }}>Mã NV: {formData.MaNV}</p>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '100%', maxWidth: '500px', padding: '2.25rem', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+            <div style={{ textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: 20, marginBottom: 24 }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, background: 'linear-gradient(to right, #fff, #2563eb)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>HỒ SƠ NHÂN SỰ</h2>
+              <p style={{ margin: '8px 0 0 0', color: '#475569', fontWeight: 600 }}>Mã NV: {formData.MaNV}</p>
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px' }}>
               <tbody>
                 {formData.Avatar && (
                   <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-                    <img src={`http://localhost:5000${formData.Avatar}`} alt={formData.HoTen} style={{ width: '200px', height: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+                    <img src={`http://localhost:5000${formData.Avatar}`} alt={formData.HoTen} style={{ width: '200px', height: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
                   </div>
                 )}
 
                 <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', width: '40%', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-tertiary)' }}>Họ và tên:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-primary)' }}>{formData.HoTen}</td>
+                  <td style={{ padding: '12px 0', fontWeight: 'bold', width: '40%', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Họ và tên:</td>
+                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.HoTen}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-tertiary)' }}>Trạng thái làm việc:</td>
-                  <td style={{ fontWeight: 600, padding: '12px 0', borderBottom: '1px dotted var(--border-color)', color: formData.TrangThai === 'Đang nghỉ phép' ? 'var(--accent-amber)' : formData.TrangThai === 'Đã nghỉ việc' ? 'var(--accent-rose)' : 'var(--accent-emerald)' }}>{formData.TrangThai || 'Đang làm'}</td>
+                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Trạng thái làm việc:</td>
+                  <td style={{ fontWeight: 600, padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: formData.TrangThai === 'Đang nghỉ phép' ? '#d97706' : formData.TrangThai === 'Đã nghỉ việc' ? '#e11d48' : '#059669' }}>{formData.TrangThai || 'Đang làm'}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-tertiary)' }}>Ngày sinh:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-primary)' }}>{formData.NgaySinh || 'Chưa cập nhật'}</td>
+                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Ngày sinh:</td>
+                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.NgaySinh || 'Chưa cập nhật'}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-tertiary)' }}>Giới tính:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-primary)' }}>{formData.GioiTinh || 'Chưa cập nhật'}</td>
+                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Giới tính:</td>
+                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.GioiTinh || 'Chưa cập nhật'}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-tertiary)' }}>Số điện thoại:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-primary)' }}>{formData.SDT || 'Chưa cập nhật'}</td>
+                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Số điện thoại:</td>
+                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.SDT || 'Chưa cập nhật'}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-tertiary)' }}>Địa chỉ thường trú:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-primary)' }}>{formData.DiaChi || 'Chưa cập nhật'}</td>
+                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Địa chỉ thường trú:</td>
+                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.DiaChi || 'Chưa cập nhật'}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-tertiary)' }}>Email</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted var(--border-color)', color: 'var(--text-primary)' }}>{formData.Email || 'Chưa cập nhật'}</td>
+                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Email</td>
+                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.Email || 'Chưa cập nhật'}</td>
                 </tr>
                 <tr>
                   <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #ccc' }}>Phòng ban:</td>

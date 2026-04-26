@@ -46,7 +46,7 @@ export default function ThanhToanHopDongPage() {
   return (
     <div>
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card emerald">
           <div className="kpi-icon"><Landmark size={22} /></div>
           <div className="kpi-label">Tổng Dòng Tiền Đã Nhập Quỹ</div>
@@ -70,14 +70,14 @@ export default function ThanhToanHopDongPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Truy vấn số Hợp Đồng, Tên Đối Tác..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -92,7 +92,7 @@ export default function ThanhToanHopDongPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`btn btn-sm ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -100,15 +100,15 @@ export default function ThanhToanHopDongPage() {
               ))}
             </div>
           </div>
-          <button className="btn btn-primary">
+          <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
             <Plus size={16} /> Lập Phiếu Nhắc Nợ
           </button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>ID Giao Dịch</th>
@@ -125,20 +125,20 @@ export default function ThanhToanHopDongPage() {
           <tbody>
             {filteredData.map(item => (
               <tr key={item.id}>
-                <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{item.id}</td>
-                <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{item.hopDong}</td>
-                <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.doiTac}</td>
+                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.id}</td>
+                <td style={{ fontWeight: 600, color: '#475569' }}>{item.hopDong}</td>
+                <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.doiTac}</td>
                 <td>{item.dotThanhToan}</td>
-                <td style={{ fontWeight: 700, color: 'var(--accent-emerald)' }}>{item.soTien.toLocaleString()} ₫</td>
-                <td style={{ fontWeight: 600, color: 'var(--text-tertiary)' }}>{item.nhanVien}</td>
-                <td style={{ fontWeight: 600, color: item.trangThai === 'Quá Hạn' ? 'var(--accent-rose)' : 'inherit' }}>{item.hanChot}</td>
+                <td style={{ fontWeight: 700, color: '#059669' }}>{item.soTien.toLocaleString()} ₫</td>
+                <td style={{ fontWeight: 600, color: '#94a3b8' }}>{item.nhanVien}</td>
+                <td style={{ fontWeight: 600, color: item.trangThai === 'Quá Hạn' ? '#e11d48' : 'inherit' }}>{item.hanChot}</td>
                 <td>
                   <span className={`badge ${item.trangThai === 'Đã Nhận' ? 'approved' : item.trangThai === 'Quá Hạn' ? 'rejected' : 'pending'}`}>
                     {item.trangThai}
                   </span>
                 </td>
                 <td style={{ textAlign: 'right' }}>
-                  <button className="btn btn-ghost btn-sm"><Eye size={16} /></button>
+                  <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Eye size={16} /></button>
                 </td>
               </tr>
             ))}

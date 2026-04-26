@@ -92,11 +92,11 @@ export default function NewProductionOrder() {
     <div className="admin-container" style={{ maxWidth: 1000, margin: '0 auto' }}>
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
-          <Link href="/production" className="btn btn-ghost btn-circle">
+          <Link href="/production" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 p-2 rounded-full">
             <ArrowLeft size={20} />
           </Link>
           <div>
-            <h1 className="page-title">KHỞI TẠO LỆNH SẢN XUẤT MỚI</h1>
+            <h1 className="text-lg font-bold text-slate-800">KHỞI TẠO LỆNH SẢN XUẤT MỚI</h1>
             <p className="page-subtitle">Hệ thống hoạch định vật tư MRP & Phân công sản xuất</p>
           </div>
         </div>
@@ -108,8 +108,8 @@ export default function NewProductionOrder() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           
           {/* Step 1: Contract Selection */}
-          <div className="glass-card" style={{ padding: 25 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, color: 'var(--accent-cyan)' }}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 25 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, color: '#2563eb' }}>
               <FileText size={20} />
               <h3 style={{ fontSize: 16, fontWeight: 800 }}>THÔNG TIN ĐỐI CHIẾU HỢP ĐỒNG</h3>
             </div>
@@ -117,7 +117,7 @@ export default function NewProductionOrder() {
             <div className="form-group">
               <label className="form-label">Chọn Hợp đồng mẹ (Ref Contract)</label>
               <select 
-                className="form-input" 
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
                 required
                 value={formData.ContractID}
                 onChange={(e) => setFormData({...formData, ContractID: e.target.value})}
@@ -131,7 +131,7 @@ export default function NewProductionOrder() {
 
             {selectedContract && (
                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 15, padding: 15, background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
-                 <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-tertiary)' }}>DANH MỤC MÃ MÀU TRONG HỢP ĐỒNG:</div>
+                 <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8' }}>DANH MỤC MÃ MÀU TRONG HỢP ĐỒNG:</div>
                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                    {selectedContract.ChiTietHopDong.map((item: any, idx: number) => (
                      <div key={idx} className="badge info" style={{ fontSize: 11 }}>
@@ -144,8 +144,8 @@ export default function NewProductionOrder() {
           </div>
 
           {/* Step 2: Formula & Target */}
-          <div className="glass-card" style={{ padding: 25 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, color: 'var(--accent-amber)' }}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 25 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, color: '#d97706' }}>
               <Beaker size={20} />
               <h3 style={{ fontSize: 16, fontWeight: 800 }}>CÔNG THỨC & KHỐI LƯỢNG MỤC TIÊU</h3>
             </div>
@@ -154,7 +154,7 @@ export default function NewProductionOrder() {
               <div className="form-group">
                 <label className="form-label">Công thức / Mã màu (Color Model)</label>
                 <select 
-                  className="form-input" 
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
                   required
                   value={formData.CongThucID}
                   onChange={(e) => setFormData({...formData, CongThucID: e.target.value})}
@@ -170,27 +170,27 @@ export default function NewProductionOrder() {
                 <div style={{ position: 'relative' }}>
                   <input 
                     type="number" 
-                    className="form-input" 
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
                     required
                     style={{ paddingRight: 40 }}
                     value={formData.TargetWeight}
                     onChange={(e) => setFormData({...formData, TargetWeight: parseInt(e.target.value) || 0})}
                   />
-                  <span style={{ position: 'absolute', right: 15, top: '50%', transform: 'translateY(-50%)', fontWeight: 800, fontSize: 12, color: 'var(--text-tertiary)' }}>KG</span>
+                  <span style={{ position: 'absolute', right: 15, top: '50%', transform: 'translateY(-50%)', fontWeight: 800, fontSize: 12, color: '#94a3b8' }}>KG</span>
                 </div>
               </div>
             </div>
 
             {selectedFormula && (
               <div style={{ marginTop: 20 }}>
-                 <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-tertiary)', marginBottom: 15 }}>DỰ TOÁN VẬT TƯ (MRP CALCULATION):</div>
+                 <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', marginBottom: 15 }}>DỰ TOÁN VẬT TƯ (MRP CALCULATION):</div>
                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 15 }}>
                     {mrpPreview.map((item, idx) => (
                       <div key={idx} style={{ padding: 12, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                          <div style={{ fontSize: 13, fontWeight: 700 }}>{item.name}</div>
                          <div style={{ textAlign: 'right' }}>
-                           <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent-cyan)' }}>{item.weight.toLocaleString()} Kg</div>
-                           <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{item.ratio}% TỶ LỆ</div>
+                           <div style={{ fontSize: 14, fontWeight: 800, color: '#2563eb' }}>{item.weight.toLocaleString()} Kg</div>
+                           <div style={{ fontSize: 10, color: '#94a3b8' }}>{item.ratio}% TỶ LỆ</div>
                          </div>
                       </div>
                     ))}
@@ -202,8 +202,8 @@ export default function NewProductionOrder() {
 
         {/* Right: Assignment & Status */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-           <div className="glass-card" style={{ padding: 25 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, color: 'var(--accent-purple)' }}>
+           <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 25 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, color: '#7c3aed' }}>
                 <Users size={20} />
                 <h3 style={{ fontSize: 16, fontWeight: 800 }}>NGUỒN LỰC</h3>
               </div>
@@ -211,7 +211,7 @@ export default function NewProductionOrder() {
               <div className="form-group">
                 <label className="form-label">Phân công kỹ thuật viên</label>
                 <select 
-                  className="form-input" 
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
                   required
                   value={formData.Assignee}
                   onChange={(e) => setFormData({...formData, Assignee: e.target.value})}
@@ -226,7 +226,7 @@ export default function NewProductionOrder() {
               <div className="form-group">
                 <label className="form-label">Line sản xuất</label>
                 <select 
-                  className="form-input" 
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
                   value={formData.ProductionLine}
                   onChange={(e) => setFormData({...formData, ProductionLine: e.target.value})}
                 >
@@ -249,29 +249,29 @@ export default function NewProductionOrder() {
               </div>
 
               <div style={{ marginTop: 20 }}>
-                <button type="submit" className="btn btn-primary w-full" style={{ padding: '15px 0', fontSize: 15, fontWeight: 800 }}>
+                <button type="submit" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm w-full" style={{ padding: '15px 0', fontSize: 15, fontWeight: 800 }}>
                    XÁC NHẬN PHÁT LỆNH 🏭
                 </button>
-                <p style={{ fontSize: 11, textAlign: 'center', color: 'var(--text-tertiary)', marginTop: 12 }}>
+                <p style={{ fontSize: 11, textAlign: 'center', color: '#94a3b8', marginTop: 12 }}>
                   <AlertCircle size={10} style={{ display: 'inline', marginRight: 4 }} /> 
                   Xác nhận lệnh sẽ cấp quyền truy xuất kho tương ứng cho Line sản xuất.
                 </p>
               </div>
            </div>
 
-           <div className="glass-card" style={{ padding: 15, border: '1px dashed var(--accent-cyan)', background: 'rgba(0,212,255,0.02)' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent-cyan)', marginBottom: 10 }}>THẺ KIỂM SOÁT NHIỆT (DỰ KIẾN):</div>
+           <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 15, border: '1px dashed #2563eb', background: 'rgba(0,212,255,0.02)' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#2563eb', marginBottom: 10 }}>THẺ KIỂM SOÁT NHIỆT (DỰ KIẾN):</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                   <span style={{ color: 'var(--text-tertiary)' }}>Nhiệt độ sấy:</span>
+                   <span style={{ color: '#94a3b8' }}>Nhiệt độ sấy:</span>
                    <span style={{ fontWeight: 800 }}>195°C / 15m</span>
                  </div>
                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                   <span style={{ color: 'var(--text-tertiary)' }}>Độ dày màng:</span>
+                   <span style={{ color: '#94a3b8' }}>Độ dày màng:</span>
                    <span style={{ fontWeight: 800 }}>75-85 µm</span>
                  </div>
                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                   <span style={{ color: 'var(--text-tertiary)' }}>Áp suất đẩy:</span>
+                   <span style={{ color: '#94a3b8' }}>Áp suất đẩy:</span>
                    <span style={{ fontWeight: 800 }}>4.5 Bar</span>
                  </div>
               </div>

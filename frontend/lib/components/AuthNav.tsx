@@ -35,27 +35,13 @@ export default function AuthNav() {
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+    <div className="flex items-center gap-4">
       <Link
         href="/login"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          fontSize: "14px",
-          fontWeight: 600,
-          color: "#ffffff",
-          background: "#2563eb",
-          padding: "8px 18px",
-          borderRadius: "10px",
-          textDecoration: "none",
-          boxShadow: "0 2px 10px rgba(37,99,235,0.25)",
-          transition: "all 0.2s ease",
-          lineHeight: 1.4,
-        }}
+        className="flex items-center gap-2 text-sm font-semibold text-white bg-blue-600 px-4 py-2 rounded-xl no-underline shadow-md shadow-blue-600/25 hover:bg-blue-700 transition-all"
       >
-        <LogIn style={{ width: "16px", height: "16px", color: "#ffffff" }} />
-        <span style={{ color: "#ffffff" }}>Đăng nhập</span>
+        <LogIn className="w-4 h-4" />
+        <span>Đăng nhập</span>
       </Link>
     </div>
   );

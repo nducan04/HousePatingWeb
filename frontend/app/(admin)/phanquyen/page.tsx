@@ -26,10 +26,10 @@ const mockPermissions: Permission[] = [
 ];
 
 const ROLES = [
-  { id: 'Admin', name: 'Admin', color: 'var(--accent-purple)' },
-  { id: 'NhanVien', name: 'Nhân viên / Đại lý', color: 'var(--accent-cyan)' },
-  { id: 'KhachHangB2B', name: 'Khách B2B (Doanh nghiệp)', color: 'var(--accent-amber)' },
-  { id: 'KhachHangB2C', name: 'Khách B2C (Cá nhân)', color: 'var(--accent-emerald)' },
+  { id: 'Admin', name: 'Admin', color: '#7c3aed' },
+  { id: 'NhanVien', name: 'Nhân viên / Đại lý', color: '#2563eb' },
+  { id: 'KhachHangB2B', name: 'Khách B2B (Doanh nghiệp)', color: '#d97706' },
+  { id: 'KhachHangB2C', name: 'Khách B2C (Cá nhân)', color: '#059669' },
 ];
 
 export default function PhanQuyenPage() {
@@ -62,15 +62,15 @@ export default function PhanQuyenPage() {
   return (
     <div>
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <h1 style={{ margin: 0, fontSize: 'var(--font-xl)', color: 'var(--text-primary)', fontWeight: 700 }}>Phân quyền tài khoản</h1>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <h1 style={{ margin: 0, fontSize: '1.625rem', color: '#0f172a', fontWeight: 700 }}>Phân quyền tài khoản</h1>
           </div>
           <button
             onClick={handleSave}
             disabled={!hasChanges}
-            className={`btn ${hasChanges ? 'btn-primary' : 'btn-ghost'}`}
+            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${hasChanges ? 'btn-primary' : 'btn-ghost'}`}
             style={!hasChanges ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
             <Save size={16} /> Lưu cập nhật
@@ -79,8 +79,8 @@ export default function PhanQuyenPage() {
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th style={{ width: '30%' }}>Module Hệ thống</th>
@@ -95,8 +95,8 @@ export default function PhanQuyenPage() {
             {permissions.map((perm) => (
               <tr key={perm.id}>
                 <td>
-                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 'var(--font-base)' }}>{perm.module}</div>
-                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)', display: 'flex', gap: 6, marginTop: 4 }}>
+                  <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '1.125rem' }}>{perm.module}</div>
+                  <div style={{ fontSize: '0.875rem', color: '#475569', display: 'flex', gap: 6, marginTop: 4 }}>
                     <Info size={14} style={{ marginTop: 2, flexShrink: 0 }} />
                     <span style={{ lineHeight: 1.4 }}>{perm.description}</span>
                   </div>
@@ -108,12 +108,12 @@ export default function PhanQuyenPage() {
                     <td key={role.id} style={{ textAlign: 'center' }}>
                       <button
                         onClick={() => togglePermission(perm.id, role.id as keyof Permission['roles'])}
-                        className="btn btn-ghost"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                         style={{
                           padding: 8,
                           cursor: isAdmin ? 'not-allowed' : 'pointer',
                           opacity: isAdmin ? 0.5 : 1,
-                          color: isGranted ? role.color : 'var(--text-tertiary)'
+                          color: isGranted ? role.color : '#94a3b8'
                         }}
                         title={isAdmin ? 'Quyền Admin là bắt buộc' : 'Thay đổi quyền truy cập'}
                       >

@@ -24,7 +24,7 @@ function KPICard({ data, color, icon: Icon }: {
       <div className="kpi-label">{data.label}</div>
       <div className="kpi-value">
         {data.value.toLocaleString('vi-VN')}
-        <span style={{ fontSize: 'var(--font-sm)', fontWeight: 500, color: 'var(--text-tertiary)', marginLeft: 6 }}>
+        <span style={{ fontSize: '1rem', fontWeight: 500, color: '#94a3b8', marginLeft: 6 }}>
           {data.unit}
         </span>
       </div>
@@ -40,18 +40,18 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload) return null;
   return (
     <div style={{
-      background: 'var(--bg-card)',
-      border: '1px solid var(--border-color)',
-      borderRadius: 'var(--radius-md)',
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '10px',
       padding: '12px 16px',
-      boxShadow: 'var(--shadow-lg)',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
     }}>
-      <div style={{ fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>{label}</div>
+      <div style={{ fontWeight: 700, marginBottom: 8, color: '#0f172a' }}>{label}</div>
       {payload.map((item: any, i: number) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: item.color }} />
-          <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>{item.name}:</span>
-          <span style={{ fontSize: 'var(--font-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
+          <span style={{ fontSize: '0.875rem', color: '#475569' }}>{item.name}:</span>
+          <span style={{ fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>
             {item.value?.toLocaleString('vi-VN')}
           </span>
         </div>
@@ -83,8 +83,8 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16 }}>
-        <Loader2 className="animate-spin text-[var(--accent-cyan)]" size={40} />
-        <p style={{ color: 'var(--text-secondary)' }}>Đang tổng hợp dữ liệu thời gian thực...</p>
+        <Loader2 className="animate-spin text-[#2563eb]" size={40} />
+        <p style={{ color: '#475569' }}>Đang tổng hợp dữ liệu thời gian thực...</p>
       </div>
     );
   }
@@ -94,7 +94,7 @@ export default function DashboardPage() {
   return (
     <div>
       {/* KPI Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <KPICard data={stats.kpi.totalRevenue} color="cyan" icon={Activity} />
         <KPICard data={stats.kpi.totalProduction} color="purple" icon={Package} />
         <KPICard data={stats.kpi.customerCount} color="emerald" icon={Users} />
@@ -102,13 +102,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid-2" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginBottom: '2.25rem' }}>
         {/* Revenue Chart */}
-        <div className="glass-card" style={{ padding: 'var(--spacing-lg)' }}>
-          <div className="section-header">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="section-title">Doanh thu Thực tế vs Kế hoạch</h3>
-              <p className="section-subtitle">Đơn vị: Triệu VNĐ — Dữ liệu thời gian thực</p>
+              <h3 className="text-lg font-bold text-slate-800">Doanh thu Thực tế vs Kế hoạch</h3>
+              <p className="text-sm text-slate-400 mt-1">Đơn vị: Triệu VNĐ — Dữ liệu thời gian thực</p>
             </div>
           </div>
           <div style={{ width: '100%', height: 320 }}>
@@ -125,8 +125,8 @@ export default function DashboardPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
-                <XAxis dataKey="month" stroke="var(--text-secondary)" fontSize={12} tickLine={false} />
-                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis dataKey="month" stroke="#475569" fontSize={12} tickLine={false} />
+                <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
                 <Area type="monotone" dataKey="revenuePlan" name="Kế hoạch" stroke="#6366f1" fill="url(#gradPlan)" strokeWidth={2} dot={false} />
@@ -137,19 +137,19 @@ export default function DashboardPage() {
         </div>
 
         {/* Production Chart */}
-        <div className="glass-card" style={{ padding: 'var(--spacing-lg)' }}>
-          <div className="section-header">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="section-title">Sản lượng Thực tế vs Kế hoạch</h3>
-              <p className="section-subtitle">Đơn vị: kg — Dữ liệu thời gian thực</p>
+              <h3 className="text-lg font-bold text-slate-800">Sản lượng Thực tế vs Kế hoạch</h3>
+              <p className="text-sm text-slate-400 mt-1">Đơn vị: kg — Dữ liệu thời gian thực</p>
             </div>
           </div>
           <div style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
               <ComposedChart data={stats.monthlyTrends}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
-                <XAxis dataKey="month" stroke="var(--text-secondary)" fontSize={12} tickLine={false} />
-                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis dataKey="month" stroke="#475569" fontSize={12} tickLine={false} />
+                <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
                 <Bar dataKey="prodActual" name="Thực tế" fill="#2563eb" radius={[4, 4, 0, 0]} opacity={0.9} />
@@ -161,26 +161,26 @@ export default function DashboardPage() {
       </div>
 
       {/* Top Customers Table */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)' }}>
-        <div className="section-header">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="section-title">Top Khách hàng theo Sản lượng thực</h3>
-            <p className="section-subtitle">Dựa trên đơn hàng & hợp đồng đã ký kết</p>
+            <h3 className="text-lg font-bold text-slate-800">Top Khách hàng theo Sản lượng thực</h3>
+            <p className="text-sm text-slate-400 mt-1">Dựa trên đơn hàng & hợp đồng đã ký kết</p>
           </div>
 
           <div className="flex gap-2 w-full md:w-auto">
-            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }}>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs" style={{ flex: 1 }}>
               <Calendar size={14} /> Tuần này
             </button>
-            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }}>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs" style={{ flex: 1 }}>
               <Filter size={14} /> Bộ lọc
             </button>
             <a
               href="http://localhost:5000/api/export/targets/excel"
-              className="btn btn-sm"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs"
               style={{
                 flex: 1,
-                background: 'var(--accent-emerald)',
+                background: '#059669',
                 color: 'white',
                 border: 'none',
                 marginLeft: '8px'
@@ -190,7 +190,7 @@ export default function DashboardPage() {
             </a>
           </div>
         </div>
-        <table className="data-table">
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>#</th>
@@ -207,22 +207,22 @@ export default function DashboardPage() {
               const pct = Math.round((c.volume / (c.target || 2500)) * 100);
               return (
                 <tr key={c.name}>
-                  <td style={{ fontWeight: 700, color: 'var(--text-tertiary)' }}>{i + 1}</td>
-                  <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</td>
+                  <td style={{ fontWeight: 700, color: '#94a3b8' }}>{i + 1}</td>
+                  <td style={{ fontWeight: 600, color: '#0f172a' }}>{c.name}</td>
                   <td>{c.segment}</td>
                   <td style={{ fontWeight: 600 }}>{c.volume.toLocaleString('vi-VN')}</td>
                   <td style={{ fontWeight: 500 }}>{c.revenue.toLocaleString('vi-VN')}</td>
                   <td style={{ minWidth: 160 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div className="progress-bar" style={{ flex: 1 }}>
-                        <div className="progress-fill" style={{
+                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden" style={{ flex: 1 }}>
+                        <div className="h-full bg-blue-500 rounded-full transition-all" style={{
                           width: `${Math.min(pct, 100)}%`,
-                          background: pct >= 90 ? 'linear-gradient(90deg, var(--accent-emerald), #34d399)' :
-                            pct >= 70 ? 'linear-gradient(90deg, var(--accent-amber), #fbbf24)' :
-                              'linear-gradient(90deg, var(--accent-rose), #fb7185)'
+                          background: pct >= 90 ? 'linear-gradient(90deg, #059669, #34d399)' :
+                            pct >= 70 ? 'linear-gradient(90deg, #d97706, #fbbf24)' :
+                              'linear-gradient(90deg, #e11d48, #fb7185)'
                         }} />
                       </div>
-                      <span style={{ fontSize: 'var(--font-xs)', fontWeight: 700, minWidth: 38 }}>{pct}%</span>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 700, minWidth: 38 }}>{pct}%</span>
                     </div>
                   </td>
                   <td>

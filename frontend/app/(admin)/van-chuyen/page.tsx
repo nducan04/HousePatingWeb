@@ -201,7 +201,7 @@ export default function VanChuyenPage() {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: 20 }}>
         <div className="spinner"></div>
-        <div style={{ color: 'var(--accent-cyan)', fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700 }}>Đang tải dữ liệu vận chuyển...</div>
+        <div style={{ color: '#2563eb', fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700 }}>Đang tải dữ liệu vận chuyển...</div>
       </div>
     );
   }
@@ -213,7 +213,7 @@ export default function VanChuyenPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
           <button
             onClick={() => setViewMode('LIST')}
-            className="btn btn-ghost"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
             style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', padding: '10px 18px', borderRadius: 8 }}
           >
             <ArrowLeft size={20} /> Quay lại
@@ -229,15 +229,15 @@ export default function VanChuyenPage() {
           return (
             <>
               {/* TRẠNG THÁI TỔNG QUÁT */}
-              <div className="glass-card" style={{ padding: 24, marginBottom: 24, borderLeft: `4px solid ${isDelivered ? 'var(--accent-emerald)' : 'var(--accent-cyan)'}` }}>
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, marginBottom: 24, borderLeft: `4px solid ${isDelivered ? '#059669' : '#2563eb'}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>Trạng thái tổng quát:</div>
+                    <div style={{ fontSize: 13, color: '#475569', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>Trạng thái tổng quát:</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span className={`badge ${isDelivered ? 'approved' : 'testing'}`} style={{ fontSize: 16, padding: '6px 16px' }}>
                         {isDelivered ? '✅' : '🚚'} {selectedTracking.TrangThaiTongQuat}
                       </span>
-                      <span style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>
+                      <span style={{ color: '#94a3b8', fontSize: 14 }}>
                         {isDelivered ? `Hoàn tất lúc: ${new Date().toLocaleTimeString()} - ${new Date().toLocaleDateString()}` : `Dự kiến bàn giao: ${selectedTracking.DuKienBanGiao ? new Date(selectedTracking.DuKienBanGiao).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' - ' + new Date(selectedTracking.DuKienBanGiao).toLocaleDateString() : 'N/A'}`}
                       </span>
                     </div>
@@ -246,14 +246,14 @@ export default function VanChuyenPage() {
               </div>
 
               {/* BẢN ĐỒ LỘ TRÌNH (Visual Dynamic) */}
-              <div className="glass-card" style={{ padding: 32, marginBottom: 24 }}>
-                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
-                  <MapPin size={18} color="var(--accent-rose)" /> BẢN ĐỒ LỘ TRÌNH
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 32, marginBottom: 24 }}>
+                <div style={{ fontSize: 13, color: '#475569', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
+                  <MapPin size={18} color="#e11d48" /> BẢN ĐỒ LỘ TRÌNH
                 </div>
 
                 <div style={{ position: 'relative', padding: '40px 0' }}>
                   {/* Linear Track Line */}
-                  <div style={{ position: 'absolute', top: '50%', left: '10%', right: '10%', height: 2, background: 'var(--border-color)', transform: 'translateY(-50%)' }}></div>
+                  <div style={{ position: 'absolute', top: '50%', left: '10%', right: '10%', height: 2, background: '#e2e8f0', transform: 'translateY(-50%)' }}></div>
 
                   {/* Active Track Line */}
                   <div style={{
@@ -262,23 +262,23 @@ export default function VanChuyenPage() {
                     left: '10%',
                     width: isDelivered ? '80%' : '50%',
                     height: 2,
-                    background: isDelivered ? 'var(--accent-emerald)' : 'var(--accent-cyan)',
+                    background: isDelivered ? '#059669' : '#2563eb',
                     transform: 'translateY(-50%)',
-                    boxShadow: `0 0 10px ${isDelivered ? 'var(--accent-emerald)' : 'var(--accent-cyan)'}`,
+                    boxShadow: `0 0 10px ${isDelivered ? '#059669' : '#2563eb'}`,
                     transition: 'all 1s ease-in-out'
                   }}></div>
 
                   {/* Waypoints */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 1, padding: '0 10%' }}>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-secondary)', border: '2px solid var(--accent-cyan)', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Building size={20} color="var(--accent-cyan)" />
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#ffffff', border: '2px solid #2563eb', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Building size={20} color="#2563eb" />
                       </div>
                       <div style={{ fontSize: 12, fontWeight: 700 }}>Xưởng Sơn</div>
                     </div>
 
                     <div style={{ textAlign: 'center', visibility: isDelivered ? 'hidden' : 'visible' }}>
-                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--accent-cyan)', border: '4px solid rgba(0,212,255,0.2)', margin: '12px auto 26px' }}></div>
+                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#2563eb', border: '4px solid rgba(0,212,255,0.2)', margin: '12px auto 26px' }}></div>
                     </div>
 
                     <div style={{ textAlign: 'center' }}>
@@ -292,34 +292,34 @@ export default function VanChuyenPage() {
                         transition: 'all 1s ease-in-out'
                       }}>
                         <div style={{
-                          background: isDelivered ? 'var(--accent-emerald)' : 'var(--accent-cyan)',
+                          background: isDelivered ? '#059669' : '#2563eb',
                           color: 'black', padding: '4px 12px', borderRadius: 4, fontSize: 11, fontWeight: 700, marginBottom: 8, whiteSpace: 'nowrap'
                         }}>
                           {isDelivered ? 'Đã bàn giao' : 'Đang di chuyển'}
                         </div>
-                        <Truck size={32} color={isDelivered ? 'var(--accent-emerald)' : 'var(--accent-cyan)'} style={{ filter: `drop-shadow(0 0 12px ${isDelivered ? 'var(--accent-emerald)' : 'var(--accent-cyan)'})` }} />
+                        <Truck size={32} color={isDelivered ? '#059669' : '#2563eb'} style={{ filter: `drop-shadow(0 0 12px ${isDelivered ? '#059669' : '#2563eb'})` }} />
                       </div>
                     </div>
 
                     <div style={{ textAlign: 'center', visibility: isDelivered ? 'hidden' : 'visible' }}>
-                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--bg-secondary)', border: '2px solid var(--border-color)', margin: '12px auto 26px' }}></div>
+                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#ffffff', border: '2px solid #e2e8f0', margin: '12px auto 26px' }}></div>
                     </div>
 
                     <div style={{ textAlign: 'center' }}>
                       <div style={{
                         width: 40, height: 40, borderRadius: '50%',
-                        background: isDelivered ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-secondary)',
-                        border: `2px solid ${isDelivered ? 'var(--accent-emerald)' : 'var(--border-color)'}`,
+                        background: isDelivered ? 'rgba(16, 185, 129, 0.1)' : '#ffffff',
+                        border: `2px solid ${isDelivered ? '#059669' : '#e2e8f0'}`,
                         margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'all 0.5s ease'
                       }}>
-                        {isDelivered ? <CheckCircle2 size={24} color="var(--accent-emerald)" /> : <User size={20} color="var(--text-tertiary)" />}
+                        {isDelivered ? <CheckCircle2 size={24} color="#059669" /> : <User size={20} color="#94a3b8" />}
                       </div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: isDelivered ? 'var(--accent-emerald)' : 'var(--text-tertiary)' }}>{selectedTracking.DonHang.KhachHang.TenKhachHang}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: isDelivered ? '#059669' : '#94a3b8' }}>{selectedTracking.DonHang.KhachHang.TenKhachHang}</div>
                     </div>
                   </div>
 
-                  <div style={{ textAlign: 'center', marginTop: 40, color: 'var(--text-tertiary)', fontSize: 13, fontStyle: 'italic' }}>
+                  <div style={{ textAlign: 'center', marginTop: 40, color: '#94a3b8', fontSize: 13, fontStyle: 'italic' }}>
                     {isDelivered ? 'Đơn hàng đã được giao nhận thành công. Cảm ơn quý khách!' : '(Giao diện bản đồ tích hợp Google Maps API hiển thị vị trí xe tải thực tế)'}
                   </div>
                 </div>
@@ -331,41 +331,41 @@ export default function VanChuyenPage() {
         {/* INFO GRIDS: Section III & IV */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
           {/* III. CHI TIẾT LÔ HÀNG */}
-          <div className="glass-card" style={{ padding: 24 }}>
-            <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border-color)', paddingBottom: 12 }}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24 }}>
+            <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
               III. CHI TIẾT LÔ HÀNG
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 14 }}>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: 'var(--text-tertiary)' }}>* Số kiện:</span>
+                <span style={{ color: '#94a3b8' }}>* Số kiện:</span>
                 <span style={{ fontWeight: 600 }}>{selectedTracking.LoHang.SoKien} kiện (Đã đóng gói)</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: 'var(--text-tertiary)' }}>* Khối lượng:</span>
+                <span style={{ color: '#94a3b8' }}>* Khối lượng:</span>
                 <span style={{ fontWeight: 600 }}>{selectedTracking.LoHang.KhoiLuong} kg</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: 'var(--text-tertiary)' }}>* Màu sơn:</span>
-                <span style={{ fontWeight: 600, color: 'var(--accent-cyan)' }}>{selectedTracking.LoHang.MauSon} (Kiểm tra OK)</span>
+                <span style={{ color: '#94a3b8' }}>* Màu sơn:</span>
+                <span style={{ fontWeight: 600, color: '#2563eb' }}>{selectedTracking.LoHang.MauSon} (Kiểm tra OK)</span>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-tertiary)' }}>* Biên bản bàn giao:</span>
+                <span style={{ color: '#94a3b8' }}>* Biên bản bàn giao:</span>
                 {selectedTracking.LoHang.BienBanFile ? (
                   <a
                     href={selectedTracking.LoHang.BienBanFile}
                     target="_blank"
                     rel="noreferrer"
-                    className="btn btn-ghost btn-sm"
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--accent-emerald)' }}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#059669' }}
                   >
                     <FileText size={16} /> Xem File
                   </a>
                 ) : (
-                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Chưa cập nhật</span>
+                  <span style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>Chưa cập nhật</span>
                 )}
                 <button
                   onClick={() => receiptInputRef.current?.click()}
-                  className="btn btn-ghost btn-sm"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                   style={{ fontSize: 11, padding: '4px 8px', marginLeft: 8 }}
                 >
                   <Upload size={12} /> Tải lên
@@ -375,61 +375,61 @@ export default function VanChuyenPage() {
           </div>
 
           {/* IV. THÔNG TIN VẬN CHUYỂN */}
-          <div className="glass-card" style={{ padding: 24 }}>
-            <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border-color)', paddingBottom: 12 }}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24 }}>
+            <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
               IV. THÔNG TIN VẬN CHUYỂN
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 14 }}>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: 'var(--text-tertiary)' }}>* Đơn vị:</span>
+                <span style={{ color: '#94a3b8' }}>* Đơn vị:</span>
                 <span style={{ fontWeight: 600 }}>{selectedTracking.VanChuyenInfo.DonVi}</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: 'var(--text-secondary)' }}>* Tài xế:</span>
+                <span style={{ color: '#475569' }}>* Tài xế:</span>
                 <span style={{ fontWeight: 600 }}>{selectedTracking.VanChuyenInfo.NhanVien?.HoTen || 'Chưa phân công'}</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: 'var(--text-secondary)' }}>* SĐT:</span>
-                <span style={{ fontWeight: 600, color: 'var(--accent-amber)' }}>{selectedTracking.VanChuyenInfo.NhanVien?.SDT || selectedTracking.VanChuyenInfo.SDT || 'N/A'}</span>
+                <span style={{ color: '#475569' }}>* SĐT:</span>
+                <span style={{ fontWeight: 600, color: '#d97706' }}>{selectedTracking.VanChuyenInfo.NhanVien?.SDT || selectedTracking.VanChuyenInfo.SDT || 'N/A'}</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: 'var(--text-tertiary)' }}>* Phí VC:</span>
-                <span style={{ fontWeight: 700, color: 'var(--accent-emerald)' }}>{selectedTracking.VanChuyenInfo.PhiVC.toLocaleString()}đ (Đã bao gồm)</span>
+                <span style={{ color: '#94a3b8' }}>* Phí VC:</span>
+                <span style={{ fontWeight: 700, color: '#059669' }}>{selectedTracking.VanChuyenInfo.PhiVC.toLocaleString()}đ (Đã bao gồm)</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* VI. THÔNG TIN NGƯỜI NHẬN (NEW) */}
-        <div className="glass-card" style={{ padding: 24, marginBottom: 24, background: 'linear-gradient(to right, rgba(20, 25, 35, 0.8), rgba(30, 40, 55, 0.5))' }}>
-          <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border-color)', paddingBottom: 12 }}>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, marginBottom: 24, background: 'linear-gradient(to right, rgba(20, 25, 35, 0.8), rgba(30, 40, 55, 0.5))' }}>
+          <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
             VI. CHI TIẾT PHIẾU GIAO (THÔNG TIN NGƯỜI NHẬN)
           </h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             <div>
-              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase' }}>Người nhận hàng:</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase' }}>Người nhận hàng:</div>
               <div style={{ fontSize: 15, fontWeight: 700 }}>{selectedTracking.DonHang.KhachHang?.TenKhachHang || 'N/A'}</div>
             </div>
             <div>
-              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase' }}>Số điện thoại:</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent-amber)' }}>{getReceiverPhone(selectedTracking.DonHang.GhiChu || '')}</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase' }}>Số điện thoại:</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#d97706' }}>{getReceiverPhone(selectedTracking.DonHang.GhiChu || '')}</div>
             </div>
             <div>
-              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase' }}>Địa chỉ bàn giao:</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>{selectedTracking.DonHang.DiaChiGiaoHang}</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase' }}>Địa chỉ bàn giao:</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#475569' }}>{selectedTracking.DonHang.DiaChiGiaoHang}</div>
             </div>
           </div>
         </div>
 
         {/* V. LỊCH SỬ LỘ TRÌNH (TIMELINE) */}
-        <div className="glass-card" style={{ padding: 32, marginBottom: 32 }}>
-          <h4 style={{ margin: '0 0 24px 0', fontSize: 15, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: 1 }}>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 32, marginBottom: 32 }}>
+          <h4 style={{ margin: '0 0 24px 0', fontSize: 15, color: '#0f172a', textTransform: 'uppercase', letterSpacing: 1 }}>
             V. LỊCH SỬ LỘ TRÌNH (TIMELINE)
           </h4>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0, position: 'relative' }}>
             {/* Timeline Vertical Line */}
-            <div style={{ position: 'absolute', left: 88, top: 12, bottom: 12, width: 2, background: 'var(--border-color)' }}></div>
+            <div style={{ position: 'absolute', left: 88, top: 12, bottom: 12, width: 2, background: '#e2e8f0' }}></div>
 
             {selectedTracking.LoTrinh.map((log, idx) => {
               const isComplete = log.Status === 'COMPLETE';
@@ -437,24 +437,24 @@ export default function VanChuyenPage() {
               return (
                 <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 32, marginBottom: 32, position: 'relative' }}>
                   {/* Time */}
-                  <div style={{ width: 70, textAlign: 'right', fontSize: 14, fontWeight: 700, color: isComplete ? 'var(--text-primary)' : 'var(--text-tertiary)', paddingTop: 2 }}>
+                  <div style={{ width: 70, textAlign: 'right', fontSize: 14, fontWeight: 700, color: isComplete ? '#0f172a' : '#94a3b8', paddingTop: 2 }}>
                     {log.ThoiGian ? new Date(log.ThoiGian).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                   </div>
 
                   {/* Dot Icon */}
-                  <div style={{ zIndex: 2, background: 'var(--bg-card)', padding: '2px 0' }}>
+                  <div style={{ zIndex: 2, background: '#ffffff', padding: '2px 0' }}>
                     {isComplete ? (
-                      <CheckCircle2 size={18} color="var(--accent-emerald)" />
+                      <CheckCircle2 size={18} color="#059669" />
                     ) : isProcessing ? (
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--accent-cyan)', border: '4px solid rgba(0,212,255,0.2)' }}></div>
+                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#2563eb', border: '4px solid rgba(0,212,255,0.2)' }}></div>
                     ) : (
-                      <Circle size={18} color="var(--text-tertiary)" />
+                      <Circle size={18} color="#94a3b8" />
                     )}
                   </div>
 
                   {/* Content */}
                   <div style={{ flex: 1, paddingTop: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: (isComplete || isProcessing) ? 600 : 400, color: (isComplete || isProcessing) ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                    <div style={{ fontSize: 15, fontWeight: (isComplete || isProcessing) ? 600 : 400, color: (isComplete || isProcessing) ? '#0f172a' : '#94a3b8' }}>
                       {log.NoiDung}
                     </div>
                   </div>
@@ -466,12 +466,12 @@ export default function VanChuyenPage() {
           {/* HÌNH ẢNH GIAO HÀNG (GALLERY) */}
           {selectedTracking.HinhAnhGiaoHang && selectedTracking.HinhAnhGiaoHang.length > 0 && (
             <div style={{ marginTop: 32 }}>
-              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, fontWeight: 700, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 13, color: '#475569', marginBottom: 16, fontWeight: 700, textTransform: 'uppercase' }}>
                 📸 HÌNH ẢNH MINH CHỨNG GIAO HÀNG
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 16 }}>
                 {selectedTracking.HinhAnhGiaoHang.map((url, i) => (
-                  <div key={i} className="glass-card" style={{ padding: 4, borderRadius: 8, overflow: 'hidden', height: 150 }}>
+                  <div key={i} className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 4, borderRadius: 8, overflow: 'hidden', height: 150 }}>
                     <img src={url} alt={`Evidence ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} />
                   </div>
                 ))}
@@ -481,24 +481,24 @@ export default function VanChuyenPage() {
         </div>
 
         {/* FOOTER ACTIONS */}
-        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', borderTop: '1px solid var(--border-color)', paddingTop: 32 }}>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', borderTop: '1px solid #e2e8f0', paddingTop: 32 }}>
           <button
             onClick={handleCallDriver}
-            className="btn btn-ghost"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--accent-rose)', border: '1px solid var(--accent-rose)', padding: '12px 24px' }}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#e11d48', border: '1px solid #e11d48', padding: '12px 24px' }}
           >
             <PhoneCall size={20} /> Gọi Tài Xế
           </button>
           <button
             onClick={handleShareLocation}
-            className="btn btn-ghost"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--accent-cyan)', border: '1px solid var(--accent-cyan)', padding: '12px 24px' }}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#2563eb', border: '1px solid #2563eb', padding: '12px 24px' }}
           >
             <Share2 size={20} /> Chia Sẻ Vị Trí
           </button>
           <button
             onClick={() => photoInputRef.current?.click()}
-            className="btn btn-primary"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
             style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 32px' }}
           >
             <Upload size={20} /> Cập Nhật Ảnh Giao Hàng
@@ -506,8 +506,8 @@ export default function VanChuyenPage() {
           {selectedTracking.TrangThaiTongQuat !== 'Giao hàng thành công' && (
             <button
               onClick={handleConfirmSuccess}
-              className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 32px', background: 'var(--accent-emerald)', border: 'none' }}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 32px', background: '#059669', border: 'none' }}
             >
               <CheckCircle2 size={20} /> Xác nhận giao hàng thành công
             </button>
@@ -535,7 +535,7 @@ export default function VanChuyenPage() {
   return (
     <div className="fade-in">
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><Map size={22} /></div>
           <div className="kpi-label">Tổng Chuyến Hàng</div>
@@ -559,14 +559,14 @@ export default function VanChuyenPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tra cứu MVĐ, Đơn hàng, Tên khách..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -577,8 +577,8 @@ export default function VanChuyenPage() {
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>Mã Vận Chuyển</th>
@@ -594,17 +594,17 @@ export default function VanChuyenPage() {
           <tbody>
             {filteredData.map(item => (
               <tr key={item._id}>
-                <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{item.MaVanChuyen}</td>
+                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaVanChuyen}</td>
                 <td style={{ fontWeight: 600 }}>{item.DonHang.MaDonHang}</td>
                 <td>{item.DonHang.KhachHang.TenKhachHang}</td>
                 <td>{item.LoHang.SoKien} kiện - {item.LoHang.KhoiLuong}kg</td>
-                <td style={{ fontWeight: 600, color: 'var(--accent-amber)' }}>{item.VanChuyenInfo.NhanVien?.HoTen || 'Chưa phân công'}</td>
+                <td style={{ fontWeight: 600, color: '#d97706' }}>{item.VanChuyenInfo.NhanVien?.HoTen || 'Chưa phân công'}</td>
                 <td>
-                  <span className="badge testing">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700">
                     {item.TrangThaiTongQuat}
                   </span>
                 </td>
-                <td style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+                <td style={{ fontSize: 12, color: '#94a3b8' }}>
                   {new Date(item.createdAt).toLocaleDateString()}
                 </td>
                 <td style={{ textAlign: 'right' }}>
@@ -613,7 +613,7 @@ export default function VanChuyenPage() {
                       setSelectedTracking(item);
                       setViewMode('DETAIL');
                     }}
-                    className="btn btn-ghost btn-sm"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                   >
                     <Eye size={16} />
                   </button>

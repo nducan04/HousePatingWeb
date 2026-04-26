@@ -109,7 +109,7 @@ export default function RDTrackingPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><FlaskConical size={22} /></div>
           <div className="kpi-label">Tổng Số Mẫu Phân Tích</div>
@@ -133,14 +133,14 @@ export default function RDTrackingPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tra cứu Trace Log Code Lab Model..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -155,7 +155,7 @@ export default function RDTrackingPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`btn btn-sm ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -163,7 +163,7 @@ export default function RDTrackingPage() {
               ))}
             </div>
           </div>
-          <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+          <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => setIsModalOpen(true)}>
             <Plus size={16} /> Tạo Log R&D Mới
           </button>
         </div>
@@ -176,19 +176,19 @@ export default function RDTrackingPage() {
           background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex',
           alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)'
         }}>
-          <div className="glass-card" style={{ width: 500, padding: 30, border: '1px solid var(--accent-cyan)' }}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: 500, padding: 30, border: '1px solid #2563eb' }}>
             <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Beaker className="text-[var(--accent-cyan)]" /> KHỞI TẠO LOG TRUY XUẤT R&D
+              <Beaker className="text-[#2563eb]" /> KHỞI TẠO LOG TRUY XUẤT R&D
             </h3>
 
             <div style={{ display: 'grid', gap: 20 }}>
               <div className="form-group">
                 <label className="form-label">Chọn Hợp đồng Kinh doanh/Gia công</label>
                 <select
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   value={selectedContract}
                   onChange={(e) => handleContractChange(e.target.value)}
-                  style={{ background: 'var(--bg-card)' }}
+                  style={{ background: '#ffffff' }}
                 >
                   <option value="">-- Chọn hợp đồng --</option>
                   {contracts.map(c => (
@@ -200,11 +200,11 @@ export default function RDTrackingPage() {
               <div className="form-group">
                 <label className="form-label">Mã màu yêu cầu pha chế</label>
                 <select
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   value={selectedColor}
                   onChange={(e) => setSelectedColor(e.target.value)}
                   disabled={!selectedContract}
-                  style={{ background: 'var(--bg-card)' }}
+                  style={{ background: '#ffffff' }}
                 >
                   <option value="">-- Chọn mã màu --</option>
                   {availableColors.map(color => {
@@ -230,26 +230,26 @@ export default function RDTrackingPage() {
                       <div style={{ fontSize: 13, fontWeight: 700 }}>
                         {paintColors.find(c => c.code === selectedColor)?.name || 'Custom Color'}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>
                         {selectedColor} | {paintColors.find(c => c.code === selectedColor)?.category || 'Mixed'}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {!selectedContract && <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>* Vui lòng chọn hợp đồng trước</p>}
+                {!selectedContract && <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>* Vui lòng chọn hợp đồng trước</p>}
               </div>
 
               <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
                 <button
-                  className="btn btn-ghost flex-1"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 flex-1"
                   onClick={() => setIsModalOpen(false)}
                   disabled={creating}
                 >
                   Hủy bỏ
                 </button>
                 <button
-                  className="btn btn-primary flex-1"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm flex-1"
                   onClick={handleCreateLog}
                   disabled={creating || !selectedContract || !selectedColor}
                 >
@@ -262,8 +262,8 @@ export default function RDTrackingPage() {
       )}
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>ID Lab Định Biên</th>
@@ -284,24 +284,24 @@ export default function RDTrackingPage() {
 
               return (
                 <tr key={item._id}>
-                  <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{item.MaNhatKy}</td>
+                  <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaNhatKy}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{
                         width: 16, height: 16, borderRadius: 3,
                         background: paintColors.find(c => c.code === item.MaMauYeuCau)?.hex || '#333'
                       }} />
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.MaMauYeuCau}</div>
+                      <div style={{ fontWeight: 600, color: '#0f172a' }}>{item.MaMauYeuCau}</div>
                     </div>
                     {paintColors.find(c => c.code === item.MaMauYeuCau) && (
-                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginLeft: 26 }}>
+                      <div style={{ fontSize: 10, color: '#94a3b8', marginLeft: 26 }}>
                         {paintColors.find(c => c.code === item.MaMauYeuCau)?.name}
                       </div>
                     )}
                   </td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{item.ContractID?.MaHopDong || item.ContractID?.contractId || 'N/A'}</td>
-                  <td style={{ fontWeight: 700, color: 'var(--accent-purple)' }}>{item.LichSuPhienBan?.length || 0}</td>
-                  <td style={{ fontWeight: 600, color: 'var(--accent-amber)' }}>{wastage}%</td>
+                  <td style={{ color: '#475569' }}>{item.ContractID?.MaHopDong || item.ContractID?.contractId || 'N/A'}</td>
+                  <td style={{ fontWeight: 700, color: '#7c3aed' }}>{item.LichSuPhienBan?.length || 0}</td>
+                  <td style={{ fontWeight: 600, color: '#d97706' }}>{wastage}%</td>
                   <td>
                     <span className={`badge ${item.TrangThai === 'approved' ? 'approved' : item.TrangThai === 'rejected' ? 'rejected' : 'testing'}`}>
                       {(item.TrangThai || 'testing').toUpperCase()}
@@ -309,7 +309,7 @@ export default function RDTrackingPage() {
                   </td>
                   <td>{new Date(item.updatedAt).toLocaleDateString()}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <Link href={`/rd-tracking/${item._id}`} className="btn btn-ghost btn-sm">
+                    <Link href={`/rd-tracking/${item._id}`} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs">
                       <Eye size={16} />
                     </Link>
                   </td>

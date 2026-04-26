@@ -33,27 +33,27 @@ export default function NewRDRequestPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <Link href="/rd-tracking" className="btn btn-ghost btn-sm" style={{ marginBottom: 'var(--spacing-lg)' }}>
+      <Link href="/rd-tracking" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ marginBottom: '1.75rem' }}>
         <ArrowLeft size={16} /> Quay lại
       </Link>
 
-      <div className="glass-card" style={{ padding: 'var(--spacing-xl)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 'var(--spacing-xl)' }}>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '2.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '2.25rem' }}>
           <div style={{
-            width: 48, height: 48, borderRadius: 'var(--radius-md)',
-            background: 'var(--accent-purple-soft)', color: 'var(--accent-purple)',
+            width: 48, height: 48, borderRadius: '10px',
+            background: 'rgba(124, 58, 237, 0.08)', color: '#7c3aed',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
             <Droplets size={24} />
           </div>
           <div>
-            <h2 style={{ fontSize: 'var(--font-xl)', fontWeight: 700 }}>Tạo Yêu cầu R&D Mới</h2>
-            <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-tertiary)' }}>Yêu cầu sẽ được tạo với Version 1.0</p>
+            <h2 style={{ fontSize: '1.625rem', fontWeight: 700 }}>Tạo Yêu cầu R&D Mới</h2>
+            <p style={{ fontSize: '1rem', color: '#94a3b8' }}>Yêu cầu sẽ được tạo với Version 1.0</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.75rem' }}>
             <div className="form-group">
               <label className="form-label">Khách hàng *</label>
               <select className="form-select" required value={formData.customer} onChange={e => setFormData(p => ({ ...p, customer: e.target.value }))}>
@@ -69,13 +69,13 @@ export default function NewRDRequestPage() {
 
             <div className="form-group">
               <label className="form-label">Mã Màu Mục tiêu *</label>
-              <input className="form-input" type="text" placeholder="VD: INT-D2525" required
+              <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" type="text" placeholder="VD: INT-D2525" required
                 value={formData.colorCode} onChange={e => setFormData(p => ({ ...p, colorCode: e.target.value }))} />
             </div>
 
             <div className="form-group">
               <label className="form-label">Tên Màu</label>
-              <input className="form-input" type="text" placeholder="VD: Silver Metallic"
+              <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" type="text" placeholder="VD: Silver Metallic"
                 value={formData.colorName} onChange={e => setFormData(p => ({ ...p, colorName: e.target.value }))} />
             </div>
 
@@ -94,20 +94,20 @@ export default function NewRDRequestPage() {
 
             <div className="form-group">
               <label className="form-label">Lớp nền (Substrate)</label>
-              <input className="form-input" type="text" placeholder="VD: Primer + Topcoat"
+              <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" type="text" placeholder="VD: Primer + Topcoat"
                 value={formData.substrate} onChange={e => setFormData(p => ({ ...p, substrate: e.target.value }))} />
             </div>
           </div>
 
-          <div className="form-group" style={{ marginTop: 'var(--spacing-lg)' }}>
+          <div className="form-group" style={{ marginTop: '1.75rem' }}>
             <label className="form-label">Yêu cầu Chi tiết</label>
             <textarea className="form-textarea" rows={4} placeholder="Mô tả yêu cầu kỹ thuật, độ bóng, ΔE cho phép, ứng dụng..."
               value={formData.requirements} onChange={e => setFormData(p => ({ ...p, requirements: e.target.value }))} />
           </div>
 
           {/* File Upload */}
-          <div style={{ marginTop: 'var(--spacing-lg)' }}>
-            <label className="form-label" style={{ marginBottom: 'var(--spacing-sm)', display: 'block' }}>Ảnh/Tài liệu Đính kèm</label>
+          <div style={{ marginTop: '1.75rem' }}>
+            <label className="form-label" style={{ marginBottom: '0.625rem', display: 'block' }}>Ảnh/Tài liệu Đính kèm</label>
             <div
               className={`upload-zone ${dragOver ? 'dragover' : ''}`}
               onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -115,11 +115,11 @@ export default function NewRDRequestPage() {
               onDrop={handleFileDrop}
               onClick={() => document.getElementById('file-input')?.click()}
             >
-              <Upload size={32} className="upload-icon" style={{ margin: '0 auto var(--spacing-sm)' }} />
+              <Upload size={32} className="upload-icon" style={{ margin: '0 auto 0.625rem' }} />
               <p className="upload-text">
                 Kéo thả file vào đây hoặc <strong>click để chọn</strong>
               </p>
-              <p style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', marginTop: 4 }}>
+              <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginTop: 4 }}>
                 PNG, JPG, PDF — Tối đa 10MB
               </p>
               <input id="file-input" type="file" multiple accept="image/*,.pdf" style={{ display: 'none' }}
@@ -130,7 +130,7 @@ export default function NewRDRequestPage() {
               />
             </div>
             {files.length > 0 && (
-              <div style={{ marginTop: 'var(--spacing-sm)', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ marginTop: '0.625rem', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {files.map((f, i) => (
                   <span key={i} className="badge signed" style={{ cursor: 'pointer' }} onClick={() => setFiles(fls => fls.filter((_, j) => j !== i))}>
                     📎 {f} ✕
@@ -140,9 +140,9 @@ export default function NewRDRequestPage() {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'flex-end', marginTop: 'var(--spacing-xl)' }}>
-            <Link href="/rd-tracking" className="btn btn-secondary">Hủy</Link>
-            <button type="submit" className="btn btn-primary btn-lg">
+          <div style={{ display: 'flex', gap: '1.125rem', justifyContent: 'flex-end', marginTop: '2.25rem' }}>
+            <Link href="/rd-tracking" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200">Hủy</Link>
+            <button type="submit" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-6 py-3 text-base">
               <Plus size={18} /> Tạo Yêu cầu (v1.0)
             </button>
           </div>

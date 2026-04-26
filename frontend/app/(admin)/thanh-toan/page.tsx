@@ -98,40 +98,40 @@ export default function ThanhToanPage() {
   });
 
   return (
-    <div style={{ padding: 'var(--spacing-lg)' }}>
+    <div style={{ padding: '1.75rem' }}>
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
-        <div className="kpi-card emerald" style={{ border: '1px solid var(--accent-emerald)' }}>
-          <div className="kpi-icon" style={{ background: 'var(--accent-emerald)' }}><DollarSign size={22} color="#fff" /></div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
+        <div className="kpi-card emerald" style={{ border: '1px solid #059669' }}>
+          <div className="kpi-icon" style={{ background: '#059669' }}><DollarSign size={22} color="#fff" /></div>
           <div className="kpi-label">Tổng Doanh Thu (HĐ + ĐH)</div>
-          <div className="kpi-value" style={{ color: 'var(--accent-emerald)' }}>{STATS.totalExpected.toLocaleString()} ₫</div>
+          <div className="kpi-value" style={{ color: '#059669' }}>{STATS.totalExpected.toLocaleString()} ₫</div>
         </div>
         <div className="kpi-card cyan">
-          <div className="kpi-icon" style={{ background: 'var(--accent-cyan)' }}><Wallet size={22} color="#fff" /></div>
+          <div className="kpi-icon" style={{ background: '#2563eb' }}><Wallet size={22} color="#fff" /></div>
           <div className="kpi-label">Đã Thu Hồi</div>
-          <div className="kpi-value" style={{ color: 'var(--accent-cyan)' }}>{STATS.totalPaid.toLocaleString()} ₫</div>
+          <div className="kpi-value" style={{ color: '#2563eb' }}>{STATS.totalPaid.toLocaleString()} ₫</div>
         </div>
-        <div className="kpi-card rose" style={{ border: '1px solid var(--accent-rose)' }}>
-          <div className="kpi-icon" style={{ background: 'var(--accent-rose)' }}><CreditCard size={22} color="#fff" /></div>
+        <div className="kpi-card rose" style={{ border: '1px solid #e11d48' }}>
+          <div className="kpi-icon" style={{ background: '#e11d48' }}><CreditCard size={22} color="#fff" /></div>
           <div className="kpi-label">Công Nợ Phải Thu</div>
-          <div className="kpi-value" style={{ color: 'var(--accent-rose)' }}>{STATS.totalDebt.toLocaleString()} ₫</div>
+          <div className="kpi-value" style={{ color: '#e11d48' }}>{STATS.totalDebt.toLocaleString()} ₫</div>
         </div>
         <div className="kpi-card amber">
-          <div className="kpi-icon" style={{ background: 'var(--accent-amber)' }}><Clock size={22} color="#fff" /></div>
+          <div className="kpi-icon" style={{ background: '#d97706' }}><Clock size={22} color="#fff" /></div>
           <div className="kpi-label">Đơn/HĐ Còn Lại</div>
-          <div className="kpi-value" style={{ color: 'var(--accent-amber)' }}>{STATS.pendingCount}</div>
+          <div className="kpi-value" style={{ color: '#d97706' }}>{STATS.pendingCount}</div>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tra cứu mã HĐ, mã đơn, khách hàng..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -146,7 +146,7 @@ export default function ThanhToanPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`btn btn-sm ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -154,20 +154,20 @@ export default function ThanhToanPage() {
               ))}
             </div>
           </div>
-          <button className="btn btn-ghost" onClick={fetchRecords}><FileCheck size={16} style={{ marginRight: 8 }} /> Làm mới dữ liệu</button>
+          <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" onClick={fetchRecords}><FileCheck size={16} style={{ marginRight: 8 }} /> Làm mới dữ liệu</button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0 }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0 }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>Loại / Mã tham chiếu</th>
               <th>Khách Hàng</th>
               <th>Tổng Giá Trị</th>
               <th>Đã Thanh Toán</th>
-              <th style={{ color: 'var(--accent-rose)' }}>Công Nợ</th>
+              <th style={{ color: '#e11d48' }}>Công Nợ</th>
               <th>Trạng Thái</th>
               <th>Ngày Lập</th>
               <th style={{ textAlign: 'right' }}>Thao tác</th>
@@ -179,23 +179,23 @@ export default function ThanhToanPage() {
             ) : filteredData.length === 0 ? (
               <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40 }}>Không tìm thấy dữ liệu phù hợp.</td></tr>
             ) : filteredData.map(item => (
-              <tr key={item._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <tr key={item._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {item.type === 'ORDER' ? <Package size={14} color="var(--accent-cyan)" /> : <FileCheck size={14} color="var(--accent-amber)" />}
+                    {item.type === 'ORDER' ? <Package size={14} color="#2563eb" /> : <FileCheck size={14} color="#d97706" />}
                     <div>
-                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 600 }}>{item.type === 'ORDER' ? 'ĐƠN HÀNG' : 'HỢP ĐỒNG'}</div>
-                      <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{item.code}</div>
+                      <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600 }}>{item.type === 'ORDER' ? 'ĐƠN HÀNG' : 'HỢP ĐỒNG'}</div>
+                      <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.code}</div>
                     </div>
                   </div>
                 </td>
                 <td>
                   <div style={{ fontWeight: 600 }}>{item.customer?.name}</div>
-                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)' }}>{item.customer?.code}</div>
+                  <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>{item.customer?.code}</div>
                 </td>
                 <td style={{ fontWeight: 600 }}>{item.totalAmount.toLocaleString()} ₫</td>
-                <td style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{item.paidAmount.toLocaleString()} ₫</td>
-                <td style={{ fontWeight: 700, color: item.debtAmount > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)' }}>
+                <td style={{ color: '#2563eb', fontWeight: 600 }}>{item.paidAmount.toLocaleString()} ₫</td>
+                <td style={{ fontWeight: 700, color: item.debtAmount > 0 ? '#e11d48' : '#059669' }}>
                   {item.debtAmount === 0 ? '—' : `${item.debtAmount.toLocaleString()} ₫`}
                 </td>
                 <td>
@@ -207,11 +207,11 @@ export default function ThanhToanPage() {
                     {item.debtAmount === 0 ? 'Đã quyết toán' : item.paidAmount > 0 ? 'Đang thanh toán' : 'Chưa thanh toán'}
                   </span>
                 </td>
-                <td style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>{new Date(item.date).toLocaleDateString()}</td>
+                <td style={{ color: '#94a3b8', fontSize: 13 }}>{new Date(item.date).toLocaleDateString()}</td>
                 <td style={{ textAlign: 'right' }}>
                   <button
                     onClick={() => handleTogglePayment(item)}
-                    className="btn btn-ghost btn-sm"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                     title={item.type === 'ORDER' ? 'Thay đổi trạng thái' : 'Cập nhật số tiền'}
                   >
                     {item.type === 'ORDER' ? <ArrowRight size={16} /> : <CreditCard size={16} />}

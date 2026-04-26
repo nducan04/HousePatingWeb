@@ -30,7 +30,6 @@ const allNavItems = [
       { href: '/phanquyen', label: 'Quản lý phân quyền', icon: Users, roles: ['Admin'] },
       { href: '#settings', label: 'Cài đặt', icon: Settings, roles: ['Admin'] },
       { href: '#data-period', label: 'Đồng bộ hệ thống', icon: CloudSync, roles: ['Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C', 'NhaCungCap'] },
-      // { href: '/dashboard', label: 'Dashboard', icon: BarChart3, roles: ['Admin', 'NhanVien'] },
     ]
   },
   {
@@ -41,10 +40,8 @@ const allNavItems = [
       { href: '/kho', label: 'Quản lý kho', icon: ClipboardList, roles: ['Admin', 'NhanVien'] },
       { href: '/nhan-vien', label: 'Quản lý nhân viên', icon: User, roles: ['Admin'] },
       { href: '/doi-tac', label: 'Quản lý khách hàng', icon: User, roles: ['Admin', 'NhanVien'] },
-      // { href: '/khach-hang', label: 'Quản lý khách hàng B2C', icon: User, roles: ['Admin', 'NhanVien'] },
       { href: '/nha-cung-cap', label: 'Quản lý nhà cung cấp', icon: User, roles: ['Admin', 'NhanVien'] },
       { href: '/import', label: 'Nhập Dữ Liệu', icon: FileUp, roles: ['Admin', 'NhanVien'] },
-
     ]
   },
   {
@@ -135,48 +132,59 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         userRole === 'KhachHangB2B' ? 'Đối tác B2B' : 'Khách hàng');
   const initials = displayName.split(' ').map((w: string) => w[0]).join('').slice(-3).toUpperCase();
 
+  // Map pathname to page title
+  const getPageTitle = () => {
+    if (pathname === '/dashboard') return '📊 Dashboard';
+    if (pathname?.startsWith('/san-pham')) return '📦 Quản lý Sản phẩm Sơn';
+    if (pathname?.startsWith('/kho')) return '🏭 Quản lý Kho';
+    if (pathname?.startsWith('/doi-tac')) return '🤝 Quản lý Đối tác';
+    if (pathname?.startsWith('/nhan-vien')) return '👥 Quản lý Nhân sự';
+    if (pathname?.startsWith('/rd-tracking')) return '🔬 R&D Tracking';
+    if (pathname?.startsWith('/contracts')) return '📝 Hợp đồng B2B';
+    if (pathname === '/colors') return '🎨 Tra cứu Mã Màu';
+    if (pathname === '/tracking') return '📦 QR Tracking';
+    if (pathname === '/don-hang') return '📋 Quản lý Đơn hàng';
+    if (pathname === '/chatbot') return '🤖 AI Hỗ trợ Khách hàng';
+    if (pathname === '/import') return '📤 Nhập Dữ Liệu (Excel/CSV)';
+    return '📊 Tổng quan';
+  };
+
   return (
     <ProtectedRoute allowedRoles={['Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C']}>
-      <div className="admin-layout">
-        {/* Sidebar */}
-        <aside className="sidebar">
-          <div className="logo-container">
-            <div className="logo-icon">
-              <a href="/dashboard" style={{ display: 'block', width: '100%', height: '100%' }}>
-                <img src="/vtsc.png" alt="VTSC Logo" style={{ width: '200%', height: '200%', marginTop: -30, marginLeft: -5, objectFit: 'contain' }} />
-              </a>
-            </div>
-            {/* Ẩn chữ đi vì logo ảnh đã có chữ
+      <div className="flex h-screen bg-slate-50 font-[Inter,sans-serif]">
+        {/* ═══════ Sidebar ═══════ */}
+        <aside className="w-[260px] flex-shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden">
+          {/* Logo */}
+          <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+            <a href="/dashboard" className="block w-10 h-10 flex-shrink-0">
+              <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+            </a>
             <div>
-              <div className="logo-text">VTSC</div>
-              <div className="logo-sub">PaintPro System</div>
-            </div> 
-            */}
+              <div className="text-sm font-bold text-slate-800 tracking-tight">VTSC</div>
+              <div className="text-[10px] text-slate-400 font-medium">PaintPro System</div>
+            </div>
           </div>
 
-          <nav>
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
             {filteredNav.filter(s => s.section !== 'Hệ thống').map((section) => (
               <div key={section.section}>
-                <div
-                  className="nav-section-title"
+                {/* Section Title */}
+                <button
                   onClick={() => toggleSection(section.section)}
-                  style={{
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    userSelect: 'none'
-                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 mt-3 mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors select-none cursor-pointer"
                 >
                   {section.section}
-                  {expandedSections[section.section] ? <ChevronDown size={14} /> : <ChevronRight size={14} opacity={0.5} />}
-                </div>
+                  {expandedSections[section.section]
+                    ? <ChevronDown size={12} />
+                    : <ChevronRight size={12} className="opacity-50" />}
+                </button>
 
-                <div style={{
-                  overflow: 'hidden',
-                  transition: 'max-height 0.3s ease-in-out',
-                  maxHeight: expandedSections[section.section] ? '1000px' : '0px'
-                }}>
+                {/* Nav Items */}
+                <div
+                  className="overflow-hidden transition-all duration-300 ease-in-out"
+                  style={{ maxHeight: expandedSections[section.section] ? '1000px' : '0px' }}
+                >
                   {section.items.map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
@@ -184,10 +192,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`nav-item ${isActive ? 'active' : ''}`}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 no-underline mb-0.5 ${isActive ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }`}
                       >
-                        <Icon className="nav-icon" size={20} />
-                        <span>{item.label}</span>
+                        <Icon size={18} className={`flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                        <span className="truncate">{item.label}</span>
                       </Link>
                     );
                   })}
@@ -196,107 +204,43 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ))}
           </nav>
 
-          {/* Ghim cứng thư mục Hệ thống ở góc dưới cùng */}
-          {filteredNav.find(s => s.section === 'Hệ thống') && (() => {
-            const systemNav = filteredNav.find(s => s.section === 'Hệ thống')!;
-            return (
-              <div style={{ padding: '0 var(--spacing-md) var(--spacing-md) var(--spacing-md)', borderTop: '1px solid var(--border-color)', paddingTop: 'var(--spacing-md)' }}>
-                <div
-                  className="nav-section-title"
-                  onClick={() => toggleSection(systemNav.section)}
-                  style={{
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    userSelect: 'none',
-                    marginTop: 0
-                  }}
-                >
-                  {systemNav.section}
-                  {expandedSections[systemNav.section] ? <ChevronDown size={14} /> : <ChevronRight size={14} opacity={0.5} />}
-                </div>
-
-                <div style={{
-                  overflow: 'hidden',
-                  transition: 'max-height 0.3s ease-in-out',
-                  maxHeight: expandedSections[systemNav.section] ? '1000px' : '0px'
-                }}>
-                  {systemNav.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`nav-item ${isActive ? 'active' : ''}`}
-                      >
-                        <Icon className="nav-icon" size={20} />
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* User Info + Đăng xuất */}
-          <div style={{
-            padding: 'var(--spacing-md)',
-            borderTop: '1px solid var(--border-color)',
-            background: 'var(--bg-primary)',
-            display: 'flex', alignItems: 'center', gap: '12px'
-          }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: '13px', color: '#fff',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
-            }}>{initials}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 'var(--font-sm)', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</div>
-              <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)' }}>{displayRole}</div>
+          {/* User Info + Logout at bottom */}
+          <div className="p-4 border-t border-slate-200 bg-slate-50/80 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 shadow-md shadow-blue-500/20">
+              {initials}
             </div>
-            <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Đăng xuất">
-              <LogOut size={18} />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-slate-800 truncate">{displayName}</div>
+              <div className="text-xs text-slate-400">{displayRole}</div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 text-slate-400 hover:text-red-500 transition-colors cursor-pointer rounded-lg hover:bg-red-50"
+              title="Đăng xuất"
+            >
+              <LogOut size={16} />
             </button>
           </div>
         </aside>
 
-        {/* Main Content */}
-        <div className="admin-content">
-          <header className="topbar">
-            <div className="page-title">
-              {pathname === '/dashboard' && '📊 Dashboard'}
-              {pathname?.startsWith('/san-pham') && '📦 Quản lý Sản phẩm Sơn'}
-              {pathname?.startsWith('/kho') && '🏭 Quản lý Kho'}
-              {pathname?.startsWith('/doi-tac') && '🤝 Quản lý Đối tác'}
-              {pathname?.startsWith('/nhan-vien') && '👥 Quản lý Nhân sự'}
-              {pathname?.startsWith('/rd-tracking') && '🔬 R&D Tracking'}
-              {pathname?.startsWith('/contracts') && '📝 Hợp đồng B2B'}
-              {pathname === '/colors' && '🎨 Tra cứu Mã Màu'}
-              {pathname === '/tracking' && '📦 QR Tracking'}
-              {pathname === '/don-hang' && '📋 Quản lý Đơn hàng'}
-              {pathname === '/chatbot' && '🤖 AI Hỗ trợ Khách hàng'}
-              {pathname === '/import' && '📤 Nhập Dữ Liệu (Excel/CSV)'}
-            </div>
-            <div className="topbar-actions">
-              <button className="btn btn-ghost btn-sm" style={{ position: 'relative' }}>
+        {/* ═══════ Main Content ═══════ */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Bar */}
+          <header className="h-16 flex-shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-8">
+            <h1 className="text-lg font-bold text-slate-800">{getPageTitle()}</h1>
+            <div className="flex items-center gap-3">
+              <button className="relative p-2.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
                 <Bell size={18} />
-                <span style={{
-                  position: 'absolute', top: 4, right: 4, width: 8, height: 8,
-                  borderRadius: '50%', background: 'var(--accent-rose)'
-                }} />
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500" />
               </button>
-              <div className="badge active" style={{ textTransform: 'none' }}>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
                 {userRole === 'Admin' ? 'Admin' : userRole === 'KhachHangB2B' ? 'B2B' : 'PKDS'}
-              </div>
+              </span>
             </div>
           </header>
-          <main className="main-content">
+
+          {/* Page Content */}
+          <main className="flex-1 overflow-y-auto p-8 bg-slate-50">
             {children}
           </main>
         </div>

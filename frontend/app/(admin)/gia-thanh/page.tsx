@@ -78,7 +78,7 @@ export default function GiaThanhPage() {
   return (
     <div>
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><DollarSign size={22} /></div>
           <div className="kpi-label">Số Lượng Bảng Giá Cốt Lõi</div>
@@ -102,29 +102,29 @@ export default function GiaThanhPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tìm mã SP, tên sơn..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
-          <button className="btn btn-primary" title="Chuyển sang trang Quản lý Sản Phẩm để tạo mới dòng sơn và thiết lập giá" onClick={() => window.location.href = '/san-pham'}>
+          <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" title="Chuyển sang trang Quản lý Sản Phẩm để tạo mới dòng sơn và thiết lập giá" onClick={() => window.location.href = '/san-pham'}>
             <Plus size={16} /> Thiết Lập Dòng Sơn Mới
           </button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>Tham chiếu (Mã SP)</th>
@@ -143,18 +143,18 @@ export default function GiaThanhPage() {
               const b2c = giaGoc * 1.3;
               return (
                 <tr key={item._id}>
-                  <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{item.MaSanPham}</td>
+                  <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaSanPham}</td>
                   <td>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{item.TenDongSon}</div>
+                    <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.TenDongSon}</div>
                   </td>
-                  <td style={{ color: 'var(--text-tertiary)', fontWeight: 'bold' }}>{giaGoc.toLocaleString()} ₫</td>
-                  <td style={{ fontWeight: 600, color: 'var(--accent-emerald)' }}>{b2b.toLocaleString()} ₫</td>
-                  <td style={{ fontWeight: 600, color: 'var(--accent-purple)' }}>{b2c.toLocaleString()} ₫</td>
+                  <td style={{ color: '#94a3b8', fontWeight: 'bold' }}>{giaGoc.toLocaleString()} ₫</td>
+                  <td style={{ fontWeight: 600, color: '#059669' }}>{b2b.toLocaleString()} ₫</td>
+                  <td style={{ fontWeight: 600, color: '#7c3aed' }}>{b2c.toLocaleString()} ₫</td>
                   <td style={{ textAlign: 'center' }}>
-                    <span className="badge testing">~30%</span>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700">~30%</span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <button onClick={() => openEditModal(item)} className="btn btn-ghost btn-sm" title="Cập nhật Giá Vốn">
+                    <button onClick={() => openEditModal(item)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" title="Cập nhật Giá Vốn">
                       <Edit size={16} /> Update Giá
                     </button>
                   </td>
@@ -188,7 +188,7 @@ export default function GiaThanhPage() {
                 <input
                   type="number"
                   min="0"
-                  style={{ width: '100%', padding: '12px', border: '2px solid var(--accent-cyan)', borderRadius: '4px', fontSize: '16px', fontWeight: 'bold' }}
+                  style={{ width: '100%', padding: '12px', border: '2px solid #2563eb', borderRadius: '4px', fontSize: '16px', fontWeight: 'bold' }}
                   value={newPrice}
                   onChange={e => setNewPrice(Number(e.target.value))}
                 />

@@ -463,7 +463,7 @@ export default function QuanLyKhoPage() {
   return (
     <div>
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: "var(--spacing-xl)" }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: "2.25rem" }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon">
             <Package size={22} />
@@ -497,33 +497,33 @@ export default function QuanLyKhoPage() {
       <div
         style={{
           display: "flex",
-          gap: "var(--spacing-md)",
-          marginBottom: "var(--spacing-lg)",
+          gap: "1.125rem",
+          marginBottom: "1.75rem",
           flexWrap: "wrap",
         }}
       >
         <button
-          className={`btn ${activeTab === "kho" ? "btn-primary" : "btn-ghost"}`}
+          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kho" ? "btn-primary" : "btn-ghost"}`}
           onClick={() => setActiveTab("kho")}
         >
           <Package size={18} style={{ marginRight: 8 }} /> Danh Mục Thành Phẩm
         </button>
         <button
-          className={`btn ${activeTab === "nvl" ? "btn-primary" : "btn-ghost"}`}
+          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nvl" ? "btn-primary" : "btn-ghost"}`}
           onClick={() => setActiveTab("nvl")}
         >
           <Beaker size={18} style={{ marginRight: 8 }} /> Nguyên Vật Liệu Pha
           Chế
         </button>
         <button
-          className={`btn ${activeTab === "nhapxuat" ? "btn-primary" : "btn-ghost"}`}
+          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nhapxuat" ? "btn-primary" : "btn-ghost"}`}
           onClick={() => setActiveTab("nhapxuat")}
         >
           <ArrowRightLeft size={18} style={{ marginRight: 8 }} /> Lịch Sử Nhập /
           Xuất
         </button>
         <button
-          className={`btn ${activeTab === "kiemke" ? "btn-primary" : "btn-ghost"}`}
+          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kiemke" ? "btn-primary" : "btn-ghost"}`}
           onClick={() => setActiveTab("kiemke")}
         >
           <ClipboardList size={18} style={{ marginRight: 8 }} /> Phiếu Kiểm Kê
@@ -533,20 +533,20 @@ export default function QuanLyKhoPage() {
       {activeTab === "kho" && (
         <>
           <div
-            className="glass-card"
+            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden"
             style={{
-              padding: "var(--spacing-lg)",
-              marginBottom: "var(--spacing-lg)",
+              padding: "1.75rem",
+              marginBottom: "1.75rem",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
             }}
           >
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tìm mã SP, tên..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -554,20 +554,20 @@ export default function QuanLyKhoPage() {
             </div>
             <button
               onClick={exportToExcel}
-              className="btn btn-ghost"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
               style={{
-                border: "1px solid var(--border-color)",
-                color: "var(--accent-emerald)",
+                border: "1px solid #e2e8f0",
+                color: "#059669",
               }}
             >
               <Download size={16} /> Xuất Excel
             </button>
           </div>
           <div
-            className="glass-card rounded-none"
+            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none"
             style={{ overflow: "hidden", borderRadius: 0, marginTop: "1rem" }}
           >
-            <table className="data-table">
+            <table className="w-full text-left text-sm">
               <thead>
                 <tr>
                   <th>Mã SP</th>
@@ -592,14 +592,14 @@ export default function QuanLyKhoPage() {
                   .map((item) => (
                     <tr key={item._id}>
                       <td
-                        style={{ fontWeight: 700, color: "var(--accent-cyan)" }}
+                        style={{ fontWeight: 700, color: "#2563eb" }}
                       >
                         {item.MaSanPham}
                       </td>
                       <td
                         style={{
                           fontWeight: 600,
-                          color: "var(--text-primary)",
+                          color: "#0f172a",
                         }}
                       >
                         {item.TenDongSon}
@@ -608,7 +608,7 @@ export default function QuanLyKhoPage() {
                       <td
                         style={{
                           fontWeight: 600,
-                          color: "var(--accent-emerald)",
+                          color: "#059669",
                         }}
                       >
                         {item.TonKho || 0} Đv
@@ -636,20 +636,20 @@ export default function QuanLyKhoPage() {
       {activeTab === "nvl" && (
         <>
           <div
-            className="glass-card"
+            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden"
             style={{
-              padding: "var(--spacing-lg)",
-              marginBottom: "var(--spacing-lg)",
+              padding: "1.75rem",
+              marginBottom: "1.75rem",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
             }}
           >
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tìm mã NVL, tên..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -658,24 +658,24 @@ export default function QuanLyKhoPage() {
             <div style={{ display: "flex", gap: 12 }}>
               <button
                 onClick={exportToExcel}
-                className="btn btn-ghost"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 style={{
-                  border: "1px solid var(--border-color)",
-                  color: "var(--accent-emerald)",
+                  border: "1px solid #e2e8f0",
+                  color: "#059669",
                 }}
               >
                 <Download size={16} /> Xuất Excel
               </button>
-              <button onClick={openCreateNVL} className="btn btn-primary">
+              <button onClick={openCreateNVL} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
                 <Plus size={16} style={{ marginRight: 8 }} /> Khai Báo NVL Mới
               </button>
             </div>
           </div>
           <div
-            className="glass-card rounded-none"
+            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none"
             style={{ overflow: "hidden", borderRadius: 0 }}
           >
-            <table className="data-table">
+            <table className="w-full text-left text-sm">
               <thead>
                 <tr>
                   <th>Mã NVL</th>
@@ -702,14 +702,14 @@ export default function QuanLyKhoPage() {
                   .map((item) => (
                     <tr key={item._id}>
                       <td
-                        style={{ fontWeight: 700, color: "var(--accent-cyan)" }}
+                        style={{ fontWeight: 700, color: "#2563eb" }}
                       >
                         {item.MaNVL}
                       </td>
                       <td
                         style={{
                           fontWeight: 600,
-                          color: "var(--text-primary)",
+                          color: "#0f172a",
                         }}
                       >
                         {item.TenNguyenVatLieu}
@@ -718,28 +718,28 @@ export default function QuanLyKhoPage() {
                         {item.NhaCungCap ? (
                           <span
                             style={{
-                              color: "var(--accent-amber)",
+                              color: "#d97706",
                               fontWeight: 600,
                             }}
                           >
                             {item.NhaCungCap.TenNCC}
                           </span>
                         ) : (
-                          <span style={{ color: "var(--text-secondary)" }}>
+                          <span style={{ color: "#475569" }}>
                             ---
                           </span>
                         )}
                       </td>
                       <td>
-                        <span className="badge testing">{item.PhanLoai}</span>
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700">{item.PhanLoai}</span>
                       </td>
                       <td
                         style={{
                           fontWeight: 600,
                           color:
                             (item.TonKho || 0) > 0
-                              ? "var(--accent-emerald)"
-                              : "var(--accent-rose)",
+                              ? "#059669"
+                              : "#e11d48",
                         }}
                       >
                         {item.TonKho || 0} {item.DonViTinh}
@@ -749,18 +749,18 @@ export default function QuanLyKhoPage() {
                       <td style={{ textAlign: "right" }}>
                         <button
                           onClick={() => openEditNVL(item)}
-                          className="btn btn-ghost btn-sm"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                           title="Sửa"
                         >
                           <Edit size={16} />
                         </button>
                         <button
                           onClick={() => handleDeleteNVL(item._id)}
-                          className="btn btn-ghost btn-sm"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                           title="Xóa"
                           style={{ marginLeft: 4 }}
                         >
-                          <Trash2 size={16} color="var(--accent-rose)" />
+                          <Trash2 size={16} color="#e11d48" />
                         </button>
                       </td>
                     </tr>
@@ -784,10 +784,10 @@ export default function QuanLyKhoPage() {
       {activeTab === "nhapxuat" && (
         <>
           <div
-            className="glass-card"
+            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden"
             style={{
-              padding: "var(--spacing-lg)",
-              marginBottom: "var(--spacing-lg)",
+              padding: "1.75rem",
+              marginBottom: "1.75rem",
               display: "flex",
               justifyContent: "flex-end",
               gap: 12,
@@ -795,20 +795,20 @@ export default function QuanLyKhoPage() {
           >
             <button
               onClick={exportToExcel}
-              className="btn btn-ghost"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
               style={{
-                border: "1px solid var(--border-color)",
-                color: "var(--accent-emerald)",
+                border: "1px solid #e2e8f0",
+                color: "#059669",
               }}
             >
               <Download size={16} /> Xuất Excel
             </button>
             <button
               onClick={openCreateNXModal}
-              className="btn btn-primary"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
               style={{
-                background: "var(--accent-emerald)",
-                borderColor: "var(--accent-emerald)",
+                background: "#059669",
+                borderColor: "#059669",
               }}
             >
               <ArrowRightLeft size={16} style={{ marginRight: 8 }} /> Lập Lệnh
@@ -816,10 +816,10 @@ export default function QuanLyKhoPage() {
             </button>
           </div>
           <div
-            className="glass-card rounded-none"
+            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none"
             style={{ overflow: "hidden", borderRadius: 0 }}
           >
-            <table className="data-table">
+            <table className="w-full text-left text-sm">
               <thead>
                 <tr>
                   <th>Mã Lệnh</th>
@@ -836,7 +836,7 @@ export default function QuanLyKhoPage() {
                 {phieuNXData.map((item) => (
                   <tr key={item._id}>
                     <td
-                      style={{ fontWeight: 700, color: "var(--text-primary)" }}
+                      style={{ fontWeight: 700, color: "#0f172a" }}
                     >
                       {item.MaPhieu}
                     </td>
@@ -861,18 +861,18 @@ export default function QuanLyKhoPage() {
                     <td style={{ textAlign: "right" }}>
                       <button
                         onClick={() => openEditNXModal(item)}
-                        className="btn btn-ghost btn-sm"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                         title="Sửa"
                       >
                         <Edit size={16} />
                       </button>
                       <button
                         onClick={() => handleDeleteNX(item._id)}
-                        className="btn btn-ghost btn-sm"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                         title="Xóa"
                         style={{ marginLeft: 4 }}
                       >
-                        <Trash2 size={16} color="var(--accent-rose)" />
+                        <Trash2 size={16} color="#e11d48" />
                       </button>
                     </td>
                   </tr>
@@ -896,20 +896,20 @@ export default function QuanLyKhoPage() {
       {activeTab === "kiemke" && (
         <>
           <div
-            className="glass-card"
+            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden"
             style={{
-              padding: "var(--spacing-lg)",
-              marginBottom: "var(--spacing-lg)",
+              padding: "1.75rem",
+              marginBottom: "1.75rem",
               display: "flex",
               justifyContent: "flex-end",
             }}
           >
             <button
               onClick={() => setIsKiemKhoModal(true)}
-              className="btn btn-ghost"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
               style={{
-                border: "1px solid var(--accent-amber)",
-                color: "var(--accent-amber)",
+                border: "1px solid #d97706",
+                color: "#d97706",
               }}
             >
               <FileCheck size={16} style={{ marginRight: 6 }} /> Tạo Phiếu Kiểm
@@ -917,10 +917,10 @@ export default function QuanLyKhoPage() {
             </button>
           </div>
           <div
-            className="glass-card rounded-none"
+            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none"
             style={{ overflow: "hidden", borderRadius: 0 }}
           >
-            <table className="data-table">
+            <table className="w-full text-left text-sm">
               <thead>
                 <tr>
                   <th>Mã Phiếu Kiểm</th>
@@ -935,12 +935,12 @@ export default function QuanLyKhoPage() {
                 {phieuData.map((item) => (
                   <tr key={item._id}>
                     <td
-                      style={{ fontWeight: 700, color: "var(--accent-cyan)" }}
+                      style={{ fontWeight: 700, color: "#2563eb" }}
                     >
                       {item.MaPhieu}
                     </td>
                     <td
-                      style={{ fontWeight: 600, color: "var(--text-primary)" }}
+                      style={{ fontWeight: 600, color: "#0f172a" }}
                     >
                       {item.NguoiKiem
                         ? `${item.NguoiKiem.MaNV} - ${item.NguoiKiem.HoTen}`
@@ -951,8 +951,8 @@ export default function QuanLyKhoPage() {
                         fontWeight: 800,
                         color:
                           item.TongChenhLech < 0
-                            ? "var(--accent-rose)"
-                            : "var(--accent-emerald)",
+                            ? "#e11d48"
+                            : "#059669",
                       }}
                     >
                       {item.TongChenhLech.toLocaleString()} ₫
@@ -968,7 +968,7 @@ export default function QuanLyKhoPage() {
                     <td style={{ textAlign: "right" }}>
                       <button
                         onClick={() => setSelectedPhieu(item)}
-                        className="btn btn-ghost btn-sm"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                         title="Xem chi tiết & In"
                       >
                         <Eye size={16} />
@@ -976,7 +976,7 @@ export default function QuanLyKhoPage() {
                       {item.TrangThai !== "HOAN_THANH" && (
                         <button
                           onClick={() => hoanThanhPhiếu(item.MaPhieu)}
-                          className="btn btn-primary btn-sm"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg text-xs"
                           style={{ marginLeft: 8 }}
                         >
                           Chốt Số
@@ -1011,11 +1011,11 @@ export default function QuanLyKhoPage() {
               width: "100%",
               maxWidth: "500px",
               background: "var(--bg-color)",
-              border: "1px solid var(--border-color)",
+              border: "1px solid #e2e8f0",
               borderRadius: "8px",
               padding: "24px",
               margin: "2rem auto",
-              color: "var(--text-primary)",
+              color: "#0f172a",
             }}
           >
             <h3
@@ -1034,7 +1034,7 @@ export default function QuanLyKhoPage() {
                 <label>Mã NVL</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   value={nvlForm.MaNVL}
                   onChange={(e) =>
                     setNvlForm({ ...nvlForm, MaNVL: e.target.value })
@@ -1047,7 +1047,7 @@ export default function QuanLyKhoPage() {
                 <label>Tên Nguyên Liệu</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   value={nvlForm.TenNguyenVatLieu}
                   onChange={(e) =>
                     setNvlForm({ ...nvlForm, TenNguyenVatLieu: e.target.value })
@@ -1058,7 +1058,7 @@ export default function QuanLyKhoPage() {
                 <div style={{ flex: 1 }}>
                   <label>Bộ phân loại</label>
                   <select
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={nvlForm.PhanLoai}
                     onChange={(e) =>
                       setNvlForm({ ...nvlForm, PhanLoai: e.target.value })
@@ -1074,7 +1074,7 @@ export default function QuanLyKhoPage() {
                   <label>Đơn Vị Tính</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={nvlForm.DonViTinh}
                     onChange={(e) =>
                       setNvlForm({ ...nvlForm, DonViTinh: e.target.value })
@@ -1087,7 +1087,7 @@ export default function QuanLyKhoPage() {
                   <label>Số lượng tồn kho</label>
                   <input
                     type="number"
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     min={0}
                     value={nvlForm.TonKho}
                     onChange={(e) =>
@@ -1099,7 +1099,7 @@ export default function QuanLyKhoPage() {
                   <label>Giá Thành Base (₫)</label>
                   <input
                     type="number"
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={nvlForm.DonGia}
                     onChange={(e) =>
                       setNvlForm({ ...nvlForm, DonGia: Number(e.target.value) })
@@ -1110,7 +1110,7 @@ export default function QuanLyKhoPage() {
               <div>
                 <label>Nhà Cung Cấp</label>
                 <select
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   value={nvlForm.NhaCungCap}
                   onChange={(e) =>
                     setNvlForm({ ...nvlForm, NhaCungCap: e.target.value })
@@ -1131,14 +1131,14 @@ export default function QuanLyKhoPage() {
                   setIsNVLModal(false);
                   setEditingNVLId(null);
                 }}
-                className="btn btn-ghost"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 style={{ flex: 1 }}
               >
                 Đóng
               </button>
               <button
                 onClick={handleSubmitNVL}
-                className="btn btn-primary"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                 style={{ flex: 1 }}
               >
                 {editingNVLId ? "Cập Nhật" : "Lưu"}
@@ -1167,11 +1167,11 @@ export default function QuanLyKhoPage() {
               width: "100%",
               maxWidth: "800px",
               background: "var(--bg-color)",
-              border: "1px solid var(--border-color)",
+              border: "1px solid #e2e8f0",
               borderRadius: "8px",
               padding: "24px",
               margin: "2rem auto",
-              color: "var(--text-primary)",
+              color: "#0f172a",
               maxHeight: "90vh",
               overflowY: "auto",
             }}
@@ -1191,7 +1191,7 @@ export default function QuanLyKhoPage() {
               <div style={{ flex: 1 }}>
                 <label>Mục Đích Lệnh</label>
                 <select
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   value={nxForm.LoaiPhieu}
                   onChange={(e) =>
                     setNxForm({ ...nxForm, LoaiPhieu: e.target.value })
@@ -1205,7 +1205,7 @@ export default function QuanLyKhoPage() {
               <div style={{ flex: 1 }}>
                 <label>Đối Tượng Lệnh</label>
                 <select
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   value={nxForm.LoaiHang}
                   onChange={(e) =>
                     setNxForm({ ...nxForm, LoaiHang: e.target.value })
@@ -1223,7 +1223,7 @@ export default function QuanLyKhoPage() {
               <label>Mô tả Nhập / Xuất Kho</label>
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 value={nxForm.MoTa}
                 onChange={(e) => setNxForm({ ...nxForm, MoTa: e.target.value })}
               />
@@ -1251,7 +1251,7 @@ export default function QuanLyKhoPage() {
                     Mã Sản Phẩm {nxForm.LoaiHang === "SAN_PHAM" ? "Sơn" : "NVL"}
                   </label>
                   <select
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={k.ItemId}
                     onChange={(e) =>
                       handleNXItemChange(idx, "ItemId", e.target.value)
@@ -1279,7 +1279,7 @@ export default function QuanLyKhoPage() {
                   <input
                     type="number"
                     min={1}
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={k.SoLuong}
                     onChange={(e) =>
                       handleNXItemChange(idx, "SoLuong", Number(e.target.value))
@@ -1291,7 +1291,7 @@ export default function QuanLyKhoPage() {
                   <input
                     type="number"
                     min={0}
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={k.DonGia}
                     onChange={(e) =>
                       handleNXItemChange(idx, "DonGia", Number(e.target.value))
@@ -1302,7 +1302,7 @@ export default function QuanLyKhoPage() {
                   <label>Tạm Tính</label>
                   <input
                     type="number"
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     value={k.ThanhTien}
                     disabled
                     style={{ opacity: 0.7 }}
@@ -1313,9 +1313,9 @@ export default function QuanLyKhoPage() {
             {!editingNXId && (
               <button
                 onClick={handleAddNXItem}
-                className="btn btn-ghost"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 style={{
-                  border: "1px dashed var(--border-color)",
+                  border: "1px dashed #e2e8f0",
                   width: "100%",
                   marginBottom: 24,
                 }}
@@ -1330,20 +1330,20 @@ export default function QuanLyKhoPage() {
                   setIsNXModal(false);
                   setEditingNXId(null);
                 }}
-                className="btn btn-ghost"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 style={{ flex: 1 }}
               >
                 Hủy Bỏ
               </button>
               <button
                 onClick={handleSubmitPhieuNX}
-                className="btn btn-primary"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                 style={{
                   flex: 1,
                   background:
                     nxForm.LoaiPhieu === "NHAP"
-                      ? "var(--accent-emerald)"
-                      : "var(--accent-rose)",
+                      ? "#059669"
+                      : "#e11d48",
                 }}
               >
                 {editingNXId
@@ -1374,11 +1374,11 @@ export default function QuanLyKhoPage() {
               width: "100%",
               maxWidth: "700px",
               background: "var(--bg-color)",
-              border: "1px solid var(--border-color)",
+              border: "1px solid #e2e8f0",
               borderRadius: "8px",
               padding: "24px",
               margin: "2rem auto",
-              color: "var(--text-primary)",
+              color: "#0f172a",
               maxHeight: "90vh",
               overflowY: "auto",
             }}
@@ -1434,9 +1434,9 @@ export default function QuanLyKhoPage() {
                       style={{
                         width: "100%",
                         padding: "10px",
-                        border: "1px solid var(--border-color)",
+                        border: "1px solid #e2e8f0",
                         borderRadius: "4px",
-                        background: "var(--bg-card)",
+                        background: "#ffffff",
                       }}
                       value={k.Sanpham}
                       onChange={(e) => {
@@ -1472,9 +1472,9 @@ export default function QuanLyKhoPage() {
                       style={{
                         width: "100%",
                         padding: "10px",
-                        border: "1px solid var(--border-color)",
+                        border: "1px solid #e2e8f0",
                         borderRadius: "4px",
-                        background: "var(--bg-card)",
+                        background: "#ffffff",
                       }}
                       value={k.TonThucTe}
                       onChange={(e) => {
@@ -1488,9 +1488,9 @@ export default function QuanLyKhoPage() {
               ))}
               <button
                 onClick={handleAddKiemKhoItem}
-                className="btn btn-ghost"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 style={{
-                  border: "1px dashed var(--border-color)",
+                  border: "1px dashed #e2e8f0",
                   width: "100%",
                 }}
               >
@@ -1563,7 +1563,7 @@ export default function QuanLyKhoPage() {
               <div style={{ display: "flex", gap: 10 }}>
                 <button
                   onClick={() => window.print()}
-                  className="btn btn-primary"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                 >
                   <Printer size={16} /> In Phiếu
                 </button>

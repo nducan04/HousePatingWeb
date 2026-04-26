@@ -176,7 +176,7 @@ export default function TinTucPage() {
   return (
     <div>
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><Megaphone size={22} /></div>
           <div className="kpi-label">Tổng Chiến Dịch</div>
@@ -200,14 +200,14 @@ export default function TinTucPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tìm tiêu đề chiến dịch..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -221,7 +221,7 @@ export default function TinTucPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`btn btn-sm ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -229,15 +229,15 @@ export default function TinTucPage() {
               ))}
             </div>
           </div>
-          <button onClick={() => openForm()} className="btn btn-primary">
+          <button onClick={() => openForm()} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
             <Plus size={16} /> Soạn Bài Mới
           </button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead className="justify-center text-center">
             <tr>
               <th>Mã BV</th>
@@ -253,7 +253,7 @@ export default function TinTucPage() {
           <tbody>
             {filteredData.map(item => (
               <tr key={item._id}>
-                <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{item.MaTinTuc}</td>
+                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaTinTuc}</td>
                 <td>
                   {item.HinhAnh ? (
                     <img src={getImageUrl(item.HinhAnh)} alt={item.TieuDe} style={{ width: 60, height: 40, objectFit: 'cover', borderRadius: 4 }} />
@@ -263,14 +263,14 @@ export default function TinTucPage() {
                 </td>
                 <td
                   onClick={() => openDetail(item)}
-                  style={{ fontWeight: 600, color: 'var(--accent-cyan)', cursor: 'pointer', textDecoration: 'underline' }}
+                  style={{ fontWeight: 600, color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}
                 >
                   {item.TieuDe}
                 </td>
-                <td style={{ color: 'var(--text-secondary)', fontSize: 13, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <td style={{ color: '#475569', fontSize: 13, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {item.Abstract || item.GhiChu || 'N/A'}
                 </td>
-                <td style={{ fontWeight: 600, color: 'var(--text-tertiary)' }}>{item.NhanVienDang?.HoTen || 'ADMIN'}</td>
+                <td style={{ fontWeight: 600, color: '#94a3b8' }}>{item.NhanVienDang?.HoTen || 'ADMIN'}</td>
                 <td>
                   <span className={`badge ${item.TrangThai === 'Published' ? 'approved' : 'pending'}`}>
                     {item.TrangThai}
@@ -278,9 +278,9 @@ export default function TinTucPage() {
                 </td>
                 <td>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A'}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <button onClick={() => exportToPDF(item)} className="btn btn-ghost btn-sm" title="Xuất PDF"><FileCheck size={16} color="var(--accent-emerald)" /></button>
-                  <button onClick={() => openForm(item)} className="btn btn-ghost btn-sm"><Edit size={16} /></button>
-                  <button onClick={() => handleDelete(item._id!)} className="btn btn-ghost btn-sm"><Trash2 size={16} color="var(--accent-rose)" /></button>
+                  <button onClick={() => exportToPDF(item)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" title="Xuất PDF"><FileCheck size={16} color="#059669" /></button>
+                  <button onClick={() => openForm(item)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Edit size={16} /></button>
+                  <button onClick={() => handleDelete(item._id!)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Trash2 size={16} color="#e11d48" /></button>
                 </td>
               </tr>
             ))}
@@ -316,7 +316,7 @@ export default function TinTucPage() {
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Ảnh Bìa Bài Viết / Banner</label>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <input type="text" style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} placeholder="URL Ảnh hoặc tải lên file..." value={formData.HinhAnh} onChange={e => setFormData({ ...formData, HinhAnh: e.target.value })} />
-                  <label className="btn btn-ghost" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, border: '1px solid #ddd' }}>
+                  <label className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, border: '1px solid #ddd' }}>
                     <Plus size={14} /> {uploading ? 'Đang tải...' : 'Tải ảnh'}
                     <input type="file" hidden accept="image/*" onChange={handleImageUpload} disabled={uploading} />
                   </label>
@@ -448,7 +448,7 @@ export default function TinTucPage() {
               <div style={{ padding: '40px 60px' }}>
                 {/* Abstract / Teaser */}
                 {formData.Abstract && (
-                  <div style={{ color: 'var(--accent-emerald)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', fontSize: '12px', marginBottom: '10px' }}>
+                  <div style={{ color: '#059669', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', fontSize: '12px', marginBottom: '10px' }}>
                     {formData.Abstract}
                   </div>
                 )}
@@ -468,7 +468,7 @@ export default function TinTucPage() {
                 {/* Signature */}
                 <div style={{ marginTop: '50px', borderTop: '1px solid #eee', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ color: '#999', fontSize: '14px' }}>VTSC PaintPro Editorial Board</div>
-                  <button onClick={() => setIsDetailOpen(false)} className="btn btn-primary">Xong, đã đọc tài liệu</button>
+                  <button onClick={() => setIsDetailOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">Xong, đã đọc tài liệu</button>
                 </div>
               </div>
             </div>

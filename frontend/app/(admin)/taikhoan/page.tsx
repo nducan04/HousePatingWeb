@@ -137,7 +137,7 @@ export default function QuanLyTaiKhoanPage() {
   return (
     <div>
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><Users size={22} /></div>
           <div className="kpi-label">Tổng Tài Khoản</div>
@@ -161,14 +161,14 @@ export default function QuanLyTaiKhoanPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tìm user, email..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -178,7 +178,7 @@ export default function QuanLyTaiKhoanPage() {
               {['all', 'admin', 'nhanvien', 'khachhang'].map(f => (
                 <button
                   key={f}
-                  className={`btn btn-sm ${filterRole === f ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filterRole === f ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setFilterRole(f)}
                   style={{ textTransform: 'capitalize' }}
                 >
@@ -187,15 +187,15 @@ export default function QuanLyTaiKhoanPage() {
               ))}
             </div>
           </div>
-          <button onClick={() => openForm()} className="btn btn-primary">
+          <button onClick={() => openForm()} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
             <Plus size={16} /> Cấp mới Tài khoản
           </button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>Tên Đăng Nhập</th>
@@ -211,19 +211,19 @@ export default function QuanLyTaiKhoanPage() {
               <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>Đang tải...</td></tr>
             ) : filteredData.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Không tìm thấy tài khoản.</td>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#475569' }}>Không tìm thấy tài khoản.</td>
               </tr>
             ) : (
               filteredData.map(tk => (
                 <tr key={tk._id}>
                   <td
-                    style={{ fontWeight: 700, color: 'var(--accent-cyan)', cursor: 'pointer', textDecoration: 'underline' }}
+                    style={{ fontWeight: 700, color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}
                     onClick={() => handleViewDetails(tk._id)}
                     title="Xem chi tiết hồ sơ nhân sự"
                   >
                     {tk.TenDangNhap}
                   </td>
-                  <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{tk.Email}</td>
+                  <td style={{ fontWeight: 600, color: '#0f172a' }}>{tk.Email}</td>
                   <td>{tk.VaiTro === 'KhachHangB2B' ? 'Doanh nghiệp B2B' : tk.VaiTro === 'KhachHangB2C' ? 'Cá nhân B2C' : tk.VaiTro}</td>
                   <td>
                     <span className={`badge ${tk.TrangThai ? 'approved' : 'rejected'}`}>
@@ -235,16 +235,16 @@ export default function QuanLyTaiKhoanPage() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
                       <button
                         onClick={() => handleToggleLock(tk._id, tk.TrangThai)}
-                        className="btn btn-ghost btn-sm"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                         title={tk.TrangThai ? 'Khóa' : 'Mở khóa'}
                       >
                         {tk.TrangThai ? <Lock size={16} /> : <Unlock size={16} />}
                       </button>
-                      <button onClick={() => openForm(tk)} className="btn btn-ghost btn-sm">
+                      <button onClick={() => openForm(tk)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs">
                         <Edit size={16} />
                       </button>
-                      <button onClick={() => handleDelete(tk._id)} className="btn btn-ghost btn-sm">
-                        <Trash2 size={16} color="var(--accent-rose)" />
+                      <button onClick={() => handleDelete(tk._id)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs">
+                        <Trash2 size={16} color="#e11d48" />
                       </button>
                     </div>
                   </td>
@@ -258,26 +258,26 @@ export default function QuanLyTaiKhoanPage() {
       {/* Modal */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: 0 }}>
-            <div style={{ padding: 'var(--spacing-lg)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: 'var(--font-lg)', fontWeight: 700 }}>{formData._id ? 'Chỉnh sửa' : 'Cấp mới'}</h3>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '100%', maxWidth: '500px', padding: 0 }}>
+            <div style={{ padding: '1.75rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between' }}>
+              <h3 style={{ fontSize: '1.375rem', fontWeight: 700 }}>{formData._id ? 'Chỉnh sửa' : 'Cấp mới'}</h3>
             </div>
-            <div style={{ padding: 'var(--spacing-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+            <div style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: 8, fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Tên Đăng Nhập</label>
-                <input type="text" className="form-input" value={formData.TenDangNhap} onChange={(e) => setFormData({ ...formData, TenDangNhap: e.target.value })} />
+                <label style={{ display: 'block', marginBottom: 8, fontSize: '0.875rem', color: '#475569' }}>Tên Đăng Nhập</label>
+                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.TenDangNhap} onChange={(e) => setFormData({ ...formData, TenDangNhap: e.target.value })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 8, fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Email</label>
-                <input type="email" className="form-input" value={formData.Email} onChange={(e) => setFormData({ ...formData, Email: e.target.value })} />
+                <label style={{ display: 'block', marginBottom: 8, fontSize: '0.875rem', color: '#475569' }}>Email</label>
+                <input type="email" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.Email} onChange={(e) => setFormData({ ...formData, Email: e.target.value })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 8, fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Mật khẩu {formData._id ? '(Bỏ trống nếu không đổi)' : '(Mặc định: VTSC@123)'}</label>
-                <input type="password" placeholder={formData._id ? "Nhập mật khẩu mới" : "VTSC@123"} className="form-input" value={formData.MatKhau || ''} onChange={(e) => setFormData({ ...formData, MatKhau: e.target.value })} />
+                <label style={{ display: 'block', marginBottom: 8, fontSize: '0.875rem', color: '#475569' }}>Mật khẩu {formData._id ? '(Bỏ trống nếu không đổi)' : '(Mặc định: VTSC@123)'}</label>
+                <input type="password" placeholder={formData._id ? "Nhập mật khẩu mới" : "VTSC@123"} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.MatKhau || ''} onChange={(e) => setFormData({ ...formData, MatKhau: e.target.value })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 8, fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Vai trò</label>
-                <select className="form-input" value={formData.VaiTro} onChange={(e) => setFormData({ ...formData, VaiTro: e.target.value })}>
+                <label style={{ display: 'block', marginBottom: 8, fontSize: '0.875rem', color: '#475569' }}>Vai trò</label>
+                <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.VaiTro} onChange={(e) => setFormData({ ...formData, VaiTro: e.target.value })}>
                   <option value="Admin">Admin</option>
                   <option value="NhanVien">Nhân viên</option>
                   <option value="KhachHangB2B">Khách hàng B2B</option>
@@ -286,9 +286,9 @@ export default function QuanLyTaiKhoanPage() {
                 </select>
               </div>
             </div>
-            <div style={{ padding: 'var(--spacing-md) var(--spacing-lg)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost">Đóng</button>
-              <button onClick={handleSubmit} className="btn btn-primary">Lưu</button>
+            <div style={{ padding: '1.125rem 1.75rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={() => setIsModalOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700">Đóng</button>
+              <button onClick={handleSubmit} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">Lưu</button>
             </div>
           </div>
         </div>
@@ -297,32 +297,32 @@ export default function QuanLyTaiKhoanPage() {
       {/* Modal View Employee Details */}
       {isEmployeeDetailsOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', overflowY: 'auto' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '600px', background: 'var(--surface-color)', padding: '30px', margin: '2rem auto' }}>
-            <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: 15, marginBottom: 20 }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--accent-cyan)', margin: 0 }}>HỒ SƠ NHÂN SỰ TÀI KHOẢN</h2>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '100%', maxWidth: '600px', background: 'var(--surface-color)', padding: '30px', margin: '2rem auto' }}>
+            <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: 15, marginBottom: 20 }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#2563eb', margin: 0 }}>HỒ SƠ NHÂN SỰ TÀI KHOẢN</h2>
             </div>
 
             {isEmployeeDetailsLoading ? (
               <div style={{ textAlign: 'center', padding: '2rem' }}>Đang tải thông tin...</div>
             ) : employeeDetails?.notFound ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--accent-rose)' }}>Tài khoản này chưa được liên kết với hồ sơ nhân sự nào.</div>
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#e11d48' }}>Tài khoản này chưa được liên kết với hồ sơ nhân sự nào.</div>
             ) : employeeDetails ? (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px' }}>
                 <tbody>
-                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', width: '40%', borderBottom: '1px solid var(--border-color)' }}>Họ và tên:</td><td style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>{employeeDetails.HoTen}</td></tr>
-                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid var(--border-color)' }}>Giới tính:</td><td style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>{employeeDetails.GioiTinh || 'Chưa cập nhật'}</td></tr>
-                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid var(--border-color)' }}>Số điện thoại:</td><td style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>{employeeDetails.SDT || 'Chưa cập nhật'}</td></tr>
-                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid var(--border-color)' }}>Email liên hệ:</td><td style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>{employeeDetails.Email || 'Chưa cập nhật'}</td></tr>
-                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid var(--border-color)' }}>Địa chỉ thường trú:</td><td style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>{employeeDetails.DiaChi || 'Chưa cập nhật'}</td></tr>
-                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid var(--border-color)' }}>Phòng ban - Bộ phận:</td><td style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>{employeeDetails.BoPhan}</td></tr>
-                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid var(--border-color)' }}>Chức vụ:</td><td style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>{employeeDetails.ChucVu}</td></tr>
+                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', width: '40%', borderBottom: '1px solid #e2e8f0' }}>Họ và tên:</td><td style={{ padding: '12px 0', borderBottom: '1px solid #e2e8f0' }}>{employeeDetails.HoTen}</td></tr>
+                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0' }}>Giới tính:</td><td style={{ padding: '12px 0', borderBottom: '1px solid #e2e8f0' }}>{employeeDetails.GioiTinh || 'Chưa cập nhật'}</td></tr>
+                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0' }}>Số điện thoại:</td><td style={{ padding: '12px 0', borderBottom: '1px solid #e2e8f0' }}>{employeeDetails.SDT || 'Chưa cập nhật'}</td></tr>
+                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0' }}>Email liên hệ:</td><td style={{ padding: '12px 0', borderBottom: '1px solid #e2e8f0' }}>{employeeDetails.Email || 'Chưa cập nhật'}</td></tr>
+                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0' }}>Địa chỉ thường trú:</td><td style={{ padding: '12px 0', borderBottom: '1px solid #e2e8f0' }}>{employeeDetails.DiaChi || 'Chưa cập nhật'}</td></tr>
+                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0' }}>Phòng ban - Bộ phận:</td><td style={{ padding: '12px 0', borderBottom: '1px solid #e2e8f0' }}>{employeeDetails.BoPhan}</td></tr>
+                  <tr><td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0' }}>Chức vụ:</td><td style={{ padding: '12px 0', borderBottom: '1px solid #e2e8f0' }}>{employeeDetails.ChucVu}</td></tr>
                   <tr><td style={{ padding: '12px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Mô tả công việc:</td><td style={{ padding: '12px 0' }}>{employeeDetails.MoTaCongViec || 'Chưa cập nhật'}</td></tr>
                 </tbody>
               </table>
             ) : null}
 
             <div style={{ marginTop: '30px', textAlign: 'center' }}>
-              <button onClick={() => setIsEmployeeDetailsOpen(false)} className="btn btn-primary" style={{ padding: '10px 30px' }}>Đóng hồ sơ</button>
+              <button onClick={() => setIsEmployeeDetailsOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ padding: '10px 30px' }}>Đóng hồ sơ</button>
             </div>
           </div>
         </div>

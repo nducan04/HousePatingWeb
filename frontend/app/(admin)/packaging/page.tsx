@@ -106,47 +106,47 @@ export default function PackagingPage() {
     <div className="admin-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">QUY TRÌNH ĐÓNG GÓI THÀNH PHẨM</h1>
+          <h1 className="text-lg font-bold text-slate-800">QUY TRÌNH ĐÓNG GÓI THÀNH PHẨM</h1>
           <p className="page-subtitle">Quản lý quy cách đóng đóng gói, cập nhật kho và chứng từ bàn giao</p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-           <button className="btn btn-ghost"><Printer size={16} /> In báo cáo</button>
+           <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"><Printer size={16} /> In báo cáo</button>
         </div>
       </div>
 
       {/* Overview Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 30 }}>
-        <div className="glass-card" style={{ padding: 20 }}>
-          <div style={{ color: 'var(--text-tertiary)', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>CHỜ ĐÓNG GÓI</div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent-cyan)' }}>{pendingRD.length}</div>
-          <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>Từ mẫu KCS đã duyệt</div>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+          <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>CHỜ ĐÓNG GÓI</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#2563eb' }}>{pendingRD.length}</div>
+          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>Từ mẫu KCS đã duyệt</div>
         </div>
-        <div className="glass-card" style={{ padding: 20 }}>
-          <div style={{ color: 'var(--text-tertiary)', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>ĐÃ ĐÓNG GÓI</div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent-emerald)' }}>{slips.length}</div>
-          <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>Tổng sản lượng tháng này</div>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+          <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>ĐÃ ĐÓNG GÓI</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#059669' }}>{slips.length}</div>
+          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>Tổng sản lượng tháng này</div>
         </div>
-        <div className="glass-card" style={{ padding: 20 }}>
-          <div style={{ color: 'var(--text-tertiary)', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>KHỐI LƯỢNG TỊNH</div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent-amber)' }}>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+          <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>KHỐI LƯỢNG TỊNH</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#d97706' }}>
             {slips.reduce((acc, s) => acc + s.NetWeightTotal, 0).toLocaleString()} <span style={{ fontSize: 14 }}>Kg</span>
           </div>
         </div>
-        <div className="glass-card" style={{ padding: 20 }}>
-          <div style={{ color: 'var(--text-tertiary)', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>TỶ LỆ HAO HỤT B/Q</div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent-purple)' }}>2.4<span style={{ fontSize: 14 }}>%</span></div>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+          <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>TỶ LỆ HAO HỤT B/Q</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#7c3aed' }}>2.4<span style={{ fontSize: 14 }}>%</span></div>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 30 }}>
         
         {/* Left: Main Logs Table */}
-        <div className="glass-card" style={{ padding: 20 }}>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <CheckCircle2 className="text-[var(--accent-emerald)]" size={20} /> LỊCH SỬ ĐÓNG GÓI & XUẤT KHO
+              <CheckCircle2 className="text-[#059669]" size={20} /> LỊCH SỬ ĐÓNG GÓI & XUẤT KHO
             </h3>
-            <div className="search-box" style={{ maxWidth: 300 }}>
+            <div className="relative" style={{ maxWidth: 300 }}>
               <Search size={16} />
               <input type="text" placeholder="Tìm theo mã phiếu/log R&D..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
@@ -167,16 +167,16 @@ export default function PackagingPage() {
             <tbody>
               {filteredSlips.map(s => (
                 <tr key={s._id}>
-                  <td style={{ fontWeight: 800, color: 'var(--accent-cyan)' }}>{s.MaPhieuDongGoi}</td>
+                  <td style={{ fontWeight: 800, color: '#2563eb' }}>{s.MaPhieuDongGoi}</td>
                   <td>{s.RDLogID?.MaNhatKy}</td>
                   <td>
                     {s.ContractID ? (
                       <div style={{ fontSize: 11 }}>
-                        <span style={{ color: 'var(--accent-purple)', fontWeight: 700 }}>HĐ:</span> {s.ContractID.MaHopDong}
+                        <span style={{ color: '#7c3aed', fontWeight: 700 }}>HĐ:</span> {s.ContractID.MaHopDong}
                       </div>
                     ) : s.OrderID ? (
                       <div style={{ fontSize: 11 }}>
-                        <span style={{ color: 'var(--accent-amber)', fontWeight: 700 }}>ĐH:</span> {s.OrderID.MaDonHang}
+                        <span style={{ color: '#d97706', fontWeight: 700 }}>ĐH:</span> {s.OrderID.MaDonHang}
                       </div>
                     ) : 'N/A'}
                   </td>
@@ -189,8 +189,8 @@ export default function PackagingPage() {
                   <td style={{ fontSize: 12 }}>{new Date(s.createdAt).toLocaleDateString()}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <Link href={`/packaging/${s._id}`} className="btn btn-ghost btn-xs"><Eye size={14} /></Link>
-                      <button className="btn btn-ghost btn-xs"><Printer size={14} /></button>
+                      <Link href={`/packaging/${s._id}`} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-2 py-1 rounded-md text-xs"><Eye size={14} /></Link>
+                      <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-2 py-1 rounded-md text-xs"><Printer size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -202,15 +202,15 @@ export default function PackagingPage() {
         {/* Right: Pending Packaging Queue */}
         <div>
           <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Clock className="text-[var(--accent-amber)]" size={18} /> HÀNG CHỜ ĐÓNG GÓI
+            <Clock className="text-[#d97706]" size={18} /> HÀNG CHỜ ĐÓNG GÓI
           </h3>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
             {pendingRD.map(rd => (
-              <div key={rd._id} className="glass-card hover:border-[var(--accent-cyan)]/50 transition-all" style={{ padding: 15 }}>
+              <div key={rd._id} className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden hover:border-[#2563eb]/50 transition-all" style={{ padding: 15 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: 2 }}>{rd.MaNhatKy}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#2563eb', marginBottom: 2 }}>{rd.MaNhatKy}</div>
                     <div style={{ fontSize: 13, fontWeight: 800 }}>Mã màu: {rd.MaMauYeuCau}</div>
                   </div>
                   <div className="badge success">KCS PASSED</div>
@@ -218,13 +218,13 @@ export default function PackagingPage() {
                 
                 {/* Progress Mini-Tracker */}
                 <div style={{ display: 'flex', gap: 4, marginBottom: 15 }}>
-                  <div style={{ flex: 1, height: 4, background: 'var(--accent-emerald)', borderRadius: 2 }} />
-                  <div style={{ flex: 1, height: 4, background: 'var(--accent-emerald)', borderRadius: 2 }} />
+                  <div style={{ flex: 1, height: 4, background: '#059669', borderRadius: 2 }} />
+                  <div style={{ flex: 1, height: 4, background: '#059669', borderRadius: 2 }} />
                   <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2 }} />
                   <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }} />
                 </div>
                 
-                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 15 }}>
+                <div style={{ fontSize: 12, color: '#475569', marginBottom: 15 }}>
                   {rd.ContractID ? (
                     <>Hợp đồng: {rd.ContractID?.MaHopDong}</>
                   ) : rd.OrderID ? (
@@ -233,7 +233,7 @@ export default function PackagingPage() {
                 </div>
 
                 <button 
-                  className="btn btn-primary btn-sm w-full"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg text-xs w-full"
                   onClick={() => {
                     setSelectedRD(rd);
                     setShowModal(true);
@@ -245,7 +245,7 @@ export default function PackagingPage() {
             ))}
             
             {pendingRD.length === 0 && (
-              <div style={{ textAlign: 'center', padding: 40, border: '1px dashed var(--border-color)', borderRadius: 12, opacity: 0.5 }}>
+              <div style={{ textAlign: 'center', padding: 40, border: '1px dashed #e2e8f0', borderRadius: 12, opacity: 0.5 }}>
                 <p style={{ fontSize: 12 }}>Không có hàng chờ đóng gói</p>
               </div>
             )}
@@ -255,10 +255,10 @@ export default function PackagingPage() {
 
       {/* Modal: Create Packing Slip */}
       {showModal && selectedRD && (
-        <div className="modal-overlay">
-          <div className="modal-content glass-card" style={{ maxWidth: 600 }}>
-            <div className="modal-header">
-              <h2 className="modal-title">KHỞI TẠO PHIẾU ĐÓNG GÓI & XUẤT KHO</h2>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ maxWidth: 600 }}>
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-slate-800">KHỞI TẠO PHIẾU ĐÓNG GÓI & XUẤT KHO</h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>&times;</button>
             </div>
             
@@ -266,12 +266,12 @@ export default function PackagingPage() {
               <div style={{ background: 'rgba(0,212,255,0.05)', padding: 15, borderRadius: 8, border: '1px solid rgba(0,212,255,0.1)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                   <div>
-                    <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 800 }}>MẪU R&D GỐC</div>
+                    <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 800 }}>MẪU R&D GỐC</div>
                     <div style={{ fontWeight: 800 }}>{selectedRD.MaNhatKy}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 800 }}>MÃ MÀU CHUẨN</div>
-                    <div style={{ fontWeight: 800, color: 'var(--accent-amber)' }}>{selectedRD.MaMauYeuCau}</div>
+                    <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 800 }}>MÃ MÀU CHUẨN</div>
+                    <div style={{ fontWeight: 800, color: '#d97706' }}>{selectedRD.MaMauYeuCau}</div>
                   </div>
                 </div>
               </div>
@@ -281,16 +281,16 @@ export default function PackagingPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {packagingData.specs.map((spec, idx) => (
                     <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 12, alignItems: 'center' }}>
-                      <div className="form-input" style={{ background: 'var(--bg-card)', fontSize: 12 }}>{spec.containerType} ( {spec.unitWeight} kg )</div>
+                      <div className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ background: '#ffffff', fontSize: 12 }}>{spec.containerType} ( {spec.unitWeight} kg )</div>
                       <input 
                         type="number" 
-                        className="form-input" 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
                         placeholder="Số lượng"
                         value={spec.quantity || ''}
                         onChange={e => updateSpec(idx, 'quantity', parseInt(e.target.value) || 0)}
                       />
                       <div style={{ textAlign: 'right', fontWeight: 700, fontSize: 14 }}>
-                        {(spec.quantity * spec.unitWeight).toLocaleString()} <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Kg</span>
+                        {(spec.quantity * spec.unitWeight).toLocaleString()} <span style={{ fontSize: 10, color: '#94a3b8' }}>Kg</span>
                       </div>
                     </div>
                   ))}
@@ -301,7 +301,7 @@ export default function PackagingPage() {
                 <label className="form-label">Loại vật liệu bao bì</label>
                 <input 
                   type="text" 
-                  className="form-input" 
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
                   value={packagingData.material}
                   onChange={e => setPackagingData({...packagingData, material: e.target.value})}
                 />
@@ -318,20 +318,20 @@ export default function PackagingPage() {
               </div>
 
               <div style={{ marginTop: 10, padding: 15, borderRadius: 8, background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>TỔNG KHỐI LƯỢNG THỰC XUẤT:</div>
-                <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--accent-emerald)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>TỔNG KHỐI LƯỢNG THỰC XUẤT:</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: '#059669' }}>
                   {packagingData.specs.reduce((acc, s) => acc + (s.quantity * s.unitWeight), 0).toLocaleString()} <span style={{ fontSize: 14 }}>Kg</span>
                 </div>
               </div>
 
-              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'flex', gap: 6, alignItems: 'center' }}>
+              <div style={{ fontSize: 11, color: '#94a3b8', display: 'flex', gap: 6, alignItems: 'center' }}>
                  <AlertCircle size={12} /> Hệ thống sẽ tự động trừ trừ tồn nguyên liệu và nhập kho thành phẩm ngay sau khi xác nhận.
               </div>
             </div>
 
             <div className="modal-footer" style={{ marginTop: 20 }}>
-              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Hủy bỏ</button>
-              <button className="btn btn-primary" onClick={handleCreateSlip}>
+              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" onClick={() => setShowModal(false)}>Hủy bỏ</button>
+              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={handleCreateSlip}>
                 <CheckCircle2 size={16} /> Xác nhận Đóng gói & Nhập kho
               </button>
             </div>
@@ -340,8 +340,8 @@ export default function PackagingPage() {
       )}
 
       <style jsx>{`
-        .admin-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-tertiary); }
-        .badge.success { background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.2); font-size: 10px; padding: 2px 8px; }
+        .admin-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
+        .badge.success { background: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2); font-size: 10px; padding: 2px 8px; }
       `}</style>
     </div>
   );

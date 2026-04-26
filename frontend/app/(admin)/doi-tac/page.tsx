@@ -140,7 +140,7 @@ export default function DoiTacPage() {
   return (
     <div>
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><Handshake size={22} /></div>
           <div className="kpi-label">Tổng Đối Tác</div>
@@ -164,14 +164,14 @@ export default function DoiTacPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tìm tên, mã đối tác..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -186,7 +186,7 @@ export default function DoiTacPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`btn btn-sm ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -195,10 +195,10 @@ export default function DoiTacPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
-            <button onClick={exportToExcel} className="btn btn-ghost" style={{ border: '1px solid var(--border-color)', color: 'var(--accent-emerald)' }}>
+            <button onClick={exportToExcel} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ border: '1px solid #e2e8f0', color: '#059669' }}>
               <Download size={16} /> Xuất Excel
             </button>
-            <button onClick={() => openForm()} className="btn btn-primary">
+            <button onClick={() => openForm()} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
               <Plus size={16} /> Thêm Đối Tác
             </button>
           </div>
@@ -206,8 +206,8 @@ export default function DoiTacPage() {
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>Mã KH</th>
@@ -227,20 +227,20 @@ export default function DoiTacPage() {
               <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Không tìm thấy khách hàng.</td></tr>
             ) : filteredData.map(item => (
               <tr key={item._id}>
-                <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{item.MaKH}</td>
-                <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.TenKhachHang}</td>
+                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaKH}</td>
+                <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.TenKhachHang}</td>
                 <td>
                   <span className={`badge ${item.PhanLoai === 'B2B' ? 'approved' : item.PhanLoai === 'Đại lý' ? 'testing' : 'pending'}`}>
                     {item.PhanLoai}
                   </span>
                 </td>
-                <td style={{ textAlign: 'center', fontWeight: 'bold', color: 'var(--accent-emerald)' }}>{item.SoDonHang || 0} Đơn</td>
+                <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#059669' }}>{item.SoDonHang || 0} Đơn</td>
                 <td>{item.SDT}</td>
-                <td style={{ color: 'var(--text-secondary)' }}>{item.Email}</td>
-                <td style={{ color: 'var(--text-secondary)' }}>{item.DiaChi}</td>
+                <td style={{ color: '#475569' }}>{item.Email}</td>
+                <td style={{ color: '#475569' }}>{item.DiaChi}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <button onClick={() => openForm(item)} className="btn btn-ghost btn-sm"><Edit size={16} /></button>
-                  <button onClick={() => handleDelete(item._id!)} className="btn btn-ghost btn-sm"><Trash2 size={16} color="var(--accent-rose)" /></button>
+                  <button onClick={() => openForm(item)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Edit size={16} /></button>
+                  <button onClick={() => handleDelete(item._id!)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Trash2 size={16} color="#e11d48" /></button>
                 </td>
               </tr>
             ))}

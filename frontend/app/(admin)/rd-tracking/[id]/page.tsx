@@ -80,9 +80,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
   if (!request) {
     return (
-      <div style={{ textAlign: 'center', padding: 'var(--spacing-2xl)' }}>
+      <div style={{ textAlign: 'center', padding: '3.5rem' }}>
         <h2>Không tìm thấy yêu cầu R&D "{id}"</h2>
-        <Link href="/rd-tracking" className="btn btn-primary" style={{ marginTop: 'var(--spacing-lg)' }}>
+        <Link href="/rd-tracking" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ marginTop: '1.75rem' }}>
           Quay lại danh sách
         </Link>
       </div>
@@ -111,47 +111,47 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', paddingBottom: 100 }}>
-      <Link href="/rd-tracking" className="btn btn-ghost btn-sm" style={{ marginBottom: 'var(--spacing-lg)' }}>
+      <Link href="/rd-tracking" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ marginBottom: '1.75rem' }}>
         <ArrowLeft size={16} /> Quay lại Trace Log R&D
       </Link>
 
       {/* Header Card - Industrial Style */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-xl)', marginBottom: 'var(--spacing-xl)', position: 'relative', overflow: 'hidden' }}>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '2.25rem', marginBottom: '2.25rem', position: 'relative', overflow: 'hidden' }}>
         <div style={{ 
           position: 'absolute', top: 0, right: 0, width: '30%', height: '100%', 
           background: `linear-gradient(90deg, transparent, ${contract.colorHex || '#00d4ff'}15)`,
           zIndex: 0
         }} />
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--spacing-md)', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.125rem', position: 'relative', zIndex: 1 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-              <div style={{ padding: '4px 10px', background: 'rgba(0,0,0,0.3)', borderRadius: 4, letterSpacing: 1, fontSize: 13, fontWeight: 700, color: 'var(--accent-cyan)' }}>
+              <div style={{ padding: '4px 10px', background: 'rgba(0,0,0,0.3)', borderRadius: 4, letterSpacing: 1, fontSize: 13, fontWeight: 700, color: '#2563eb' }}>
                 LOG ID: {request.MaNhatKy}
               </div>
               <span className={`badge ${request.TrangThai}`}>{request.TrangThai.toUpperCase()}</span>
             </div>
-            <h2 style={{ fontSize: 'var(--font-2xl)', fontWeight: 800, marginBottom: 8 }}>{request.MaMauYeuCau} {colorInfo ? `- ${colorInfo.name}` : ''}</h2>
+            <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 8 }}>{request.MaMauYeuCau} {colorInfo ? `- ${colorInfo.name}` : ''}</h2>
             
             {colorInfo && (
               <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
                 <div style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ color: 'var(--text-tertiary)' }}>Category:</span>
+                  <span style={{ color: '#94a3b8' }}>Category:</span>
                   <span style={{ fontWeight: 600 }}>{colorInfo.category}</span>
                 </div>
                 <div style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ color: 'var(--text-tertiary)' }}>Gloss:</span>
+                  <span style={{ color: '#94a3b8' }}>Gloss:</span>
                   <span style={{ fontWeight: 600 }}>{colorInfo.gloss}</span>
                 </div>
                 <div style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ color: 'var(--text-tertiary)' }}>Surface:</span>
+                  <span style={{ color: '#94a3b8' }}>Surface:</span>
                   <span style={{ fontWeight: 600 }}>{colorInfo.surface}</span>
                 </div>
               </div>
             )}
 
-            <p style={{ color: 'var(--text-secondary)' }}>
-              Hợp đồng gốc: <strong style={{ color: 'var(--text-primary)' }}>{contract.MaHopDong} - {contract.title}</strong>
+            <p style={{ color: '#475569' }}>
+              Hợp đồng gốc: <strong style={{ color: '#0f172a' }}>{contract.MaHopDong} - {contract.title}</strong>
             </p>
           </div>
           
@@ -163,7 +163,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
             }} />
             <div>
               <div style={{ fontWeight: 800 }}>{request.MaMauYeuCau}</div>
-              <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)' }}>HEX: {colorInfo?.hex || 'MIX'}</div>
+              <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>HEX: {colorInfo?.hex || 'MIX'}</div>
             </div>
           </div>
         </div>
@@ -171,39 +171,39 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         {/* Dynamic Stats Row */}
         <div style={{ 
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', 
-          gap: 'var(--spacing-xl)', marginTop: 30, paddingTop: 24, 
+          gap: '2.25rem', marginTop: 30, paddingTop: 24, 
           borderTop: '1px solid rgba(255,255,255,0.06)' 
         }}>
           <div className="stat-item">
-            <div className="stat-label">TỔNG MẺ TEST</div>
+            <div className="text-sm text-slate-500 mb-1">TỔNG MẺ TEST</div>
             <div className="stat-value">{request.LichSuPhienBan.length} <span className="stat-unit">Lô</span></div>
           </div>
           <div className="stat-item">
-            <div className="stat-label">TỶ LỆ PASS</div>
-            <div className="stat-value" style={{ color: passRate >= 70 ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>
+            <div className="text-sm text-slate-500 mb-1">TỶ LỆ PASS</div>
+            <div className="stat-value" style={{ color: passRate >= 70 ? '#059669' : '#e11d48' }}>
               {passRate}<span className="stat-unit">%</span>
             </div>
           </div>
           <div className="stat-item">
-            <div className="stat-label">HAO HỤT B/Q</div>
-            <div className="stat-value" style={{ color: 'var(--accent-amber)' }}>
+            <div className="text-sm text-slate-500 mb-1">HAO HỤT B/Q</div>
+            <div className="stat-value" style={{ color: '#d97706' }}>
               {(request.LichSuPhienBan.reduce((acc: number, cur: any) => acc + (cur.inputWeight > 0 ? (cur.inputWeight - cur.outputWeight)/cur.inputWeight*100 : 0), 0) / (request.LichSuPhienBan.length || 1)).toFixed(1)}<span className="stat-unit">%</span>
             </div>
           </div>
           <div className="stat-item">
-            <div className="stat-label">CẬP NHẬT</div>
+            <div className="text-sm text-slate-500 mb-1">CẬP NHẬT</div>
             <div className="stat-value" style={{ fontSize: 18 }}>{new Date(request.updatedAt).toLocaleDateString('vi-VN')}</div>
           </div>
         </div>
       </div>
 
-      <div className="section-header" style={{ marginBottom: 30 }}>
+      <div className="flex items-center justify-between mb-4" style={{ marginBottom: 30 }}>
         <div>
-          <h3 className="section-title">Hành trình Phân tích & Pha chế (R&D Timeline)</h3>
-          <p className="section-subtitle">Dữ liệu vòng lặp test được ghi nhận qua từng phiên bản</p>
+          <h3 className="text-lg font-bold text-slate-800">Hành trình Phân tích & Pha chế (R&D Timeline)</h3>
+          <p className="text-sm text-slate-400 mt-1">Dữ liệu vòng lặp test được ghi nhận qua từng phiên bản</p>
         </div>
         {!isSigned && (
-          <button className="btn btn-primary btn-sm" onClick={() => setShowAddVersion(!showAddVersion)}>
+          <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg text-xs" onClick={() => setShowAddVersion(!showAddVersion)}>
             <Plus size={14} /> Log Mẻ Test Mới
           </button>
         )}
@@ -211,12 +211,12 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
       {/* Add Version Form - Advanced */}
       {showAddVersion && (
-        <div className="glass-card" style={{ 
-          padding: 'var(--spacing-xl)', marginBottom: 40, 
-          border: '1px solid var(--accent-cyan)', background: 'rgba(0, 212, 255, 0.02)' 
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ 
+          padding: '2.25rem', marginBottom: 40, 
+          border: '1px solid #2563eb', background: 'rgba(0, 212, 255, 0.02)' 
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-cyan)', boxShadow: '0 0 10px var(--accent-cyan)' }} />
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563eb', boxShadow: '0 0 10px #2563eb' }} />
             <h4 style={{ fontWeight: 800 }}>NHẬT KÝ CHI TIẾT PHIÊN BẢN V{request.LichSuPhienBan.length + 1}.0</h4>
           </div>
           
@@ -231,12 +231,12 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div className="form-group">
                   <label className="form-label"><Scale size={14} style={{ marginRight: 6 }} /> Khối lượng Input (kg)</label>
-                  <input type="number" className="form-input" placeholder="0.00"
+                  <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="0.00"
                     value={newVersion.inputWeight} onChange={e => setNewVersion(p => ({ ...p, inputWeight: e.target.value }))} />
                 </div>
                 <div className="form-group">
                   <label className="form-label"><Scale size={14} style={{ marginRight: 6 }} /> Khối lượng Output (kg)</label>
-                  <input type="number" className="form-input" placeholder="0.00"
+                  <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="0.00"
                     value={newVersion.outputWeight} onChange={e => setNewVersion(p => ({ ...p, outputWeight: e.target.value }))} />
                 </div>
               </div>
@@ -254,9 +254,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 <div style={{ 
                   border: '2px dashed rgba(255,255,255,0.1)', borderRadius: 8, padding: '16px', 
                   textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s' 
-                }} className="hover:border-[var(--accent-cyan)] hover:bg-[rgba(255,255,255,0.02)]">
+                }} className="hover:border-[#2563eb] hover:bg-[rgba(255,255,255,0.02)]">
                   <Plus size={24} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
-                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Nhấn để tải lên ảnh so màu (.jpg, .png)</span>
+                  <span style={{ fontSize: 12, color: '#94a3b8' }}>Nhấn để tải lên ảnh so màu (.jpg, .png)</span>
                 </div>
               </div>
             </div>
@@ -267,22 +267,22 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>HAO HỤT TỰ ĐỘNG:</span>
-              <span style={{ fontWeight: 800, color: 'var(--accent-amber)', fontSize: 18 }}>
+              <span style={{ fontSize: 12, color: '#94a3b8' }}>HAO HỤT TỰ ĐỘNG:</span>
+              <span style={{ fontWeight: 800, color: '#d97706', fontSize: 18 }}>
                 {calculatedWastage(newVersion.inputWeight, newVersion.outputWeight) || '0.00'}%
               </span>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button className="btn btn-ghost" onClick={() => setShowAddVersion(false)}>Hủy</button>
+              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" onClick={() => setShowAddVersion(false)}>Hủy</button>
               <button 
-                className="btn btn-danger btn-sm" 
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-rose-600 text-white hover:bg-rose-700 px-3 py-1.5 rounded-lg text-xs" 
                 style={{ padding: '0 20px', fontWeight: 800, fontSize: 13 }} 
                 onClick={() => handleAddVersion('fail')}
               >
                 BÁO LỖI (RE-TEST) ❌
               </button>
               <button 
-                className="btn btn-success btn-sm" 
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 rounded-lg text-xs" 
                 style={{ padding: '0 20px', fontWeight: 800, fontSize: 13 }} 
                 onClick={() => handleAddVersion('pass')}
               >
@@ -306,7 +306,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 {v.result === 'pass' ? <CheckCircle2 size={14} /> : v.result === 'fail' ? <XCircle size={14} /> : <Clock size={14} />}
               </div>
               
-              <div className="timeline-card glass-card">
+              <div className="timeline-card bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden">
                 <div className="card-header-rd">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <span style={{ fontWeight: 800, fontSize: 16 }}>VERSION {v.version}</span>
@@ -314,15 +314,15 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                       {v.result === 'pass' ? 'ĐẠT CHUẨN KỸ THUẬT' : 'CHƯA ĐẠT - RE-TEST'}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: 'var(--text-tertiary)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: '#94a3b8' }}>
                     <span><Calendar size={12} style={{ display: 'inline', marginRight: 4 }} /> {new Date(v.date).toLocaleString('vi-VN')}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <User size={12} style={{ display: 'inline' }} /> 
-                      <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{v.tester}</span>
+                      <span style={{ fontWeight: 700, color: '#0f172a' }}>{v.tester}</span>
                       {v.testerCode && (
                         <span style={{ 
                           fontSize: 10, background: 'rgba(255,255,255,0.1)', padding: '1px 6px', 
-                          borderRadius: 4, color: 'var(--accent-cyan)', fontWeight: 700 
+                          borderRadius: 4, color: '#2563eb', fontWeight: 700 
                         }}>
                           {v.testerCode}
                         </span>
@@ -342,7 +342,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                       <div className="rd-mini-stat">
                         <span>Output:</span> <strong>{v.outputWeight}kg</strong>
                       </div>
-                      <div className="rd-mini-stat" style={{ color: 'var(--accent-amber)' }}>
+                      <div className="rd-mini-stat" style={{ color: '#d97706' }}>
                         <span>Hao hụt:</span> <strong>{wastage}%</strong>
                       </div>
                     </div>
@@ -372,17 +372,17 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* Admin KCS Sign-off Section */}
-      <div className="glass-card" style={{ 
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ 
         marginTop: 60, padding: '30px', border: '1px solid rgba(255,255,255,0.05)',
         background: isSigned ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255, 255, 255, 0.02)'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <PenTool size={22} className="text-[var(--accent-emerald)]" /> 
+              <PenTool size={22} className="text-[#059669]" /> 
               XÁC NHẬN KHOÁ MẪU & CHUẨN KCS (QUYỀN QUẢN LÝ)
             </h3>
-            <p style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>
+            <p style={{ color: '#94a3b8', fontSize: 14 }}>
               Thao tác này sẽ xác nhận công thức cuối cùng cho sản xuất hàng loạt. Chỉ có MaQuyen 'Admin' mới được phép ký duyệt.
             </p>
           </div>
@@ -391,7 +391,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
             {!isSigned ? (
               <div style={{ textAlign: 'right' }}>
                 <button 
-                  className={`btn ${isKCSManager ? 'btn-success' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${isKCSManager ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'btn-ghost'}`}
                   disabled={!isKCSManager || passCount === 0}
                   onClick={handleSignKCS}
                   style={{ minWidth: 200 }}
@@ -399,21 +399,21 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                   <PenTool size={16} /> Ký Duyệt KCS
                 </button>
                 {!isKCSManager && (
-                  <p style={{ fontSize: 11, color: 'var(--accent-rose)', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                  <p style={{ fontSize: 11, color: '#e11d48', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
                     <AlertTriangle size={12} /> Bạn không có quyền ký duyệt mục này
                   </p>
                 )}
                 {isKCSManager && passCount === 0 && (
-                  <p style={{ fontSize: 11, color: 'var(--accent-amber)', marginTop: 8 }}>
+                  <p style={{ fontSize: 11, color: '#d97706', marginTop: 8 }}>
                     ⚠️ Cần ít nhất 1 phiên bản Đạt (PASS) để ký duyệt
                   </p>
                 )}
               </div>
             ) : (
               <div className="kcs-signature-stamp">
-                <div style={{ border: '3px solid var(--accent-emerald)', padding: '10px 20px', borderRadius: 4, transform: 'rotate(-5deg)' }}>
-                  <div style={{ color: 'var(--accent-emerald)', fontWeight: 900, fontSize: 24, textAlign: 'center' }}>PASTED KCS</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center' }}>SIGNED BY: {request.signedBy} — {new Date(request.signedAt).toLocaleDateString()}</div>
+                <div style={{ border: '3px solid #059669', padding: '10px 20px', borderRadius: 4, transform: 'rotate(-5deg)' }}>
+                  <div style={{ color: '#059669', fontWeight: 900, fontSize: 24, textAlign: 'center' }}>PASTED KCS</div>
+                  <div style={{ fontSize: 12, color: '#475569', textAlign: 'center' }}>SIGNED BY: {request.signedBy} — {new Date(request.signedAt).toLocaleDateString()}</div>
                 </div>
               </div>
             )}
@@ -433,7 +433,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           top: 0;
           bottom: 0;
           width: 2px;
-          background: linear-gradient(180deg, var(--accent-cyan), rgba(0, 212, 255, 0.05));
+          background: linear-gradient(180deg, #2563eb, rgba(0, 212, 255, 0.05));
         }
         .timeline-item {
           position: relative;
@@ -446,17 +446,17 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           width: 24px;
           height: 24px;
           border-radius: 50%;
-          background: var(--bg-card);
-          border: 2px solid var(--border-color);
+          background: #ffffff;
+          border: 2px solid #e2e8f0;
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 2;
           box-shadow: 0 0 15px rgba(0,0,0,0.5);
         }
-        .timeline-dot.pass { border-color: var(--accent-emerald); color: var(--accent-emerald); box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
-        .timeline-dot.fail { border-color: var(--accent-rose); color: var(--accent-rose); }
-        .timeline-dot.pending { border-color: var(--accent-amber); color: var(--accent-amber); }
+        .timeline-dot.pass { border-color: #059669; color: #059669; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+        .timeline-dot.fail { border-color: #e11d48; color: #e11d48; }
+        .timeline-dot.pending { border-color: #d97706; color: #d97706; }
         
         .timeline-card {
           padding: 0 !important;
@@ -483,8 +483,8 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           padding: 2px 8px;
           border-radius: 4px;
         }
-        .badge-rd.pass { background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.2); }
-        .badge-rd.fail { background: rgba(244, 63, 94, 0.1); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.2); }
+        .badge-rd.pass { background: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .badge-rd.fail { background: rgba(244, 63, 94, 0.1); color: #e11d48; border: 1px solid rgba(244, 63, 94, 0.2); }
         
         .card-content-rd {
           display: grid;
@@ -496,21 +496,21 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         .rd-block-title {
           font-size: 11px;
           font-weight: 800;
-          color: var(--text-tertiary);
+          color: #94a3b8;
           margin-bottom: 8px;
           letter-spacing: 0.5px;
         }
         .rd-block-text {
           font-size: 14px;
-          color: var(--text-primary);
+          color: #0f172a;
           line-height: 1.6;
         }
         
         .rd-mini-stat {
           font-size: 12px;
-          color: var(--text-secondary);
+          color: #475569;
         }
-        .rd-mini-stat strong { margin-left: 4px; color: var(--text-primary); }
+        .rd-mini-stat strong { margin-left: 4px; color: #0f172a; }
         
         .rd-image-placeholder {
           width: 50px;
@@ -520,17 +520,17 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: var(--text-tertiary);
+          color: #94a3b8;
           border: 1px solid rgba(255,255,255,0.1);
         }
         
-        .stat-label { font-size: 10px; font-weight: 800; color: var(--text-tertiary); margin-bottom: 4px; }
+        .stat-label { font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 4px; }
         .stat-value { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-        .stat-unit { font-size: 12px; font-weight: 500; color: var(--text-tertiary); margin-left: 4px; }
+        .stat-unit { font-size: 12px; font-weight: 500; color: #94a3b8; margin-left: 4px; }
         
         @keyframes pulse {
           0% { box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-          50% { box-shadow: 0 0 40px var(--accent-cyan)30; }
+          50% { box-shadow: 0 0 40px #2563eb30; }
           100% { box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         }
       `}</style>

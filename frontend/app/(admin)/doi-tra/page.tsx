@@ -130,7 +130,7 @@ export default function DoiTraPage() {
   return (
     <div>
       {/* Summary Cards */}
-      <div className="grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><RefreshCcw size={22} /></div>
           <div className="kpi-label">Tổng Yêu Cầu Đổi Trả</div>
@@ -154,14 +154,14 @@ export default function DoiTraPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="form-input"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tra cứu Mã Đổi Trả, Đơn Hàng..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -176,7 +176,7 @@ export default function DoiTraPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`btn btn-sm ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -184,15 +184,15 @@ export default function DoiTraPage() {
               ))}
             </div>
           </div>
-          <button onClick={openCreateModal} className="btn btn-primary">
+          <button onClick={openCreateModal} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
             <Plus size={16} /> Submit Lệnh Đổi Trả Thủ Công
           </button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="data-table">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
+        <table className="w-full text-left text-sm">
           <thead>
             <tr>
               <th>ID Report Đổi Trả</th>
@@ -213,12 +213,12 @@ export default function DoiTraPage() {
               <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }}>Không tìm thấy yêu cầu đổi trả nào.</td></tr>
             ) : filteredData.map(item => (
               <tr key={item._id}>
-                <td style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{item.MaDoiTra}</td>
-                <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{item.DonHang?.MaDonHang}</td>
-                <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.KhachHang?.TenKhachHang}</td>
+                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaDoiTra}</td>
+                <td style={{ fontWeight: 600, color: '#475569' }}>{item.DonHang?.MaDonHang}</td>
+                <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.KhachHang?.TenKhachHang}</td>
                 <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.LyDo}>{item.LyDo}</td>
-                <td style={{ fontWeight: 700, color: item.GiaTriTru > 0 ? 'var(--accent-amber)' : 'var(--text-tertiary)' }}>{item.GiaTriTru?.toLocaleString() || 0} ₫</td>
-                <td style={{ fontWeight: 600, color: 'var(--text-tertiary)' }}>{item.NhanVienPhuTrach ? `${item.NhanVienPhuTrach.MaNV}` : '---'}</td>
+                <td style={{ fontWeight: 700, color: item.GiaTriTru > 0 ? '#d97706' : '#94a3b8' }}>{item.GiaTriTru?.toLocaleString() || 0} ₫</td>
+                <td style={{ fontWeight: 600, color: '#94a3b8' }}>{item.NhanVienPhuTrach ? `${item.NhanVienPhuTrach.MaNV}` : '---'}</td>
                 <td>
                   <span className={`badge ${item.TrangThai === 'Đã hoàn tiền' ? 'approved' : item.TrangThai === 'Bị từ chối' ? 'rejected' : 'testing'}`}>
                     {item.TrangThai}
@@ -226,7 +226,7 @@ export default function DoiTraPage() {
                 </td>
                 <td>{new Date(item.createdAt).toLocaleDateString()}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <button onClick={() => openDetail(item._id)} className="btn btn-ghost btn-sm"><Eye size={16} /></button>
+                  <button onClick={() => openDetail(item._id)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Eye size={16} /></button>
                 </td>
               </tr>
             ))}
@@ -237,17 +237,17 @@ export default function DoiTraPage() {
       {/* Manual Return Modal */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', margin: '2rem auto', color: 'var(--text-primary)' }}>
+          <div style={{ width: '100%', maxWidth: '500px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', margin: '2rem auto', color: '#0f172a' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: 'bold' }}>Lập Lệnh Đổi Trả Thủ Công</h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={24} /></button>
+              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}><X size={24} /></button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Chọn Đơn Hàng Gốc</label>
                 <select
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   style={{ width: '100%', background: 'black' }}
                   value={formData.DonHang}
                   onChange={e => handleOrderChange(e.target.value)}
@@ -259,13 +259,13 @@ export default function DoiTraPage() {
 
               <div>
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Khách Hàng</label>
-                <input type="text" className="form-input" style={{ width: '100%', opacity: 0.7 }} value={formData.TenKhachHang} readOnly disabled />
+                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%', opacity: 0.7 }} value={formData.TenKhachHang} readOnly disabled />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Lý Do Đổi Trả / Khiếu Nại</label>
                 <textarea
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   style={{ width: '100%', minHeight: '80px', resize: 'vertical' }}
                   placeholder="Ghi rõ lỗi sản phẩm hoặc yêu cầu của khách..."
                   value={formData.LyDo}
@@ -277,7 +277,7 @@ export default function DoiTraPage() {
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Dự Kiến Đền Hàng (Mô tả)</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   style={{ width: '100%' }}
                   placeholder="Vd: Đổi 2 thùng sơn mịn xanh, bồi thường 500k..."
                   value={formData.DuKienDenHang}
@@ -289,7 +289,7 @@ export default function DoiTraPage() {
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Giá Trị Phải Đền / Cấn Trừ (₫)</label>
                 <input
                   type="number"
-                  className="form-input"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   style={{ width: '100%' }}
                   value={formData.GiaTriTru}
                   onChange={e => setFormData({ ...formData, GiaTriTru: Number(e.target.value) })}
@@ -300,7 +300,7 @@ export default function DoiTraPage() {
             <div style={{ marginTop: '32px' }}>
               <button
                 onClick={handleSubmit}
-                className="btn btn-primary"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                 style={{ width: '100%', padding: '12px', fontSize: '16px' }}>
                 Xác Nhận Xuất Lệnh Report
               </button>
@@ -312,26 +312,26 @@ export default function DoiTraPage() {
       {/* Detail Modal */}
       {isDetailOpen && selectedReturn && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: '750px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', margin: '2rem auto', color: 'var(--text-primary)' }}>
+          <div style={{ width: '100%', maxWidth: '750px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '32px', margin: '2rem auto', color: '#0f172a' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                  <h2 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: 'var(--accent-cyan)' }}>{selectedReturn.MaDoiTra}</h2>
+                  <h2 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: '#2563eb' }}>{selectedReturn.MaDoiTra}</h2>
                   <span className={`badge ${selectedReturn.TrangThai === 'Đã hoàn tiền' ? 'approved' : 'testing'}`}>{selectedReturn.TrangThai}</span>
                 </div>
-                <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ color: '#475569', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={14} /> Created: {new Date(selectedReturn.createdAt).toLocaleString()}</span>
                 </div>
               </div>
-              <button onClick={() => setIsDetailOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={24} /></button>
+              <button onClick={() => setIsDetailOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}><X size={24} /></button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 32 }}>
-              <div className="glass-card" style={{ padding: 20 }}>
-                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><Package size={18} /> Thông tin đơn hàng gốc</h4>
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><Package size={18} /> Thông tin đơn hàng gốc</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div><label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Mã Đơn Hàng</label><div style={{ fontWeight: 600 }}>{selectedReturn.DonHang?.MaDonHang}</div></div>
-                  <div><label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Danh sách sản phẩm trong đơn</label>
+                  <div><label style={{ fontSize: 12, color: '#475569' }}>Mã Đơn Hàng</label><div style={{ fontWeight: 600 }}>{selectedReturn.DonHang?.MaDonHang}</div></div>
+                  <div><label style={{ fontSize: 12, color: '#475569' }}>Danh sách sản phẩm trong đơn</label>
                     <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
                       {selectedReturn.DonHang?.Items?.map((p: any, idx: number) => (
                         <div key={idx} style={{ fontSize: 13, display: 'flex', justifyContent: 'space-between', padding: '4px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: 4 }}>
@@ -344,36 +344,36 @@ export default function DoiTraPage() {
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: 20 }}>
-                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><User size={18} /> Khách hàng & Phụ trách</h4>
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><User size={18} /> Khách hàng & Phụ trách</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div><label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Tên Khách Hàng</label><div style={{ fontWeight: 600 }}>{selectedReturn.KhachHang?.TenKhachHang}</div></div>
-                  <div><label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Mã Khách Hàng</label><div style={{ fontWeight: 600 }}>{selectedReturn.KhachHang?.MaKH}</div></div>
-                  <div><label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Nhân viên phụ trách</label><div style={{ fontWeight: 600, color: 'var(--accent-cyan)' }}>{selectedReturn.NhanVienPhuTrach?.HoTen} ({selectedReturn.NhanVienPhuTrach?.MaNV})</div></div>
+                  <div><label style={{ fontSize: 12, color: '#475569' }}>Tên Khách Hàng</label><div style={{ fontWeight: 600 }}>{selectedReturn.KhachHang?.TenKhachHang}</div></div>
+                  <div><label style={{ fontSize: 12, color: '#475569' }}>Mã Khách Hàng</label><div style={{ fontWeight: 600 }}>{selectedReturn.KhachHang?.MaKH}</div></div>
+                  <div><label style={{ fontSize: 12, color: '#475569' }}>Nhân viên phụ trách</label><div style={{ fontWeight: 600, color: '#2563eb' }}>{selectedReturn.NhanVienPhuTrach?.HoTen} ({selectedReturn.NhanVienPhuTrach?.MaNV})</div></div>
                 </div>
               </div>
             </div>
 
-            <div className="glass-card" style={{ padding: 24, marginBottom: 24, borderLeft: '4px solid var(--accent-amber)' }}>
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, marginBottom: 24, borderLeft: '4px solid #d97706' }}>
               <div style={{ marginBottom: 20 }}>
                 <h4 style={{ margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: 8 }}><FileText size={18} /> Lý Do & Yêu Cầu</h4>
-                <p style={{ margin: 0, fontStyle: 'italic', color: 'var(--text-primary)' }}>{selectedReturn.LyDo}</p>
+                <p style={{ margin: 0, fontStyle: 'italic', color: '#0f172a' }}>{selectedReturn.LyDo}</p>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h4 style={{ margin: '0 0 8px 0' }}>Dự Kiến Đền</h4>
-                  <div style={{ color: 'var(--accent-emerald)', fontWeight: 600 }}>{selectedReturn.DuKienDenHang || 'Đang chờ xác nhận hàng đền...'}</div>
+                  <div style={{ color: '#059669', fontWeight: 600 }}>{selectedReturn.DuKienDenHang || 'Đang chờ xác nhận hàng đền...'}</div>
                 </div>
 
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <h4 style={{ margin: '0 0 8px 0' }}>Giá Trị Cấn Trừ</h4>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent-amber)' }}><DollarSign size={24} inline-block /> {selectedReturn.GiaTriTru?.toLocaleString()} ₫</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#d97706' }}><DollarSign size={24} inline-block /> {selectedReturn.GiaTriTru?.toLocaleString()} ₫</div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-              <button onClick={() => setIsDetailOpen(false)} className="btn btn-ghost">Đóng chi tiết</button>
-              <button className="btn btn-primary" onClick={() => alert('Chức năng In Ticket đang được phát triển')}>In Ticket Report</button>
+              <button onClick={() => setIsDetailOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700">Đóng chi tiết</button>
+              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => alert('Chức năng In Ticket đang được phát triển')}>In Ticket Report</button>
             </div>
           </div>
         </div>
