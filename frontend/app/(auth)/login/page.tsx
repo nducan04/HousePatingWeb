@@ -67,7 +67,7 @@ export default function LoginPage() {
     >
       <div className="bg-white text-gray-500 w-full max-w-96 mx-auto md:p-6 p-4 text-left text-sm rounded-xl shadow-[0px_0px_10px_0px] shadow-black/10">
         <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">
-          Welcome back
+          Chào Mừng Trở Lại
         </h2>
         <form onSubmit={handleLogin}>
           {error && (
@@ -81,7 +81,7 @@ export default function LoginPage() {
             id="email"
             className="w-full bg-transparent border my-3 border-gray-500/30 outline-none rounded-full py-2.5 px-4 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             type="text"
-            placeholder="Enter your email"
+            placeholder="Nhập Tên Đăng Nhập"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
@@ -90,14 +90,14 @@ export default function LoginPage() {
             id="password"
             className="w-full bg-transparent border mt-1 border-gray-500/30 outline-none rounded-full py-2.5 px-4 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             type="password"
-            placeholder="Enter your password"
+            placeholder="Nhập Mật Khẩu"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
           <div className="text-right py-4">
             <Link className="text-blue-600 underline" href="#">
-              Forgot Password
+              Quên Mật Khẩu
             </Link>
           </div>
           <button
@@ -108,14 +108,14 @@ export default function LoginPage() {
             {loading ? (
               <Loader2 className="animate-spin" size={18} />
             ) : (
-              "Log in"
+              "Đăng Nhập"
             )}
           </button>
         </form>
         <p className="text-center mt-4">
-          Don’t have an account?{" "}
+          Chưa có tài khoản?{" "}
           <Link href="#" className="text-blue-500 underline">
-            Signup
+            Đăng Ký
           </Link>
         </p>
         <button
@@ -127,7 +127,7 @@ export default function LoginPage() {
             src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png"
             alt="appleLogo"
           />
-          Log in with Apple
+          Đăng nhập bằng Apple
         </button>
         <button
           type="button"
@@ -138,7 +138,7 @@ export default function LoginPage() {
             src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png"
             alt="googleFavicon"
           />
-          Log in with Google
+          Đăng nhập bằng Google
         </button>
         <div className="mt-4 text-center">
           <Link
