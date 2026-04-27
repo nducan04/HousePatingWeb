@@ -14,9 +14,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Filter,
+  Eye,
+  Star
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
+import * as XLSX from "xlsx";
 
 interface MaMau {
   _id: string;
@@ -181,7 +185,7 @@ export default function SanPhamPage() {
     } else {
       setFormData({
         _id: "",
-        MaSanPham: "",
+        MaSanPham: "SP" + Date.now().toString().slice(-4),
         TenDongSon: "",
         MaMau: "",
         ThuongHieu: "AkzoNobel",
@@ -252,131 +256,79 @@ export default function SanPhamPage() {
     congNghiep: sanPhams.filter((t) => t.PhanLoai === "Sơn công nghiệp").length,
   };
 
+  const getAvatarUrl = (path: string) => {
+    if (!path || path === 'undefined' || path === 'null') return '';
+    if (path.startsWith('http')) return path;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    const origin = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:5000` : 'http://localhost:5000';
+    return `${origin}${cleanPath}`;
+  };
+
   return (
-    <div>
-      {/* Summary Cards */}
-      <div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-        style={{ marginBottom: "var(--spacing-ms)", gap: "var(--spacing-ms)" }}
-      >
-        {[
-          {
-            color: "cyan",
-            icon: <Package size={14} />,
-            label: "Tổng",
-            value: STATS.total,
-          },
-          {
-            color: "emerald",
-            icon: <Layers size={14} />,
-            label: "Tĩnh Điện",
-            value: STATS.tinhDien,
-          },
-          {
-            color: "purple",
-            icon: <Droplet size={14} />,
-            label: "Tàu Biển",
-            value: STATS.tauBien,
-          },
-          {
-            color: "amber",
-            icon: <Box size={14} />,
-            label: "Công Nghiệp",
-            value: STATS.congNghiep,
-          },
-        ].map((item, idx) => (
-          <div
-            key={idx}
-            className={`kpi-card ${item.color}`}
-            style={{
-              padding: "8px 12px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <div
-              className="kpi-icon"
-              style={{
-                width: 24,
-                height: 24,
-                margin: 0,
-                padding: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {item.icon}
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+              <Package size={22} />
             </div>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div
-                className="kpi-label"
-                style={{ fontSize: "10px", opacity: 0.8, margin: 0 }}
-              >
-                {item.label}
+            Danh mục Sản phẩm
+          </h1>
+          <p className="text-slate-400 font-medium mt-1">Quản lý dòng sơn, thương hiệu và thông số kỹ thuật sản phẩm</p>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { label: "Tổng sản phẩm", value: STATS.total, unit: "Dòng sơn", icon: Package, color: "blue" },
+          { label: "Sơn tĩnh điện", value: STATS.tinhDien, unit: "Dòng", icon: Layers, color: "emerald" },
+          { label: "Sơn tàu biển", value: STATS.tauBien, unit: "Dòng", icon: Droplet, color: "purple" },
+          { label: "Sơn công nghiệp", value: STATS.congNghiep, unit: "Dòng", icon: Box, color: "amber" },
+        ].map((item, i) => (
+          <div key={i} className="kpi-card group">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{item.label}</p>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">{item.value} <span className="text-sm font-bold text-slate-400">{item.unit}</span></h3>
               </div>
-              <div
-                className="kpi-value"
-                style={{ fontSize: "14px", fontWeight: 700, margin: 0 }}
-              >
-                {item.value}
+              <div className={`w-12 h-12 bg-${item.color}-50 text-${item.color}-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                <item.icon size={24} />
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Toolbar */}
-      <div
-        className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden"
-        style={{
-          padding: "var(--spacing-ms)",
-          marginBottom: "1.125rem",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "1.125rem",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "1.125rem",
-            }}
-          >
-            <div className="relative" style={{ width: 140 }}>
-              <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+      {/* Toolbar & Filter */}
+      <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-6">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
+            <div className="relative w-full md:w-80 group">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
               <input
                 type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                style={{
-                  padding: "4px 8px 4px 30px",
-                  fontSize: "11px",
-                  height: 28,
-                }}
-                placeholder="Tìm..."
+                className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                placeholder="Tìm mã SP, tên dòng sơn..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <div style={{ display: "flex", gap: 2 }}>
+
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl">
               {[
                 { id: "all", label: "Tất cả" },
                 { id: "Sơn tĩnh điện", label: "Tĩnh điện" },
                 { id: "Sơn tàu biển", label: "Tàu biển" },
                 { id: "Sơn công nghiệp", label: "Công nghiệp" },
-              ].map((f) => (
+              ].map(f => (
                 <button
                   key={f.id}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filterType === f.id ? "btn-primary" : "btn-ghost"}`}
-                  style={{ fontSize: "10px", height: 28, padding: "0 8px" }}
+                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${filterType === f.id
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                    }`}
                   onClick={() => setFilterType(f.id)}
                 >
                   {f.label}
@@ -384,903 +336,317 @@ export default function SanPhamPage() {
               ))}
             </div>
           </div>
-          <div style={{ display: "flex", gap: 12 }}>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={exportToExcel}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-[14px] bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all border border-emerald-100 cursor-pointer"
+            >
+              <Download size={18} /> Xuất Excel
+            </button>
             {isAdminOrEmployee && (
-              <>
-                <button
-                  onClick={exportToExcel}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                  style={{
-                    border: "1px solid #e2e8f0",
-                    color: "#059669",
-                    fontSize: "10px",
-                    height: 28,
-                    padding: "0 8px",
-                  }}
-                >
-                  <Download size={14} /> Xuất
-                </button>
-                <button
-                  onClick={() => openForm()}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                  style={{ fontSize: "10px", height: 28, padding: "0 8px" }}
-                >
-                  <Plus size={14} /> Thêm SP
-                </button>
-              </>
+              <button
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+                onClick={() => openForm()}
+              >
+                <Plus size={18} /> Thêm Sản phẩm
+              </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div
-        className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none"
-        style={{ overflow: "hidden", borderRadius: 0, marginTop: "0.5rem" }}
-      >
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr style={{ fontSize: "11px" }}>
-              <th style={{ width: "40px", textAlign: "center" }}>Ảnh</th>
-              <th>Mã SP</th>
-              <th>Tên Dòng Sơn</th>
-              <th>Thương hiệu</th>
-              <th>Phân loại</th>
-              <th>Đơn giá</th>
-              <th>ĐVT</th>
-              <th>Tồn Kho</th>
-              <th>Màu</th>
-              <th style={{ textAlign: "right" }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+      {/* Data Table */}
+      <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="premium-table">
+            <thead>
               <tr>
-                <td
-                  colSpan={10}
-                  style={{
-                    textAlign: "center",
-                    padding: "2rem",
-                    color: "#475569",
-                  }}
-                >
-                  Đang tải...
-                </td>
+                <th className="w-20 text-center">Ảnh</th>
+                <th>Mã SP</th>
+                <th>Dòng sản phẩm</th>
+                <th>Thương hiệu / Loại</th>
+                <th>Đơn giá</th>
+                <th className="text-right">Tồn kho</th>
+                <th className="text-center">Phiên bản</th>
+                <th className="text-right">Thao tác</th>
               </tr>
-            ) : sanPhams.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={10}
-                  style={{
-                    textAlign: "center",
-                    padding: "2rem",
-                    color: "#475569",
-                  }}
-                >
-                  Không tìm thấy sản phẩm.
-                </td>
-              </tr>
-            ) : (
-              sanPhams.map((sp) => (
-                <tr key={sp._id} style={{ fontSize: "0.875rem" }}>
-                  <td style={{ padding: "2px", textAlign: "center" }}>
-                    <div
-                      style={{
-                        width: "28px",
-                        height: "28px",
-                        borderRadius: "3px",
-                        overflow: "hidden",
-                        backgroundColor: "var(--bg-color)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      {sp.HinhAnh ? (
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={8} className="text-center py-20 text-blue-600 font-bold">Đang tải dữ liệu...</td></tr>
+              ) : sanPhams.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-20 text-slate-400 font-medium italic">Không tìm thấy sản phẩm.</td></tr>
+              ) : sanPhams.map(item => (
+                <tr key={item._id} className="hover:bg-blue-50/30 group">
+                  <td className="text-center">
+                    <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm mx-auto group-hover:scale-105 transition-transform">
+                      {item.HinhAnh ? (
                         <img
-                          src={`http://localhost:5000${sp.HinhAnh}`}
-                          alt="SP"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
+                          src={getAvatarUrl(item.HinhAnh)}
+                          alt="Img"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(item.TenDongSon) + '&background=random';
                           }}
                         />
                       ) : (
-                        <Package size={14} color="#475569" />
+                        <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-600 font-bold">
+                          <Package size={20} />
+                        </div>
                       )}
                     </div>
                   </td>
-                  <td
-                    style={{
-                      fontWeight: 700,
-                      color: "#2563eb",
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                    }}
-                    onClick={() => handleViewProduct(sp)}
-                    title="Xem chi tiết sản phẩm"
-                  >
-                    {sp.MaSanPham}
+                  <td>
+                    <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg text-[13px]">{item.MaSanPham}</span>
                   </td>
-                  <td style={{ fontWeight: 600, color: "#0f172a" }}>
-                    {sp.TenDongSon}
+                  <td className="min-w-[200px]">
+                    <div className="font-bold text-slate-900 text-[15px] cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleViewProduct(item)}>
+                      {item.TenDongSon}
+                    </div>
+                    <div className="text-[12px] text-slate-400 font-medium mt-0.5 uppercase tracking-wider line-clamp-1">{item.MoTa || 'Chưa có mô tả ngắn'}</div>
                   </td>
-                  <td>{sp.ThuongHieu}</td>
-                  <td>{sp.PhanLoai}</td>
-                  <td
-                    style={{ color: "#059669", fontWeight: 600 }}
-                  >
-                    {sp.DonGiaCoSo.toLocaleString()} ₫
+                  <td>
+                    <div className="font-bold text-slate-800 text-[14px]">{item.ThuongHieu}</div>
+                    <div className="text-[12px] text-blue-500 font-bold bg-blue-50 px-2 py-0.5 rounded-md inline-block mt-1">{item.PhanLoai}</div>
                   </td>
-                  <td style={{ fontWeight: 600 }}>{sp.DonViTinh || "Thùng"}</td>
-                  <td
-                    style={{
-                      fontWeight: 600,
-                      color:
-                        (sp.TonKho || 0) > 0
-                          ? "#2563eb"
-                          : "#e11d48",
-                    }}
-                  >
-                    {sp.TonKho || 0}
+                  <td>
+                    <div className="font-black text-emerald-600 text-[15px]">{item.DonGiaCoSo.toLocaleString()} ₫</div>
+                    <div className="text-[11px] text-slate-400 font-bold">per {item.DonViTinh}</div>
                   </td>
-                  <td style={{ padding: "4px 8px" }}>
-                    <span
-                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700"
-                      style={{ fontSize: "10px", padding: "2px 6px" }}
-                    >
-                      {sp.DanhSachMaMau?.length || 0} Màu
+                  <td className="text-right">
+                    <div className={`font-black text-[16px] ${(item.TonKho || 0) < 10 ? 'text-rose-500' : 'text-slate-900'}`}>
+                      {item.TonKho || 0}
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">{item.DonViTinh}</div>
+                  </td>
+                  <td className="text-center">
+                    <span className="status-badge status-active">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                      {item.DanhSachMaMau?.length || 0} SKU
                     </span>
                   </td>
-                  <td style={{ textAlign: "right" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        gap: 8,
-                      }}
-                    >
-                      <button
-                        onClick={() => addToCart(sp)}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                        title="Thêm vào giỏ hàng"
-                        style={{ color: "#059669" }}
-                        disabled={(sp.TonKho || 0) <= 0}
-                      >
-                        <ShoppingCart size={16} />
+                  <td className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => addToCart(item)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer shadow-sm" title="Thêm vào giỏ">
+                        <ShoppingCart size={18} />
+                      </button>
+                      <button onClick={() => handleViewProduct(item)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
+                        <Eye size={18} />
                       </button>
                       {isAdminOrEmployee && (
                         <>
-                          <button
-                            onClick={() => openForm(sp)}
-                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                          >
-                            <Edit size={16} />
+                          <button onClick={() => openForm(item)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
+                            <Edit size={18} />
                           </button>
-                          <button
-                            onClick={() => handleDelete(sp._id)}
-                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                          >
-                            <Trash2 size={16} color="#e11d48" />
+                          <button onClick={() => handleDelete(item._id)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all cursor-pointer">
+                            <Trash2 size={18} />
                           </button>
                         </>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        {/* Pagination Controls */}
-        <div
-          style={{
-            padding: "8px 1.125rem",
-            borderTop: "1px solid #e2e8f0",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            background: "rgba(0,0,0,0.1)",
-          }}
-        >
-          <div style={{ fontSize: "10px", color: "#94a3b8" }}>
-            Trang {currentPage} / {totalPages}
-          </div>
-          <div style={{ display: "flex", gap: 4 }}>
+        {/* Pagination */}
+        <div className="px-8 py-4 border-t border-slate-50 flex items-center justify-between bg-slate-50/30">
+          <p className="text-[13px] font-bold text-slate-400">Trang {currentPage} / {totalPages}</p>
+          <div className="flex items-center gap-2">
             <button
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              style={{ height: 24, width: 24, padding: 0 }}
             >
-              <ChevronLeft size={14} />
+              <ChevronLeft size={18} />
             </button>
-            {Array.from(
-              { length: Math.min(totalPages, 5) },
-              (_, i) => i + 1,
-            ).map((page) => (
-              <button
-                key={page}
-                className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${currentPage === page ? "btn-primary" : "btn-ghost"}`}
-                onClick={() => setCurrentPage(page)}
-                style={{
-                  minWidth: "24px",
-                  height: 24,
-                  padding: 0,
-                  fontSize: "10px",
-                }}
-              >
-                {page}
-              </button>
-            ))}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <button
+                  key={p}
+                  className={`w-10 h-10 rounded-xl text-[13px] font-black transition-all ${currentPage === p ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-white border border-slate-100 text-slate-400 hover:bg-slate-50'
+                    }`}
+                  onClick={() => setCurrentPage(p)}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
             <button
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-              }
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              style={{ height: 24, width: 24, padding: 0 }}
             >
-              <ChevronRight size={14} />
+              <ChevronRight size={18} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 50,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.7)",
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          <div
-            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden"
-            style={{ width: "100%", maxWidth: "600px", padding: 0 }}
-          >
-            <div
-              style={{
-                padding: "1.75rem",
-                borderBottom: "1px solid #e2e8f0",
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <h3 style={{ fontSize: "1.375rem", fontWeight: 700 }}>
-                {formData._id ? "Chỉnh sửa" : "Thêm Sản Phẩm"}
-              </h3>
+      {/* View Modal */}
+      {isViewOpen && selectedProduct && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Hồ sơ sản phẩm: {selectedProduct.MaSanPham}</h2>
+              <button onClick={() => setIsViewOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors">×</button>
             </div>
-            <div
-              style={{
-                padding: "1.75rem",
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.125rem",
-                maxHeight: "70vh",
-                overflowY: "auto",
-              }}
-            >
-              {/* Upload Ảnh Sản Phẩm */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "8px",
-                  marginBottom: "16px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "150px",
-                    height: "150px",
-                    borderRadius: "8px",
-                    border: "2px dashed #ccc",
-                    overflow: "hidden",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    backgroundColor: "#f5f5f5",
-                  }}
-                >
-                  {formData.HinhAnh ? (
-                    <img
-                      src={`http://localhost:5000${formData.HinhAnh}`}
-                      alt="HinhAnh"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  ) : (
-                    <span
-                      style={{
-                        fontSize: "13px",
-                        color: "#888",
-                        textAlign: "center",
-                      }}
-                    >
-                      Chưa có ảnh
-                      <br />
-                      sản phẩm
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  disabled={isUploading}
-                  style={{ fontSize: "13px", color: "#dddddd" }}
-                />
-                {isUploading && (
-                  <span style={{ color: "#1100f8ff", fontSize: "13px" }}>
-                    Đang tải lên...
-                  </span>
-                )}
-              </div>
 
-              <div style={{ display: "flex", gap: "1.125rem" }}>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                    }}
-                  >
-                    Mã Sản Phẩm *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    value={formData.MaSanPham}
-                    onChange={(e) =>
-                      setFormData({ ...formData, MaSanPham: e.target.value })
-                    }
-                  />
+            <div className="p-8 overflow-y-auto space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="col-span-1">
+                  <div className="aspect-square rounded-[32px] overflow-hidden border-4 border-white shadow-xl bg-slate-100">
+                    <img src={getAvatarUrl(selectedProduct.HinhAnh || '')} alt={selectedProduct.TenDongSon} className="w-full h-full object-cover" />
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                    }}
-                  >
-                    Thương hiệu
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    value={formData.ThuongHieu}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ThuongHieu: e.target.value })
-                    }
-                  />
+
+                <div className="col-span-1 md:col-span-2 space-y-6">
+                  <div>
+                    <span className="text-[11px] font-black bg-blue-600 text-white px-3 py-1 rounded-full uppercase tracking-widest">{selectedProduct.PhanLoai}</span>
+                    <h1 className="text-3xl font-black text-slate-900 mt-2">{selectedProduct.TenDongSon}</h1>
+                    <p className="text-slate-400 font-bold mt-1 uppercase tracking-wider">{selectedProduct.ThuongHieu}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-[24px]">
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase">Đơn giá cơ sở</p>
+                      <p className="text-2xl font-black text-emerald-600">{selectedProduct.DonGiaCoSo?.toLocaleString()} ₫</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase">Tồn kho hiện tại</p>
+                      <p className="text-2xl font-black text-slate-900">{selectedProduct.TonKho || 0} <span className="text-sm text-slate-400">{selectedProduct.DonViTinh}</span></p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[13px] font-black text-slate-900 uppercase tracking-tight">Thông tin kỹ thuật & Mô tả</p>
+                    <p className="text-slate-600 leading-relaxed font-medium">{selectedProduct.MoTa || 'Chưa có thông tin chi tiết.'}</p>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: 8,
-                    fontSize: "0.875rem",
-                    color: "#475569",
-                  }}
-                >
-                  Tên Dòng Sơn *
-                </label>
-                <input
-                  type="text"
-                  required
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  value={formData.TenDongSon}
-                  onChange={(e) =>
-                    setFormData({ ...formData, TenDongSon: e.target.value })
-                  }
-                />
-              </div>
-
-              <div style={{ display: "flex", gap: "1.125rem" }}>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                    }}
-                  >
-                    Phân loại
-                  </label>
-                  <select
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    value={formData.PhanLoai}
-                    onChange={(e) =>
-                      setFormData({ ...formData, PhanLoai: e.target.value })
-                    }
-                  >
-                    <option value="Sơn tĩnh điện">Sơn tĩnh điện</option>
-                    <option value="Sơn tàu biển">Sơn tàu biển</option>
-                    <option value="Sơn công nghiệp">Sơn công nghiệp</option>
-                    <option value="Sơn nội thất">Sơn nội thất</option>
-                  </select>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                    }}
-                  >
-                    Đơn giá (VNĐ)
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    value={formData.DonGiaCoSo}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        DonGiaCoSo: Number(e.target.value),
-                      })
-                    }
-                  />
+              <div className="space-y-4">
+                <h3 className="text-[16px] font-black text-slate-900 uppercase tracking-tight">Danh sách mã màu SKU ({selectedProduct.DanhSachMaMau?.length || 0})</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                  {selectedProduct.DanhSachMaMau?.map((m, i) => (
+                    <div key={i} className="p-3 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col items-center gap-2">
+                      <div className="w-full aspect-square rounded-xl shadow-inner border border-slate-50" style={{ background: m.HexCode }}></div>
+                      <span className="text-[11px] font-black text-slate-700">{m.MaMau}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "1.125rem" }}>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                    }}
-                  >
-                    Đơn vị tính
-                  </label>
-                  <select
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    value={formData.DonViTinh}
-                    onChange={(e) =>
-                      setFormData({ ...formData, DonViTinh: e.target.value })
-                    }
-                  >
-                    <option value="Thùng">Thùng</option>
-                    <option value="Kg">Kg</option>
-                  </select>
+              <div className="space-y-4">
+                <h3 className="text-[16px] font-black text-slate-900 uppercase tracking-tight">Phản hồi khách hàng</h3>
+                <div className="space-y-4">
+                  {selectedProduct.DanhGia?.length ? selectedProduct.DanhGia.map((dg, idx) => (
+                    <div key={idx} className="p-6 bg-slate-50 rounded-[24px] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-slate-900">{dg.KhachHang}</span>
+                        <span className="text-[12px] font-bold text-slate-400">{new Date(dg.NgayDanhGia).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex text-amber-400 gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={14} fill={i < dg.SoSao ? "currentColor" : "none"} />)}
+                      </div>
+                      <p className="text-[14px] text-slate-600 font-medium">{dg.BinhLuan}</p>
+                    </div>
+                  )) : <p className="text-center py-10 text-slate-400 italic font-medium">Chưa có đánh giá nào.</p>}
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                    }}
-                  >
-                    Tồn kho hệ thống
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    value={formData.TonKho}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        TonKho: Number(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-              </div>
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontWeight: "bold",
-                    marginBottom: "8px",
-                    fontSize: "14px",
-                  }}
-                >
-                  Mô tả sản phẩm
-                </label>
-                <textarea
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    borderRadius: "4px",
-                    fontSize: "14px",
-                    outline: "none",
-                    minHeight: "80px",
-                    resize: "vertical",
-                  }}
-                  value={formData.MoTa}
-                  onChange={(e) =>
-                    setFormData({ ...formData, MoTa: e.target.value })
-                  }
-                ></textarea>
               </div>
             </div>
-            <div
-              style={{
-                padding: "1.125rem 1.75rem",
-                borderTop: "1px solid #e2e8f0",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 8,
-              }}
-            >
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-              >
-                Đóng
-              </button>
-              <button onClick={handleSubmit} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
-                Lưu thay đổi
+
+            <div className="p-6 bg-slate-50/50 border-t border-slate-50 flex justify-center">
+              <button onClick={() => setIsViewOpen(false)} className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20">
+                Đóng hồ sơ
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* View Modal */}
-      {isViewOpen && selectedProduct && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 60,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.7)",
-            backdropFilter: "blur(4px)",
-            overflowY: "auto",
-          }}
-        >
-          <div
-            className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden"
-            style={{
-              width: "100%",
-              maxWidth: "700px",
-              padding: 0,
-              margin: "2rem auto",
-              background: "var(--surface-color)",
-            }}
-          >
-            <div
-              style={{
-                padding: "1.75rem",
-                borderBottom: "1px solid #e2e8f0",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "1.375rem",
-                  fontWeight: 700,
-                  color: "#2563eb",
-                }}
-              >
-                Chi Tiết Sản Phẩm: {selectedProduct.MaSanPham}
-              </h3>
-              <button
-                onClick={() => setIsViewOpen(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#475569",
-                  cursor: "pointer",
-                  fontSize: "1.5rem",
-                }}
-              >
-                &times;
-              </button>
+      {/* Modal - Cập nhật thông tin */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+              <h2 className="text-xl font-black text-slate-900">{formData._id ? 'Chỉnh sửa Sản phẩm' : 'Thêm Sản phẩm mới'}</h2>
+              <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors">×</button>
             </div>
 
-            <div
-              style={{
-                padding: "1.75rem",
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.125rem",
-                maxHeight: "70vh",
-                overflowY: "auto",
-              }}
-            >
-              {selectedProduct.HinhAnh && (
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    marginBottom: "1rem",
-                  }}
-                >
-                  <img
-                    src={`http://localhost:5000${selectedProduct.HinhAnh}`}
-                    alt={selectedProduct.TenDongSon}
-                    style={{
-                      width: "200px",
-                      height: "200px",
-                      objectFit: "cover",
-                      borderRadius: "8px",
-                      border: "1px solid #e2e8f0",
-                    }}
-                  />
-                </div>
-              )}
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "1rem",
-                  backgroundColor: "rgba(0,0,0,0.2)",
-                  padding: "1rem",
-                  borderRadius: "8px",
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    Tên Dòng Sơn
-                  </div>
-                  <div style={{ fontWeight: "bold", fontSize: "1.1rem" }}>
-                    {selectedProduct.TenDongSon}
-                  </div>
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    Thương Hiệu
-                  </div>
-                  <div style={{ fontWeight: "bold" }}>
-                    {selectedProduct.ThuongHieu}
-                  </div>
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    Phân Loại (Loại sơn)
-                  </div>
-                  <div
-                    style={{
-                      fontWeight: "bold",
-                      color: "#7c3aed",
-                    }}
-                  >
-                    {selectedProduct.PhanLoai}
-                  </div>
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    Đơn Giá / Định Lượng
-                  </div>
-                  <div
-                    style={{
-                      fontWeight: "bold",
-                      color: "#059669",
-                    }}
-                  >
-                    {selectedProduct.DonGiaCoSo?.toLocaleString()} đ /{" "}
-                    {selectedProduct.DonViTinh}
-                  </div>
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    Tồn Kho Thực Tế
-                  </div>
-                  <div style={{ fontWeight: "bold" }}>
-                    {selectedProduct.TonKho || 0} {selectedProduct.DonViTinh}
-                  </div>
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    Số Lượng Đã Bán
-                  </div>
-                  <div
-                    style={{ fontWeight: "bold", color: "#d97706" }}
-                  >
-                    {selectedProduct.SoLuongDaBan || 0}{" "}
-                    {selectedProduct.DonViTinh}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4
-                  style={{
-                    fontSize: "1rem",
-                    fontWeight: 600,
-                    borderBottom: "1px solid #e2e8f0",
-                    paddingBottom: "8px",
-                    marginBottom: "12px",
-                  }}
-                >
-                  Mô Tả Thuộc Tính Chi Tiết
-                </h4>
-                <div
-                  style={{
-                    whiteSpace: "pre-line",
-                    fontSize: "0.95rem",
-                    lineHeight: "1.6",
-                    color: "#0f172a",
-                    backgroundColor: "var(--bg-color)",
-                    padding: "1rem",
-                    borderRadius: "8px",
-                  }}
-                >
-                  {selectedProduct.MoTa ||
-                    "Chưa có thông tin mô tả chi tiết cho sản phẩm này."}
-                </div>
-              </div>
-
-              <div>
-                <h4
-                  style={{
-                    fontSize: "1rem",
-                    fontWeight: 600,
-                    borderBottom: "1px solid #e2e8f0",
-                    paddingBottom: "8px",
-                    marginBottom: "12px",
-                  }}
-                >
-                  Đánh Giá Của Khách Hàng
-                </h4>
-                {selectedProduct.DanhGia &&
-                selectedProduct.DanhGia.length > 0 ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "10px",
-                    }}
-                  >
-                    {selectedProduct.DanhGia.map((dg, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          backgroundColor: "var(--bg-color)",
-                          padding: "12px",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontWeight: "bold",
-                              color: "#2563eb",
-                            }}
-                          >
-                            {dg.KhachHang}
-                          </span>
-                          <span
-                            style={{
-                              color: "#475569",
-                              fontSize: "0.85rem",
-                            }}
-                          >
-                            {new Date(dg.NgayDanhGia).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            color: "#d97706",
-                            marginBottom: "6px",
-                            fontSize: "1rem",
-                          }}
-                        >
-                          {"★".repeat(dg.SoSao)}
-                          {"☆".repeat(5 - dg.SoSao)}
-                        </div>
-                        <p
-                          style={{
-                            margin: 0,
-                            fontSize: "0.9rem",
-                            color: "#0f172a",
-                          }}
-                        >
-                          {dg.BinhLuan}
-                        </p>
+            <div className="p-8 overflow-y-auto space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Image Upload */}
+                <div className="col-span-1 md:col-span-2 flex flex-col items-center justify-center p-8 bg-slate-50 rounded-[24px] border-2 border-dashed border-slate-200 group hover:border-blue-400 transition-colors cursor-pointer relative overflow-hidden">
+                  <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={handleImageUpload} />
+                  {formData.HinhAnh ? (
+                    <div className="relative group/img">
+                      <img src={getAvatarUrl(formData.HinhAnh)} alt="Product" className="w-40 h-40 rounded-3xl object-cover shadow-xl border-4 border-white" />
+                      <div className="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+                        <Plus className="text-white" size={24} />
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "2rem",
-                      backgroundColor: "var(--bg-color)",
-                      borderRadius: "8px",
-                      color: "#475569",
-                    }}
-                  >
-                    Chưa có đánh giá nào cho sản phẩm này.
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-blue-600 shadow-sm transition-colors mb-3">
+                        <Plus size={28} />
+                      </div>
+                      <p className="text-sm font-bold text-slate-500">Tải ảnh sản phẩm</p>
+                    </div>
+                  )}
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20">
+                      <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Mã sản phẩm</label>
+                  <input type="text" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.MaSanPham} onChange={e => setFormData({ ...formData, MaSanPham: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Dòng sản phẩm</label>
+                  <input type="text" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.TenDongSon} onChange={e => setFormData({ ...formData, TenDongSon: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Phân loại</label>
+                  <select className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.PhanLoai} onChange={e => setFormData({ ...formData, PhanLoai: e.target.value })}>
+                    <option value="Sơn tĩnh điện">Sơn tĩnh điện</option>
+                    <option value="Sơn tàu biển">Sơn tàu biển</option>
+                    <option value="Sơn công nghiệp">Sơn công nghiệp</option>
+                    <option value="Sơn nội thất">Sơn nội thất</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Thương hiệu</label>
+                  <input type="text" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.ThuongHieu} onChange={e => setFormData({ ...formData, ThuongHieu: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Đơn giá cơ sở</label>
+                  <input type="number" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.DonGiaCoSo} onChange={e => setFormData({ ...formData, DonGiaCoSo: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Đơn vị tính</label>
+                  <select className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.DonViTinh} onChange={e => setFormData({ ...formData, DonViTinh: e.target.value })}>
+                    <option value="Thùng">Thùng</option>
+                    <option value="Kg">Kg</option>
+                    <option value="Lít">Lít</option>
+                  </select>
+                </div>
+                <div className="col-span-1 md:col-span-2 space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Mô tả chi tiết</label>
+                  <textarea rows={4} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 resize-none" value={formData.MoTa} onChange={e => setFormData({ ...formData, MoTa: e.target.value })}></textarea>
+                </div>
               </div>
             </div>
-            <div
-              style={{
-                padding: "1.125rem 1.75rem",
-                borderTop: "1px solid #e2e8f0",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 8,
-              }}
-            >
-              <button
-                onClick={() => setIsViewOpen(false)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                style={{ padding: "10px 30px" }}
-              >
-                Đóng hồ sơ sản phẩm
-              </button>
+
+            <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
+              <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all">Hủy</button>
+              <button onClick={handleSubmit} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all">Lưu sản phẩm</button>
             </div>
           </div>
         </div>

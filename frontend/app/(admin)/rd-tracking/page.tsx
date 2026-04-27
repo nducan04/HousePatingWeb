@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, FlaskConical, Beaker, CheckCircle2, FlaskRound, Plus, Loader2 } from 'lucide-react';
+import { Search, Eye, FlaskConical, Beaker, CheckCircle2, FlaskRound, Plus, Loader2, X } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import Link from 'next/link';
 import { paintColors } from '@/lib/data/colors-data';
@@ -76,10 +76,10 @@ export default function RDTrackingPage() {
       if (res.data.success) {
         setIsModalOpen(false);
         fetchLogs();
-        alert('✅ Đã tạo Log R&D mới thành công!');
+        alert('Đã tạo Log R&D mới thành công!');
       }
     } catch (err) {
-      alert('❌ Lỗi khi tạo log mới');
+      alert('Lỗi khi tạo log mới');
     } finally {
       setCreating(false);
     }
@@ -105,57 +105,101 @@ export default function RDTrackingPage() {
     return matchSearch && matchFilter;
   });
 
-  if (loading) return <div style={{ textAlign: 'center', padding: 100 }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></div>;
-
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><FlaskConical size={22} /></div>
-          <div className="kpi-label">Tổng Số Mẫu Phân Tích</div>
-          <div className="kpi-value">{STATS.total} Lô Mẫu</div>
-        </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><Beaker size={22} /></div>
-          <div className="kpi-label">Đang Test/Pha chế</div>
-          <div className="kpi-value">{STATS.testing}</div>
-        </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><CheckCircle2 size={22} /></div>
-          <div className="kpi-label">Đã Ký Duyệt KCS</div>
-          <div className="kpi-value">{STATS.success}</div>
-        </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><FlaskRound size={22} /></div>
-          <div className="kpi-label">Lô Mẫu Thất Bại</div>
-          <div className="kpi-value">{STATS.fail}</div>
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
+             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+               <FlaskConical size={22} />
+             </div>
+             Phân tích R&D
+          </h1>
+          <p className="text-slate-400 font-medium mt-1">Truy xuất và kiểm soát chất lượng (KCS) phòng thí nghiệm</p>
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tổng Số Mẫu Phân Tích</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.total} <span className="text-sm font-bold text-slate-400">Lô</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <FlaskConical size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Đang Test/Pha chế</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.testing} <span className="text-sm font-bold text-slate-400">Mẫu</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Beaker size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Đã Ký Duyệt KCS</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.success} <span className="text-sm font-bold text-slate-400">Mẫu</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <CheckCircle2 size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Lô Mẫu Thất Bại</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.fail} <span className="text-sm font-bold text-slate-400">Mẫu</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <FlaskRound size={24} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Toolbar & Filter */}
+      <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-6">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
+            <div className="relative w-full md:w-80 group">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
               <input
                 type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                 placeholder="Tra cứu Trace Log Code Lab Model..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <div style={{ display: 'flex', gap: 4 }}>
+            
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl">
               {[
                 { id: 'all', label: 'Tất cả' },
-                { id: 'testing', label: 'Processing...' },
+                { id: 'testing', label: 'Processing' },
                 { id: 'success', label: 'Approved KCS' },
                 { id: 'fail', label: 'Rejected' }
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
+                    filter === f.id 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                  }`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -163,32 +207,37 @@ export default function RDTrackingPage() {
               ))}
             </div>
           </div>
-          <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => setIsModalOpen(true)}>
-            <Plus size={16} /> Tạo Log R&D Mới
+
+          <button 
+            className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <Plus size={18} /> Tạo Log R&D Mới
           </button>
         </div>
       </div>
 
       {/* Create Log Modal */}
       {isModalOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)'
-        }}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: 500, padding: 30, border: '1px solid #2563eb' }}>
-            <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Beaker className="text-[#2563eb]" /> KHỞI TẠO LOG TRUY XUẤT R&D
-            </h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300">
+            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                 <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                    <Beaker size={18} />
+                 </div>
+                 KHỞI TẠO LOG TRUY XUẤT R&D
+              </h2>
+              <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"><X size={20} /></button>
+            </div>
 
-            <div style={{ display: 'grid', gap: 20 }}>
-              <div className="form-group">
-                <label className="form-label">Chọn Hợp đồng Kinh doanh/Gia công</label>
+            <div className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Chọn Hợp đồng Kinh doanh/Gia công</label>
                 <select
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
                   value={selectedContract}
                   onChange={(e) => handleContractChange(e.target.value)}
-                  style={{ background: '#ffffff' }}
                 >
                   <option value="">-- Chọn hợp đồng --</option>
                   {contracts.map(c => (
@@ -197,14 +246,13 @@ export default function RDTrackingPage() {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Mã màu yêu cầu pha chế</label>
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Mã màu yêu cầu pha chế</label>
                 <select
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all disabled:opacity-50"
                   value={selectedColor}
                   onChange={(e) => setSelectedColor(e.target.value)}
                   disabled={!selectedContract}
-                  style={{ background: '#ffffff' }}
                 >
                   <option value="">-- Chọn mã màu --</option>
                   {availableColors.map(color => {
@@ -217,110 +265,109 @@ export default function RDTrackingPage() {
                   })}
                 </select>
 
+                {!selectedContract && <p className="text-[11px] text-rose-500 font-bold ml-1 mt-1">* Vui lòng chọn hợp đồng trước</p>}
+
                 {selectedColor && (
-                  <div style={{
-                    marginTop: 12, padding: 12, borderRadius: 8, background: 'rgba(255,255,255,0.03)',
-                    display: 'flex', alignItems: 'center', gap: 12, border: '1px solid rgba(255,255,255,0.05)'
-                  }}>
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 6,
-                      background: paintColors.find(c => c.code === selectedColor)?.hex || '#333'
-                    }} />
+                  <div className="mt-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl shadow-inner border border-slate-100" style={{ background: paintColors.find(c => c.code === selectedColor)?.hex || '#333' }} />
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>
+                      <div className="text-[14px] font-black text-slate-900">
                         {paintColors.find(c => c.code === selectedColor)?.name || 'Custom Color'}
                       </div>
-                      <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                      <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
                         {selectedColor} | {paintColors.find(c => c.code === selectedColor)?.category || 'Mixed'}
                       </div>
                     </div>
                   </div>
                 )}
-
-                {!selectedContract && <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>* Vui lòng chọn hợp đồng trước</p>}
               </div>
+            </div>
 
-              <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
-                <button
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 flex-1"
-                  onClick={() => setIsModalOpen(false)}
-                  disabled={creating}
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm flex-1"
-                  onClick={handleCreateLog}
-                  disabled={creating || !selectedContract || !selectedColor}
-                >
-                  {creating ? 'Đang tạo...' : 'Xác nhận Khởi tạo'}
-                </button>
-              </div>
+            <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
+              <button onClick={() => setIsModalOpen(false)} disabled={creating} className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer">Hủy</button>
+              <button onClick={handleCreateLog} disabled={creating || !selectedContract || !selectedColor} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                {creating ? 'Đang tạo...' : 'Xác nhận Khởi tạo'}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr>
-              <th>ID Lab Định Biên</th>
-              <th>Mã Màu Yêu Cầu</th>
-              <th>Hợp Đồng</th>
-              <th>Số Mẻ Test</th>
-              <th>Hao Hụt % (Avg)</th>
-              <th>Status</th>
-              <th>Cập nhật cuối</th>
-              <th style={{ textAlign: 'right' }}>Log Tracking</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map(item => {
-              const wastage = item.LichSuPhienBan?.length > 0
-                ? (item.LichSuPhienBan.reduce((acc: number, cur: any) => acc + (cur.inputWeight > 0 ? (cur.inputWeight - cur.outputWeight) / cur.inputWeight * 100 : 0), 0) / item.LichSuPhienBan.length).toFixed(1)
-                : '0.0';
+      {/* Data Table */}
+      <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="premium-table">
+            <thead>
+              <tr>
+                <th>ID Lab Định Biên</th>
+                <th>Mã Màu Yêu Cầu</th>
+                <th>Hợp Đồng</th>
+                <th className="text-center">Số Mẻ Test</th>
+                <th className="text-center">Hao Hụt % (Avg)</th>
+                <th className="text-center">Status</th>
+                <th>Cập nhật cuối</th>
+                <th className="text-right">Log Tracking</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={8} className="text-center py-20 text-blue-600 font-bold">Đang tải dữ liệu...</td></tr>
+              ) : filteredData.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-20 text-slate-400 font-medium italic">Không tìm thấy log R&D nào.</td></tr>
+              ) : filteredData.map(item => {
+                const wastage = item.LichSuPhienBan?.length > 0
+                  ? (item.LichSuPhienBan.reduce((acc: number, cur: any) => acc + (cur.inputWeight > 0 ? (cur.inputWeight - cur.outputWeight) / cur.inputWeight * 100 : 0), 0) / item.LichSuPhienBan.length).toFixed(1)
+                  : '0.0';
 
-              return (
-                <tr key={item._id}>
-                  <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaNhatKy}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{
-                        width: 16, height: 16, borderRadius: 3,
-                        background: paintColors.find(c => c.code === item.MaMauYeuCau)?.hex || '#333'
-                      }} />
-                      <div style={{ fontWeight: 600, color: '#0f172a' }}>{item.MaMauYeuCau}</div>
-                    </div>
-                    {paintColors.find(c => c.code === item.MaMauYeuCau) && (
-                      <div style={{ fontSize: 10, color: '#94a3b8', marginLeft: 26 }}>
-                        {paintColors.find(c => c.code === item.MaMauYeuCau)?.name}
+                return (
+                  <tr key={item._id} className="hover:bg-blue-50/30 group">
+                    <td>
+                      <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg text-[13px]">{item.MaNhatKy}</span>
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-100" style={{ background: paintColors.find(c => c.code === item.MaMauYeuCau)?.hex || '#333' }} />
+                        <div>
+                          <div className="font-bold text-slate-900 text-[14px]">{item.MaMauYeuCau}</div>
+                          {paintColors.find(c => c.code === item.MaMauYeuCau) && (
+                            <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+                              {paintColors.find(c => c.code === item.MaMauYeuCau)?.name}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </td>
-                  <td style={{ color: '#475569' }}>{item.ContractID?.MaHopDong || item.ContractID?.contractId || 'N/A'}</td>
-                  <td style={{ fontWeight: 700, color: '#7c3aed' }}>{item.LichSuPhienBan?.length || 0}</td>
-                  <td style={{ fontWeight: 600, color: '#d97706' }}>{wastage}%</td>
-                  <td>
-                    <span className={`badge ${item.TrangThai === 'approved' ? 'approved' : item.TrangThai === 'rejected' ? 'rejected' : 'testing'}`}>
-                      {(item.TrangThai || 'testing').toUpperCase()}
-                    </span>
-                  </td>
-                  <td>{new Date(item.updatedAt).toLocaleDateString()}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <Link href={`/rd-tracking/${item._id}`} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs">
-                      <Eye size={16} />
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-            {filteredData.length === 0 && (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>Không tìm thấy log R&D nào.</td></tr>
-            )}
-          </tbody>
-        </table>
+                    </td>
+                    <td>
+                      <div className="font-bold text-slate-600">{item.ContractID?.MaHopDong || item.ContractID?.contractId || 'N/A'}</div>
+                    </td>
+                    <td className="text-center">
+                      <span className="font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-[13px]">{item.LichSuPhienBan?.length || 0}</span>
+                    </td>
+                    <td className="text-center">
+                      <span className="font-black text-amber-600">{wastage}%</span>
+                    </td>
+                    <td className="text-center">
+                      <span className={`status-badge ${item.TrangThai === 'approved' ? 'status-active' : item.TrangThai === 'rejected' ? 'status-error' : 'status-warning'}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${item.TrangThai === 'approved' ? 'bg-emerald-500' : item.TrangThai === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
+                        {(item.TrangThai || 'testing').toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="font-medium text-slate-500 text-[13px]">
+                      {new Date(item.updatedAt).toLocaleDateString()}
+                    </td>
+                    <td className="text-right">
+                      <div className="flex items-center justify-end">
+                        <Link href={`/rd-tracking/${item._id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
+                          <Eye size={18} />
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -128,46 +128,87 @@ export default function BaoHanhPage() {
   });
 
   return (
-    <div>
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><Shield size={22} /></div>
-          <div className="kpi-label">Tổng Lệnh Hỗ Trợ Kỹ Thuật B2B (BH)</div>
-          <div className="kpi-value">{STATS.total}</div>
-        </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><Wrench size={22} /></div>
-          <div className="kpi-label">KTV Đang Khảo Sát Tận Nhà Máy Khách</div>
-          <div className="kpi-value">{STATS.active}</div>
-        </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><CheckCircle size={22} /></div>
-          <div className="kpi-label">Sửa Lỗi Lớp Sơn Thành Công Bàn Giao Thêm</div>
-          <div className="kpi-value">{STATS.resolved}</div>
-        </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><FileWarning size={22} /></div>
-          <div className="kpi-label">Yêu Cầu Ngoài Thời Gian BH Hệ Thống Đóng</div>
-          <div className="kpi-value">{STATS.expired}</div>
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
+             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+               <Shield size={22} />
+             </div>
+             Bảo Hành & Hậu Mãi
+          </h1>
+          <p className="text-slate-400 font-medium mt-1">Quản lý hỗ trợ kỹ thuật B2B và khiếu nại khách hàng</p>
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tổng Lệnh Hỗ Trợ B2B</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.total} <span className="text-sm font-bold text-slate-400">Tickets</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Shield size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Đang Khảo Sát Tận Nhà Máy</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.active} <span className="text-sm font-bold text-slate-400">Tickets</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Wrench size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sửa Lỗi Lớp Sơn Thành Công</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.resolved} <span className="text-sm font-bold text-slate-400">Tickets</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <CheckCircle size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Hết Thời Gian Bảo Hành</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.expired} <span className="text-sm font-bold text-slate-400">Tickets</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <FileWarning size={24} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Toolbar & Filter */}
+      <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-6">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
+            <div className="relative w-full md:w-80 group">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
               <input
                 type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                placeholder="Tra cứu Report ID, Name..."
+                className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                placeholder="Tra cứu Report ID, Tên KH..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <div style={{ display: 'flex', gap: 4 }}>
+            
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl">
               {[
                 { id: 'all', label: 'Tất cả Tickets' },
                 { id: 'active', label: 'Đang mở Open' },
@@ -175,7 +216,11 @@ export default function BaoHanhPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
+                    filter === f.id 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                  }`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -183,104 +228,147 @@ export default function BaoHanhPage() {
               ))}
             </div>
           </div>
-          <button onClick={openCreateModal} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
-            <Plus size={16} /> Tạo Log BH Khách Hàng Gọi Gấp
+
+          <button 
+            className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+            onClick={openCreateModal}
+          >
+            <Plus size={18} /> Tạo Log BH Khách Hàng Gọi Gấp
           </button>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr>
-              <th>ID </th>
-              <th>Khách Hàng</th>
-              <th>Mã Sơn Áp Dụng</th>
-              <th>Lỗi Tóm Tắt Tình Hình</th>
-              <th>Kỹ Thuật Phụ Trách</th>
-              <th>Ngày Hết Hạn Bảo Hành</th>
-              <th>Trạng Thái</th>
-              <th style={{ textAlign: 'right' }}>Debug Link</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Đang tải dữ liệu...</td></tr>
-            ) : filteredData.length === 0 ? (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Không có log bảo hành nào.</td></tr>
-            ) : filteredData.map(item => (
-              <tr key={item._id}>
-                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaBaoHanh}</td>
-                <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.KhachHang?.TenKhachHang || 'N/A'}</td>
-                <td style={{ color: '#475569' }}>{item.SanPham}</td>
-                <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.NoiDungLoi}>{item.NoiDungLoi}</td>
-                <td style={{ fontWeight: 600, color: '#94a3b8' }}>{item.KyThuatKCS ? `${item.KyThuatKCS.MaNV} - ${item.KyThuatKCS.HoTen}` : 'Chưa gán'}</td>
-                <td>{item.HanBaoHanh ? new Date(item.HanBaoHanh).toLocaleDateString() : '---'}</td>
-                <td>
-                  <span className={`badge ${item.TrangThai === 'Đã khắc phục' ? 'approved' : item.TrangThai === 'Hết hạn BH' ? 'rejected' : 'testing'}`}>
-                    {item.TrangThai}
-                  </span>
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  <button onClick={() => openDetail(item._id)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Eye size={16} /></button>
-                </td>
+      {/* Data Table */}
+      <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="premium-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Khách Hàng</th>
+                <th>Mã Sơn Áp Dụng</th>
+                <th>Lỗi Tóm Tắt Tình Hình</th>
+                <th>Kỹ Thuật Phụ Trách</th>
+                <th className="text-center">Ngày Hết Hạn</th>
+                <th className="text-center">Trạng Thái</th>
+                <th className="text-right">Thao Tác</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr><td colSpan={8} className="text-center py-20 text-blue-600 font-bold">Đang tải dữ liệu...</td></tr>
+              ) : filteredData.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-20 text-slate-400 font-medium italic">Không có log bảo hành nào.</td></tr>
+              ) : filteredData.map(item => (
+                <tr key={item._id} className="hover:bg-blue-50/30 group">
+                  <td>
+                    <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg text-[13px]">{item.MaBaoHanh}</span>
+                  </td>
+                  <td>
+                    <div className="font-bold text-slate-900 text-[14px]">{item.KhachHang?.TenKhachHang || 'N/A'}</div>
+                    <div className="text-[12px] text-slate-400 font-medium mt-0.5">{item.KhachHang?.MaKH || '---'}</div>
+                  </td>
+                  <td>
+                    <span className="font-medium text-slate-600">{item.SanPham}</span>
+                  </td>
+                  <td className="max-w-[200px]">
+                    <div className="truncate font-medium text-slate-600" title={item.NoiDungLoi}>
+                      {item.NoiDungLoi}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="font-bold text-blue-600 text-[13px]">
+                      {item.KyThuatKCS ? item.KyThuatKCS.HoTen : <span className="text-slate-400 font-medium italic">Chưa gán</span>}
+                    </div>
+                    {item.KyThuatKCS && <div className="text-[11px] text-slate-400 font-medium">{item.KyThuatKCS.MaNV}</div>}
+                  </td>
+                  <td className="text-center">
+                    <span className="font-medium text-slate-500 text-[13px]">
+                      {item.HanBaoHanh ? new Date(item.HanBaoHanh).toLocaleDateString() : '---'}
+                    </span>
+                  </td>
+                  <td className="text-center">
+                    <span className={`status-badge ${
+                      item.TrangThai === 'Đã khắc phục' ? 'status-active' : 
+                      item.TrangThai === 'Hết hạn BH' ? 'status-error' : 'status-warning'
+                    }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${
+                        item.TrangThai === 'Đã khắc phục' ? 'bg-emerald-500' : 
+                        item.TrangThai === 'Hết hạn BH' ? 'bg-rose-500' : 'bg-amber-500'
+                      }`}></div>
+                      {item.TrangThai}
+                    </span>
+                  </td>
+                  <td className="text-right">
+                    <div className="flex items-center justify-end">
+                      <button onClick={() => openDetail(item._id)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
+                        <Eye size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Create Ticket Modal */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', padding: '20px' }}>
-          <div style={{ width: '100%', maxWidth: '500px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', position: 'relative', color: '#0f172a', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: 'bold' }}>Tạo Log Bảo Hành Mới</h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}><X size={24} /></button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
+            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                 <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                    <Plus size={18} />
+                 </div>
+                 Tạo Log Bảo Hành Mới
+              </h2>
+              <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors"><X size={20} /></button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Chọn Khách Hàng *</label>
-                <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} value={formData.KhachHang} onChange={e => setFormData({ ...formData, KhachHang: e.target.value })}>
+            <div className="p-8 overflow-y-auto space-y-6">
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Chọn Khách Hàng <span className="text-rose-500">*</span></label>
+                <select className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all" value={formData.KhachHang} onChange={e => setFormData({ ...formData, KhachHang: e.target.value })}>
                   <option value="">-- Chọn khách hàng --</option>
                   {customers.map(c => <option key={c._id} value={c._id}>{c.MaKH} - {c.TenKhachHang}</option>)}
                 </select>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Mã Sơn / Loại Sản Phẩm</label>
-                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} placeholder="Vd: Sơn Tĩnh Điện PE Ngoài..." value={formData.SanPham} onChange={e => setFormData({ ...formData, SanPham: e.target.value })} />
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Mã Sơn / Loại Sản Phẩm</label>
+                <input type="text" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all" placeholder="Vd: Sơn Tĩnh Điện PE Ngoài..." value={formData.SanPham} onChange={e => setFormData({ ...formData, SanPham: e.target.value })} />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Nội Dung Lỗi / Khiếu Nại *</label>
-                <textarea className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }} value={formData.NoiDungLoi} onChange={e => setFormData({ ...formData, NoiDungLoi: e.target.value })} />
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Nội Dung Lỗi / Khiếu Nại <span className="text-rose-500">*</span></label>
+                <textarea rows={4} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all resize-none" placeholder="Mô tả chi tiết sự cố..." value={formData.NoiDungLoi} onChange={e => setFormData({ ...formData, NoiDungLoi: e.target.value })} />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Kỹ Thuật Viên Phụ Trách</label>
-                <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} value={formData.KyThuatKCS} onChange={e => setFormData({ ...formData, KyThuatKCS: e.target.value })}>
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Kỹ Thuật Viên Phụ Trách</label>
+                <select className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all" value={formData.KyThuatKCS} onChange={e => setFormData({ ...formData, KyThuatKCS: e.target.value })}>
                   <option value="">-- Chọn kỹ thuật viên --</option>
                   {technicians.map(t => <option key={t._id} value={t._id}>{t.MaNV} - {t.HoTen}</option>)}
                 </select>
               </div>
 
-              <div style={{ display: 'flex', gap: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Thời Hạn Bảo Hành *</label>
-                  <input type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} value={formData.HanBaoHanh} onChange={e => setFormData({ ...formData, HanBaoHanh: e.target.value })} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Thời Hạn Bảo Hành <span className="text-rose-500">*</span></label>
+                  <input type="date" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all" value={formData.HanBaoHanh} onChange={e => setFormData({ ...formData, HanBaoHanh: e.target.value })} />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Ngày Mua Hàng</label>
-                  <input type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} value={formData.NgayMua} onChange={e => setFormData({ ...formData, NgayMua: e.target.value })} />
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Ngày Mua Hàng</label>
+                  <input type="date" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all" value={formData.NgayMua} onChange={e => setFormData({ ...formData, NgayMua: e.target.value })} />
                 </div>
               </div>
             </div>
 
-            <div style={{ marginTop: '32px' }}>
-              <button onClick={handleSubmit} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ width: '100%', padding: '12px', fontSize: '16px' }}>Lưu Lệnh Bảo Hành</button>
+            <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex justify-end gap-3 flex-shrink-0">
+              <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer">Hủy</button>
+              <button onClick={handleSubmit} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer">Lưu Lệnh Bảo Hành</button>
             </div>
           </div>
         </div>
@@ -288,49 +376,82 @@ export default function BaoHanhPage() {
 
       {/* Detail Modal */}
       {isDetailOpen && selectedTicket && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', padding: '20px' }}>
-          <div style={{ width: '100%', maxWidth: '750px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '32px', position: 'relative', color: '#0f172a', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
+            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                  <h2 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: '#2563eb' }}>{selectedTicket.MaBaoHanh}</h2>
-                  <span className={`badge ${selectedTicket.TrangThai === 'Đã khắc phục' ? 'approved' : 'testing'}`}>{selectedTicket.TrangThai}</span>
+                <div className="flex items-center gap-4 mb-2">
+                  <h2 className="text-2xl font-black text-slate-900">{selectedTicket.MaBaoHanh}</h2>
+                  <span className={`status-badge ${selectedTicket.TrangThai === 'Đã khắc phục' ? 'status-active' : 'status-warning'}`}>
+                    {selectedTicket.TrangThai}
+                  </span>
                 </div>
-                <div style={{ color: '#475569', display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={14} /> Created: {selectedTicket.createdAt ? new Date(selectedTicket.createdAt).toLocaleString() : '---'}</span>
-                </div>
-              </div>
-              <button onClick={() => setIsDetailOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}><X size={24} /></button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 32 }}>
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
-                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><Bookmark size={18} /> Thông tin bảo hành</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div><label style={{ fontSize: 12, color: '#475569' }}>Mã Sản Phẩm / Hệ Sơn</label><div style={{ fontWeight: 600 }}>{selectedTicket.SanPham}</div></div>
-                  <div><label style={{ fontSize: 12, color: '#475569' }}>Ngày Mua</label><div style={{ fontWeight: 600 }}>{selectedTicket.NgayMua ? new Date(selectedTicket.NgayMua).toLocaleDateString() : '---'}</div></div>
-                  <div><label style={{ fontSize: 12, color: '#475569' }}>Hết Hạn Bảo Hành</label><div style={{ fontWeight: 600, color: '#e11d48' }}>{selectedTicket.HanBaoHanh ? new Date(selectedTicket.HanBaoHanh).toLocaleDateString() : '---'}</div></div>
+                <div className="flex items-center gap-2 text-[13px] font-bold text-slate-400">
+                  <Clock size={14} /> Created: {selectedTicket.createdAt ? new Date(selectedTicket.createdAt).toLocaleString() : '---'}
                 </div>
               </div>
+              <button onClick={() => setIsDetailOpen(false)} className="w-10 h-10 rounded-full flex items-center justify-center bg-white text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors shadow-sm"><X size={20} /></button>
+            </div>
 
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
-                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><User size={18} /> Khách hàng & Kỹ thuật</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div><label style={{ fontSize: 12, color: '#475569' }}>Khách Hàng</label><div style={{ fontWeight: 600 }}>{selectedTicket.KhachHang?.TenKhachHang || 'N/A'} ({selectedTicket.KhachHang?.MaKH || '---'})</div></div>
-                  <div><label style={{ fontSize: 12, color: '#475569' }}>Địa chỉ khách hàng</label><div style={{ fontSize: 13 }}>{(selectedTicket.KhachHang as any)?.DiaChi || '---'}</div></div>
-                  <div><label style={{ fontSize: 12, color: '#475569' }}>Kỹ thuật viên KCS</label><div style={{ fontWeight: 600, color: '#2563eb' }}>{selectedTicket.KyThuatKCS ? `${selectedTicket.KyThuatKCS.HoTen} (${selectedTicket.KyThuatKCS.MaNV})` : 'Chưa gán'}</div></div>
+            <div className="p-8 overflow-y-auto space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-slate-50 rounded-[24px] p-6 border border-slate-100">
+                  <h4 className="text-[15px] font-black text-slate-900 flex items-center gap-2 mb-6 pb-4 border-b border-slate-200">
+                    <Bookmark size={18} className="text-blue-600" /> Thông tin bảo hành
+                  </h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Mã Sản Phẩm / Hệ Sơn</label>
+                      <div className="text-[15px] font-bold text-slate-900">{selectedTicket.SanPham}</div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ngày Mua</label>
+                      <div className="text-[14px] font-bold text-slate-700">{selectedTicket.NgayMua ? new Date(selectedTicket.NgayMua).toLocaleDateString() : '---'}</div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Hết Hạn Bảo Hành</label>
+                      <div className="text-[15px] font-black text-rose-500 bg-rose-50 px-3 py-1.5 rounded-lg inline-block">{selectedTicket.HanBaoHanh ? new Date(selectedTicket.HanBaoHanh).toLocaleDateString() : '---'}</div>
+                    </div>
+                  </div>
                 </div>
+
+                <div className="bg-slate-50 rounded-[24px] p-6 border border-slate-100">
+                  <h4 className="text-[15px] font-black text-slate-900 flex items-center gap-2 mb-6 pb-4 border-b border-slate-200">
+                    <User size={18} className="text-purple-600" /> Khách hàng & Kỹ thuật
+                  </h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Khách Hàng</label>
+                      <div className="text-[15px] font-bold text-slate-900">{selectedTicket.KhachHang?.TenKhachHang || 'N/A'}</div>
+                      <div className="text-[12px] font-bold text-slate-400">{selectedTicket.KhachHang?.MaKH || '---'}</div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Địa chỉ khách hàng</label>
+                      <div className="text-[14px] font-medium text-slate-600">{(selectedTicket.KhachHang as any)?.DiaChi || '---'}</div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Kỹ thuật viên KCS</label>
+                      <div className="text-[15px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg inline-block">
+                        {selectedTicket.KyThuatKCS ? `${selectedTicket.KyThuatKCS.HoTen} (${selectedTicket.KyThuatKCS.MaNV})` : 'Chưa gán'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 rounded-[24px] p-6 border border-amber-100">
+                <h4 className="text-[15px] font-black text-amber-900 flex items-center gap-2 mb-3">
+                  <FileText size={18} /> Log Sự Cố Lỗi Tóm Tắt
+                </h4>
+                <p className="text-[15px] font-medium text-amber-800 italic leading-relaxed">
+                  "{selectedTicket.NoiDungLoi}"
+                </p>
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, marginBottom: 24, borderLeft: '4px solid #d97706' }}>
-              <h4 style={{ margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: 8 }}><FileText size={18} /> Log Sự Cố Lỗi Tóm Tắt</h4>
-              <p style={{ margin: 0, fontStyle: 'italic', color: '#0f172a' }}>{selectedTicket.NoiDungLoi}</p>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-              <button onClick={() => setIsDetailOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700">Đóng chi tiết</button>
-              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => alert('Chức năng In Ticket đang được phát triển')}>In Biên Bản Kỹ Thuật</button>
+            <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex justify-end gap-3 flex-shrink-0">
+              <button onClick={() => setIsDetailOpen(false)} className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer shadow-sm border border-slate-200">Đóng chi tiết</button>
+              <button className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 shadow-lg shadow-slate-900/20 transition-all cursor-pointer" onClick={() => alert('Chức năng In Ticket đang được phát triển')}>In Biên Bản Kỹ Thuật</button>
             </div>
           </div>
         </div>
@@ -338,4 +459,3 @@ export default function BaoHanhPage() {
     </div>
   );
 }
-

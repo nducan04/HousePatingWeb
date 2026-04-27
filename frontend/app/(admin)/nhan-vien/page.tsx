@@ -33,7 +33,6 @@ export default function NhanVienPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
-  const SERVER_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
   const getAvatarUrl = (path: string) => {
     if (!path || path === 'undefined' || path === 'null') return '';
@@ -72,7 +71,7 @@ export default function NhanVienPage() {
       if (res.data.success) {
         let staffList = res.data.data;
 
-        // Fetch performance stats to get revenue
+        // Fetch performance stats
         try {
           const statsRes = await api.get('/hieu-suat/stats');
           if (statsRes.data.success) {
@@ -175,6 +174,14 @@ export default function NhanVienPage() {
     setIsModalOpen(true);
   };
 
+  const openView = (nv: NhanVien) => {
+    setFormData({
+      ...nv,
+      NgaySinh: nv.NgaySinh ? new Date(nv.NgaySinh).toISOString().split('T')[0] : ''
+    });
+    setIsViewModalOpen(true);
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -196,14 +203,6 @@ export default function NhanVienPage() {
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const openView = (nv: NhanVien) => {
-    setFormData({
-      ...nv,
-      NgaySinh: nv.NgaySinh ? new Date(nv.NgaySinh).toISOString().split('T')[0] : ''
-    });
-    setIsViewModalOpen(true);
   };
 
   const handleSubmit = async () => {
@@ -233,66 +232,124 @@ export default function NhanVienPage() {
   };
 
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 style={{ fontSize: '3rem', fontWeight: 900, background: 'linear-gradient(to right, #fff, #2563eb)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0, letterSpacing: '-0.02em' }}>
-            Hệ Thống Nhân Sự
+          <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
+             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+               <Users size={22} />
+             </div>
+             Quản lý Nhân sự
           </h1>
-          <p style={{ color: '#475569', marginTop: '0.25rem', fontSize: '1.1rem' }}>Quản trị hiệu suất & thông tin nhân sự chiến lược</p>
+          <p className="text-slate-400 font-medium mt-1">Theo dõi, quản lý và tối ưu hiệu suất đội ngũ nhân sự</p>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><Users size={22} /></div>
-          <div className="kpi-label">Tổng Nhân Sự Của Hệ Thống</div>
-          <div className="kpi-value">{STATS.total} Biên chế</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tổng nhân sự</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.total} <span className="text-sm font-bold text-slate-400">Biên chế</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Users size={24} />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-2 text-emerald-500 text-[13px] font-bold">
+            <span className="bg-emerald-50 px-2 py-0.5 rounded-lg">+2.5%</span>
+            <span>So với tháng trước</span>
+          </div>
         </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><CheckCircle2 size={22} /></div>
-          <div className="kpi-label">Đang Công Tác / Trực Ca</div>
-          <div className="kpi-value">{STATS.active}</div>
+
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Đang công tác</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.active} <span className="text-sm font-bold text-slate-400">Nhân sự</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <CheckCircle2 size={24} />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-2 text-slate-400 text-[13px] font-bold">
+            <div className="flex-1 h-1.5 bg-slate-50 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${STATS.total > 0 ? (STATS.active / STATS.total) * 100 : 0}%` }}></div>
+            </div>
+            <span>{STATS.total > 0 ? Math.round((STATS.active / STATS.total) * 100) : 0}%</span>
+          </div>
         </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><Briefcase size={22} /></div>
-          <div className="kpi-label">Khối Kinh Doanh & Dịch Vụ</div>
-          <div className="kpi-value">{STATS.sale} Nhân sự</div>
+
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kinh doanh & Dịch vụ</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.sale} <span className="text-sm font-bold text-slate-400">Nhân sự</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Briefcase size={24} />
+            </div>
+          </div>
+          <div className="mt-4 flex -space-x-2">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="w-7 h-7 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400">U{i}</div>
+            ))}
+            <div className="w-7 h-7 rounded-full border-2 border-white bg-blue-50 flex items-center justify-center text-[10px] font-bold text-blue-600">+{Math.max(0, STATS.sale - 4)}</div>
+          </div>
         </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><Award size={22} /></div>
-          <div className="kpi-label">Khối Sản Xuất & Chuỗi Cung Ứng</div>
-          <div className="kpi-value">{STATS.tech} Nhân sự</div>
+
+        <div className="kpi-card group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sản xuất & Cung ứng</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{STATS.tech} <span className="text-sm font-bold text-slate-400">Nhân sự</span></h3>
+            </div>
+            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Award size={24} />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-2 text-amber-500 text-[13px] font-bold">
+            <div className="flex items-center">
+              {[1, 2, 3, 4, 5].map(i => <Award key={i} size={14} className={i <= 4 ? 'fill-amber-400 text-amber-400' : 'text-slate-200'} />)}
+            </div>
+            <span className="text-slate-400">Hiệu suất cao</span>
+          </div>
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+      {/* Toolbar & Filter */}
+      <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-6">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
+            <div className="relative w-full md:w-80 group">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
               <input
                 type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                placeholder="Tìm mã NV, tên..."
+                className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                placeholder="Tìm mã NV, tên, bộ phận..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl">
               {[
-                { id: 'all', label: 'Tất cả Cơ Cấu' },
+                { id: 'all', label: 'Tất cả' },
                 { id: 'sale_mkt', label: 'Sale / MKT' },
                 { id: 'ketoan', label: 'Kế Toán' },
-                { id: 'cskh', label: 'CSKH Bảo Hành' },
+                { id: 'cskh', label: 'Bảo Hành' },
                 { id: 'logistics', label: 'Kho / Logistics' },
-                { id: 'tech_sx', label: 'R&D Kỹ Thuật Máy' },
+                { id: 'tech_sx', label: 'Kỹ Thuật' },
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
+                    filter === f.id 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                  }`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -300,167 +357,163 @@ export default function NhanVienPage() {
               ))}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button onClick={exportToExcel} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ border: '1px solid #e2e8f0', color: '#059669' }}>
-              <Download size={16} /> Xuất Excel
+
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={exportToExcel} 
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-[14px] bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all border border-emerald-100 cursor-pointer"
+            >
+              <Download size={18} /> Xuất Excel
             </button>
-            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => openForm()}>
-              <Plus size={16} /> Cấp mới Tài khoản
+            <button 
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+              onClick={() => openForm()}
+            >
+              <Plus size={18} /> Cấp mới Tài khoản
             </button>
           </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem', justifyContent: 'center', textAlign: 'center' }}>
-        <table className="w-full text-left text-sm">
-          <thead style={{ justifyContent: 'justify-center' }}>
-            <tr>
-              <th style={{ width: '60px', textAlign: 'center' }}>Ảnh</th>
-              <th>Mã NV</th>
-              <th>Họ và Tên <br />Nhân Sự</th>
-              <th>Phòng Ban <br /> Cốt Lõi</th>
-              <th>Chức Danh Giám Sát</th>
-              <th>Email</th>
-              <th>SDT</th>
-              <th style={{ textAlign: 'right' }}>Hiệu suất Công tác</th>
-              <th>Trạng thái</th>
-
-              <th style={{ textAlign: 'right' }}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }}>Đang tải...</td></tr>
-            ) : filteredData.length === 0 ? (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }}>Không tìm thấy nhân viên.</td></tr>
-            ) : filteredData.map(item => (
-              <tr key={item._id}>
-                <td style={{ textAlign: 'center' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', backgroundColor: 'var(--bg-color)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0' }}>
-                    {item.Avatar ? (
-                      <img
-                        src={getAvatarUrl(item.Avatar)}
-                        alt="Ava"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                          (e.target as HTMLImageElement).parentElement!.innerHTML = `<span style="color: #94a3b8; font-weight: 700">${item.HoTen.charAt(0)}</span>`;
-                        }}
-                      />
-                    ) : (
-                      <Users size={20} color="#475569" />
-                    )}
-                  </div>
-                </td>
-                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaNV}</td>
-                <td
-                  style={{ fontWeight: 600, color: '#0f172a', cursor: 'pointer', textDecoration: 'underline' }}
-                  onClick={() => openView(item)}
-                >
-                  {item.HoTen}
-                </td>
-                <td style={{ color: '#475569' }}>{item.BoPhan}</td>
-                <td style={{ fontWeight: 600, color: '#7c3aed' }}>{item.ChucVu}</td>
-                <td>{item.Email}</td>
-                <td>{item.SDT}</td>
-                <td style={{ textAlign: 'right' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <div style={{ fontWeight: 800, color: '#2563eb', fontSize: '15px' }}>
-                      {item.BoPhan === 'Kho / Logistics' && `${item.deliveries || 0} Chuyến`}
-                      {item.BoPhan === 'R&D Kỹ Thuật Máy' && `${item.tests || 0} Lô hàng`}
-                      {item.BoPhan === 'CSKH Bảo Hành' && `${item.customers || 0} Khách hàng`}
-                      {(item.BoPhan === 'Sale / MKT' || item.BoPhan === 'Kinh doanh' || !['Kho / Logistics', 'R&D Kỹ Thuật Máy', 'CSKH Bảo Hành'].includes(item.BoPhan)) && (
-                        <>
-                          <span style={{ display: 'block' }}>{item.orders || 0} Đơn hàng</span>
-                          <span style={{ fontSize: '12px', color: '#059669', marginTop: '2px' }}>
-                            {item.revenue ? item.revenue.toLocaleString() : 0} ₫
-                          </span>
-                        </>
+      {/* Data Table */}
+      <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="premium-table">
+            <thead>
+              <tr>
+                <th className="w-20 text-center">Ảnh</th>
+                <th>Mã NV</th>
+                <th>Thông tin nhân sự</th>
+                <th>Chức danh / Bộ phận</th>
+                <th>Email / SĐT</th>
+                <th className="text-right">Hiệu suất</th>
+                <th className="text-center">Trạng thái</th>
+                <th className="text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr><td colSpan={8} className="text-center py-20 text-blue-600 font-bold">Đang tải dữ liệu...</td></tr>
+              ) : filteredData.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-20 text-slate-400 font-medium italic">Không tìm thấy nhân viên.</td></tr>
+              ) : filteredData.map(item => (
+                <tr key={item._id} className="hover:bg-blue-50/30 group">
+                  <td className="text-center">
+                    <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm mx-auto group-hover:scale-105 transition-transform">
+                      {item.Avatar ? (
+                        <img
+                          src={getAvatarUrl(item.Avatar)}
+                          alt="Ava"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(item.HoTen) + '&background=random';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-600 font-bold">
+                          {item.HoTen.charAt(0)}
+                        </div>
                       )}
                     </div>
-                  </div>
-                </td>
-                <td>
-                  <span className={`badge ${item.TrangThai === 'Đang làm' || !item.TrangThai ? 'approved' : item.TrangThai === 'Đang nghỉ phép' ? 'warning' : 'rejected'}`}>
-                    {item.TrangThai || 'Đang làm'}
-                  </span>
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  <button onClick={() => openForm(item)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Edit size={16} /></button>
-                  <button onClick={() => handleDelete(item._id!)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Trash2 size={16} color="#e11d48" /></button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                  <td>
+                    <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg text-[13px]">{item.MaNV}</span>
+                  </td>
+                  <td className="min-w-[200px]">
+                    <div className="font-bold text-slate-900 text-[15px] cursor-pointer hover:text-blue-600 transition-colors" onClick={() => openView(item)}>
+                      {item.HoTen}
+                    </div>
+                    <div className="text-[12px] text-slate-400 font-medium mt-0.5 uppercase tracking-wider">{item.GioiTinh} • {item.NgaySinh ? new Date(item.NgaySinh).toLocaleDateString('vi-VN') : 'N/A'}</div>
+                  </td>
+                  <td>
+                    <div className="font-bold text-slate-800 text-[14px]">{item.ChucVu || 'Nhân viên'}</div>
+                    <div className="text-[12px] text-blue-500 font-bold bg-blue-50 px-2 py-0.5 rounded-md inline-block mt-1">{item.BoPhan}</div>
+                  </td>
+                  <td>
+                    <div className="text-[14px] font-medium text-slate-600">{item.Email}</div>
+                    <div className="text-[13px] font-bold text-slate-400 mt-0.5">{item.SDT}</div>
+                  </td>
+                  <td className="text-right">
+                    <div className="flex flex-col items-end">
+                      <div className="font-black text-slate-900 text-[16px]">
+                        {item.BoPhan === 'Kho / Logistics' && `${item.deliveries || 0} Chuyến`}
+                        {item.BoPhan === 'R&D Kỹ Thuật Máy' && `${item.tests || 0} Lô hàng`}
+                        {item.BoPhan === 'CSKH Bảo Hành' && `${item.customers || 0} Khách hàng`}
+                        {(item.BoPhan === 'Sale / MKT' || item.BoPhan === 'Kinh doanh' || !['Kho / Logistics', 'R&D Kỹ Thuật Máy', 'CSKH Bảo Hành'].includes(item.BoPhan)) && (
+                          <div className="flex flex-col items-end">
+                            <span>{item.orders || 0} Đơn hàng</span>
+                            <span className="text-[12px] text-emerald-600 font-extrabold mt-0.5">
+                              {item.revenue ? item.revenue.toLocaleString() : 0} ₫
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="text-center">
+                    <span className={`status-badge ${
+                      item.TrangThai === 'Đang làm' || !item.TrangThai ? 'status-active' : 
+                      item.TrangThai === 'Đang nghỉ phép' ? 'status-warning' : 'status-error'
+                    }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${
+                        item.TrangThai === 'Đang làm' || !item.TrangThai ? 'bg-emerald-500' : 
+                        item.TrangThai === 'Đang nghỉ phép' ? 'bg-amber-500' : 'bg-rose-500'
+                      }`}></div>
+                      {item.TrangThai || 'Đang làm'}
+                    </span>
+                  </td>
+                  <td className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => openForm(item)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
+                        <Edit size={18} />
+                      </button>
+                      <button onClick={() => handleDelete(item._id!)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all cursor-pointer">
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal - Xem Chi Tiết Thông Tin Nhân Viên */}
       {isViewModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', padding: 20 }}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '100%', maxWidth: '500px', padding: '2.25rem', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-            <div style={{ textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: 20, marginBottom: 24 }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 800, background: 'linear-gradient(to right, #fff, #2563eb)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>HỒ SƠ NHÂN SỰ</h2>
-              <p style={{ margin: '8px 0 0 0', color: '#475569', fontWeight: 600 }}>Mã NV: {formData.MaNV}</p>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in duration-300">
+            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+              <h2 className="text-xl font-black text-slate-900">HỒ SƠ NHÂN SỰ</h2>
+              <button onClick={() => setIsViewModalOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors">×</button>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div className="flex justify-center">
+                <div className="w-32 h-32 rounded-[24px] overflow-hidden border-4 border-white shadow-xl">
+                   <img src={getAvatarUrl(formData.Avatar || '')} alt={formData.HoTen} className="w-full h-full object-cover" />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  { label: 'Họ và tên', value: formData.HoTen },
+                  { label: 'Mã nhân viên', value: formData.MaNV },
+                  { label: 'Bộ phận', value: formData.BoPhan },
+                  { label: 'Chức vụ', value: formData.ChucVu },
+                  { label: 'Email', value: formData.Email },
+                  { label: 'Số điện thoại', value: formData.SDT },
+                ].map((row, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+                    <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">{row.label}</span>
+                    <span className="text-[15px] font-bold text-slate-800">{row.value || 'N/A'}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px' }}>
-              <tbody>
-                {formData.Avatar && (
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-                    <img src={`http://localhost:5000${formData.Avatar}`} alt={formData.HoTen} style={{ width: '200px', height: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
-                  </div>
-                )}
-
-                <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', width: '40%', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Họ và tên:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.HoTen}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Trạng thái làm việc:</td>
-                  <td style={{ fontWeight: 600, padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: formData.TrangThai === 'Đang nghỉ phép' ? '#d97706' : formData.TrangThai === 'Đã nghỉ việc' ? '#e11d48' : '#059669' }}>{formData.TrangThai || 'Đang làm'}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Ngày sinh:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.NgaySinh || 'Chưa cập nhật'}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Giới tính:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.GioiTinh || 'Chưa cập nhật'}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Số điện thoại:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.SDT || 'Chưa cập nhật'}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Địa chỉ thường trú:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.DiaChi || 'Chưa cập nhật'}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #e2e8f0', color: '#94a3b8' }}>Email</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #e2e8f0', color: '#0f172a' }}>{formData.Email || 'Chưa cập nhật'}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #ccc' }}>Phòng ban:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #ccc' }}>{formData.BoPhan}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', borderBottom: '1px dotted #ccc' }}>Chức vụ:</td>
-                  <td style={{ padding: '12px 0', borderBottom: '1px dotted #ccc' }}>{formData.ChucVu}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '12px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Mô tả công việc hiện tại:</td>
-                  <td style={{ padding: '12px 0' }}>{formData.MoTaCongViec || 'Chưa cập nhật'}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div style={{ marginTop: '30px', textAlign: 'center' }}>
-              <button
-                onClick={() => setIsViewModalOpen(false)}
-                style={{ background: '#333', color: '#fff', border: 'none', padding: '10px 30px', borderRadius: '4px', fontSize: '16px', cursor: 'pointer' }}
-              >
+            <div className="p-6 bg-slate-50/50 flex justify-center">
+              <button onClick={() => setIsViewModalOpen(false)} className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20">
                 Đóng hồ sơ
               </button>
             </div>
@@ -468,135 +521,99 @@ export default function NhanVienPage() {
         </div>
       )}
 
-      {/* Modal - Chuẩn thông tin nhân sự */}
+      {/* Modal - Cập nhật thông tin */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: '600px', background: '#ffffffff', borderRadius: '8px', padding: '24px', margin: '2rem auto', color: '#000', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: 'bold' }}>{formData._id ? 'Cập nhật Thông tin nhân sự' : 'Thông tin nhân sự'}</h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' }}>×</button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-              {/* Upload Ảnh Đại Diện */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <div style={{ width: '120px', height: '120px', borderRadius: '50%', border: '2px dashed #ccc', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
-                  {formData.Avatar ? (
-                    <img src={`http://localhost:5000${formData.Avatar}`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ fontSize: '13px', color: '#888' }}>Chưa có ảnh</span>
-                  )}
-                </div>
-                <input type="file" accept="image/*" onChange={handleImageUpload} disabled={isUploading} style={{ fontSize: '13px', color: '#333' }} />
-                {isUploading && <span style={{ color: '#1100f8ff', fontSize: '13px' }}>Đang tải lên...</span>}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+           <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
+              <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+                <h2 className="text-xl font-black text-slate-900">{formData._id ? 'Cập nhật Nhân viên' : 'Thêm Nhân viên mới'}</h2>
+                <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors">×</button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Họ và tên</label>
-                  <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }} placeholder="VD: Nguyễn Văn A" value={formData.HoTen} onChange={e => setFormData({ ...formData, HoTen: e.target.value })} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Trạng thái làm việc</label>
-                  <select
-                    style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none', background: '#fff' }}
-                    value={formData.TrangThai || 'Đang làm'}
-                    onChange={e => setFormData({ ...formData, TrangThai: e.target.value })}
-                  >
-                    <option value="Đang làm">Đang làm</option>
-                    <option value="Đang nghỉ phép">Đang nghỉ phép</option>
-                    <option value="Đã nghỉ việc">Đã nghỉ việc</option>
-                  </select>
+              <div className="p-8 overflow-y-auto space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Avatar Upload */}
+                  <div className="col-span-1 md:col-span-2 flex flex-col items-center justify-center p-6 bg-slate-50 rounded-[24px] border-2 border-dashed border-slate-200 group hover:border-blue-400 transition-colors cursor-pointer relative overflow-hidden">
+                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={handleImageUpload} />
+                    {formData.Avatar ? (
+                      <div className="relative group/avatar">
+                        <img src={getAvatarUrl(formData.Avatar)} alt="Avatar" className="w-32 h-32 rounded-3xl object-cover shadow-xl border-4 border-white" />
+                        <div className="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                          <Plus className="text-white" size={24} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-blue-600 shadow-sm transition-colors mb-3">
+                          <Plus size={28} />
+                        </div>
+                        <p className="text-sm font-bold text-slate-500">Tải ảnh đại diện</p>
+                      </div>
+                    )}
+                    {isUploading && (
+                      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20">
+                        <div className="flex flex-col items-center gap-2">
+                           <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+                           <p className="text-xs font-bold text-blue-600">Đang tải lên...</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Họ và tên</label>
+                    <input type="text" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.HoTen} onChange={e => setFormData({...formData, HoTen: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Mã nhân viên</label>
+                    <input type="text" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.MaNV} onChange={e => setFormData({...formData, MaNV: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Bộ phận</label>
+                    <select className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.BoPhan} onChange={e => setFormData({...formData, BoPhan: e.target.value})}>
+                      <option value="Sale / MKT">Sale / MKT</option>
+                      <option value="Kế Toán">Kế Toán</option>
+                      <option value="CSKH Bảo Hành">CSKH Bảo Hành</option>
+                      <option value="Kho / Logistics">Kho / Logistics</option>
+                      <option value="R&D Kỹ Thuật Máy">R&D Kỹ Thuật Máy</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Chức vụ</label>
+                    <input type="text" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.ChucVu} onChange={e => setFormData({...formData, ChucVu: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Email</label>
+                    <input type="email" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.Email} onChange={e => setFormData({...formData, Email: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Số điện thoại</label>
+                    <input type="text" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.SDT} onChange={e => setFormData({...formData, SDT: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Ngày sinh</label>
+                    <input type="date" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.NgaySinh} onChange={e => setFormData({...formData, NgaySinh: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Trạng thái</label>
+                    <select className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10" value={formData.TrangThai} onChange={e => setFormData({...formData, TrangThai: e.target.value})}>
+                      <option value="Đang làm">Đang làm</option>
+                      <option value="Đang nghỉ phép">Đang nghỉ phép</option>
+                      <option value="Đã nghỉ việc">Đã nghỉ việc</option>
+                    </select>
+                  </div>
+                  <div className="col-span-1 md:col-span-2 space-y-2">
+                    <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Mô tả công việc</label>
+                    <textarea rows={3} className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 resize-none" value={formData.MoTaCongViec} onChange={e => setFormData({...formData, MoTaCongViec: e.target.value})}></textarea>
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Ngày sinh</label>
-                  <input type="date" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }} value={formData.NgaySinh} onChange={e => setFormData({ ...formData, NgaySinh: e.target.value })} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Giới tính</label>
-                  <select
-                    style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none', background: '#fff' }}
-                    value={formData.GioiTinh}
-                    onChange={e => setFormData({ ...formData, GioiTinh: e.target.value })}
-                  >
-                    <option value="Nam">Nam</option>
-                    <option value="Nữ">Nữ</option>
-                    <option value="Khác">Khác</option>
-                  </select>
-                </div>
+              <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
+                <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer">Hủy</button>
+                <button onClick={handleSubmit} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer">Lưu thông tin</button>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Số điện thoại</label>
-                  <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }} value={formData.SDT} onChange={e => setFormData({ ...formData, SDT: e.target.value })} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Chức vụ</label>
-                  {/* <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }} value={formData.ChucVu} onChange={e => setFormData({ ...formData, ChucVu: e.target.value })} /> */}
-                  <select
-                    style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none', background: '#fff' }}
-                    value={formData.ChucVu}
-                    onChange={e => setFormData({ ...formData, ChucVu: e.target.value })}
-                  >
-                    <option value="Giám đốc">Giám đốc</option>
-                    <option value="Trưởng phòng kinh doanh">Trưởng phòng kinh doanh</option>
-                    <option value="Trưởng bộ phận kỹ thuật">Trưởng bộ phận kỹ thuật</option>
-                    <option value="Trưởng bộ phận kho / logistic">Trưởng bộ phận kho / logistic</option>
-                    <option value="Nhân viên kinh doanh">Nhân viên kinh doanh</option>
-                    <option value="Nhân viên kỹ thuật">Nhân viên kỹ thuật</option>
-                    <option value="Nhân viên kế toán">Nhân viên kế toán</option>
-                    <option value="Nhân viên marketing">Nhân viên marketing</option>
-                    <option value="Nhân viên kho / logistic">Nhân viên kho / logistic</option>
-                    <option value="Nhân viên CSKH Bảo Hành">Nhân viên CSKH Bảo Hành</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Địa chỉ</label>
-                <textarea style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none', minHeight: '80px', resize: 'vertical' }} value={formData.DiaChi} onChange={e => setFormData({ ...formData, DiaChi: e.target.value })}></textarea>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Phòng ban</label>
-                  <select
-                    style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none', background: '#fff' }}
-                    value={formData.BoPhan}
-                    onChange={e => setFormData({ ...formData, BoPhan: e.target.value })}
-                  >
-                    <option value="Sale / MKT">Sale / MKT</option>
-                    <option value="Kế Toán">Kế Toán</option>
-                    <option value="CSKH Bảo Hành">CSKH Bảo Hành</option>
-                    <option value="Kho / Logistics">Kho / Logistics</option>
-                    <option value="R&D Kỹ Thuật Máy">R&D Kỹ Thuật Máy</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Email</label>
-                  <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }} value={formData.Email} onChange={e => setFormData({ ...formData, Email: e.target.value })} />
-                </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Mô tả công việc</label>
-                <textarea style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none', minHeight: '80px', resize: 'vertical' }} value={formData.MoTaCongViec} onChange={e => setFormData({ ...formData, MoTaCongViec: e.target.value })}></textarea>
-              </div>
-
-            </div>
-
-            <div style={{ marginTop: '24px' }}>
-              <button
-                onClick={handleSubmit}
-                style={{ width: '100%', background: '#1100f8ff', color: '#fff', border: 'none', padding: '12px', borderRadius: '4px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
-              >
-                Lưu thông tin
-              </button>
-            </div>
-          </div>
+           </div>
         </div>
       )}
     </div>

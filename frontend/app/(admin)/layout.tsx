@@ -151,40 +151,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <ProtectedRoute allowedRoles={['Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C']}>
-      <div className="flex h-screen bg-slate-50 font-[Inter,sans-serif]">
+      <div className="flex h-screen bg-[#F8FAFC] font-sans">
         {/* ═══════ Sidebar ═══════ */}
-        <aside className="w-[260px] flex-shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden">
-          {/* Logo */}
-          <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-            <a href="/dashboard" className="block w-10 h-10 flex-shrink-0">
-              <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
-            </a>
+        <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+          {/* Logo Area */}
+          <div className="px-8 py-7 flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10">
+              <img src="/vtsc.png" alt="Logo" className="w-full h-full object-contain brightness-110" />
+            </div>
             <div>
-              <div className="text-sm font-bold text-slate-800 tracking-tight">VTSC</div>
-              <div className="text-[10px] text-slate-400 font-medium">PaintPro System</div>
+              <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">VTSC</div>
+              <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">PaintPro</div>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+          <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-6">
             {filteredNav.filter(s => s.section !== 'Hệ thống').map((section) => (
-              <div key={section.section}>
+              <div key={section.section} className="space-y-1.5">
                 {/* Section Title */}
-                <button
-                  onClick={() => toggleSection(section.section)}
-                  className="w-full flex items-center justify-between px-3 py-2 mt-3 mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors select-none cursor-pointer"
-                >
-                  {section.section}
-                  {expandedSections[section.section]
-                    ? <ChevronDown size={12} />
-                    : <ChevronRight size={12} className="opacity-50" />}
-                </button>
+                <div className="px-4 mb-2 flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-slate-400">
+                    {section.section}
+                  </span>
+                  <div className="h-[1px] flex-1 bg-slate-50 ml-3 opacity-50"></div>
+                </div>
 
                 {/* Nav Items */}
-                <div
-                  className="overflow-hidden transition-all duration-300 ease-in-out"
-                  style={{ maxHeight: expandedSections[section.section] ? '1000px' : '0px' }}
-                >
+                <div className="space-y-1">
                   {section.items.map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
@@ -192,10 +186,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 no-underline mb-0.5 ${isActive ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }`}
+                        className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${
+                          isActive 
+                            ? 'bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5' 
+                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                        }`}
                       >
-                        <Icon size={18} className={`flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                        <div className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-blue-600' : 'text-slate-400'}`}>
+                          <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                        </div>
                         <span className="truncate">{item.label}</span>
+                        {isActive && (
+                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.6)]"></div>
+                        )}
                       </Link>
                     );
                   })}
@@ -204,44 +207,73 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ))}
           </nav>
 
-          {/* User Info + Logout at bottom */}
-          <div className="p-4 border-t border-slate-200 bg-slate-50/80 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 shadow-md shadow-blue-500/20">
-              {initials}
+          {/* Sidebar Footer */}
+          <div className="p-4 border-t border-slate-50 mt-auto bg-slate-50/30">
+            <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-[12px] font-bold text-white shadow-md">
+                {initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-bold text-slate-800 truncate">{displayName}</div>
+                <div className="text-[11px] text-slate-400 font-medium">Trưởng phòng Kinh doanh</div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all rounded-xl cursor-pointer"
+                title="Đăng xuất"
+              >
+                <LogOut size={18} />
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-slate-800 truncate">{displayName}</div>
-              <div className="text-xs text-slate-400">{displayRole}</div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-red-500 transition-colors cursor-pointer rounded-lg hover:bg-red-50"
-              title="Đăng xuất"
-            >
-              <LogOut size={16} />
-            </button>
           </div>
         </aside>
 
         {/* ═══════ Main Content ═══════ */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Bar */}
-          <header className="h-16 flex-shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-8">
-            <h1 className="text-lg font-bold text-slate-800">{getPageTitle()}</h1>
-            <div className="flex items-center gap-3">
-              <button className="relative p-2.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
-                <Bell size={18} />
-                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500" />
-              </button>
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                {userRole === 'Admin' ? 'Admin' : userRole === 'KhachHangB2B' ? 'B2B' : 'PKDS'}
-              </span>
+          <header className="h-[88px] flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-10">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                {(() => {
+                  const currentItem = allNavItems.flatMap(s => s.items).find(i => pathname === i.href || (i.href !== '/' && pathname?.startsWith(i.href + '/')));
+                  const Icon = currentItem?.icon || BarChart3;
+                  return <Icon size={24} strokeWidth={2.5} />;
+                })()}
+              </div>
+              <div>
+                <h1 className="text-[22px] font-black text-slate-900 tracking-tight">{getPageTitle()}</h1>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <button className="w-11 h-11 flex items-center justify-center rounded-2xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all relative cursor-pointer group">
+                  <Bell size={20} />
+                  <span className="absolute top-3.5 right-3.5 w-2 h-2 rounded-full bg-rose-500 border-2 border-white group-hover:scale-110 transition-transform" />
+                </button>
+              </div>
+              <div className="h-10 w-[1px] bg-slate-100"></div>
+              <div className="flex items-center gap-3">
+                <div className="text-right hidden sm:block">
+                  <div className="text-[14px] font-bold text-slate-800 leading-none mb-1">{displayName}</div>
+                  <div className="text-[11px] text-blue-600 font-extrabold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-lg inline-block">
+                    {userRole === 'Admin' ? 'Admin' : userRole === 'KhachHangB2B' ? 'B2B' : 'Quản lý'}
+                  </div>
+                </div>
+                <div className="w-11 h-11 rounded-2xl border-2 border-white shadow-md shadow-slate-200 overflow-hidden bg-slate-100">
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm">
+                    {initials}
+                  </div>
+                </div>
+              </div>
             </div>
           </header>
 
           {/* Page Content */}
-          <main className="flex-1 overflow-y-auto p-8 bg-slate-50">
-            {children}
+          <main className="flex-1 overflow-y-auto p-10 bg-[#F8FAFC]">
+            <div className="max-w-[1600px] mx-auto">
+              {children}
+            </div>
           </main>
         </div>
       </div>
