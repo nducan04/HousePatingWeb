@@ -137,7 +137,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (pathname === '/dashboard') return '📊 Dashboard';
     if (pathname?.startsWith('/san-pham')) return '📦 Quản lý Sản phẩm Sơn';
     if (pathname?.startsWith('/kho')) return '🏭 Quản lý Kho';
-    if (pathname?.startsWith('/doi-tac')) return '🤝 Quản lý Đối tác';
+    if (pathname?.startsWith('/doi-tac')) return '🤝 Quản lý Khách Hàng';
     if (pathname?.startsWith('/nhan-vien')) return '👥 Quản lý Nhân sự';
     if (pathname?.startsWith('/rd-tracking')) return '🔬 R&D Tracking';
     if (pathname?.startsWith('/contracts')) return '📝 Hợp đồng B2B';
@@ -186,11 +186,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${
-                          isActive 
-                            ? 'bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5' 
-                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
+                        className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${isActive
+                          ? 'bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5'
+                          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                          }`}
                       >
                         <div className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-blue-600' : 'text-slate-400'}`}>
                           <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />

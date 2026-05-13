@@ -43,11 +43,7 @@ const khachHangSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  // Định danh Web3 — Chỉ dùng cho B2B
-  WalletAddress: {
-    type: String,
-    trim: true,
-  },
+
   // Mã số thuế cá nhân — Chỉ dùng cho Đại lý
   MaSoThueCaNhan: {
     type: String,
@@ -57,8 +53,7 @@ const khachHangSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Index sparse cho WalletAddress (chỉ unique nếu có giá trị)
-khachHangSchema.index({ WalletAddress: 1 }, { unique: true, sparse: true });
+
 khachHangSchema.index({ Email: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('KhachHang', khachHangSchema, 'KhachHangs');

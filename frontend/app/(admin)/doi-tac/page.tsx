@@ -16,7 +16,6 @@ interface DoiTac {
   SDT: string;
   DiaChi?: string;
   Email: string;
-  WalletAddress?: string;
   MaSoThueCaNhan?: string;
   SoDonHang?: number;
 }
@@ -35,7 +34,6 @@ export default function DoiTacPage() {
     SDT: '',
     DiaChi: '',
     Email: '',
-    WalletAddress: '',
     MaSoThueCaNhan: ''
   });
 
@@ -86,7 +84,6 @@ export default function DoiTacPage() {
         SDT: '',
         DiaChi: '',
         Email: '',
-        WalletAddress: '',
         MaSoThueCaNhan: ''
       });
     }
@@ -108,22 +105,22 @@ export default function DoiTacPage() {
     }
   };
 
-  const exportToExcel = () => {
-    const dataToExport = filteredData.map(item => ({
-      'Mã KH': item.MaKH,
-      'Phân loại': item.PhanLoai,
-      'Tên KH': item.TenKhachHang,
-      'Email': item.Email || '',
-      'SĐT': item.SDT || '',
-      'Địa chỉ': item.DiaChi || '',
-      'Ví Web3': item.WalletAddress || '',
-      'Số đơn đã đặt': item.SoDonHang || 0
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Khach-Hang");
-    XLSX.writeFile(workbook, `VTSC_Danh_Sach_Khach_Hang_${new Date().toLocaleDateString().replace(/\//g, '_')}.xlsx`);
+  const exportToExcel = async () => {
+    try {
+      const res = await api.get(`/export/customers/excel?search=${encodeURIComponent(searchTerm)}&filter=${encodeURIComponent(filter)}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `VTSC_Danh_Sach_Khach_Hang_${new Date().toLocaleDateString('vi-VN').replace(/\//g, '_')}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (err) {
+      console.error('Lỗi tải file', err);
+      alert('Có lỗi xảy ra khi tải file Excel');
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -140,26 +137,53 @@ export default function DoiTacPage() {
   return (
     <div>
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><Handshake size={22} /></div>
-          <div className="kpi-label">Tổng Đối Tác</div>
-          <div className="kpi-value">{STATS.total}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" style={{ marginBottom: '2.25rem' }}>
+        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(37,99,235,0.12)] transition-all duration-300 group">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100/50 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+              <Handshake size={28} strokeWidth={2} />
+            </div>
+            <div>
+              <div className="text-slate-500 text-[12px] font-extrabold uppercase tracking-widest mb-1.5">Tổng Đối Tác</div>
+              <div className="text-4xl font-black text-slate-800 leading-none">{STATS.total}</div>
+            </div>
+          </div>
         </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><Building2 size={22} /></div>
-          <div className="kpi-label">Khách Doanh Nghiệp (B2B)</div>
-          <div className="kpi-value">{STATS.b2b}</div>
+        
+        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(16,185,129,0.12)] transition-all duration-300 group">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 flex items-center justify-center text-emerald-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+              <Building2 size={28} strokeWidth={2} />
+            </div>
+            <div>
+              <div className="text-slate-500 text-[12px] font-extrabold uppercase tracking-widest mb-1.5">Doanh Nghiệp (B2B)</div>
+              <div className="text-4xl font-black text-slate-800 leading-none">{STATS.b2b}</div>
+            </div>
+          </div>
         </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><Ribbon size={22} /></div>
-          <div className="kpi-label">Đại Lý Trung Gian</div>
-          <div className="kpi-value">{STATS.daily}</div>
+
+        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(139,92,246,0.12)] transition-all duration-300 group">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100/50 flex items-center justify-center text-violet-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+              <Ribbon size={28} strokeWidth={2} />
+            </div>
+            <div>
+              <div className="text-slate-500 text-[12px] font-extrabold uppercase tracking-widest mb-1.5">Đại Lý Trung Gian</div>
+              <div className="text-4xl font-black text-slate-800 leading-none">{STATS.daily}</div>
+            </div>
+          </div>
         </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><Users size={22} /></div>
-          <div className="kpi-label">Khách Lẻ (B2C)</div>
-          <div className="kpi-value">{STATS.b2c}</div>
+
+        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(245,158,11,0.12)] transition-all duration-300 group">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 flex items-center justify-center text-amber-600 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300">
+              <Users size={28} strokeWidth={2} />
+            </div>
+            <div>
+              <div className="text-slate-500 text-[12px] font-extrabold uppercase tracking-widest mb-1.5">Khách Lẻ (B2C)</div>
+              <div className="text-4xl font-black text-slate-800 leading-none">{STATS.b2c}</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -171,7 +195,7 @@ export default function DoiTacPage() {
               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tìm tên, mã đối tác..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -186,7 +210,7 @@ export default function DoiTacPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border ${filter === f.id ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-700'}`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -300,18 +324,7 @@ export default function DoiTacPage() {
                 </div>
               </div>
 
-              {formData.PhanLoai === 'B2B' && (
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Địa chỉ ví Metamask (Blockchain Identity)</label>
-                  <input
-                    type="text"
-                    style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }}
-                    placeholder="0x..."
-                    value={formData.WalletAddress || ''}
-                    onChange={e => setFormData({ ...formData, WalletAddress: e.target.value })}
-                  />
-                </div>
-              )}
+
 
               {formData.PhanLoai === 'Đại lý' && (
                 <div>

@@ -67,7 +67,6 @@ export default function ContractsPage() {
     contractId: '',
     title: 'Hợp đồng nguyên tắc mua bán sơn VTSC-KSM',
     customer: '',
-    clientAddress: '', // Wallet address
     partyBAddress: '',
     partyBTaxCode: '',
     partyBBankAccount: '',
@@ -128,7 +127,6 @@ export default function ContractsPage() {
       contractId: 'VTSC-KSM-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 9000 + 1000),
       title: 'Hợp đồng nguyên tắc mua bán sơn VTSC-KSM',
       customer: '',
-      clientAddress: '',
       partyBAddress: '',
       partyBTaxCode: '',
       partyBBankAccount: '',
@@ -150,7 +148,6 @@ export default function ContractsPage() {
         customer: customerId,
         partyBAddress: cust.DiaChi || '',
         partyBTaxCode: cust.MaSoThue || '',
-        clientAddress: cust.WalletAddress || '',
         partyBRepresentative: cust.NguoiDaiDien || ''
       });
     }
@@ -161,7 +158,6 @@ export default function ContractsPage() {
       contractId: item.contractId || item.MaHopDong,
       title: item.title,
       customer: item.customer?._id || item.CustomerID?._id || item.CustomerID,
-      clientAddress: item.clientAddress || '',
       partyBAddress: item.partyBAddress || '',
       partyBTaxCode: item.partyBTaxCode || '',
       partyBBankAccount: item.partyBBankAccount || '',
@@ -441,10 +437,7 @@ export default function ContractsPage() {
                         <label className="form-label">Tại ngân hàng</label>
                         <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Techcombank..." value={formData.partyBBankName} onChange={e => setFormData({ ...formData, partyBBankName: e.target.value })} />
                       </div>
-                      <div style={{ gridColumn: 'span 2' }}>
-                        <label className="form-label">Địa chỉ ví SmartContract (Tùy chọn cho B2B)</label>
-                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="0x..." value={formData.clientAddress} onChange={e => setFormData({ ...formData, clientAddress: e.target.value })} />
-                      </div>
+
                     </div>
                   </div>
                 </div>
@@ -647,7 +640,6 @@ export default function ContractsPage() {
                       <div style={{ marginBottom: 4 }}><b>Mã số thuế:</b> {formData.partyBTaxCode || '................................'}</div>
                       <div style={{ marginBottom: 4 }}><b>Người đại diện:</b> {formData.partyBRepresentative || '................................'} — <b>Chức vụ:</b> {formData.partyBPosition || '................................'}</div>
                       <div style={{ marginBottom: 4 }}><b>Tài khoản:</b> {formData.partyBBankAccount || '................................'} tại {formData.partyBBankName || '................................'}</div>
-                      <div style={{ fontSize: 11, color: '#444', fontStyle: 'italic', marginTop: 3 }}><b>Ví Blockchain xác thực:</b> {formData.clientAddress || 'Chưa liên kết ví số'}</div>
                     </div>
                   </div>
 

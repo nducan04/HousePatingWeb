@@ -348,16 +348,11 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
               </div>
             ) : (
               <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ width: '100%' }} onClick={handleDeploy}
-                disabled={isDeploying || !contract.ipfsCid || !contract.clientAddress}>
+                disabled={isDeploying || !contract.ipfsCid}>
                 {isDeploying
                   ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Đang ghi Blockchain...</>
                   : <><Shield size={16} /> Deploy On-Chain (Sepolia)</>}
               </button>
-            )}
-            {!contract.clientAddress && contract.status === 'draft' && (
-              <p style={{ fontSize: '0.875rem', color: '#d97706', marginTop: 8 }}>
-                ⚠️ Cần cập nhật địa chỉ ví khách hàng B2B trước khi deploy.
-              </p>
             )}
           </div>
 
@@ -429,17 +424,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
             )}
           </div>
 
-          {/* Wallet Addresses */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
-            <div style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: 8 }}>
-              <strong>Ví VTSC:</strong><br />
-              <span style={{ wordBreak: 'break-all' }}>{contract.vtscAddress || '—'}</span>
-            </div>
-            <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>
-              <strong>Ví Đối tác:</strong><br />
-              <span style={{ wordBreak: 'break-all' }}>{contract.clientAddress || 'Chưa liên kết'}</span>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>
