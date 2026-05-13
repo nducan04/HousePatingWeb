@@ -93,6 +93,11 @@ export const paintColors: PaintColor[] = [
   { code: 'TEX-G404', name: 'Gold Hammertone', hex: '#B8860B', category: 'Texture', gloss: 'Vân búa vàng', surface: 'Sắt mỹ thuật', application: 'Bàn ghế sắt uốn', coverage: '8 - 10 m²/kg', packaging: 'Thùng 20kg', mixing: 'Khuấy đều 5 phút trước khi phun (Không pha dung môi)' },
   { code: 'TEX-S505', name: 'Sand Texture Black', hex: '#1C1C1C', category: 'Texture', gloss: 'Cát nhám mờ', surface: 'Hợp kim kẽm', application: 'Phụ kiện tay cứng', coverage: '8 - 10 m²/kg', packaging: 'Thùng 20kg', mixing: 'Khuấy đều 5 phút trước khi phun (Không pha dung môi)' },
   { code: 'TEX-W606', name: 'Wrinkle Black', hex: '#2B2B2B', category: 'Texture', gloss: 'Vân nhăn đen', surface: 'Nhôm tản nhiệt', application: 'Tản nhiệt Led, Âm ly', coverage: '8 - 10 m²/kg', packaging: 'Thùng 20kg', mixing: 'Khuấy đều 5 phút trước khi phun (Không pha dung môi)' },
+  { code: 'PAS-101', name: 'Pastel Pink', hex: '#FFD1DC', category: 'Pastel', gloss: '20% Matt', surface: 'Nhôm', application: 'Nội thất trẻ em', coverage: '8 - 10 m²/kg', packaging: 'Thùng 20kg', mixing: 'Khuấy đều 5 phút trước khi phun (Không pha dung môi)' },
+  { code: 'PAS-102', name: 'Soft Lavender', hex: '#E6E6FA', category: 'Pastel', gloss: '20% Matt', surface: 'Nhôm', application: 'Nội thất phòng ngủ', coverage: '8 - 10 m²/kg', packaging: 'Thùng 20kg', mixing: 'Khuấy đều 5 phút trước khi phun (Không pha dung môi)' },
+  { code: 'PAS-103', name: 'Mint Frost', hex: '#AAF0D1', category: 'Pastel', gloss: '20% Matt', surface: 'Nhôm', application: 'Bệnh viện, Trường học', coverage: '8 - 10 m²/kg', packaging: 'Thùng 20kg', mixing: 'Khuấy đều 5 phút trước khi phun (Không pha dung môi)' },
+  { code: 'NEO-201', name: 'Electric Lime', hex: '#CCFF00', category: 'Neon', gloss: '90% Gloss', surface: 'Thép', application: 'Trang trí thể thao', coverage: '8 - 10 m²/kg', packaging: 'Thùng 20kg', mixing: 'Khuấy đều 5 phút trước khi phun (Không pha dung môi)' },
+  { code: 'NEO-202', name: 'Cyber Pink', hex: '#FF007F', category: 'Neon', gloss: '90% Gloss', surface: 'Thép', application: 'Biển quảng cáo', coverage: '8 - 10 m²/kg', packaging: 'Thùng 20kg', mixing: 'Khuấy đều 5 phút trước khi phun (Không pha dung môi)' }
 ];
 
 export const trackingData = [

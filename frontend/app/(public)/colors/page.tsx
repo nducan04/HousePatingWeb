@@ -5,6 +5,28 @@ import Link from "next/link";
 import { Search, Palette, Sparkles, X } from "lucide-react";
 import { paintColors } from "@/lib/data/colors-data";
 
+function hexToHSL(hex: string) {
+  hex = hex.replace(/^#/, '');
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 };
+}
+
 export default function ColorsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedColor, setSelectedColor] = useState<
@@ -12,7 +34,13 @@ export default function ColorsPage() {
   >(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const filteredColors = paintColors.filter((c) => {
+  const sortedColors = [...paintColors].sort((a, b) => {
+    const hslA = hexToHSL(a.hex);
+    const hslB = hexToHSL(b.hex);
+    return hslA.h - hslB.h;
+  });
+
+  const filteredColors = sortedColors.filter((c) => {
     const matchesSearch =
       c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -24,28 +52,29 @@ export default function ColorsPage() {
 
   const categories = [
     "all",
-    ...Array.from(new Set(paintColors.map((c) => c.category))),
+    ...Array.from(new Set(sortedColors.map((c) => c.category))),
   ];
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Hero Banner */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-10 mb-8 border border-blue-100 text-center">
-        <Palette size={48} className="text-blue-600 mx-auto mb-4" />
-        <h2 className="text-3xl font-extrabold text-slate-800 mb-2">
+      <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950 rounded-2xl p-10 mb-8 border border-slate-800 text-center relative overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+        <Palette size={48} className="text-blue-400 mx-auto mb-4 relative z-10" />
+        <h2 className="text-4xl font-extrabold text-white mb-2 relative z-10">
           Bảng Mã Màu Sơn Tĩnh Điện
         </h2>
-        <p className="text-slate-500 text-lg mb-6">
+        <p className="text-blue-200 text-lg mb-6 relative z-10">
           AkzoNobel Interpon — Tiêu chuẩn chất lượng hàng đầu thế giới
         </p>
-        <div className="relative max-w-md mx-auto">
+        <div className="relative max-w-md mx-auto z-10">
           <Search
             size={18}
             className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
           />
           <input
             type="text"
-            className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
+            className="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-slate-300 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all shadow-lg"
             placeholder="Tìm theo mã màu, tên hoặc HEX..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -58,39 +87,40 @@ export default function ColorsPage() {
         {categories.map((cat) => (
           <button
             key={cat}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${categoryFilter === cat ? "bg-blue-600 text-white shadow-sm" : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700"}`}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer border-none ${categoryFilter === cat ? "bg-blue-600 text-white shadow-md" : "bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 shadow-sm border border-slate-200"}`}
             onClick={() => setCategoryFilter(cat)}
           >
             {cat === "all" ? "Tất cả" : cat}
           </button>
         ))}
-        <span className="ml-auto text-sm text-slate-400">
+        <span className="ml-auto text-sm font-medium text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
           {filteredColors.length} màu
         </span>
       </div>
 
       {/* Color Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredColors.map((color) => (
           <div
             key={color.code}
-            className="bg-white border border-slate-200 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-blue-300"
+            className="bg-white border border-slate-100 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 hover:border-blue-200 group"
             onClick={() =>
               setSelectedColor(
                 selectedColor?.code === color.code ? null : color,
               )
             }
           >
-            <div className="h-28 w-full" style={{ background: color.hex }} />
-            <div className="p-3">
-              <div className="text-xs font-bold text-blue-600 tracking-wider">
+            <div className="h-32 w-full transition-transform duration-500 group-hover:scale-105" style={{ background: color.hex }} />
+            <div className="p-4">
+              <div className="text-xs font-bold text-blue-600 tracking-wider uppercase">
                 {color.code}
               </div>
-              <div className="text-sm font-semibold text-slate-800 mt-0.5">
+              <div className="text-base font-bold text-slate-800 mt-1">
                 {color.name}
               </div>
-              <div className="text-xs text-slate-400 mt-1">
-                {color.hex} · {color.gloss}
+              <div className="text-xs text-slate-500 mt-1 flex justify-between items-center">
+                <span>{color.hex}</span>
+                <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 text-[10px] font-semibold">{color.gloss}</span>
               </div>
             </div>
           </div>
@@ -100,47 +130,53 @@ export default function ColorsPage() {
       {filteredColors.length === 0 && (
         <div className="text-center py-16 text-slate-400">
           <Search size={48} className="mx-auto mb-4 opacity-30" />
-          <p>Không tìm thấy màu phù hợp. Thử nhập mã màu khác.</p>
+          <p className="text-lg font-medium">Không tìm thấy màu phù hợp.</p>
+          <p className="text-sm">Thử nhập mã màu khác hoặc kiểm tra lại từ khóa.</p>
         </div>
       )}
 
       {/* Color Detail Modal */}
       {selectedColor && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedColor(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto transform transition-all scale-100"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-800">
-                {selectedColor.name}
-              </h3>
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <div>
+                <h3 className="text-xl font-bold text-slate-800">
+                  {selectedColor.name}
+                </h3>
+                <p className="text-sm text-blue-600 font-semibold">{selectedColor.code}</p>
+              </div>
               <button
-                className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+                className="p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
                 onClick={() => setSelectedColor(null)}
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
             {/* Color Preview */}
-            <div className="px-5 pt-5">
+            <div className="px-6 pt-6">
               <div
-                className="h-40 rounded-xl mb-6"
+                className="h-44 rounded-xl mb-6 relative overflow-hidden group"
                 style={{
                   background: selectedColor.hex,
-                  boxShadow: `0 10px 40px ${selectedColor.hex}60`,
+                  boxShadow: `0 10px 40px ${selectedColor.hex}40`,
                 }}
-              />
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
             </div>
 
             {/* Details */}
-            <div className="px-5 pb-5">
-              <div className="bg-slate-50 rounded-xl p-5 space-y-0">
+            <div className="px-6 pb-6">
+              <div className="bg-slate-50 rounded-xl p-5 space-y-0 border border-slate-100">
                 {[
                   { label: "Mã Màu", value: selectedColor.code },
                   { label: "HEX", value: selectedColor.hex, mono: true },
@@ -151,7 +187,7 @@ export default function ColorsPage() {
                 ].map((row) => (
                   <div
                     key={row.label}
-                    className="flex justify-between py-2.5 border-b border-slate-200 last:border-b-0"
+                    className="flex justify-between py-2.5 border-b border-slate-200/60 last:border-b-0"
                   >
                     <span className="text-sm text-slate-500 font-medium">
                       {row.label}
@@ -164,6 +200,9 @@ export default function ColorsPage() {
                   </div>
                 ))}
 
+                {/* Divider */}
+                <div className="border-t border-slate-200/60 my-2 pt-2"></div>
+
                 {/* 3 trường B2C */}
                 {[
                   { label: "Độ phủ lý thuyết", value: selectedColor.coverage },
@@ -175,7 +214,7 @@ export default function ColorsPage() {
                 ].map((row) => (
                   <div
                     key={row.label}
-                    className="flex justify-between py-2.5 border-b border-slate-200 last:border-b-0"
+                    className="flex justify-between py-2.5 border-b border-slate-200/60 last:border-b-0"
                   >
                     <span className="text-sm text-blue-600 font-bold">
                       {row.label}
@@ -191,12 +230,12 @@ export default function ColorsPage() {
               <div className="flex gap-3 mt-6">
                 <Link
                   href="/rd-tracking/new"
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-blue-600 text-white hover:bg-blue-700 transition-all no-underline"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm bg-blue-600 text-white hover:bg-blue-700 transition-all no-underline shadow-md shadow-blue-600/20"
                 >
                   <Sparkles size={16} /> Yêu cầu mẫu thử
                 </Link>
                 <button
-                  className="flex-1 px-5 py-2.5 rounded-xl font-semibold text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all cursor-pointer border-none"
+                  className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm bg-white text-slate-700 hover:bg-slate-50 transition-all cursor-pointer border border-slate-200 shadow-sm"
                   onClick={() => setSelectedColor(null)}
                 >
                   Đóng
