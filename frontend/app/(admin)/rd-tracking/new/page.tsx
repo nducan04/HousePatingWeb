@@ -32,31 +32,37 @@ export default function NewRDRequestPage() {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <Link href="/rd-tracking" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ marginBottom: '1.75rem' }}>
-        <ArrowLeft size={16} /> Quay lại
+    <div className="max-w-4xl mx-auto px-4 py-8 animate-in fade-in duration-700">
+      <Link 
+        href="/rd-tracking" 
+        className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 font-medium transition-colors mb-6 group no-underline"
+      >
+        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
+        Quay lại
       </Link>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '2.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '2.25rem' }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: '10px',
-            background: 'rgba(124, 58, 237, 0.08)', color: '#7c3aed',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
+      <div className="bg-white border border-slate-100 rounded-[24px] shadow-xl shadow-slate-100/50 overflow-hidden">
+        {/* Header */}
+        <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shadow-inner">
             <Droplets size={24} />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.625rem', fontWeight: 700 }}>Tạo Yêu cầu R&D Mới</h2>
-            <p style={{ fontSize: '1rem', color: '#94a3b8' }}>Yêu cầu sẽ được tạo với Version 1.0</p>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Tạo Yêu cầu R&D Mới</h2>
+            <p className="text-sm font-medium text-slate-400 mt-0.5">Yêu cầu sẽ được tạo với Version 1.0</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.75rem' }}>
-            <div className="form-group">
-              <label className="form-label">Khách hàng *</label>
-              <select className="form-select" required value={formData.customer} onChange={e => setFormData(p => ({ ...p, customer: e.target.value }))}>
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Khách hàng *</label>
+              <select 
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all" 
+                required 
+                value={formData.customer} 
+                onChange={e => setFormData(p => ({ ...p, customer: e.target.value }))}
+              >
                 <option value="">Chọn khách hàng</option>
                 <option value="NCC Aluminium">NCC Aluminium</option>
                 <option value="VPIC Steel">VPIC Steel</option>
@@ -67,21 +73,37 @@ export default function NewRDRequestPage() {
               </select>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Mã Màu Mục tiêu *</label>
-              <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" type="text" placeholder="VD: INT-D2525" required
-                value={formData.colorCode} onChange={e => setFormData(p => ({ ...p, colorCode: e.target.value }))} />
+            <div className="space-y-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Mã Màu Mục tiêu *</label>
+              <input 
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all" 
+                type="text" 
+                placeholder="VD: INT-D2525" 
+                required
+                value={formData.colorCode} 
+                onChange={e => setFormData(p => ({ ...p, colorCode: e.target.value }))} 
+              />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Tên Màu</label>
-              <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" type="text" placeholder="VD: Silver Metallic"
-                value={formData.colorName} onChange={e => setFormData(p => ({ ...p, colorName: e.target.value }))} />
+            <div className="space-y-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Tên Màu</label>
+              <input 
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all" 
+                type="text" 
+                placeholder="VD: Silver Metallic"
+                value={formData.colorName} 
+                onChange={e => setFormData(p => ({ ...p, colorName: e.target.value }))} 
+              />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Loại Bề mặt *</label>
-              <select className="form-select" required value={formData.surface} onChange={e => setFormData(p => ({ ...p, surface: e.target.value }))}>
+            <div className="space-y-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Loại Bề mặt *</label>
+              <select 
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all" 
+                required 
+                value={formData.surface} 
+                onChange={e => setFormData(p => ({ ...p, surface: e.target.value }))}
+              >
                 <option value="">Chọn bề mặt</option>
                 <option value="Nhôm định hình">Nhôm định hình</option>
                 <option value="Nhôm đúc">Nhôm đúc</option>
@@ -92,37 +114,49 @@ export default function NewRDRequestPage() {
               </select>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Lớp nền (Substrate)</label>
-              <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" type="text" placeholder="VD: Primer + Topcoat"
-                value={formData.substrate} onChange={e => setFormData(p => ({ ...p, substrate: e.target.value }))} />
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Lớp nền (Substrate)</label>
+              <input 
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all" 
+                type="text" 
+                placeholder="VD: Primer + Topcoat"
+                value={formData.substrate} 
+                onChange={e => setFormData(p => ({ ...p, substrate: e.target.value }))} 
+              />
             </div>
           </div>
 
-          <div className="form-group" style={{ marginTop: '1.75rem' }}>
-            <label className="form-label">Yêu cầu Chi tiết</label>
-            <textarea className="form-textarea" rows={4} placeholder="Mô tả yêu cầu kỹ thuật, độ bóng, ΔE cho phép, ứng dụng..."
-              value={formData.requirements} onChange={e => setFormData(p => ({ ...p, requirements: e.target.value }))} />
+          <div className="space-y-2">
+            <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Yêu cầu Chi tiết</label>
+            <textarea 
+              className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all" 
+              rows={4} 
+              placeholder="Mô tả yêu cầu kỹ thuật, độ bóng, ΔE cho phép, ứng dụng..."
+              value={formData.requirements} 
+              onChange={e => setFormData(p => ({ ...p, requirements: e.target.value }))} 
+            />
           </div>
 
           {/* File Upload */}
-          <div style={{ marginTop: '1.75rem' }}>
-            <label className="form-label" style={{ marginBottom: '0.625rem', display: 'block' }}>Ảnh/Tài liệu Đính kèm</label>
+          <div className="space-y-2">
+            <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Ảnh/Tài liệu Đính kèm</label>
             <div
-              className={`upload-zone ${dragOver ? 'dragover' : ''}`}
+              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+                dragOver ? 'border-purple-500 bg-purple-50/50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+              }`}
               onDragOver={e => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleFileDrop}
               onClick={() => document.getElementById('file-input')?.click()}
             >
-              <Upload size={32} className="upload-icon" style={{ margin: '0 auto 0.625rem' }} />
-              <p className="upload-text">
-                Kéo thả file vào đây hoặc <strong>click để chọn</strong>
+              <Upload size={32} className={`mx-auto mb-2 ${dragOver ? 'text-purple-600' : 'text-slate-400'}`} />
+              <p className="text-sm font-bold text-slate-600">
+                Kéo thả file vào đây hoặc <span className="text-purple-600">click để chọn</span>
               </p>
-              <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginTop: 4 }}>
+              <p className="text-xs font-medium text-slate-400 mt-1">
                 PNG, JPG, PDF — Tối đa 10MB
               </p>
-              <input id="file-input" type="file" multiple accept="image/*,.pdf" style={{ display: 'none' }}
+              <input id="file-input" type="file" multiple accept="image/*,.pdf" className="hidden"
                 onChange={e => {
                   const names = Array.from(e.target.files || []).map(f => f.name);
                   setFiles(prev => [...prev, ...names]);
@@ -130,9 +164,9 @@ export default function NewRDRequestPage() {
               />
             </div>
             {files.length > 0 && (
-              <div style={{ marginTop: '0.625rem', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <div className="flex flex-wrap gap-2 mt-2">
                 {files.map((f, i) => (
-                  <span key={i} className="badge signed" style={{ cursor: 'pointer' }} onClick={() => setFiles(fls => fls.filter((_, j) => j !== i))}>
+                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-50 text-purple-600 text-xs font-bold cursor-pointer hover:bg-purple-100 transition-colors" onClick={() => setFiles(fls => fls.filter((_, j) => j !== i))}>
                     📎 {f} ✕
                   </span>
                 ))}
@@ -140,9 +174,9 @@ export default function NewRDRequestPage() {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '1.125rem', justifyContent: 'flex-end', marginTop: '2.25rem' }}>
-            <Link href="/rd-tracking" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200">Hủy</Link>
-            <button type="submit" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-6 py-3 text-base">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-50">
+            <Link href="/rd-tracking" className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all cursor-pointer no-underline">Hủy</Link>
+            <button type="submit" className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer flex items-center gap-2">
               <Plus size={18} /> Tạo Yêu cầu (v1.0)
             </button>
           </div>
