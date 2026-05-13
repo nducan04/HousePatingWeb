@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, Palette, Sparkles, X } from "lucide-react";
 import { paintColors } from "@/lib/data/colors-data";
@@ -27,8 +27,17 @@ export default function ColorsPage() {
     ...Array.from(new Set(paintColors.map((c) => c.category))),
   ];
 
+  const sortedColors = useMemo(() => {
+    return [...filteredColors].sort((a, b) => {
+      if (a.category !== b.category) {
+        return a.category.localeCompare(b.category);
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [filteredColors]);
+
   return (
-    <div>
+    <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Hero Banner */}
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-10 mb-8 border border-blue-100 text-center">
         <Palette size={48} className="text-blue-600 mx-auto mb-4" />
@@ -71,7 +80,7 @@ export default function ColorsPage() {
 
       {/* Color Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredColors.map((color) => (
+        {sortedColors.map((color) => (
           <div
             key={color.code}
             className="bg-white border border-slate-200 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-blue-300"
