@@ -16,6 +16,7 @@
     "axios": "^1.14.0",
     "ethers": "^6.16.0",
     "html2canvas": "^1.4.1",
+    "html2pdf.js": "^0.14.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.577.0",
@@ -23,6 +24,7 @@
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-to-print": "^3.3.0",
     "recharts": "^3.8.0",
     "xlsx": "^0.18.5",
     "zustand": "^5.0.12"
