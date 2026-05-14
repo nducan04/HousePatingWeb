@@ -12,8 +12,8 @@ const mockDataByPeriod: Record<string, any> = {
       { name: 'Tuần 1', revenue: 800 }, { name: 'Tuần 2', revenue: 900 }, { name: 'Tuần 3', revenue: 700 }, { name: 'Tuần 4', revenue: 700 },
     ],
     productData: [
-      { name: 'Sơn tĩnh điện', value: 15000, color: '#3b82f6', unit: 'kg' }, 
-      { name: 'Sơn tàu biển', value: 12000, color: '#8b5cf6', unit: 'Lít' }, 
+      { name: 'Sơn tĩnh điện', value: 15000, color: '#3b82f6', unit: 'kg' },
+      { name: 'Sơn tàu biển', value: 12000, color: '#8b5cf6', unit: 'Lít' },
       { name: 'Sơn công nghiệp', value: 6500, color: '#f59e0b', unit: 'kg' },
       { name: 'Sơn nội thất', value: 3000, color: '#10b981', unit: 'Lít' },
       { name: 'Sơn ngoại thất', value: 2000, color: '#ef4444', unit: 'Lít' },
@@ -29,8 +29,8 @@ const mockDataByPeriod: Record<string, any> = {
       { name: 'Tuần 1', revenue: 500 }, { name: 'Tuần 2', revenue: 400 }, { name: 'Tuần 3', revenue: 900 }, { name: 'Tuần 4', revenue: 1000 },
     ],
     productData: [
-      { name: 'Sơn tĩnh điện', value: 12000, color: '#3b82f6', unit: 'kg' }, 
-      { name: 'Sơn tàu biển', value: 10000, color: '#8b5cf6', unit: 'Lít' }, 
+      { name: 'Sơn tĩnh điện', value: 12000, color: '#3b82f6', unit: 'kg' },
+      { name: 'Sơn tàu biển', value: 10000, color: '#8b5cf6', unit: 'Lít' },
       { name: 'Sơn công nghiệp', value: 4100, color: '#f59e0b', unit: 'kg' },
       { name: 'Sơn nội thất', value: 4000, color: '#10b981', unit: 'Lít' },
       { name: 'Sơn ngoại thất', value: 2000, color: '#ef4444', unit: 'Lít' },
@@ -46,8 +46,8 @@ const mockDataByPeriod: Record<string, any> = {
       { name: 'Tuần 1', revenue: 1000 }, { name: 'Tuần 2', revenue: 1100 }, { name: 'Tuần 3', revenue: 950 }, { name: 'Tuần 4', revenue: 700 },
     ],
     productData: [
-      { name: 'Sơn tĩnh điện', value: 18000, color: '#3b82f6', unit: 'kg' }, 
-      { name: 'Sơn tàu biển', value: 16000, color: '#8b5cf6', unit: 'Lít' }, 
+      { name: 'Sơn tĩnh điện', value: 18000, color: '#3b82f6', unit: 'kg' },
+      { name: 'Sơn tàu biển', value: 16000, color: '#8b5cf6', unit: 'Lít' },
       { name: 'Sơn công nghiệp', value: 5000, color: '#f59e0b', unit: 'kg' },
       { name: 'Sơn nội thất', value: 3000, color: '#10b981', unit: 'Lít' },
       { name: 'Sơn ngoại thất', value: 1000, color: '#ef4444', unit: 'Lít' },
@@ -64,8 +64,8 @@ const mockDataByPeriod: Record<string, any> = {
       { name: 'Tuần 1', revenue: 1200 }, { name: 'Tuần 2', revenue: 2100 }, { name: 'Tuần 3', revenue: 1800 }, { name: 'Tuần 4', revenue: 3200 },
     ],
     productData: [
-      { name: 'Sơn tĩnh điện', value: 20000, color: '#3b82f6', unit: 'kg' }, 
-      { name: 'Sơn tàu biển', value: 12000, color: '#8b5cf6', unit: 'Lít' }, 
+      { name: 'Sơn tĩnh điện', value: 20000, color: '#3b82f6', unit: 'kg' },
+      { name: 'Sơn tàu biển', value: 12000, color: '#8b5cf6', unit: 'Lít' },
       { name: 'Sơn công nghiệp', value: 5000, color: '#f59e0b', unit: 'kg' },
       { name: 'Sơn nội thất', value: 5200, color: '#10b981', unit: 'Lít' },
       { name: 'Sơn ngoại thất', value: 3000, color: '#ef4444', unit: 'Lít' },
@@ -83,8 +83,8 @@ const mockDataByPeriod: Record<string, any> = {
       { name: 'Tháng 1', revenue: 3100 }, { name: 'Tháng 2', revenue: 2800 }, { name: 'Tháng 3', revenue: 3750 },
     ],
     productData: [
-      { name: 'Sơn tĩnh điện', value: 45000, color: '#3b82f6', unit: 'kg' }, 
-      { name: 'Sơn tàu biển', value: 38000, color: '#8b5cf6', unit: 'Lít' }, 
+      { name: 'Sơn tĩnh điện', value: 45000, color: '#3b82f6', unit: 'kg' },
+      { name: 'Sơn tàu biển', value: 38000, color: '#8b5cf6', unit: 'Lít' },
       { name: 'Sơn công nghiệp', value: 15600, color: '#f59e0b', unit: 'kg' },
       { name: 'Sơn nội thất', value: 10000, color: '#10b981', unit: 'Lít' },
       { name: 'Sơn ngoại thất', value: 5000, color: '#ef4444', unit: 'Lít' },
@@ -103,8 +103,8 @@ const mockDataByPeriod: Record<string, any> = {
       { name: 'Quý 1', revenue: 9650 }, { name: 'Quý 2 (Tạm tính)', revenue: 4250 },
     ],
     productData: [
-      { name: 'Sơn tĩnh điện', value: 65000, color: '#3b82f6', unit: 'kg' }, 
-      { name: 'Sơn tàu biển', value: 50200, color: '#8b5cf6', unit: 'Lít' }, 
+      { name: 'Sơn tĩnh điện', value: 65000, color: '#3b82f6', unit: 'kg' },
+      { name: 'Sơn tàu biển', value: 50200, color: '#8b5cf6', unit: 'Lít' },
       { name: 'Sơn công nghiệp', value: 20600, color: '#f59e0b', unit: 'kg' },
       { name: 'Sơn nội thất', value: 15200, color: '#10b981', unit: 'Lít' },
       { name: 'Sơn ngoại thất', value: 8000, color: '#ef4444', unit: 'Lít' },
@@ -144,7 +144,7 @@ const PrintableReportTemplate = ({ selectedMonth, data }: { selectedMonth: strin
       {/* Content */}
       <div className="text-justify mb-6">
         <p className="mb-4">Căn cứ vào dữ liệu hệ thống phần mềm VTSC PaintPro, phòng Kinh doanh xin báo cáo kết quả hoạt động như sau:</p>
-        
+
         <h2 className="font-bold mb-2">1. Tổng quan:</h2>
         <ul className="list-disc pl-8 mb-4">
           <li>Tổng doanh thu: {data.summary.revenue} VNĐ</li>
@@ -178,9 +178,9 @@ const PrintableReportTemplate = ({ selectedMonth, data }: { selectedMonth: strin
         <h2 className="font-bold mb-2">3. Nhận xét/Đề xuất:</h2>
         <div className="leading-loose">
           ..................................................................................................................................................................................
-          <br/>
+          <br />
           ..................................................................................................................................................................................
-          <br/>
+          <br />
           ..................................................................................................................................................................................
         </div>
       </div>
@@ -213,7 +213,7 @@ export default function BaoCaoThongKePage() {
   const printRef = useRef<HTMLDivElement>(null);
 
   const periods = [
-    'Tháng 1/2026', 'Tháng 2/2026', 'Tháng 3/2026', 'Tháng 4/2026', 
+    'Tháng 1/2026', 'Tháng 2/2026', 'Tháng 3/2026', 'Tháng 4/2026',
     'Quý 1/2026', 'Năm 2026'
   ];
 
@@ -249,13 +249,13 @@ export default function BaoCaoThongKePage() {
     try {
       const html2pdf = (await import('html2pdf.js')).default;
       const opt = {
-        margin:       0.5,
-        filename:     `Bao-Cao-${selectedPeriod.replace(/\//g, '-')}.pdf`,
-        image:        { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' as const }
+        margin: 0.5,
+        filename: `Bao-Cao-${selectedPeriod.replace(/\//g, '-')}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' as const }
       };
-      
+
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error("Lỗi khi tạo PDF:", err);
@@ -275,16 +275,16 @@ export default function BaoCaoThongKePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 font-sans">
-      
+
       {/* ---------------- WEB UI ---------------- */}
       <div className="print:hidden space-y-6 animate-in fade-in duration-500">
-        
+
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div>
             <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Báo cáo hoạt động kinh doanh</h1>
             <div className="mt-3">
-              <select 
+              <select
                 className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-blue-600 focus:border-blue-600 block w-full md:w-64 p-3 outline-none transition-all font-bold cursor-pointer hover:border-blue-300"
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
@@ -295,9 +295,9 @@ export default function BaoCaoThongKePage() {
               </select>
             </div>
           </div>
-          
+
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={handleDownloadPDF}
               disabled={isExporting}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 cursor-pointer border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 shadow-sm disabled:opacity-50"
@@ -305,7 +305,7 @@ export default function BaoCaoThongKePage() {
               {isExporting ? <Loader2 className="animate-spin" size={18} /> : <FileText size={18} />}
               {isExporting ? 'Đang tạo...' : 'Xuất PDF'}
             </button>
-            <button 
+            <button
               onClick={handlePrint}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 cursor-pointer border-none bg-blue-700 text-white hover:bg-blue-800 shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
@@ -383,14 +383,14 @@ export default function BaoCaoThongKePage() {
                 <AreaChart data={currentData.revenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} dx={-10} tickFormatter={(value) => `${value}Tr`} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)', padding: '12px' }}
                     itemStyle={{ fontWeight: 800, color: '#0f172a' }}
                     formatter={(value: any) => [`${value} Triệu VNĐ`, 'Doanh thu']}
@@ -419,14 +419,14 @@ export default function BaoCaoThongKePage() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
                     itemStyle={{ fontWeight: 800, color: '#0f172a' }}
                     formatter={(value: any) => [`${Number(value).toLocaleString()} Kg`, 'Sản lượng']}
                   />
-                  <Legend 
-                    verticalAlign="bottom" 
-                    height={36} 
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
                     iconType="circle"
                     formatter={(value) => <span className="text-slate-700 font-bold text-sm ml-1">{value}</span>}
                   />
@@ -470,7 +470,7 @@ export default function BaoCaoThongKePage() {
                     <td className="px-6 py-4 text-right font-black text-slate-900">{tx.value}</td>
                     <td className="px-6 py-4 text-center">
                       <span className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center justify-center gap-1 w-fit mx-auto ${tx.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-600' : tx.status === 'Đang xử lý' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-700'}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${tx.status === 'Hoàn thành' ? 'bg-emerald-500' : tx.status === 'Đang xử lý' ? 'bg-blue-500' : 'bg-slate-400'}`}></div> 
+                        <div className={`w-1.5 h-1.5 rounded-full ${tx.status === 'Hoàn thành' ? 'bg-emerald-500' : tx.status === 'Đang xử lý' ? 'bg-blue-500' : 'bg-slate-400'}`}></div>
                         {tx.status}
                       </span>
                     </td>
@@ -489,7 +489,7 @@ export default function BaoCaoThongKePage() {
           <PrintableReportTemplate selectedMonth={selectedPeriod} data={currentData} />
         </div>
       </div>
-      
+
     </div>
   );
 }
