@@ -5,7 +5,9 @@ const phieuKiemKhoSchema = new mongoose.Schema({
     TrangThai: { type: String, enum: ['PHIEU_TAM', 'HOAN_THANH', 'DA_HUY'], default: 'HOAN_THANH' },
     ChiTiet: [{
         Sanpham: { type: mongoose.Schema.Types.ObjectId, ref: 'SanPhamSon' },
-        TonKhoHT: { type: Number, default: 0 }, // Tồn trên hệ thống
+        MaMau: { type: String, required: true },    // ★ Mã màu (SKU) cụ thể
+        TenMau: { type: String, default: '' },       // Tên màu hiển thị
+        TonKhoHT: { type: Number, default: 0 }, // Tồn trên hệ thống (cấp SKU)
         TonThucTe: { type: Number, required: true }, // Nhân viên nhập vào
         ChenhLech: { type: Number, default: 0 }, // TonThucTe - TonKhoHT
         DonGia: { type: Number, default: 0 }, // Lấy từ SanPhamSon

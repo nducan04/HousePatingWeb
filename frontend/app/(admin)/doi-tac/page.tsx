@@ -1,7 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, Users, Building2, Ribbon, Handshake, Download } from 'lucide-react';
+import { 
+  Plus, 
+  Search, 
+  Edit, 
+  Trash2, 
+  Users, 
+  Building2, 
+  Ribbon, 
+  Handshake, 
+  Download,
+  Mail,
+  Phone,
+  MapPin,
+  ExternalLink,
+  Loader2,
+  X,
+  UserCheck,
+  ChevronRight,
+  MoreVertical
+} from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import * as XLSX from 'xlsx';
 
@@ -65,8 +84,11 @@ export default function DoiTacPage() {
   };
 
   const filteredData = data.filter(item => {
-    const matchSearch = item.TenKhachHang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.MaKH?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchSearch = 
+      item.TenKhachHang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.MaKH?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.Email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.SDT?.includes(searchTerm);
     const matchFilter = filter === 'all' || item.PhanLoai === filter;
     return matchSearch && matchFilter;
   });
@@ -123,7 +145,7 @@ export default function DoiTacPage() {
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Khach-Hang");
-    XLSX.writeFile(workbook, `VTSC_Danh_Sach_Khach_Hang_${new Date().toLocaleDateString().replace(/\//g, '_')}.xlsx`);
+    XLSX.writeFile(workbook, `VTSC_Khach_Hang_${new Date().getTime()}.xlsx`);
   };
 
   const handleDelete = async (id: string) => {
@@ -138,55 +160,93 @@ export default function DoiTacPage() {
   };
 
   return (
-    <div>
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><Handshake size={22} /></div>
-          <div className="kpi-label">Tổng Đối Tác</div>
-          <div className="kpi-value">{STATS.total}</div>
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {/* Header section with Action */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <span className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
+              <Users size={22} />
+            </span>
+            Quản lý Khách Hàng
+          </h1>
+          <p className="text-slate-400 font-medium mt-1">Hệ thống CRM đồng bộ dữ liệu B2B/B2C & Đối tác Đại lý</p>
         </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><Building2 size={22} /></div>
-          <div className="kpi-label">Khách Doanh Nghiệp (B2B)</div>
-          <div className="kpi-value">{STATS.b2b}</div>
-        </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><Ribbon size={22} /></div>
-          <div className="kpi-label">Đại Lý Trung Gian</div>
-          <div className="kpi-value">{STATS.daily}</div>
-        </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><Users size={22} /></div>
-          <div className="kpi-label">Khách Lẻ (B2C)</div>
-          <div className="kpi-value">{STATS.b2c}</div>
+        
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={exportToExcel}
+            className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer"
+          >
+            <Download size={18} className="text-emerald-600" /> Xuất Excel
+          </button>
+          <button 
+            onClick={() => openForm()}
+            className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer"
+          >
+            <Plus size={18} /> Thêm Đối Tác
+          </button>
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { label: 'Tổng Đối Tác', value: STATS.total, icon: Handshake, color: 'indigo', sub: 'Tất cả phân loại' },
+          { label: 'Doanh Nghiệp (B2B)', value: STATS.b2b, icon: Building2, color: 'blue', sub: 'Hợp đồng dài hạn' },
+          { label: 'Đại Lý Phân Phối', value: STATS.daily, icon: Ribbon, color: 'purple', sub: 'Kênh trung gian' },
+          { label: 'Khách Lẻ (B2C)', value: STATS.b2c, icon: UserCheck, color: 'amber', sub: 'Mua hàng trực tiếp' },
+        ].map((kpi, idx) => (
+          <div key={idx} className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm group hover:shadow-md transition-all duration-300">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{kpi.label}</p>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                  {kpi.value} <span className="text-sm font-bold text-slate-400">Đơn vị</span>
+                </h3>
+                <p className="text-[12px] font-medium text-slate-400 mt-1">{kpi.sub}</p>
+              </div>
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300
+                ${kpi.color === 'indigo' ? 'bg-indigo-50 text-indigo-600' : 
+                  kpi.color === 'blue' ? 'bg-blue-50 text-blue-600' : 
+                  kpi.color === 'purple' ? 'bg-purple-50 text-purple-600' : 'bg-amber-50 text-amber-600'}`}
+              >
+                <kpi.icon size={24} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Toolbar & Filter Section */}
+      <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-6">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
+            <div className="relative w-full md:w-80 group">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
               <input
                 type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                placeholder="Tìm tên, mã đối tác..."
+                className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all font-medium"
+                placeholder="Tìm tên, mã, email hoặc SĐT..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <div style={{ display: 'flex', gap: 4 }}>
+
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl">
               {[
                 { id: 'all', label: 'Tất cả' },
-                { id: 'B2B', label: 'B2B' },
+                { id: 'B2B', label: 'Doanh nghiệp (B2B)' },
                 { id: 'Đại lý', label: 'Đại lý' },
-                { id: 'B2C', label: 'B2C' }
+                { id: 'B2C', label: 'Khách lẻ (B2C)' }
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
+                    filter === f.id 
+                      ? 'bg-white text-indigo-600 shadow-sm' 
+                      : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                  }`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -194,151 +254,291 @@ export default function DoiTacPage() {
               ))}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button onClick={exportToExcel} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ border: '1px solid #e2e8f0', color: '#059669' }}>
-              <Download size={16} /> Xuất Excel
-            </button>
-            <button onClick={() => openForm()} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
-              <Plus size={16} /> Thêm Đối Tác
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr>
-              <th>Mã KH</th>
-              <th>Tên Khách Hàng / Đối tác</th>
-              <th>Nhóm Khách</th>
-              <th>Số đơn đã đặt</th>
-              <th>Điện thoại</th>
-              <th>Email</th>
-              <th>Địa Chỉ</th>
-              <th style={{ textAlign: 'right' }}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Đang tải...</td></tr>
-            ) : filteredData.length === 0 ? (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Không tìm thấy khách hàng.</td></tr>
-            ) : filteredData.map(item => (
-              <tr key={item._id}>
-                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaKH}</td>
-                <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.TenKhachHang}</td>
-                <td>
-                  <span className={`badge ${item.PhanLoai === 'B2B' ? 'approved' : item.PhanLoai === 'Đại lý' ? 'testing' : 'pending'}`}>
-                    {item.PhanLoai}
-                  </span>
-                </td>
-                <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#059669' }}>{item.SoDonHang || 0} Đơn</td>
-                <td>{item.SDT}</td>
-                <td style={{ color: '#475569' }}>{item.Email}</td>
-                <td style={{ color: '#475569' }}>{item.DiaChi}</td>
-                <td style={{ textAlign: 'right' }}>
-                  <button onClick={() => openForm(item)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Edit size={16} /></button>
-                  <button onClick={() => handleDelete(item._id!)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Trash2 size={16} color="#e11d48" /></button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Responsive Grid/Table View */}
+      <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <Loader2 className="animate-spin text-indigo-600" size={40} />
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-[11px]">Đang tải dữ liệu khách hàng...</p>
+          </div>
+        ) : filteredData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center px-6">
+            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
+              <Search size={40} />
+            </div>
+            <h3 className="text-lg font-black text-slate-900">Không tìm thấy kết quả</h3>
+            <p className="text-slate-400 font-medium max-w-sm mt-1">Chúng tôi không tìm thấy khách hàng nào khớp với tìm kiếm của bạn. Thử từ khóa khác xem sao?</p>
+            <button 
+              onClick={() => {setSearchTerm(''); setFilter('all');}}
+              className="mt-6 text-indigo-600 font-bold text-sm hover:underline"
+            >
+              Xóa tất cả bộ lọc
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100">
+                  <th className="px-6 py-5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Thông tin khách hàng</th>
+                  <th className="px-6 py-5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Phân loại</th>
+                  <th className="px-6 py-5 text-center text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sức mua</th>
+                  <th className="px-6 py-5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Liên hệ</th>
+                  <th className="px-6 py-5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Địa chỉ</th>
+                  <th className="px-6 py-5 text-right text-[11px] font-bold text-slate-400 uppercase tracking-wider">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredData.map(item => (
+                  <tr key={item._id} className="hover:bg-indigo-50/30 transition-colors group">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-500 font-black text-sm group-hover:from-indigo-500 group-hover:to-indigo-600 group-hover:text-white transition-all duration-300">
+                          {item.TenKhachHang.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-black text-slate-900 text-[15px]">{item.TenKhachHang}</div>
+                          <div className="text-[12px] font-bold text-indigo-600/70 mt-0.5 tracking-wide">{item.MaKH}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-tight
+                        ${item.PhanLoai === 'B2B' ? 'bg-blue-50 text-blue-600' : 
+                          item.PhanLoai === 'Đại lý' ? 'bg-purple-50 text-purple-600' : 'bg-amber-50 text-amber-600'}`}
+                      >
+                        {item.PhanLoai}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <div className="font-black text-indigo-600 text-[14px] bg-indigo-50/50 inline-block px-3 py-1 rounded-lg">
+                        {item.SoDonHang || 0} <span className="text-[10px] text-indigo-400 uppercase ml-0.5">Đơn</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 text-slate-600 font-bold text-[13px]">
+                          <Phone size={14} className="text-slate-400" /> {item.SDT}
+                        </div>
+                        <div className="flex items-center gap-2 text-slate-400 font-medium text-[12px]">
+                          <Mail size={14} /> {item.Email}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-start gap-2 max-w-[240px]">
+                        <MapPin size={14} className="text-slate-400 mt-1 shrink-0" />
+                        <span className="text-slate-500 font-medium text-[13px] leading-relaxed line-clamp-2">
+                          {item.DiaChi || 'Chưa cập nhật'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => openForm(item)}
+                          className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 flex items-center justify-center transition-all cursor-pointer"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(item._id!)}
+                          className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center transition-all cursor-pointer"
+                          title="Xóa"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Modal Cập nhật - Chuẩn thông tin nhân sự */}
+      {/* Modern Responsive Modal */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: '600px', background: '#fff', borderRadius: '8px', padding: '24px', margin: '2rem auto', color: '#000', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: 'bold' }}>{formData._id ? 'Cập nhật Đối tác' : 'Thông tin khách hàng'}</h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' }}>×</button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Họ và tên</label>
-                <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }} placeholder="VD: Nguyễn Văn A" value={formData.TenKhachHang} onChange={e => setFormData({ ...formData, TenKhachHang: e.target.value })} />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Ngày sinh</label>
-                  <input type="date" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }} value={formData.NgaySinh} onChange={e => setFormData({ ...formData, NgaySinh: e.target.value })} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300">
+            {/* Modal Header */}
+            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shadow-inner">
+                  <UserCheck size={20} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Giới tính</label>
-                  <select style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none', background: '#fff' }}>
-                    <option value="Nam">Nam</option>
-                    <option value="Nữ">Nữ</option>
-                  </select>
+                  <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                    {formData._id ? 'Cập nhật Đối tác' : 'Thông tin Khách hàng Mới'}
+                  </h2>
+                  <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Hồ sơ CRM định danh khách hàng</p>
                 </div>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Số điện thoại</label>
-                  <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }} value={formData.SDT} onChange={e => setFormData({ ...formData, SDT: e.target.value })} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Chức vụ (Nhóm khách)</label>
-                  <select style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none', background: '#fff' }} value={formData.PhanLoai} onChange={e => setFormData({ ...formData, PhanLoai: e.target.value as 'B2B' | 'B2C' | 'Đại lý' })}>
-                    <option value="B2C">Khách Lẻ (B2C)</option>
-                    <option value="B2B">Khách Doanh Nghiệp (B2B)</option>
-                    <option value="Đại lý">Đại lý Trung Gian</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Cơ quan / Đơn vị (Email / Mã KH)</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <input type="email" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }} placeholder="Email" value={formData.Email} onChange={e => setFormData({ ...formData, Email: e.target.value })} />
-                  <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none', background: '#f5f5f5', color: '#666' }} placeholder="Sẽ tự động tạo VTSC-KH-xxx" value={formData.MaKH} readOnly disabled />
-                </div>
-              </div>
-
-              {formData.PhanLoai === 'B2B' && (
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Địa chỉ ví Metamask (Blockchain Identity)</label>
-                  <input
-                    type="text"
-                    style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }}
-                    placeholder="0x..."
-                    value={formData.WalletAddress || ''}
-                    onChange={e => setFormData({ ...formData, WalletAddress: e.target.value })}
-                  />
-                </div>
-              )}
-
-              {formData.PhanLoai === 'Đại lý' && (
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Mã số thuế cá nhân</label>
-                  <input
-                    type="text"
-                    style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }}
-                    placeholder="MST"
-                    value={formData.MaSoThueCaNhan || ''}
-                    onChange={e => setFormData({ ...formData, MaSoThueCaNhan: e.target.value })}
-                  />
-                </div>
-              )}
-
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Địa chỉ</label>
-                <textarea style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none', minHeight: '80px', resize: 'vertical' }} value={formData.DiaChi} onChange={e => setFormData({ ...formData, DiaChi: e.target.value })}></textarea>
-              </div>
-
-            </div>
-
-            <div style={{ marginTop: '24px' }}>
-              <button
-                onClick={handleSubmit}
-                style={{ width: '100%', background: '#1000f0ff', color: '#fff', border: 'none', padding: '12px', borderRadius: '4px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
               >
-                Lưu thông tin
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-8">
+              {/* Section 1: Thông tin cơ bản */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
+                  <h4 className="text-[13px] font-black text-slate-900 uppercase tracking-wider">Thông tin nhận diện</h4>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Họ và Tên / Tên Pháp Nhân *</label>
+                    <input 
+                      type="text" 
+                      className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                      placeholder="VD: Cty TNHH VTSC Aluminium" 
+                      value={formData.TenKhachHang} 
+                      onChange={e => setFormData({ ...formData, TenKhachHang: e.target.value })} 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Nhóm Khách Hàng *</label>
+                    <select 
+                      className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all cursor-pointer"
+                      value={formData.PhanLoai} 
+                      onChange={e => setFormData({ ...formData, PhanLoai: e.target.value as 'B2B' | 'B2C' | 'Đại lý' })}
+                    >
+                      <option value="B2C">Khách Lẻ (B2C)</option>
+                      <option value="B2B">Doanh Nghiệp (B2B)</option>
+                      <option value="Đại lý">Đại lý Phân Phối</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Mã Khách Hàng (Tự động)</label>
+                    <input 
+                      type="text" 
+                      className="w-full bg-slate-100 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-400 cursor-not-allowed outline-none"
+                      placeholder="VTSC-KH-XXX" 
+                      value={formData.MaKH} 
+                      disabled 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Ngày sinh / Ngày cấp phép</label>
+                    <input 
+                      type="date" 
+                      className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                      value={formData.NgaySinh} 
+                      onChange={e => setFormData({ ...formData, NgaySinh: e.target.value })} 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Thông tin liên hệ */}
+              <div className="space-y-6 pt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
+                  <h4 className="text-[13px] font-black text-slate-900 uppercase tracking-wider">Kết nối & Liên hệ</h4>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Số điện thoại *</label>
+                    <input 
+                      type="text" 
+                      className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                      placeholder="098..."
+                      value={formData.SDT} 
+                      onChange={e => setFormData({ ...formData, SDT: e.target.value })} 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Địa chỉ Email</label>
+                    <input 
+                      type="email" 
+                      className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                      placeholder="example@gmail.com"
+                      value={formData.Email} 
+                      onChange={e => setFormData({ ...formData, Email: e.target.value })} 
+                    />
+                  </div>
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Địa chỉ Giao hàng / Trụ sở</label>
+                    <textarea 
+                      className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all min-h-[100px] resize-none"
+                      placeholder="Nhập địa chỉ chi tiết..."
+                      value={formData.DiaChi} 
+                      onChange={e => setFormData({ ...formData, DiaChi: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Thông tin định danh Web3 / Thuế (Conditional) */}
+              {(formData.PhanLoai === 'B2B' || formData.PhanLoai === 'Đại lý') && (
+                <div className="space-y-6 pt-4 animate-in slide-in-from-top-4 duration-500">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-1.5 h-6 bg-purple-600 rounded-full"></div>
+                    <h4 className="text-[13px] font-black text-slate-900 uppercase tracking-wider">Định danh doanh nghiệp / Web3</h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6">
+                    {formData.PhanLoai === 'B2B' && (
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1 flex items-center gap-2">
+                          Địa chỉ ví Metamask (Blockchain Identity)
+                          <ExternalLink size={12} className="text-indigo-400" />
+                        </label>
+                        <input 
+                          type="text" 
+                          className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-mono font-bold text-indigo-600 placeholder:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                          placeholder="0x..." 
+                          value={formData.WalletAddress || ''} 
+                          onChange={e => setFormData({ ...formData, WalletAddress: e.target.value })} 
+                        />
+                      </div>
+                    )}
+
+                    {formData.PhanLoai === 'Đại lý' && (
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Mã số thuế / Giấy phép KD</label>
+                        <input 
+                          type="text" 
+                          className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                          placeholder="Nhập MST đối tác..." 
+                          value={formData.MaSoThueCaNhan || ''} 
+                          onChange={e => setFormData({ ...formData, MaSoThueCaNhan: e.target.value })} 
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-8 py-6 bg-slate-50/80 border-t border-slate-50 flex flex-col sm:flex-row items-center justify-end gap-3">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-500 rounded-2xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer shadow-sm border border-slate-200"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                onClick={handleSubmit}
+                className="w-full sm:w-auto px-10 py-3.5 bg-indigo-600 text-white rounded-2xl font-bold text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Plus size={18} /> Lưu thông tin
               </button>
             </div>
           </div>

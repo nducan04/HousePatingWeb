@@ -6,39 +6,52 @@ const NguyenVatLieu = require('../models/NguyenVatLieu');
 const PhieuNhapXuatKho = require('../models/PhieuNhapXuatKho');
 
 /**
- * 1. Nhập Kho
- * Tạo giao dịch (Transaction) để cộng TonKho và lưu vào bảng GiaoDichKho
+ * 1. Nhập Kho Nhanh (Thao tác trên 1 SKU cụ thể)
+ * Sử dụng .save() để trigger pre('save') → TongTonKho tự cập nhật
  */
 exports.nhapKho = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const { MaSanPham, SoLuongNhap, MaChungTu } = req.body;
+        const { MaSanPham, MaMau, SoLuongNhap, MaChungTu } = req.body;
         const nguoiThucHien = req.user ? req.user._id : null;
 
         if (!SoLuongNhap || SoLuongNhap <= 0) {
             throw new Error('Số lượng nhập kho phải lớn hơn 0');
         }
+        if (!MaMau) {
+            throw new Error('Phải chỉ định Mã Màu (SKU) cụ thể để nhập kho');
+        }
 
-        // Cập nhật tồn kho an toàn bằng hàm $inc của MongoDB
-        const sanPham = await SanPhamSon.findByIdAndUpdate(
-            MaSanPham,
-            { $inc: { TonKho: SoLuongNhap } },
-            { new: true, session }
-        );
-
+        // Lấy document sản phẩm (dùng find + save, KHÔNG dùng $inc)
+        const sanPham = await SanPhamSon.findById(MaSanPham).session(session);
         if (!sanPham) {
             throw new Error('Sản phẩm sơn không tồn tại trong hệ thống');
         }
 
-        // Lưu lịch sử giao dịch (Nhập hàng)
+        // Tìm đúng SKU trong mảng DanhSachMaMau
+        const sku = sanPham.DanhSachMaMau.find(
+            m => m.MaMau.toUpperCase() === MaMau.toUpperCase()
+        );
+        if (!sku) {
+            throw new Error(`Mã màu "${MaMau}" không tồn tại trong sản phẩm "${sanPham.TenDongSon}"`);
+        }
+
+        // Cộng tồn kho cấp SKU
+        sku.TonKhoKhaDung += SoLuongNhap;
+
+        // .save() → trigger pre('save') → TongTonKho tự cập nhật
+        await sanPham.save({ session });
+
+        // Lưu lịch sử giao dịch
         const giaoDich = new GiaoDichKho({
             LoaiGiaoDich: 'NHAP_HANG',
             MaSanPham: sanPham._id,
             SoLuongThayDoi: SoLuongNhap,
-            TonKhoSauGiaoDich: sanPham.TonKho,
+            TonKhoSauGiaoDich: sku.TonKhoKhaDung,
             MaChungTu: MaChungTu || 'NHAP_NHANH',
-            NguoiThucHien: nguoiThucHien
+            NguoiThucHien: nguoiThucHien,
+            GhiChu: `Nhập nhanh | Mã màu: ${MaMau}`
         });
         await giaoDich.save({ session });
 
@@ -74,16 +87,27 @@ exports.luuPhieuKiemKho = async (req, res) => {
             phieuCode = 'PKK' + Date.now();
         }
 
-        // Tính toán thông số lúc lưu
+        // Tính toán thông số lúc lưu — CẤP ĐỘ SKU (MaMau)
         const chiTietMoi = await Promise.all(ChiTiet.map(async (item) => {
             const sp = await SanPhamSon.findById(item.Sanpham);
-            const donGia = sp ? sp.DonGiaCoSo : 0;
+            if (!sp) throw new Error(`Sản phẩm ${item.Sanpham} không tồn tại`);
+            if (!item.MaMau) throw new Error('Phải chỉ định Mã Màu (SKU) cụ thể để kiểm kê');
+
+            // Tìm đúng SKU trong DanhSachMaMau
+            const sku = sp.DanhSachMaMau.find(
+                m => m.MaMau.toUpperCase() === item.MaMau.toUpperCase()
+            );
+            if (!sku) throw new Error(`Mã màu "${item.MaMau}" không tồn tại trong "${sp.TenDongSon}"`);
+
+            const donGia = sp.DonGiaCoSo || 0;
             const thucTe = Number(item.TonThucTe) || 0;
-            const hc = sp ? sp.TonKho : 0;
+            const hc = sku.TonKhoKhaDung || 0; // ★ Lấy tồn kho cấp SKU
             const chenhLech = thucTe - hc;
 
             return {
                 Sanpham: item.Sanpham,
+                MaMau: sku.MaMau,
+                TenMau: sku.TenMau || '',
                 TonKhoHT: hc,
                 TonThucTe: thucTe,
                 ChenhLech: chenhLech,
@@ -121,6 +145,8 @@ exports.luuPhieuKiemKho = async (req, res) => {
 
 /**
  * 3. Hoàn Thành Phiếu Kiểm Kho (Duyệt Phiếu & Cân Bằng Lại Tồn DB)
+ * ĐÃ NÂNG CẤP: Kiểm kê cấp SKU (MaMau) → ghi đè TonKhoKhaDung cho đúng mã màu
+ * .save() trigger pre('save') → TongTonKho tự cập nhật
  */
 exports.hoanThanhKiemKho = async (req, res) => {
     const session = await mongoose.startSession();
@@ -133,33 +159,44 @@ exports.hoanThanhKiemKho = async (req, res) => {
         if (phieu.TrangThai === 'HOAN_THANH') throw new Error('Tuyệt đối không chạy lại phiếu đã hoàn thành');
 
         for (let item of phieu.ChiTiet) {
-            // Lấy lại tồn hiện tại ở Database tránh đụng độ (Race Condition)
             const sp = await SanPhamSon.findById(item.Sanpham).session(session);
             if (!sp) continue;
 
-            const tonGocTruocKiem = sp.TonKho;
+            // ★ Tìm đúng SKU bằng MaMau
+            const sku = sp.DanhSachMaMau.find(
+                m => m.MaMau.toUpperCase() === item.MaMau.toUpperCase()
+            );
+            if (!sku) {
+                throw new Error(
+                    `Mã màu "${item.MaMau}" không tồn tại trong "${sp.TenDongSon}". ` +
+                    `Phiếu kiểm kê có thể đã lỗi thời.`
+                );
+            }
+
+            const tonGocTruocKiem = sku.TonKhoKhaDung || 0;
             const thucTeKiemDuoc = item.TonThucTe;
             const chenhLechCapNhat = thucTeKiemDuoc - tonGocTruocKiem;
 
             if (chenhLechCapNhat !== 0) {
-                // Đè tồn kho thành lượng thực tế đã quét
-                sp.TonKho = thucTeKiemDuoc;
+                // ★ Ghi đè tồn kho cấp SKU
+                sku.TonKhoKhaDung = thucTeKiemDuoc;
+
+                // .save() → trigger pre('save') → TongTonKho tự tính lại từ tổng các SKU
                 await sp.save({ session });
 
-                // Sinh biến động kho để giải trình sau này
                 const giaoDich = new GiaoDichKho({
                     LoaiGiaoDich: 'KIEM_KHO',
                     MaSanPham: sp._id,
                     SoLuongThayDoi: chenhLechCapNhat,
                     TonKhoSauGiaoDich: thucTeKiemDuoc,
                     MaChungTu: phieu.MaPhieu,
-                    NguoiThucHien: phieu.NguoiKiem
+                    NguoiThucHien: phieu.NguoiKiem,
+                    GhiChu: `Kiểm kê | Mã màu: ${item.MaMau} (${item.TenMau})`
                 });
                 await giaoDich.save({ session });
             }
         }
 
-        // Cập nhật trạng thái phiếu
         phieu.TrangThai = 'HOAN_THANH';
         await phieu.save({ session });
 
@@ -175,35 +212,51 @@ exports.hoanThanhKiemKho = async (req, res) => {
 };
 
 /**
- * 4. Tự động trừ kho khi bán 
- * Lưu ý: Đây KHÔNG phải là End-point API public, đây là Service nội bộ
- * Được gọi ra ở trong controller Hợp đồng đơn hàng (Order Controller)
+ * 4. Tự động trừ kho khi bán (Service nội bộ — gọi từ Order Controller)
+ * Đã nâng cấp: Trừ kho cấp SKU (MaMau) + dùng .save() để trigger pre('save')
+ *
+ * @param {Array} items - Mảng [{ sanPhamId, maMau, soLuong }]
+ * @param {String} MaDonHang - Mã đơn hàng làm chứng từ
+ * @param {Session} session - MongoDB Transaction session
+ * @param {ObjectId} nguoiThucHien - ID người thao tác
  */
-exports.truKhoKhiXuatBan = async (MasanPhams, SoLuongs, MaDonHang, session, nguoiThucHien) => {
-    // Được bọc trong MongoDB Transaction chung của tạo Hợp Đồng
-    for (let i = 0; i < MasanPhams.length; i++) {
-        const idSP = MasanPhams[i];
-        const qty = SoLuongs[i];
+exports.truKhoKhiXuatBan = async (items, MaDonHang, session, nguoiThucHien) => {
+    for (const item of items) {
+        const { sanPhamId, maMau, soLuong } = item;
 
-        // Atomically query và trừ: điều kiện là TonKho >= qty (An toàn khi mua song song)
-        const sp = await SanPhamSon.findOneAndUpdate(
-            { _id: idSP, TonKho: { $gte: qty } },
-            { $inc: { TonKho: -qty } },
-            { new: true, session }
-        );
-
+        const sp = await SanPhamSon.findById(sanPhamId).session(session);
         if (!sp) {
-            throw new Error(`Sản phẩm ${idSP} không thể xuất bán. Hàng trong kho không đủ (Dưới ${qty})`);
+            throw new Error(`Sản phẩm ${sanPhamId} không tồn tại trong hệ thống`);
         }
 
-        // Ghi lại biến động lịch sử kho
+        const sku = sp.DanhSachMaMau.find(
+            m => m.MaMau.toUpperCase() === maMau.toUpperCase()
+        );
+        if (!sku) {
+            throw new Error(`Mã màu "${maMau}" không tồn tại trong "${sp.TenDongSon}"`);
+        }
+
+        // Chống bán khống
+        if (sku.TonKhoKhaDung < soLuong) {
+            throw new Error(
+                `⛔ "${sku.TenMau} (${sku.MaMau})" chỉ còn ${sku.TonKhoKhaDung} ${sp.DonViTinh}, ` +
+                `không thể xuất ${soLuong} ${sp.DonViTinh}.`
+            );
+        }
+
+        sku.TonKhoKhaDung -= soLuong;
+
+        // .save() → trigger pre('save') → TongTonKho tự cập nhật
+        await sp.save({ session });
+
         const giaoDich = new GiaoDichKho({
             LoaiGiaoDich: 'XUAT_BAN',
             MaSanPham: sp._id,
-            SoLuongThayDoi: -qty,
-            TonKhoSauGiaoDich: sp.TonKho,
+            SoLuongThayDoi: -soLuong,
+            TonKhoSauGiaoDich: sku.TonKhoKhaDung,
             MaChungTu: MaDonHang,
-            NguoiThucHien: nguoiThucHien
+            NguoiThucHien: nguoiThucHien,
+            GhiChu: `Xuất bán | Mã màu: ${maMau}`
         });
         await giaoDich.save({ session });
     }
@@ -221,7 +274,7 @@ exports.getTonKho = async (req, res) => {
         }
 
         const danhSachSP = await SanPhamSon.find(filter)
-            .select('MaSanPham TenDongSon TonKho DonGiaCoSo PhanLoai')
+            .select('MaSanPham TenDongSon TongTonKho DonGiaCoSo PhanLoai DonViTinh DanhSachMaMau')
             .sort({ updatedAt: -1 });
 
         res.status(200).json({ success: true, data: danhSachSP });
@@ -285,20 +338,29 @@ exports.deleteNguyenVatLieu = async (req, res) => {
     }
 };
 
-// --- QUẢN LÝ PHIẾU NHẬP XUẤT KHO ---
+// ═══════════════════════════════════════════════════════════════
+//  QUẢN LÝ PHIẾU NHẬP / XUẤT KHO — APPROVAL WORKFLOW v2.0
+// ═══════════════════════════════════════════════════════════════
+//
+//  [QUY TẮC AN TOÀN]:
+//   1. createPhieuNhapXuat  → CHỈ lưu phiếu, TrangThai = 'CHO_DUYET'. KHÔNG đụng kho.
+//   2. duyetPhieuNhapXuat   → Validate tồn kho → Cộng/Trừ SKU (MaMau) → .save() → trigger pre('save') SanPhamSon.
+//   3. tuChoiPhieu          → Ghi lý do, TrangThai = 'TU_CHOI'.
+//   4. updatePhieuNhapXuat  → Chỉ cho phép sửa khi TrangThai = 'CHO_DUYET'.
+//   5. deletePhieuNhapXuat  → Chỉ cho phép xóa khi TrangThai = 'CHO_DUYET'.
+// ═══════════════════════════════════════════════════════════════
 
+/**
+ * Lấy danh sách phiếu nhập/xuất kho (kèm filter trạng thái nếu có)
+ */
 exports.getPhieuNhapXuat = async (req, res) => {
     try {
-        const data = await PhieuNhapXuatKho.find().sort({ createdAt: -1 });
-        res.status(200).json({ success: true, data });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+        const filter = {};
+        if (req.query.trangThai) filter.TrangThai = req.query.trangThai;
+        if (req.query.loaiPhieu) filter.LoaiPhieu = req.query.loaiPhieu;
 
-exports.getReceiptsBySupplier = async (req, res) => {
-    try {
-        const data = await PhieuNhapXuatKho.find({ NhaCungCapID: req.params.supplierId, LoaiPhieu: 'NHAP' })
+        const data = await PhieuNhapXuatKho.find(filter)
+            .populate('NhaCungCapID', 'MaNCC TenNCC')
             .sort({ createdAt: -1 });
         res.status(200).json({ success: true, data });
     } catch (error) {
@@ -306,22 +368,43 @@ exports.getReceiptsBySupplier = async (req, res) => {
     }
 };
 
-exports.createPhieuNhapXuat = async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+/**
+ * Lấy phiếu theo nhà cung cấp
+ */
+exports.getReceiptsBySupplier = async (req, res) => {
     try {
-        const { MaPhieu, LoaiPhieu, LoaiHang, ChiTiet, MoTa, TongTien, GhiChu } = req.body;
+        const data = await PhieuNhapXuatKho.find({
+            NhaCungCapID: req.params.supplierId,
+            LoaiPhieu: 'NHAP'
+        }).sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
 
-        let nvPhuTrach = 'ADMIN';
+/**
+ * ══════════════════════════════════════════════════
+ *  BƯỚC 1: LẬP PHIẾU (Chỉ ghi nhận, KHÔNG đụng kho)
+ * ══════════════════════════════════════════════════
+ */
+exports.createPhieuNhapXuat = async (req, res) => {
+    try {
+        const { MaPhieu, LoaiPhieu, LoaiHang, ChiTiet, MoTa, GhiChu, NhaCungCapID } = req.body;
+
+        // Tự sinh mã phiếu nếu không truyền
+        const phieuCode = MaPhieu || ((LoaiPhieu === 'NHAP' ? 'PN-' : 'PX-') + Date.now().toString().slice(-8));
+
+        // Xác định người lập phiếu
+        let nguoiLapId = req.user ? req.user._id : null;
+        let tenNguoiLap = 'ADMIN';
         if (req.user) {
             const NhanVien = require('../models/NhanVien');
             const nv = await NhanVien.findOne({ AccountID: req.user._id });
             if (nv) {
-                nvPhuTrach = `${nv.MaNV} - ${nv.HoTen}`;
+                tenNguoiLap = `${nv.MaNV} - ${nv.HoTen}`;
             }
         }
-        
-        let phieuCode = MaPhieu || ((LoaiPhieu === 'NHAP' ? 'PN' : 'PX') + Date.now().toString().slice(-4));
 
         const newPhieu = new PhieuNhapXuatKho({
             MaPhieu: phieuCode,
@@ -329,122 +412,247 @@ exports.createPhieuNhapXuat = async (req, res) => {
             LoaiHang,
             ChiTiet,
             MoTa,
-            TongTien,
             GhiChu,
-            MaNhanVienPhuTrach: nvPhuTrach
+            NhaCungCapID,
+            // ★ Approval Workflow: Phiếu mới luôn ở trạng thái CHỜ DUYỆT
+            TrangThai: 'CHO_DUYET',
+            NguoiLapPhieu: nguoiLapId,
+            TenNguoiLap: tenNguoiLap,
         });
-        await newPhieu.save({ session });
 
-        // Cập nhật tồn kho tự động (Tăng nếu NHẬP, Giảm nếu XUẤT)
-        const multiplier = LoaiPhieu === 'NHAP' ? 1 : -1;
+        // pre('save') sẽ tự tính ThanhTien + TongTien
+        await newPhieu.save();
 
-        if (ChiTiet && ChiTiet.length > 0) {
-            for (let item of ChiTiet) {
-                if (!item.ItemId) continue;
-
-                if (LoaiHang === 'SAN_PHAM') {
-                    await SanPhamSon.findByIdAndUpdate(
-                        item.ItemId,
-                        { $inc: { TonKho: item.SoLuong * multiplier } },
-                        { session }
-                    );
-                } else if (LoaiHang === 'NGUYEN_VAT_LIEU') {
-                    await NguyenVatLieu.findByIdAndUpdate(
-                        item.ItemId,
-                        { $inc: { TonKho: item.SoLuong * multiplier } },
-                        { session }
-                    );
-                }
-            }
-        }
-
-        await session.commitTransaction();
-        session.endSession();
-        res.status(201).json({ success: true, message: 'Đã lập phiếu thành công', data: newPhieu });
+        res.status(201).json({
+            success: true,
+            message: `Đã lập phiếu ${phieuCode} — Đang chờ duyệt.`,
+            data: newPhieu
+        });
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
         res.status(400).json({ success: false, message: error.message });
     }
 };
 
-exports.updatePhieuNhapXuat = async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    try {
-        const oldPhieu = await PhieuNhapXuatKho.findById(req.params.id).session(session);
-        if (!oldPhieu) throw new Error('Không tìm thấy phiếu');
-
-        // 1. Hoàn lại tồn kho cũ (Reverse old stock)
-        const oldMultiplier = oldPhieu.LoaiPhieu === 'NHAP' ? -1 : 1;
-        for (let item of oldPhieu.ChiTiet) {
-            if (!item.ItemId) continue;
-            const model = oldPhieu.LoaiHang === 'SAN_PHAM' ? SanPhamSon : NguyenVatLieu;
-            await model.findByIdAndUpdate(item.ItemId, { $inc: { TonKho: item.SoLuong * oldMultiplier } }, { session });
-        }
-
-        // 2. Cập nhật dữ liệu mới
-        const { LoaiPhieu, LoaiHang, ChiTiet, MoTa, TongTien, GhiChu, MaNhanVienPhuTrach, NhaCungCapID } = req.body;
-        oldPhieu.LoaiPhieu = LoaiPhieu || oldPhieu.LoaiPhieu;
-        oldPhieu.LoaiHang = LoaiHang || oldPhieu.LoaiHang;
-        oldPhieu.ChiTiet = ChiTiet || oldPhieu.ChiTiet;
-        oldPhieu.MoTa = MoTa || oldPhieu.MoTa;
-        oldPhieu.TongTien = TongTien || oldPhieu.TongTien;
-        oldPhieu.GhiChu = GhiChu || oldPhieu.GhiChu;
-
-        if (req.user) {
-            const NhanVien = require('../models/NhanVien');
-            const nv = await NhanVien.findOne({ AccountID: req.user._id });
-            if (nv) {
-                oldPhieu.MaNhanVienPhuTrach = `${nv.MaNV} - ${nv.HoTen}`;
-            }
-        }
-
-        oldPhieu.NhaCungCapID = NhaCungCapID || oldPhieu.NhaCungCapID;
-
-        await oldPhieu.save({ session });
-
-        // 3. Áp dụng tồn kho mới
-        const newMultiplier = oldPhieu.LoaiPhieu === 'NHAP' ? 1 : -1;
-        for (let item of oldPhieu.ChiTiet) {
-            if (!item.ItemId) continue;
-            const model = oldPhieu.LoaiHang === 'SAN_PHAM' ? SanPhamSon : NguyenVatLieu;
-            await model.findByIdAndUpdate(item.ItemId, { $inc: { TonKho: item.SoLuong * newMultiplier } }, { session });
-        }
-
-        await session.commitTransaction();
-        session.endSession();
-        res.status(200).json({ success: true, message: 'Cập nhật phiếu thành công', data: oldPhieu });
-    } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
-
-exports.deletePhieuNhapXuat = async (req, res) => {
+/**
+ * ══════════════════════════════════════════════════════════
+ *  BƯỚC 2: DUYỆT PHIẾU (★ Trái tim của hệ thống kho ★)
+ * ══════════════════════════════════════════════════════════
+ *  Logic:
+ *   1. Tìm Phiếu → kiểm tra TrangThai phải là 'CHO_DUYET'
+ *   2. Lặp qua từng dòng ChiTiet:
+ *      a. Tìm SanPhamSon bằng ItemId
+ *      b. Tìm đúng MaMau trong DanhSachMaMau
+ *      c. NHẬP → Cộng TonKhoKhaDung
+ *         XUẤT → Kiểm tra TonKhoKhaDung >= SoLuong → Trừ TonKhoKhaDung
+ *      d. Gọi sanPham.save() → trigger pre('save') → tự cập nhật TongTonKho
+ *   3. Đánh dấu phiếu 'DA_DUYET', ghi NguoiDuyet + NgayDuyet
+ */
+exports.duyetPhieuNhapXuat = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
         const phieu = await PhieuNhapXuatKho.findById(req.params.id).session(session);
         if (!phieu) throw new Error('Không tìm thấy phiếu');
-
-        // Hoàn lại tồn kho
-        const multiplier = phieu.LoaiPhieu === 'NHAP' ? -1 : 1;
-        for (let item of phieu.ChiTiet) {
-            if (!item.ItemId) continue;
-            const model = phieu.LoaiHang === 'SAN_PHAM' ? SanPhamSon : NguyenVatLieu;
-            await model.findByIdAndUpdate(item.ItemId, { $inc: { TonKho: item.SoLuong * multiplier } }, { session });
+        if (phieu.TrangThai !== 'CHO_DUYET') {
+            throw new Error(`Phiếu này đã ở trạng thái "${phieu.TrangThai}", không thể duyệt lại.`);
         }
 
-        await PhieuNhapXuatKho.findByIdAndDelete(req.params.id).session(session);
+        // ════════════════════════════════════════════
+        //  XỬ LÝ TỪNG DÒNG SẢN PHẨM TRONG PHIẾU
+        // ════════════════════════════════════════════
+        if (phieu.LoaiHang === 'SAN_PHAM' && phieu.ChiTiet.length > 0) {
+            for (const item of phieu.ChiTiet) {
+                if (!item.ItemId || !item.MaMau) {
+                    throw new Error(`Dòng "${item.TenItem || item.MaItem}" thiếu thông tin ItemId hoặc MaMau.`);
+                }
+
+                // Lấy document sản phẩm (PHẢI dùng find + save, KHÔNG dùng $inc)
+                const sanPham = await SanPhamSon.findById(item.ItemId).session(session);
+                if (!sanPham) {
+                    throw new Error(`Không tìm thấy sản phẩm "${item.TenItem}" (ID: ${item.ItemId})`);
+                }
+
+                // Tìm đúng SKU (mã màu) trong mảng DanhSachMaMau
+                const sku = sanPham.DanhSachMaMau.find(
+                    m => m.MaMau.toUpperCase() === item.MaMau.toUpperCase()
+                );
+                if (!sku) {
+                    throw new Error(
+                        `Mã màu "${item.MaMau}" không tồn tại trong sản phẩm "${sanPham.TenDongSon}". ` +
+                        `Các mã có sẵn: ${sanPham.DanhSachMaMau.map(m => m.MaMau).join(', ')}`
+                    );
+                }
+
+                if (phieu.LoaiPhieu === 'NHAP') {
+                    // ═══ NHẬP KHO: Cộng tồn ═══
+                    sku.TonKhoKhaDung += item.SoLuong;
+
+                } else if (phieu.LoaiPhieu === 'XUAT') {
+                    // ═══ XUẤT KHO: Kiểm tra rồi mới trừ (Chống bán khống!) ═══
+                    if (sku.TonKhoKhaDung < item.SoLuong) {
+                        throw new Error(
+                            `⛔ KHO KHÔNG ĐỦ: Mã màu "${sku.TenMau} (${sku.MaMau})" ` +
+                            `của sản phẩm "${sanPham.TenDongSon}" chỉ còn ${sku.TonKhoKhaDung} ${sanPham.DonViTinh}, ` +
+                            `nhưng phiếu yêu cầu xuất ${item.SoLuong} ${sanPham.DonViTinh}.`
+                        );
+                    }
+                    sku.TonKhoKhaDung -= item.SoLuong;
+                }
+
+                // ★ GỌI .save() → trigger pre('save') → TongTonKho tự cập nhật!
+                await sanPham.save({ session });
+
+                // Ghi lịch sử biến động kho
+                const giaoDich = new GiaoDichKho({
+                    LoaiGiaoDich: phieu.LoaiPhieu === 'NHAP' ? 'NHAP_HANG' : 'XUAT_BAN',
+                    MaSanPham: sanPham._id,
+                    SoLuongThayDoi: phieu.LoaiPhieu === 'NHAP' ? item.SoLuong : -item.SoLuong,
+                    TonKhoSauGiaoDich: sku.TonKhoKhaDung,
+                    MaChungTu: phieu.MaPhieu,
+                    NguoiThucHien: req.user ? req.user._id : null,
+                    GhiChu: `${phieu.LoaiPhieu} | Mã màu: ${item.MaMau} | Phiếu: ${phieu.MaPhieu}`
+                });
+                await giaoDich.save({ session });
+            }
+        }
+
+        // Xử lý Nguyên Vật Liệu (đơn giản hơn — không có SKU)
+        if (phieu.LoaiHang === 'NGUYEN_VAT_LIEU' && phieu.ChiTiet.length > 0) {
+            for (const item of phieu.ChiTiet) {
+                if (!item.ItemId) continue;
+                const multiplier = phieu.LoaiPhieu === 'NHAP' ? 1 : -1;
+
+                if (phieu.LoaiPhieu === 'XUAT') {
+                    const nvl = await NguyenVatLieu.findById(item.ItemId).session(session);
+                    if (!nvl) throw new Error(`Nguyên vật liệu "${item.TenItem}" không tồn tại`);
+                    if ((nvl.TonKho || 0) < item.SoLuong) {
+                        throw new Error(`NVL "${nvl.TenNVL}" chỉ còn ${nvl.TonKho}, không thể xuất ${item.SoLuong}`);
+                    }
+                }
+
+                await NguyenVatLieu.findByIdAndUpdate(
+                    item.ItemId,
+                    { $inc: { TonKho: item.SoLuong * multiplier } },
+                    { session }
+                );
+            }
+        }
+
+        // ═══ CẬP NHẬT TRẠNG THÁI PHIẾU ═══
+        phieu.TrangThai = 'DA_DUYET';
+        phieu.NguoiDuyet = req.user ? req.user._id : null;
+        phieu.NgayDuyet = new Date();
+
+        // Lấy tên người duyệt
+        if (req.user) {
+            const NhanVien = require('../models/NhanVien');
+            const nv = await NhanVien.findOne({ AccountID: req.user._id });
+            phieu.TenNguoiDuyet = nv ? `${nv.MaNV} - ${nv.HoTen}` : 'Admin';
+        }
+
+        await phieu.save({ session });
 
         await session.commitTransaction();
         session.endSession();
-        res.status(200).json({ success: true, message: 'Đã xóa phiếu và hoàn tồn kho' });
+
+        res.status(200).json({
+            success: true,
+            message: `✅ Phiếu ${phieu.MaPhieu} đã được duyệt. Tồn kho đã cập nhật.`,
+            data: phieu
+        });
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * ══════════════════════════════════════════════════
+ *  BƯỚC 2b: TỪ CHỐI PHIẾU
+ * ══════════════════════════════════════════════════
+ */
+exports.tuChoiPhieu = async (req, res) => {
+    try {
+        const phieu = await PhieuNhapXuatKho.findById(req.params.id);
+        if (!phieu) return res.status(404).json({ success: false, message: 'Không tìm thấy phiếu' });
+        if (phieu.TrangThai !== 'CHO_DUYET') {
+            return res.status(400).json({ success: false, message: `Phiếu đã ở trạng thái "${phieu.TrangThai}"` });
+        }
+
+        phieu.TrangThai = 'TU_CHOI';
+        phieu.LyDoTuChoi = req.body.lyDo || 'Không đạt yêu cầu';
+        phieu.NguoiDuyet = req.user ? req.user._id : null;
+        phieu.NgayDuyet = new Date();
+
+        if (req.user) {
+            const NhanVien = require('../models/NhanVien');
+            const nv = await NhanVien.findOne({ AccountID: req.user._id });
+            phieu.TenNguoiDuyet = nv ? `${nv.MaNV} - ${nv.HoTen}` : 'Admin';
+        }
+
+        await phieu.save();
+
+        res.status(200).json({
+            success: true,
+            message: `Phiếu ${phieu.MaPhieu} đã bị từ chối.`,
+            data: phieu
+        });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * Sửa phiếu (CHỈ khi TrangThai = 'CHO_DUYET')
+ */
+exports.updatePhieuNhapXuat = async (req, res) => {
+    try {
+        const phieu = await PhieuNhapXuatKho.findById(req.params.id);
+        if (!phieu) return res.status(404).json({ success: false, message: 'Không tìm thấy phiếu' });
+
+        if (phieu.TrangThai !== 'CHO_DUYET') {
+            return res.status(400).json({
+                success: false,
+                message: `Không thể sửa phiếu đã "${phieu.TrangThai}". Chỉ phiếu "CHO_DUYET" mới được phép chỉnh sửa.`
+            });
+        }
+
+        const { LoaiPhieu, LoaiHang, ChiTiet, MoTa, GhiChu, NhaCungCapID } = req.body;
+        if (LoaiPhieu) phieu.LoaiPhieu = LoaiPhieu;
+        if (LoaiHang) phieu.LoaiHang = LoaiHang;
+        if (ChiTiet) phieu.ChiTiet = ChiTiet;
+        if (MoTa !== undefined) phieu.MoTa = MoTa;
+        if (GhiChu !== undefined) phieu.GhiChu = GhiChu;
+        if (NhaCungCapID) phieu.NhaCungCapID = NhaCungCapID;
+
+        // pre('save') sẽ tự tính lại TongTien
+        await phieu.save();
+
+        res.status(200).json({ success: true, message: 'Cập nhật phiếu thành công', data: phieu });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * Xóa phiếu (CHỈ khi TrangThai = 'CHO_DUYET')
+ */
+exports.deletePhieuNhapXuat = async (req, res) => {
+    try {
+        const phieu = await PhieuNhapXuatKho.findById(req.params.id);
+        if (!phieu) return res.status(404).json({ success: false, message: 'Không tìm thấy phiếu' });
+
+        if (phieu.TrangThai !== 'CHO_DUYET') {
+            return res.status(400).json({
+                success: false,
+                message: `Không thể xóa phiếu đã "${phieu.TrangThai}". Phiếu đã duyệt là chứng từ kế toán, không được phép hủy.`
+            });
+        }
+
+        await PhieuNhapXuatKho.findByIdAndDelete(req.params.id);
+        res.status(200).json({ success: true, message: `Đã xóa phiếu ${phieu.MaPhieu}` });
+    } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
 };

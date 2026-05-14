@@ -24,13 +24,25 @@ import * as XLSX from "xlsx";
 
 const API_KHO = "/kho";
 
+interface MaMauItem {
+  _id: string;
+  MaMau: string;
+  TenMau: string;
+  TonKhoKhaDung: number;
+  TonKhoTamGiu: number;
+  NguongCanhBao: number;
+  TrangThai: boolean;
+}
+
 interface KhoItem {
   _id: string;
   MaSanPham: string;
   TenDongSon: string;
   PhanLoai: string;
-  TonKho: number;
+  TongTonKho: number;
   DonGiaCoSo: number;
+  DonViTinh: string;
+  DanhSachMaMau: MaMauItem[];
   SoLuong: number;
 }
 
@@ -77,7 +89,11 @@ interface PhieuNhapXuat {
   LoaiPhieu: string;
   LoaiHang: string;
   TongTien: number;
-  MaNhanVienPhuTrach: string;
+  TenNguoiLap: string;
+  TenNguoiDuyet?: string;
+  TrangThai: string;
+  NgayDuyet?: string;
+  LyDoTuChoi?: string;
   MoTa?: string;
   createdAt: string;
   SoLuong: number;
@@ -97,8 +113,8 @@ export default function QuanLyKhoPage() {
 
   // Modals
   const [isKiemKhoModal, setIsKiemKhoModal] = useState(false);
-  const [kiemKhoItems, setKiemKhoItems] = useState([
-    { Sanpham: "", TonThucTe: 0 },
+  const [kiemKhoItems, setKiemKhoItems] = useState<any[]>([
+    { Sanpham: "", MaMau: "", TenMau: "", TonThucTe: 0 },
   ]);
   const [selectedPhieu, setSelectedPhieu] = useState<PhieuKiemKe | null>(null);
   const [maNVKiemKe, setMaNVKiemKe] = useState(""); // Kept for state but will be hidden
@@ -125,8 +141,8 @@ export default function QuanLyKhoPage() {
     GhiChu: "",
     NhaCungCapID: "",
   });
-  const [nxItems, setNxItems] = useState([
-    { ItemId: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 },
+  const [nxItems, setNxItems] = useState<any[]>([
+    { ItemId: "", MaMau: "", TenMau: "", MaItem: "", TenItem: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 },
   ]);
 
   useEffect(() => {
@@ -185,20 +201,20 @@ export default function QuanLyKhoPage() {
   // KPI
   const STATS = {
     total: data.length,
-    tonTotal: data.reduce((sum, d) => sum + (d.TonKho || 0), 0),
-    warning: data.filter((d) => (d.TonKho || 0) < 100).length,
+    tonTotal: data.reduce((sum, d) => sum + (d.TongTonKho || 0), 0),
+    warning: data.filter((d) => (d.TongTonKho || 0) < 100).length,
   };
 
   // ----- KIỂM KHO LOGIC -----
   const handleAddKiemKhoItem = () => {
-    setKiemKhoItems([...kiemKhoItems, { Sanpham: "", TonThucTe: 0 }]);
+    setKiemKhoItems([...kiemKhoItems, { Sanpham: "", MaMau: "", TenMau: "", TonThucTe: 0 }]);
   };
 
   const handleSubmitKiemKho = async () => {
     try {
-      const validItems = kiemKhoItems.filter((i) => i.Sanpham !== "");
+      const validItems = kiemKhoItems.filter((i) => i.Sanpham !== "" && i.MaMau !== "");
       if (validItems.length === 0)
-        return alert("Vui lòng nhập sản phẩm cần kiểm kê");
+        return alert("Vui lòng chọn sản phẩm VÀ mã màu cụ thể để kiểm kê");
 
       await api.post(`${API_KHO}/kiem-kho`, {
         ChiTiet: validItems,
@@ -208,7 +224,7 @@ export default function QuanLyKhoPage() {
         "Kiểm kê thành công! Vui lòng vào Danh sách Phiếu để xem và chốt số lượng.",
       );
       setIsKiemKhoModal(false);
-      setKiemKhoItems([{ Sanpham: "", TonThucTe: 0 }]);
+      setKiemKhoItems([{ Sanpham: "", MaMau: "", TenMau: "", TonThucTe: 0 }]);
       setMaNVKiemKe("");
       fetchPhieuKiemKho();
     } catch (error: any) {
@@ -312,7 +328,7 @@ export default function QuanLyKhoPage() {
       GhiChu: "",
       NhaCungCapID: "",
     });
-    setNxItems([{ ItemId: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 }]);
+    setNxItems([{ ItemId: "", MaMau: "", TenMau: "", MaItem: "", TenItem: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 }]);
     setIsNXModal(true);
   };
 
@@ -333,44 +349,89 @@ export default function QuanLyKhoPage() {
   const handleDeleteNX = async (id: string) => {
     if (
       !confirm(
-        "XÁC NHẬN: Xóa phiếu này sẽ HOÀN LẠI số lượng tồn kho tương ứng. Bạn có chắc chắn muốn thực hiện?",
+        "XÁC NHẬN: Bạn có chắc chắn muốn xóa phiếu này? (Chỉ phiếu đang chờ duyệt mới được xóa)",
       )
     )
       return;
     try {
       await api.delete(`${API_KHO}/nhap-xuat/${id}`);
-      alert("Đã xóa phiếu và hoàn tồn kho thành công!");
+      alert("Đã xóa phiếu thành công!");
+      fetchPhieuNhapXuat();
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Lỗi xóa phiếu");
+    }
+  };
+
+  // ★ DUYỆT PHIẾU
+  const handleDuyetPhieu = async (id: string) => {
+    if (!confirm("Xác nhận DUYỆT phiếu này? Tồn kho sẽ được cập nhật ngay lập tức.")) return;
+    try {
+      const res = await api.post(`${API_KHO}/nhap-xuat/${id}/duyet`);
+      alert(res.data.message || "Đã duyệt phiếu thành công!");
       fetchPhieuNhapXuat();
       fetchTonKho();
       fetchNguyenVatLieu();
     } catch (error: any) {
-      alert(error.response?.data?.message || "Lỗi xóa phiếu");
+      alert(error.response?.data?.message || "Lỗi duyệt phiếu");
+    }
+  };
+
+  // ★ TỪ CHỐI PHIẾU
+  const handleTuChoiPhieu = async (id: string) => {
+    const lyDo = prompt("Nhập lý do từ chối:");
+    if (!lyDo) return;
+    try {
+      const res = await api.post(`${API_KHO}/nhap-xuat/${id}/tu-choi`, { lyDo });
+      alert(res.data.message || "Đã từ chối phiếu!");
+      fetchPhieuNhapXuat();
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Lỗi từ chối phiếu");
     }
   };
 
   const handleAddNXItem = () => {
     setNxItems([
       ...nxItems,
-      { ItemId: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 },
+      { ItemId: "", MaMau: "", TenMau: "", MaItem: "", TenItem: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 },
     ]);
   };
 
   const handleNXItemChange = (idx: number, field: string, val: any) => {
     const newItems = [...nxItems];
-    // @ts-ignore
     newItems[idx][field] = val;
-    // Auto calc don gia
+
+    // Auto calc don gia + tên khi chọn sản phẩm
     if (field === "ItemId") {
       const itemObj =
         nxForm.LoaiHang === "SAN_PHAM"
           ? data.find((d) => d._id === val)
           : nvlData.find((d) => d._id === val);
-      if (itemObj)
+      if (itemObj) {
         newItems[idx].DonGia =
           nxForm.LoaiHang === "SAN_PHAM"
             ? (itemObj as KhoItem).DonGiaCoSo
             : (itemObj as NguyenVatLieu).DonGia;
+        newItems[idx].MaItem = nxForm.LoaiHang === "SAN_PHAM" 
+          ? (itemObj as KhoItem).MaSanPham 
+          : (itemObj as NguyenVatLieu).MaNVL;
+        newItems[idx].TenItem = nxForm.LoaiHang === "SAN_PHAM" 
+          ? (itemObj as KhoItem).TenDongSon 
+          : (itemObj as NguyenVatLieu).TenNguyenVatLieu;
+      }
+      // Reset MaMau khi đổi sản phẩm
+      newItems[idx].MaMau = "";
+      newItems[idx].TenMau = "";
     }
+
+    // Auto fill TenMau khi chọn MaMau
+    if (field === "MaMau" && nxForm.LoaiHang === "SAN_PHAM") {
+      const sp = data.find((d) => d._id === newItems[idx].ItemId);
+      if (sp) {
+        const mau = sp.DanhSachMaMau?.find((m) => m.MaMau === val);
+        newItems[idx].TenMau = mau?.TenMau || "";
+      }
+    }
+
     newItems[idx].ThanhTien = newItems[idx].SoLuong * newItems[idx].DonGia;
     setNxItems(newItems);
   };
@@ -393,16 +454,15 @@ export default function QuanLyKhoPage() {
       } else {
         await api.post(`${API_KHO}/nhap-xuat`, {
           ...nxForm,
-          TongTien: tongTien,
           ChiTiet: validItems,
         });
         alert(
-          `Đã lập Phiếu ${nxForm.LoaiPhieu} thành công! Số lượng kho đã được cập nhật.`,
+          `Đã lập Phiếu ${nxForm.LoaiPhieu} thành công! Phiếu đang chờ Admin duyệt.`,
         );
       }
       setIsNXModal(false);
       setEditingNXId(null);
-      setNxItems([{ ItemId: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 }]);
+      setNxItems([{ ItemId: "", MaMau: "", TenMau: "", MaItem: "", TenItem: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 }]);
       fetchPhieuNhapXuat();
       fetchTonKho();
       fetchNguyenVatLieu();
@@ -420,9 +480,9 @@ export default function QuanLyKhoPage() {
         "Mã SP": item.MaSanPham,
         "Tên Dòng Sơn": item.TenDongSon,
         "Phân Loại": item.PhanLoai,
-        "Tồn Kho": item.TonKho || 0,
+        "Tồn Kho": item.TongTonKho || 0,
         "Đơn Giá": item.DonGiaCoSo,
-        "Đơn Vị Tính": "Thùng",
+        "Đơn Vị Tính": item.DonViTinh || "Kg",
       }));
       fileName = "Danh_Sach_Ton_Kho_Son";
     } else if (activeTab === "nvl") {
@@ -442,7 +502,8 @@ export default function QuanLyKhoPage() {
         "Loại Phiếu": item.LoaiPhieu,
         "Loại Hàng":
           item.LoaiHang === "SAN_PHAM" ? "Thành Phẩm" : "Nguyên Vật Liệu",
-        "Phụ Trách": item.MaNhanVienPhuTrach,
+        "Trạng Thái": item.TrangThai === "DA_DUYET" ? "Đã duyệt" : item.TrangThai === "TU_CHOI" ? "Từ chối" : "Chờ duyệt",
+        "Người Lập": item.TenNguoiLap,
         "Mô Tả": item.MoTa,
         "Tổng Tiền": item.TongTien,
         "Ngày Lập": new Date(item.createdAt).toLocaleString(),
@@ -641,7 +702,7 @@ export default function QuanLyKhoPage() {
                         ),
                     )
                     .map((item) => {
-                      const tk = item.TonKho || 0;
+                      const tk = item.TongTonKho || 0;
                       const isLow = tk < 200; // MOQ is 200kg
                       const pct = Math.min((tk / 1000) * 100, 100); // 1000 is arbitrary healthy stock
 
@@ -832,7 +893,7 @@ export default function QuanLyKhoPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span
-                            className={`font-black ${item.TonKho > 0 ? "text-emerald-600" : "text-rose-600"}`}
+                            className={`font-black ${(item.TonKho || 0) > 0 ? "text-emerald-600" : "text-rose-600"}`}
                           >
                             {(item.TonKho || 0).toLocaleString("vi-VN")}
                           </span>
@@ -915,8 +976,11 @@ export default function QuanLyKhoPage() {
                     <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
                       Loại Lệnh
                     </th>
+                    <th className="px-6 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                      Trạng Thái
+                    </th>
                     <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                      Người Phụ Trách
+                      Người Lập
                     </th>
                     <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
                       Mô Tả
@@ -961,10 +1025,38 @@ export default function QuanLyKhoPage() {
                           {item.LoaiPhieu === "NHAP" ? "NHẬP KHO" : "XUẤT KHO"}
                         </span>
                       </td>
+                      {/* ★ TRẠNG THÁI */}
+                      <td className="px-6 py-4 text-center">
+                        <span
+                          className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-tight ${
+                            item.TrangThai === "DA_DUYET"
+                              ? "bg-green-50 text-green-600"
+                              : item.TrangThai === "TU_CHOI"
+                                ? "bg-red-50 text-red-600"
+                                : "bg-amber-50 text-amber-600"
+                          }`}
+                        >
+                          {item.TrangThai === "DA_DUYET"
+                            ? "✅ Đã duyệt"
+                            : item.TrangThai === "TU_CHOI"
+                              ? "❌ Từ chối"
+                              : "⏳ Chờ duyệt"}
+                        </span>
+                        {item.TrangThai === "TU_CHOI" && item.LyDoTuChoi && (
+                          <div className="text-[10px] text-red-400 mt-1 italic" title={item.LyDoTuChoi}>
+                            {item.LyDoTuChoi}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-6 py-4">
                         <span className="font-semibold text-slate-600">
-                          {item.MaNhanVienPhuTrach}
+                          {item.TenNguoiLap || "—"}
                         </span>
+                        {item.TenNguoiDuyet && (
+                          <div className="text-[10px] text-slate-400 mt-0.5">
+                            Duyệt: {item.TenNguoiDuyet}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -992,21 +1084,43 @@ export default function QuanLyKhoPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => openEditNXModal(item)}
-                            className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
-                            title="Sửa"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteNX(item._id)}
-                            className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-colors"
-                            title="Xóa"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                        <div className="flex justify-end gap-1.5 flex-wrap">
+                          {/* Nút DUYỆT + TỪ CHỐI — Chỉ hiện khi CHO_DUYET */}
+                          {item.TrangThai === "CHO_DUYET" && (
+                            <>
+                              <button
+                                onClick={() => handleDuyetPhieu(item._id)}
+                                className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors"
+                                title="Duyệt phiếu"
+                              >
+                                ✓ Duyệt
+                              </button>
+                              <button
+                                onClick={() => handleTuChoiPhieu(item._id)}
+                                className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-red-50 text-red-500 hover:bg-red-600 hover:text-white transition-colors"
+                                title="Từ chối phiếu"
+                              >
+                                ✕ Từ chối
+                              </button>
+                              <button
+                                onClick={() => openEditNXModal(item)}
+                                className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
+                                title="Sửa"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteNX(item._id)}
+                                className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-colors"
+                                title="Xóa"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
+                          {item.TrangThai !== "CHO_DUYET" && (
+                            <span className="text-[11px] text-slate-300 italic">Đã xử lý</span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1396,17 +1510,19 @@ export default function QuanLyKhoPage() {
                 key={idx}
                 style={{
                   display: "flex",
-                  gap: 16,
+                  flexWrap: "wrap",
+                  gap: 12,
                   marginBottom: 16,
-                  alignItems: "center",
                   background: "rgba(255,255,255,0.02)",
-                  padding: 10,
+                  padding: 12,
                   borderRadius: 8,
+                  border: "1px solid #f1f5f9",
                 }}
               >
-                <div style={{ flex: 2 }}>
+                {/* Chọn sản phẩm */}
+                <div style={{ flex: "2 1 200px" }}>
                   <label>
-                    Mã Sản Phẩm {nxForm.LoaiHang === "SAN_PHAM" ? "Sơn" : "NVL"}
+                    {nxForm.LoaiHang === "SAN_PHAM" ? "Sản Phẩm Sơn" : "Nguyên Vật Liệu"}
                   </label>
                   <select
                     className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
@@ -1420,19 +1536,48 @@ export default function QuanLyKhoPage() {
                     {nxForm.LoaiHang === "SAN_PHAM"
                       ? data.map((d) => (
                           <option key={d._id} value={d._id}>
-                            {d.MaSanPham} - {d.TenDongSon} (Tồn HT:{" "}
-                            {d.TonKho || 0})
+                            {d.MaSanPham} - {d.TenDongSon} (Tổng tồn:{" "}
+                            {d.TongTonKho || 0} {d.DonViTinh || "Kg"})
                           </option>
                         ))
                       : nvlData.map((d) => (
                           <option key={d._id} value={d._id}>
-                            {d.MaNVL} - {d.TenNguyenVatLieu} (Tồn HT:{" "}
+                            {d.MaNVL} - {d.TenNguyenVatLieu} (Tồn:{" "}
                             {d.TonKho || 0})
                           </option>
                         ))}
                   </select>
                 </div>
-                <div style={{ flex: 1 }}>
+
+                {/* ★ Chọn Mã Màu (SKU) — CHỈ hiện khi LoaiHang = SAN_PHAM và đã chọn sản phẩm */}
+                {nxForm.LoaiHang === "SAN_PHAM" && k.ItemId && (
+                  <div style={{ flex: "2 1 200px" }}>
+                    <label style={{ color: "#2563eb", fontWeight: 600 }}>
+                      Mã Màu (SKU) ★
+                    </label>
+                    <select
+                      className="w-full bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold"
+                      value={k.MaMau}
+                      onChange={(e) =>
+                        handleNXItemChange(idx, "MaMau", e.target.value)
+                      }
+                      disabled={!!editingNXId}
+                    >
+                      <option value="">-- Chọn mã màu --</option>
+                      {(() => {
+                        const sp = data.find((d) => d._id === k.ItemId);
+                        return sp?.DanhSachMaMau?.filter(m => m.TrangThai !== false).map((m, mIdx) => (
+                          <option key={mIdx} value={m.MaMau}>
+                            {m.MaMau} — {m.TenMau} (Khả dụng: {m.TonKhoKhaDung || 0} {sp.DonViTinh || "Kg"})
+                          </option>
+                        )) || [];
+                      })()}
+                    </select>
+                  </div>
+                )}
+
+                {/* Số lượng */}
+                <div style={{ flex: "1 1 100px" }}>
                   <label>Số lượng</label>
                   <input
                     type="number"
@@ -1444,7 +1589,9 @@ export default function QuanLyKhoPage() {
                     }
                   />
                 </div>
-                <div style={{ flex: 1 }}>
+
+                {/* Đơn giá */}
+                <div style={{ flex: "1 1 100px" }}>
                   <label>Đơn Giá (Nháp)</label>
                   <input
                     type="number"
@@ -1456,7 +1603,9 @@ export default function QuanLyKhoPage() {
                     }
                   />
                 </div>
-                <div style={{ flex: 1 }}>
+
+                {/* Tạm tính */}
+                <div style={{ flex: "1 1 100px" }}>
                   <label>Tạm Tính</label>
                   <input
                     type="number"
@@ -1565,17 +1714,22 @@ export default function QuanLyKhoPage() {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              {kiemKhoItems.map((k, idx) => (
+              {kiemKhoItems.map((k: any, idx: number) => (
                 <div
                   key={idx}
                   style={{
                     display: "flex",
-                    gap: 16,
+                    flexWrap: "wrap",
+                    gap: 12,
                     marginBottom: 16,
-                    alignItems: "flex-end",
+                    padding: 12,
+                    borderRadius: 8,
+                    border: "1px solid #f1f5f9",
+                    background: "rgba(255,255,255,0.02)",
                   }}
                 >
-                  <div style={{ flex: 1 }}>
+                  {/* Chọn Dòng Sơn */}
+                  <div style={{ flex: "2 1 200px" }}>
                     <label
                       style={{
                         display: "block",
@@ -1584,35 +1738,73 @@ export default function QuanLyKhoPage() {
                         fontSize: "14px",
                       }}
                     >
-                      Mã Sản Phẩm Trích Xuất
+                      Dòng Sản Phẩm
                     </label>
                     <select
-                      style={{
-                        width: "100%",
-                        padding: "10px",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "4px",
-                        background: "#ffffff",
-                      }}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                       value={k.Sanpham}
                       onChange={(e) => {
                         const newArr = [...kiemKhoItems];
                         newArr[idx].Sanpham = e.target.value;
+                        newArr[idx].MaMau = ""; // Reset mã màu khi đổi SP
+                        newArr[idx].TenMau = "";
                         setKiemKhoItems(newArr);
                       }}
                     >
                       <option value="">
-                        -- Định danh đối chiếu (Load trực tiếp từ SP) --
+                        -- Chọn dòng sơn cần kiểm kê --
                       </option>
                       {data.map((d) => (
                         <option key={d._id} value={d._id}>
-                          {d.MaSanPham} - {d.TenDongSon} (Tồn HT:{" "}
-                          {d.TonKho || 0})
+                          {d.MaSanPham} - {d.TenDongSon} (Tổng tồn:{" "}
+                          {d.TongTonKho || 0} {d.DonViTinh || "Kg"})
                         </option>
                       ))}
                     </select>
                   </div>
-                  <div style={{ width: 150 }}>
+
+                  {/* ★ Chọn Mã Màu (SKU) — CHỈ hiện khi đã chọn sản phẩm */}
+                  {k.Sanpham && (
+                    <div style={{ flex: "2 1 200px" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          fontWeight: 600,
+                          marginBottom: "8px",
+                          fontSize: "14px",
+                          color: "#2563eb",
+                        }}
+                      >
+                        Mã Màu (SKU) ★
+                      </label>
+                      <select
+                        className="w-full bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold"
+                        value={k.MaMau}
+                        onChange={(e) => {
+                          const newArr = [...kiemKhoItems];
+                          newArr[idx].MaMau = e.target.value;
+                          // Auto fill TenMau
+                          const sp = data.find((d) => d._id === k.Sanpham);
+                          const mau = sp?.DanhSachMaMau?.find((m: any) => m.MaMau === e.target.value);
+                          newArr[idx].TenMau = mau?.TenMau || "";
+                          setKiemKhoItems(newArr);
+                        }}
+                      >
+                        <option value="">-- Chọn mã màu --</option>
+                        {(() => {
+                          const sp = data.find((d) => d._id === k.Sanpham);
+                          return sp?.DanhSachMaMau?.filter((m: any) => m.TrangThai !== false).map((m: any, mIdx: number) => (
+                            <option key={mIdx} value={m.MaMau}>
+                              {m.MaMau} — {m.TenMau} (Tồn HT: {m.TonKhoKhaDung || 0} {sp.DonViTinh || "Kg"})
+                            </option>
+                          )) || [];
+                        })()}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Số tồn thực tế */}
+                  <div style={{ flex: "1 1 140px" }}>
                     <label
                       style={{
                         display: "block",
@@ -1621,17 +1813,12 @@ export default function QuanLyKhoPage() {
                         fontSize: "14px",
                       }}
                     >
-                      Phát Hiện Số Tồn
+                      Số Tồn Thực Tế
                     </label>
                     <input
                       type="number"
-                      style={{
-                        width: "100%",
-                        padding: "10px",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "4px",
-                        background: "#ffffff",
-                      }}
+                      min={0}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                       value={k.TonThucTe}
                       onChange={(e) => {
                         const newArr = [...kiemKhoItems];
