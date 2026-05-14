@@ -18,6 +18,8 @@ import {
   Beaker,
   ArrowRightLeft,
   Download,
+  X,
+  Box,
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import * as XLSX from "xlsx";
@@ -1266,75 +1268,57 @@ export default function QuanLyKhoPage() {
 
       {/* Modal Lập / Sửa Phiếu NVL */}
       {isNVLModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.5)",
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "500px",
-              background: "var(--bg-color)",
-              border: "1px solid #e2e8f0",
-              borderRadius: "8px",
-              padding: "24px",
-              margin: "2rem auto",
-              color: "#0f172a",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "20px",
-                fontWeight: "bold",
-                marginBottom: "24px",
-              }}
-            >
-              {editingNVLId
-                ? "Cập Nhật Nguyên Vật Liệu"
-                : "Khai Báo Nguyên Vật Liệu Mới"}
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div>
-                <label>Mã NVL</label>
-                <input
-                  type="text"
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  value={nvlForm.MaNVL}
-                  onChange={(e) =>
-                    setNvlForm({ ...nvlForm, MaNVL: e.target.value })
-                  }
-                  disabled={!!editingNVLId}
-                  style={editingNVLId ? { opacity: 0.6 } : {}}
-                />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300">
+            {/* Header */}
+            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                  <Beaker size={20} />
+                </div>
+                {editingNVLId ? "CẬP NHẬT NVL" : "KHAI BÁO NVL MỚI"}
+              </h2>
+              <button 
+                onClick={() => setIsNVLModal(false)}
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-8 space-y-6 overflow-y-auto max-h-[70vh] custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Mã NVL</label>
+                  <input
+                    type="text"
+                    placeholder="VD: NVL001"
+                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium disabled:opacity-50"
+                    value={nvlForm.MaNVL}
+                    onChange={(e) => setNvlForm({ ...nvlForm, MaNVL: e.target.value })}
+                    disabled={!!editingNVLId}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Tên Nguyên Vật Liệu</label>
+                  <input
+                    type="text"
+                    placeholder="Nhập tên nguyên liệu..."
+                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                    value={nvlForm.TenNguyenVatLieu}
+                    onChange={(e) => setNvlForm({ ...nvlForm, TenNguyenVatLieu: e.target.value })}
+                  />
+                </div>
               </div>
-              <div>
-                <label>Tên Nguyên Liệu</label>
-                <input
-                  type="text"
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  value={nvlForm.TenNguyenVatLieu}
-                  onChange={(e) =>
-                    setNvlForm({ ...nvlForm, TenNguyenVatLieu: e.target.value })
-                  }
-                />
-              </div>
-              <div style={{ display: "flex", gap: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <label>Bộ phân loại</label>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Phân Loại</label>
                   <select
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold"
                     value={nvlForm.PhanLoai}
-                    onChange={(e) =>
-                      setNvlForm({ ...nvlForm, PhanLoai: e.target.value })
-                    }
+                    onChange={(e) => setNvlForm({ ...nvlForm, PhanLoai: e.target.value })}
                   >
                     <option>Bột màu</option>
                     <option>Dung môi</option>
@@ -1342,53 +1326,48 @@ export default function QuanLyKhoPage() {
                     <option>Phụ gia</option>
                   </select>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label>Đơn Vị Tính</label>
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Đơn Vị Tính</label>
                   <input
                     type="text"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    placeholder="VD: Kg, Lít..."
+                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                     value={nvlForm.DonViTinh}
-                    onChange={(e) =>
-                      setNvlForm({ ...nvlForm, DonViTinh: e.target.value })
-                    }
+                    onChange={(e) => setNvlForm({ ...nvlForm, DonViTinh: e.target.value })}
                   />
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <label>Số lượng tồn kho</label>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Số lượng tồn ban đầu</label>
                   <input
                     type="number"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     min={0}
+                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-black"
                     value={nvlForm.TonKho}
-                    onChange={(e) =>
-                      setNvlForm({ ...nvlForm, TonKho: Number(e.target.value) })
-                    }
+                    onChange={(e) => setNvlForm({ ...nvlForm, TonKho: Number(e.target.value) })}
                   />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label>Giá Thành Base (₫)</label>
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Giá Base (₫)</label>
                   <input
                     type="number"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-black text-emerald-600"
                     value={nvlForm.DonGia}
-                    onChange={(e) =>
-                      setNvlForm({ ...nvlForm, DonGia: Number(e.target.value) })
-                    }
+                    onChange={(e) => setNvlForm({ ...nvlForm, DonGia: Number(e.target.value) })}
                   />
                 </div>
               </div>
-              <div>
-                <label>Nhà Cung Cấp</label>
+
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Nhà Cung Cấp</label>
                 <select
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold"
                   value={nvlForm.NhaCungCap}
-                  onChange={(e) =>
-                    setNvlForm({ ...nvlForm, NhaCungCap: e.target.value })
-                  }
+                  onChange={(e) => setNvlForm({ ...nvlForm, NhaCungCap: e.target.value })}
                 >
-                  <option value="">-- Chọn nhà cung cấp --</option>
+                  <option value="">-- Chọn nhà cung cấp liên kết --</option>
                   {nccList.map((ncc) => (
                     <option key={ncc._id} value={ncc._id}>
                       {ncc.MaNCC} - {ncc.TenNCC}
@@ -1397,23 +1376,23 @@ export default function QuanLyKhoPage() {
                 </select>
               </div>
             </div>
-            <div style={{ marginTop: "24px", display: "flex", gap: 10 }}>
+
+            {/* Footer */}
+            <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-end gap-3">
               <button
                 onClick={() => {
                   setIsNVLModal(false);
                   setEditingNVLId(null);
                 }}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                style={{ flex: 1 }}
+                className="px-6 py-3 rounded-xl font-bold text-[14px] text-slate-500 hover:bg-slate-100 transition-all"
               >
-                Đóng
+                Hủy Bỏ
               </button>
               <button
                 onClick={handleSubmitNVL}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                style={{ flex: 1 }}
+                className="px-8 py-3 rounded-xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
               >
-                {editingNVLId ? "Cập Nhật" : "Lưu"}
+                {editingNVLId ? "Cập Nhật Thông Tin" : "Xác Nhận Khai Báo"}
               </button>
             </div>
           </div>
@@ -1422,239 +1401,213 @@ export default function QuanLyKhoPage() {
 
       {/* Modal Lập Phiếu Nhập Xuất */}
       {isNXModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.5)",
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "800px",
-              background: "var(--bg-color)",
-              border: "1px solid #e2e8f0",
-              borderRadius: "8px",
-              padding: "24px",
-              margin: "2rem auto",
-              color: "#0f172a",
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "20px",
-                fontWeight: "bold",
-                marginBottom: "24px",
-              }}
-            >
-              {editingNXId
-                ? `Chỉnh sửa Phiếu ${nxForm.MaPhieu}`
-                : "Lập Phiếu Lệnh Kho"}
-            </h3>
-            <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
-              <div style={{ flex: 1 }}>
-                <label>Mục Đích Lệnh</label>
-                <select
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  value={nxForm.LoaiPhieu}
-                  onChange={(e) =>
-                    setNxForm({ ...nxForm, LoaiPhieu: e.target.value })
-                  }
-                  disabled={!!editingNXId}
-                >
-                  <option value="NHAP">Biên Bản Nhập Kho</option>
-                  <option value="XUAT">Biên Bản Xuất Tồn</option>
-                </select>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label>Đối Tượng Lệnh</label>
-                <select
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  value={nxForm.LoaiHang}
-                  onChange={(e) =>
-                    setNxForm({ ...nxForm, LoaiHang: e.target.value })
-                  }
-                  disabled={!!editingNXId}
-                >
-                  <option value="SAN_PHAM">Tác Động Lên Thành Phẩm Sơn</option>
-                  <option value="NGUYEN_VAT_LIEU">
-                    Tác Động Lên NVL Pha Chế
-                  </option>
-                </select>
-              </div>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label>Mô tả Nhập / Xuất Kho</label>
-              <input
-                type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                value={nxForm.MoTa}
-                onChange={(e) => setNxForm({ ...nxForm, MoTa: e.target.value })}
-              />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300 max-h-[90vh]">
+            {/* Header */}
+            <div className={`px-8 py-6 border-b border-slate-50 flex items-center justify-between ${nxForm.LoaiPhieu === "NHAP" ? "bg-emerald-50/50" : "bg-rose-50/50"}`}>
+              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${nxForm.LoaiPhieu === "NHAP" ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"}`}>
+                  {nxForm.LoaiPhieu === "NHAP" ? <ArrowDownToLine size={20} /> : <ArrowUpToLine size={20} />}
+                </div>
+                {editingNXId ? `CHỈNH SỬA PHIẾU ${nxForm.MaPhieu}` : "LẬP LỆNH KHO MỚI"}
+              </h2>
+              <button 
+                onClick={() => { setIsNXModal(false); setEditingNXId(null); }}
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
+              >
+                <X size={20} />
+              </button>
             </div>
 
-            {/* Items List */}
-            <h4 style={{ marginTop: 24, marginBottom: 16 }}>
-              Hàng Hóa Chỉ Định:
-            </h4>
-            {nxItems.map((k: any, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 12,
-                  marginBottom: 16,
-                  background: "rgba(255,255,255,0.02)",
-                  padding: 12,
-                  borderRadius: 8,
-                  border: "1px solid #f1f5f9",
-                }}
-              >
-                {/* Chọn sản phẩm */}
-                <div style={{ flex: "2 1 200px" }}>
-                  <label>
-                    {nxForm.LoaiHang === "SAN_PHAM" ? "Sản Phẩm Sơn" : "Nguyên Vật Liệu"}
-                  </label>
+            {/* Content */}
+            <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Mục Đích Lệnh</label>
                   <select
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    value={k.ItemId}
-                    onChange={(e) =>
-                      handleNXItemChange(idx, "ItemId", e.target.value)
-                    }
+                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none disabled:opacity-50"
+                    value={nxForm.LoaiPhieu}
+                    onChange={(e) => setNxForm({ ...nxForm, LoaiPhieu: e.target.value })}
                     disabled={!!editingNXId}
                   >
-                    <option value="">-- Tra Mã Nhanh --</option>
-                    {nxForm.LoaiHang === "SAN_PHAM"
-                      ? data.map((d) => (
-                          <option key={d._id} value={d._id}>
-                            {d.MaSanPham} - {d.TenDongSon} (Tổng tồn:{" "}
-                            {d.TongTonKho || 0} {d.DonViTinh || "Kg"})
-                          </option>
-                        ))
-                      : nvlData.map((d) => (
-                          <option key={d._id} value={d._id}>
-                            {d.MaNVL} - {d.TenNguyenVatLieu} (Tồn:{" "}
-                            {d.TonKho || 0})
-                          </option>
-                        ))}
+                    <option value="NHAP">Biên Bản Nhập Kho</option>
+                    <option value="XUAT">Biên Bản Xuất Tồn</option>
                   </select>
                 </div>
-
-                {/* ★ Chọn Mã Màu (SKU) — CHỈ hiện khi LoaiHang = SAN_PHAM và đã chọn sản phẩm */}
-                {nxForm.LoaiHang === "SAN_PHAM" && k.ItemId && (
-                  <div style={{ flex: "2 1 200px" }}>
-                    <label style={{ color: "#2563eb", fontWeight: 600 }}>
-                      Mã Màu (SKU) ★
-                    </label>
-                    <select
-                      className="w-full bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold"
-                      value={k.MaMau}
-                      onChange={(e) =>
-                        handleNXItemChange(idx, "MaMau", e.target.value)
-                      }
-                      disabled={!!editingNXId}
-                    >
-                      <option value="">-- Chọn mã màu --</option>
-                      {(() => {
-                        const sp = data.find((d) => d._id === k.ItemId);
-                        return sp?.DanhSachMaMau?.filter(m => m.TrangThai !== false).map((m, mIdx) => (
-                          <option key={mIdx} value={m.MaMau}>
-                            {m.MaMau} — {m.TenMau} (Khả dụng: {m.TonKhoKhaDung || 0} {sp.DonViTinh || "Kg"})
-                          </option>
-                        )) || [];
-                      })()}
-                    </select>
-                  </div>
-                )}
-
-                {/* Số lượng */}
-                <div style={{ flex: "1 1 100px" }}>
-                  <label>Số lượng</label>
-                  <input
-                    type="number"
-                    min={1}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    value={k.SoLuong}
-                    onChange={(e) =>
-                      handleNXItemChange(idx, "SoLuong", Number(e.target.value))
-                    }
-                  />
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Đối Tượng Lệnh</label>
+                  <select
+                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none disabled:opacity-50"
+                    value={nxForm.LoaiHang}
+                    onChange={(e) => setNxForm({ ...nxForm, LoaiHang: e.target.value })}
+                    disabled={!!editingNXId}
+                  >
+                    <option value="SAN_PHAM">Thành Phẩm Sơn</option>
+                    <option value="NGUYEN_VAT_LIEU">Nguyên Vật Liệu</option>
+                  </select>
                 </div>
-
-                {/* Đơn giá */}
-                <div style={{ flex: "1 1 100px" }}>
-                  <label>Đơn Giá (Nháp)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    value={k.DonGia}
-                    onChange={(e) =>
-                      handleNXItemChange(idx, "DonGia", Number(e.target.value))
-                    }
-                  />
-                </div>
-
-                {/* Tạm tính */}
-                <div style={{ flex: "1 1 100px" }}>
-                  <label>Tạm Tính</label>
-                  <input
-                    type="number"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    value={k.ThanhTien}
-                    disabled
-                    style={{ opacity: 0.7 }}
-                  />
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Nhà Cung Cấp (Nếu có)</label>
+                  <select
+                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none"
+                    value={nxForm.NhaCungCapID}
+                    onChange={(e) => setNxForm({ ...nxForm, NhaCungCapID: e.target.value })}
+                  >
+                    <option value="">-- Không chỉ định --</option>
+                    {nccList.map((ncc) => (
+                      <option key={ncc._id} value={ncc._id}>
+                        {ncc.MaNCC} - {ncc.TenNCC}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            ))}
-            {!editingNXId && (
-              <button
-                onClick={handleAddNXItem}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                style={{
-                  border: "1px dashed #e2e8f0",
-                  width: "100%",
-                  marginBottom: 24,
-                }}
-              >
-                + Chọn thêm Danh mục xuống lệnh
-              </button>
-            )}
 
-            <div style={{ marginTop: "24px", display: "flex", gap: 10 }}>
-              <button
-                onClick={() => {
-                  setIsNXModal(false);
-                  setEditingNXId(null);
-                }}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                style={{ flex: 1 }}
-              >
-                Hủy Bỏ
-              </button>
-              <button
-                onClick={handleSubmitPhieuNX}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                style={{
-                  flex: 1,
-                  background:
-                    nxForm.LoaiPhieu === "NHAP" ? "#059669" : "#e11d48",
-                }}
-              >
-                {editingNXId
-                  ? "Cập Nhật Phiếu & Điều Chỉnh Tồn"
-                  : "Khởi Tạo Biên Bản & Cập Nhật Số Tồn"}
-              </button>
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">Mô tả / Ghi chú lệnh</label>
+                <input
+                  type="text"
+                  placeholder="Nhập lý do nhập xuất hoặc mô tả chi tiết..."
+                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                  value={nxForm.MoTa}
+                  onChange={(e) => setNxForm({ ...nxForm, MoTa: e.target.value })}
+                />
+              </div>
+
+              {/* Items Table */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-[15px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Box size={18} className="text-blue-500" />
+                    Danh sách Hàng Hóa Chỉ Định
+                  </h3>
+                  {!editingNXId && (
+                    <button
+                      onClick={handleAddNXItem}
+                      className="text-[13px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                    >
+                      <Plus size={14} /> Thêm dòng
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  {nxItems.map((k: any, idx) => (
+                    <div
+                      key={idx}
+                      className="p-5 rounded-[24px] bg-slate-50/50 border border-slate-100 grid grid-cols-1 md:grid-cols-12 gap-4 items-end animate-in slide-in-from-right-2 duration-300"
+                    >
+                      <div className="md:col-span-4 space-y-1.5">
+                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">
+                          {nxForm.LoaiHang === "SAN_PHAM" ? "Sản Phẩm" : "Nguyên Vật Liệu"}
+                        </label>
+                        <select
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] text-slate-800 outline-none focus:border-blue-500 transition-all font-bold disabled:opacity-50"
+                          value={k.ItemId}
+                          onChange={(e) => handleNXItemChange(idx, "ItemId", e.target.value)}
+                          disabled={!!editingNXId}
+                        >
+                          <option value="">-- Chọn mặt hàng --</option>
+                          {nxForm.LoaiHang === "SAN_PHAM"
+                            ? data.map((d) => (
+                                <option key={d._id} value={d._id}>
+                                  {d.MaSanPham} - {d.TenDongSon} ({d.TongTonKho || 0} {d.DonViTinh})
+                                </option>
+                              ))
+                            : nvlData.map((d) => (
+                                <option key={d._id} value={d._id}>
+                                  {d.MaNVL} - {d.TenNguyenVatLieu} ({d.TonKho || 0} {d.DonViTinh})
+                                </option>
+                              ))}
+                        </select>
+                      </div>
+
+                      {nxForm.LoaiHang === "SAN_PHAM" && k.ItemId && (
+                        <div className="md:col-span-3 space-y-1.5">
+                          <label className="text-[11px] font-black text-blue-500 uppercase tracking-tighter">Mã Màu (SKU)</label>
+                          <select
+                            className="w-full bg-blue-50/50 border border-blue-100 rounded-xl px-4 py-2.5 text-[13px] text-blue-700 outline-none focus:border-blue-500 transition-all font-bold disabled:opacity-50"
+                            value={k.MaMau}
+                            onChange={(e) => handleNXItemChange(idx, "MaMau", e.target.value)}
+                            disabled={!!editingNXId}
+                          >
+                            <option value="">-- Chọn màu --</option>
+                            {(() => {
+                              const sp = data.find((d) => d._id === k.ItemId);
+                              return sp?.DanhSachMaMau?.filter(m => m.TrangThai !== false).map((m, mIdx) => (
+                                <option key={mIdx} value={m.MaMau}>
+                                  {m.MaMau} ({m.TonKhoKhaDung || 0})
+                                </option>
+                              )) || [];
+                            })()}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className={`${nxForm.LoaiHang === "SAN_PHAM" ? "md:col-span-2" : "md:col-span-3"} space-y-1.5`}>
+                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">Số lượng</label>
+                        <input
+                          type="number"
+                          min={1}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] text-slate-800 font-black outline-none focus:border-blue-500 transition-all"
+                          value={k.SoLuong}
+                          onChange={(e) => handleNXItemChange(idx, "SoLuong", Number(e.target.value))}
+                        />
+                      </div>
+
+                      <div className="md:col-span-2 space-y-1.5">
+                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">Đơn Giá</label>
+                        <input
+                          type="number"
+                          min={0}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] text-slate-800 font-bold outline-none focus:border-blue-500 transition-all"
+                          value={k.DonGia}
+                          onChange={(e) => handleNXItemChange(idx, "DonGia", Number(e.target.value))}
+                        />
+                      </div>
+
+                      <div className="md:col-span-1 flex justify-center">
+                        <button
+                          onClick={() => {
+                            const newItems = [...nxItems];
+                            newItems.splice(idx, 1);
+                            setNxItems(newItems);
+                          }}
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-colors"
+                          disabled={nxItems.length <= 1}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[11px] font-black text-slate-400 uppercase">Tổng giá trị lệnh</span>
+                <span className="text-2xl font-black text-slate-900">
+                  {nxItems.reduce((acc, curr) => acc + (curr.ThanhTien || 0), 0).toLocaleString("vi-VN")} 
+                  <span className="text-sm ml-1 text-slate-400 uppercase">đ</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => { setIsNXModal(false); setEditingNXId(null); }}
+                  className="px-6 py-3 rounded-xl font-bold text-[14px] text-slate-500 hover:bg-slate-100 transition-all"
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  onClick={handleSubmitPhieuNX}
+                  className={`px-8 py-3 rounded-xl font-bold text-[14px] text-white shadow-lg transition-all active:scale-95 ${nxForm.LoaiPhieu === "NHAP" ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"}`}
+                >
+                  {editingNXId ? "CẬP NHẬT LỆNH" : `XÁC NHẬN ${nxForm.LoaiPhieu === "NHAP" ? "NHẬP KHO" : "XUẤT KHO"}`}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1662,199 +1615,142 @@ export default function QuanLyKhoPage() {
 
       {/* Modal Lập Phiếu Kiem Ke (Giữ nguyên cấu trúc đã có) */}
       {isKiemKhoModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.5)",
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "700px",
-              background: "var(--bg-color)",
-              border: "1px solid #e2e8f0",
-              borderRadius: "8px",
-              padding: "24px",
-              margin: "2rem auto",
-              color: "#0f172a",
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "24px",
-              }}
-            >
-              <h3 style={{ fontSize: "20px", fontWeight: "bold" }}>
-                Ghi Nhận Thực Tế Lô Kiểm Kê
-              </h3>
-              <button
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300 max-h-[90vh]">
+            {/* Header */}
+            <div className="px-8 py-6 border-b border-slate-50 bg-amber-50/50 flex items-center justify-between">
+              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-sm">
+                  <FileCheck size={20} />
+                </div>
+                KIỂM KÊ KHO THỰC TẾ
+              </h2>
+              <button 
                 onClick={() => setIsKiemKhoModal(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "20px",
-                  cursor: "pointer",
-                  color: "#666",
-                }}
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
               >
-                ×
+                <X size={20} />
               </button>
             </div>
 
-            <div style={{ marginBottom: 16 }}>
-              {kiemKhoItems.map((k: any, idx: number) => (
-                <div
-                  key={idx}
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 12,
-                    marginBottom: 16,
-                    padding: 12,
-                    borderRadius: 8,
-                    border: "1px solid #f1f5f9",
-                    background: "rgba(255,255,255,0.02)",
-                  }}
-                >
-                  {/* Chọn Dòng Sơn */}
-                  <div style={{ flex: "2 1 200px" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        fontWeight: "bold",
-                        marginBottom: "8px",
-                        fontSize: "14px",
-                      }}
-                    >
-                      Dòng Sản Phẩm
-                    </label>
-                    <select
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                      value={k.Sanpham}
-                      onChange={(e) => {
-                        const newArr = [...kiemKhoItems];
-                        newArr[idx].Sanpham = e.target.value;
-                        newArr[idx].MaMau = ""; // Reset mã màu khi đổi SP
-                        newArr[idx].TenMau = "";
-                        setKiemKhoItems(newArr);
-                      }}
-                    >
-                      <option value="">
-                        -- Chọn dòng sơn cần kiểm kê --
-                      </option>
-                      {data.map((d) => (
-                        <option key={d._id} value={d._id}>
-                          {d.MaSanPham} - {d.TenDongSon} (Tổng tồn:{" "}
-                          {d.TongTonKho || 0} {d.DonViTinh || "Kg"})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+            {/* Content */}
+            <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+              <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100/50 flex gap-4 items-start mb-4">
+                <div className="w-8 h-8 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <AlertTriangle size={16} />
+                </div>
+                <div className="text-[13px] text-amber-800 leading-relaxed font-medium">
+                  <strong>Lưu ý:</strong> Việc kiểm kê này sẽ so sánh số lượng thực tế bạn nhập với số tồn hệ thống. Sau khi chốt phiếu, hệ thống sẽ tự động tạo các lệnh điều chỉnh tương ứng.
+                </div>
+              </div>
 
-                  {/* ★ Chọn Mã Màu (SKU) — CHỈ hiện khi đã chọn sản phẩm */}
-                  {k.Sanpham && (
-                    <div style={{ flex: "2 1 200px" }}>
-                      <label
-                        style={{
-                          display: "block",
-                          fontWeight: 600,
-                          marginBottom: "8px",
-                          fontSize: "14px",
-                          color: "#2563eb",
-                        }}
-                      >
-                        Mã Màu (SKU) ★
-                      </label>
+              <div className="space-y-4">
+                {kiemKhoItems.map((k: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="p-6 rounded-[28px] bg-slate-50 border border-slate-100 grid grid-cols-1 md:grid-cols-12 gap-5 items-end animate-in slide-in-from-right-2 duration-300 relative"
+                  >
+                    <div className="md:col-span-5 space-y-1.5">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter ml-1">Sản Phẩm Thành Phẩm</label>
                       <select
-                        className="w-full bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold"
-                        value={k.MaMau}
+                        className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/10 transition-all font-bold appearance-none"
+                        value={k.Sanpham}
                         onChange={(e) => {
                           const newArr = [...kiemKhoItems];
-                          newArr[idx].MaMau = e.target.value;
-                          // Auto fill TenMau
-                          const sp = data.find((d) => d._id === k.Sanpham);
-                          const mau = sp?.DanhSachMaMau?.find((m: any) => m.MaMau === e.target.value);
-                          newArr[idx].TenMau = mau?.TenMau || "";
+                          newArr[idx].Sanpham = e.target.value;
+                          newArr[idx].MaMau = "";
+                          newArr[idx].TenMau = "";
                           setKiemKhoItems(newArr);
                         }}
                       >
-                        <option value="">-- Chọn mã màu --</option>
-                        {(() => {
-                          const sp = data.find((d) => d._id === k.Sanpham);
-                          return sp?.DanhSachMaMau?.filter((m: any) => m.TrangThai !== false).map((m: any, mIdx: number) => (
-                            <option key={mIdx} value={m.MaMau}>
-                              {m.MaMau} — {m.TenMau} (Tồn HT: {m.TonKhoKhaDung || 0} {sp.DonViTinh || "Kg"})
-                            </option>
-                          )) || [];
-                        })()}
+                        <option value="">-- Chọn sản phẩm --</option>
+                        {data.map((d) => (
+                          <option key={d._id} value={d._id}>
+                            {d.MaSanPham} - {d.TenDongSon} ({d.TongTonKho || 0} {d.DonViTinh})
+                          </option>
+                        ))}
                       </select>
                     </div>
-                  )}
 
-                  {/* Số tồn thực tế */}
-                  <div style={{ flex: "1 1 140px" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        fontWeight: "bold",
-                        marginBottom: "8px",
-                        fontSize: "14px",
-                      }}
-                    >
-                      Số Tồn Thực Tế
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                      value={k.TonThucTe}
-                      onChange={(e) => {
-                        const newArr = [...kiemKhoItems];
-                        newArr[idx].TonThucTe = Number(e.target.value);
-                        setKiemKhoItems(newArr);
-                      }}
-                    />
+                    {k.Sanpham && (
+                      <div className="md:col-span-4 space-y-1.5">
+                        <label className="text-[11px] font-black text-blue-500 uppercase tracking-tighter ml-1">Mã Màu (SKU)</label>
+                        <select
+                          className="w-full bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 text-[14px] text-blue-700 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold appearance-none"
+                          value={k.MaMau}
+                          onChange={(e) => {
+                            const newArr = [...kiemKhoItems];
+                            newArr[idx].MaMau = e.target.value;
+                            const sp = data.find((d) => d._id === k.Sanpham);
+                            const mau = sp?.DanhSachMaMau?.find((m: any) => m.MaMau === e.target.value);
+                            newArr[idx].TenMau = mau?.TenMau || "";
+                            setKiemKhoItems(newArr);
+                          }}
+                        >
+                          <option value="">-- Chọn màu --</option>
+                          {(() => {
+                            const sp = data.find((d) => d._id === k.Sanpham);
+                            return sp?.DanhSachMaMau?.filter((m: any) => m.TrangThai !== false).map((m: any, mIdx: number) => (
+                              <option key={mIdx} value={m.MaMau}>
+                                {m.MaMau} ({m.TonKhoKhaDung || 0})
+                              </option>
+                            )) || [];
+                          })()}
+                        </select>
+                      </div>
+                    )}
+
+                    <div className="md:col-span-2 space-y-1.5">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter ml-1">Tồn Thực Tế</label>
+                      <input
+                        type="number"
+                        min={0}
+                        className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-[14px] text-slate-800 font-black outline-none focus:ring-2 focus:ring-blue-500/10 transition-all text-center"
+                        value={k.TonThucTe}
+                        onChange={(e) => {
+                          const newArr = [...kiemKhoItems];
+                          newArr[idx].TonThucTe = Number(e.target.value);
+                          setKiemKhoItems(newArr);
+                        }}
+                      />
+                    </div>
+
+                    <div className="md:col-span-1 flex justify-center">
+                      <button
+                        onClick={() => {
+                          const newArr = [...kiemKhoItems];
+                          newArr.splice(idx, 1);
+                          setKiemKhoItems(newArr);
+                        }}
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-100 transition-colors"
+                        disabled={kiemKhoItems.length <= 1}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+
               <button
                 onClick={handleAddKiemKhoItem}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                style={{
-                  border: "1px dashed #e2e8f0",
-                  width: "100%",
-                }}
+                className="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold text-sm hover:bg-slate-50 hover:border-blue-400 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
               >
-                + Thêm dòng sản phẩm sai lệch
+                <Plus size={18} /> Thêm dòng sản phẩm cần kiểm kê
               </button>
             </div>
 
-            <div style={{ marginTop: "24px" }}>
+            {/* Footer */}
+            <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setIsKiemKhoModal(false)}
+                className="px-6 py-3 rounded-xl font-bold text-[14px] text-slate-500 hover:bg-slate-100 transition-all"
+              >
+                Đóng
+              </button>
               <button
                 onClick={handleSubmitKiemKho}
-                style={{
-                  width: "100%",
-                  background: "#28a745",
-                  color: "#fff",
-                  border: "none",
-                  padding: "12px",
-                  borderRadius: "4px",
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                }}
+                className="px-8 py-3 rounded-xl font-bold text-[14px] bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-600/20 transition-all active:scale-95"
               >
                 Lưu Phiếu & Tính Chênh Lệch
               </button>
