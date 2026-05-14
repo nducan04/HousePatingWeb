@@ -34,18 +34,23 @@ export default function ColorsPage() {
   >(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const sortedColorsList = useMemo(() => {
-    return [...paintColors].sort((a, b) => {
-      const hslA = hexToHSL(a.hex);
-      const hslB = hexToHSL(b.hex);
-      return hslA.h - hslB.h;
-    });
-  }, []);
+<<<<<<< Updated upstream
+  const sortedColors = [...paintColors].sort((a, b) => {
+    const hslA = hexToHSL(a.hex);
+    const hslB = hexToHSL(b.hex);
+    return hslA.h - hslB.h;
+  });
 
-  const categories = useMemo(() => {
-    return ["all", ...Array.from(new Set(sortedColorsList.map((c) => c.category)))];
-  }, [sortedColorsList]);
-
+  const filteredColors = sortedColors.filter((c) => {
+    const matchesSearch =
+      c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.hex.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCat =
+      categoryFilter === "all" || c.category === categoryFilter;
+    return matchesSearch && matchesCat;
+  });
+=======
   const filteredColors = useMemo(() => {
     return sortedColorsList.filter((c) => {
       const matchesSearch =
@@ -56,7 +61,22 @@ export default function ColorsPage() {
         categoryFilter === "all" || c.category === categoryFilter;
       return matchesSearch && matchesCat;
     });
-  }, [searchQuery, categoryFilter, sortedColorsList]);
+  }, [searchQuery, categoryFilter]);
+>>>>>>> Stashed changes
+
+  const categories = [
+    "all",
+    ...Array.from(new Set(sortedColors.map((c) => c.category))),
+  ];
+
+  const sortedColors = useMemo(() => {
+    return [...filteredColors].sort((a, b) => {
+      if (a.category !== b.category) {
+        return a.category.localeCompare(b.category);
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [filteredColors]);
 
   return (
     <div>
@@ -103,7 +123,7 @@ export default function ColorsPage() {
 
       {/* Color Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredColors.map((color) => (
+        {sortedColors.map((color) => (
           <div
             key={color.code}
             className="bg-white border border-slate-100 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 hover:border-blue-200 group"
