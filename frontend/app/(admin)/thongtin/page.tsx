@@ -19,7 +19,6 @@ export default function ThongTinCaNhanPage() {
     phone: '',
     address: '',
     dob: '',
-    wallet: '',
     jobTitle: '',
     department: '',
   });
@@ -35,7 +34,6 @@ export default function ThongTinCaNhanPage() {
         phone: p.SDT || '',
         address: p.DiaChi || '',
         dob: p.NgaySinh ? new Date(p.NgaySinh).toISOString().split('T')[0] : '',
-        wallet: p.WalletAddress || '',
         jobTitle: p.ChucVu || '',
         department: p.BoPhan || '',
       });
@@ -68,7 +66,6 @@ export default function ThongTinCaNhanPage() {
         payload.HoTen = formData.displayName;
       } else {
         payload.TenKhachHang = formData.displayName;
-        payload.WalletAddress = formData.wallet;
       }
 
       const res = await api.put(endpoint, payload);
@@ -202,22 +199,7 @@ export default function ThongTinCaNhanPage() {
                   </>
                 )}
 
-                {!isEmployee && user.role === 'KhachHangB2B' && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-500 mb-1">Địa chỉ Ví Web3 (Blockchain)</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="wallet"
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10 font-mono text-xs"
-                        value={formData.wallet}
-                        onChange={handleChange}
-                        placeholder="0x..."
-                      />
-                      <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
-                    </div>
-                  </div>
-                )}
+
               </div>
             </div>
 

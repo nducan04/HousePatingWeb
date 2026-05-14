@@ -36,7 +36,7 @@ const generateCustomer = (i) => {
         Email: `user${i}@example.com`,
         SDT: `09${Math.floor(Math.random() * 90000000 + 10000000)}`,
         DiaChi: `${Math.floor(Math.random() * 500) + 1} Đường Giải Phóng, ${cities[Math.floor(Math.random() * cities.length)]}`,
-        WalletAddress: type === 'B2B' ? `0x${Math.random().toString(16).slice(2, 42)}` : '',
+
         MaSoThueCaNhan: type === 'Đại lý' ? `${Math.floor(Math.random() * 9000000000 + 1000000000)}` : ''
     };
 };

@@ -319,19 +319,19 @@ export default function AdminLayout({
 
   // Map pathname to page title
   const getPageTitle = () => {
-    if (pathname === "/dashboard") return "Dashboard";
-    if (pathname?.startsWith("/san-pham")) return "Quản lý sản phẩm sơn";
-    if (pathname?.startsWith("/kho")) return "Quản lý kho";
-    if (pathname?.startsWith("/doi-tac")) return "Quản lý đối tác";
-    if (pathname?.startsWith("/nhan-vien")) return "Quản lý nhân sự";
-    if (pathname?.startsWith("/rd-tracking")) return "R&D Tracking";
-    if (pathname?.startsWith("/contracts")) return "Hợp đồng B2B";
-    if (pathname === "/colors") return "Tra cứu mã màu";
-    if (pathname === "/tracking") return "QR Tracking";
-    if (pathname === "/don-hang") return "Quản lý đơn hàng";
-    if (pathname === "/chatbot") return "AI Hỗ trợ khách hàng";
-    if (pathname === "/import") return "Nhập dữ liệu (Excel/CSV)";
-    return "Tổng quan";
+    if (pathname === "/dashboard") return "📊 Dashboard";
+    if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
+    if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
+    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Đối tác";
+    if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
+    if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
+    if (pathname?.startsWith("/contracts")) return "📝 Hợp đồng B2B";
+    if (pathname === "/colors") return "🎨 Tra cứu Mã Màu";
+    if (pathname === "/tracking") return "📦 QR Tracking";
+    if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
+    if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
+    if (pathname === "/import") return "📤 Nhập Dữ Liệu (Excel/CSV)";
+    return "📊 Tổng quan";
   };
 
   return (
