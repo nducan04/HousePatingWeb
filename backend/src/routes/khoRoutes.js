@@ -11,9 +11,11 @@ const {
     createNguyenVatLieu,
     updateNguyenVatLieu,
     deleteNguyenVatLieu,
-    // Phieu Nhap Xuat
+    // Phieu Nhap Xuat — Approval Workflow v2.0
     getPhieuNhapXuat,
     createPhieuNhapXuat,
+    duyetPhieuNhapXuat,
+    tuChoiPhieu,
     updatePhieuNhapXuat,
     deletePhieuNhapXuat
 } = require('../controllers/khoController');
@@ -41,10 +43,15 @@ router.post('/nguyen-vat-lieu', protect, authorize('Admin', 'NhanVien'), createN
 router.put('/nguyen-vat-lieu/:id', protect, authorize('Admin', 'NhanVien'), updateNguyenVatLieu);
 router.delete('/nguyen-vat-lieu/:id', protect, authorize('Admin', 'NhanVien'), deleteNguyenVatLieu);
 
-// --- QUẢN LÝ PHIẾU NHẬP XUẤT ---
+// ═══ QUẢN LÝ PHIẾU NHẬP / XUẤT KHO — APPROVAL WORKFLOW ═══
 router.get('/nhap-xuat', protect, getPhieuNhapXuat);
 router.post('/nhap-xuat', protect, authorize('Admin', 'NhanVien'), createPhieuNhapXuat);
 router.put('/nhap-xuat/:id', protect, authorize('Admin', 'NhanVien'), updatePhieuNhapXuat);
-router.delete('/nhap-xuat/:id', protect, authorize('Admin', 'NhanVien'), deletePhieuNhapXuat);
+router.delete('/nhap-xuat/:id', protect, authorize('Admin'), deletePhieuNhapXuat);
+
+// ★ DUYỆT / TỪ CHỐI PHIẾU (Chỉ Admin mới có quyền duyệt)
+router.post('/nhap-xuat/:id/duyet', protect, authorize('Admin'), duyetPhieuNhapXuat);
+router.post('/nhap-xuat/:id/tu-choi', protect, authorize('Admin'), tuChoiPhieu);
 
 module.exports = router;
+

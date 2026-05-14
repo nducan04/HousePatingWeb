@@ -116,6 +116,12 @@ const allNavItems = [
         roles: ["Admin", "NhanVien"],
       },
       {
+        href: "/colors",
+        label: "Tra cứu mã màu",
+        icon: Palette,
+        roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
+      },
+      {
         href: "/import",
         label: "Nhập dữ liệu",
         icon: FileUp,
