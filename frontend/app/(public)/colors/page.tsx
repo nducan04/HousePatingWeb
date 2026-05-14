@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, Palette, Sparkles, X } from "lucide-react";
 import { paintColors } from "@/lib/data/colors-data";
@@ -69,8 +69,17 @@ export default function ColorsPage() {
     ...Array.from(new Set(sortedColors.map((c) => c.category))),
   ];
 
+  const sortedColors = useMemo(() => {
+    return [...filteredColors].sort((a, b) => {
+      if (a.category !== b.category) {
+        return a.category.localeCompare(b.category);
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [filteredColors]);
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div>
       {/* Hero Banner */}
       <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950 rounded-2xl p-10 mb-8 border border-slate-800 text-center relative overflow-hidden shadow-2xl">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
@@ -113,12 +122,8 @@ export default function ColorsPage() {
       </div>
 
       {/* Color Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-<<<<<<< Updated upstream
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredColors.map((color) => (
-=======
-        {sortedColors.map((color) => (
->>>>>>> Stashed changes
           <div
             key={color.code}
             className="bg-white border border-slate-100 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 hover:border-blue-200 group"
