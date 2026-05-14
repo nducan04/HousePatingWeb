@@ -1,58 +1,38 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { Search, Palette, Sparkles, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Palette, Sparkles, X, ArrowLeft } from "lucide-react";
 import { paintColors } from "@/lib/data/colors-data";
 
-function hexToHSL(hex: string) {
-  hex = hex.replace(/^#/, '');
-  const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 4), 16) / 255;
-  const b = parseInt(hex.substring(4, 6), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
-  const l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
-    }
-    h /= 6;
-  }
-  return { h: h * 360, s: s * 100, l: l * 100 };
-}
-
 export default function ColorsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedColor, setSelectedColor] = useState<
     (typeof paintColors)[0] | null
   >(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-<<<<<<< Updated upstream
-  const sortedColors = [...paintColors].sort((a, b) => {
-    const hslA = hexToHSL(a.hex);
-    const hslB = hexToHSL(b.hex);
-    return hslA.h - hslB.h;
-  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get("code");
+      if (code) {
+        const color = paintColors.find(c => c.code === code);
+        if (color) {
+          setSelectedColor(color);
+        }
+      }
+    }
+  }, []);
 
-  const filteredColors = sortedColors.filter((c) => {
-    const matchesSearch =
-      c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.hex.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat =
-      categoryFilter === "all" || c.category === categoryFilter;
-    return matchesSearch && matchesCat;
-  });
-=======
-  const filteredColors = useMemo(() => {
-    return paintColors.filter((c) => {
+  const categories = useMemo(() => {
+    return ["all", ...Array.from(new Set(paintColors.map((c) => c.category)))];
+  }, []);
+
+  const filteredAndSortedColors = useMemo(() => {
+    const filtered = paintColors.filter((c) => {
       const matchesSearch =
         c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -61,33 +41,36 @@ export default function ColorsPage() {
         categoryFilter === "all" || c.category === categoryFilter;
       return matchesSearch && matchesCat;
     });
-  }, [searchQuery, categoryFilter]);
->>>>>>> Stashed changes
 
-  const categories = [
-    "all",
-    ...Array.from(new Set(sortedColors.map((c) => c.category))),
-  ];
-
-  const sortedColors = useMemo(() => {
-    return [...filteredColors].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       if (a.category !== b.category) {
         return a.category.localeCompare(b.category);
       }
       return a.name.localeCompare(b.name);
     });
-  }, [filteredColors]);
+  }, [searchQuery, categoryFilter]);
+
+  const filteredColors = filteredAndSortedColors;
 
   return (
     <div>
+      {/* Back Button */}
+      <button 
+        onClick={() => router.back()}
+        className="flex items-center gap-2 px-4 py-2 mb-6 text-slate-500 hover:text-blue-600 font-semibold transition-colors bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md cursor-pointer"
+      >
+        <ArrowLeft size={20} />
+        Quay lại
+      </button>
+
       {/* Hero Banner */}
       <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950 rounded-2xl p-10 mb-8 border border-slate-800 text-center relative overflow-hidden shadow-2xl">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
         <Palette size={48} className="text-blue-400 mx-auto mb-4 relative z-10" />
-        <h2 className="text-4xl font-extrabold text-white mb-2 relative z-10">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-2 relative z-10">
           Bảng Mã Màu Sơn Tĩnh Điện
         </h2>
-        <p className="text-blue-200 text-lg mb-6 relative z-10">
+        <p className="text-blue-200 text-base mb-6 relative z-10">
           AkzoNobel Interpon — Tiêu chuẩn chất lượng hàng đầu thế giới
         </p>
         <div className="relative max-w-md mx-auto z-10">
@@ -143,7 +126,7 @@ export default function ColorsPage() {
               </div>
               <div className="text-xs text-slate-500 mt-1 flex justify-between items-center">
                 <span>{color.hex}</span>
-                <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 text-[10px] font-semibold">{color.gloss}</span>
+                <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 text-xs font-semibold">{color.gloss}</span>
               </div>
             </div>
           </div>
