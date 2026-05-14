@@ -73,8 +73,7 @@ const seedAuth = async () => {
         TenKhachHang: 'Công ty TNHH NCC Aluminium',
         Email: 'contact@ncc-aluminium.vn',
         SDT: '0243456789',
-        DiaChi: 'KCN Phố Nối A, Hưng Yên',
-        WalletAddress: '',
+        DiaChi: 'KCN Phố Nối A, Hưng Yên'
       });
     } else {
       // Cập nhật AccountID nếu KH đã tồn tại

@@ -97,8 +97,7 @@ const seedUsers = async () => {
                 TenKhachHang: 'Công Ty Đối Tác (B2B)',
                 Email: b2bData.Email,
                 SDT: '0241234567',
-                DiaChi: 'Hải Phòng',
-                WalletAddress: '0x1234567890abcdef1234567890abcdef12345678'
+                DiaChi: 'Hải Phòng'
             });
             console.log('Created B2B Customer Profile');
         }

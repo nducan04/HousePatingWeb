@@ -22,7 +22,7 @@ exports.getContracts = async (req, res) => {
     }
 
     const contracts = await HopDong.find(filter)
-      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai WalletAddress')
+      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai')
       .populate('EmployeeID', 'MaNV HoTen ChucVu')
       .sort({ createdAt: -1 });
 
@@ -35,8 +35,7 @@ exports.getContracts = async (req, res) => {
         _id: c.CustomerID._id,
         name: c.CustomerID.TenKhachHang,
         code: c.CustomerID.MaKH,
-        segment: c.CustomerID.PhanLoai,
-        walletAddress: c.CustomerID.WalletAddress,
+        segment: c.CustomerID.PhanLoai
       } : null,
       employee: c.EmployeeID ? {
         _id: c.EmployeeID._id,
@@ -80,7 +79,7 @@ exports.getContracts = async (req, res) => {
 exports.getContractById = async (req, res) => {
   try {
     const contract = await HopDong.findById(req.params.id)
-      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai WalletAddress SDT Email DiaChi')
+      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai SDT Email DiaChi')
       .populate('EmployeeID', 'MaNV HoTen ChucVu');
 
     if (!contract) {
@@ -104,8 +103,7 @@ exports.getContractById = async (req, res) => {
         _id: contract.CustomerID._id,
         name: contract.CustomerID.TenKhachHang,
         code: contract.CustomerID.MaKH,
-        segment: contract.CustomerID.PhanLoai,
-        walletAddress: contract.CustomerID.WalletAddress,
+        segment: contract.CustomerID.PhanLoai
       } : null,
       employee: contract.EmployeeID ? {
         _id: contract.EmployeeID._id,
@@ -246,7 +244,7 @@ exports.createContract = async (req, res) => {
 exports.generatePreviewPDF = async (req, res) => {
   try {
     const contract = await HopDong.findById(req.params.id)
-      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai WalletAddress')
+      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai')
       .populate('EmployeeID', 'MaNV HoTen ChucVu');
 
     if (!contract) {

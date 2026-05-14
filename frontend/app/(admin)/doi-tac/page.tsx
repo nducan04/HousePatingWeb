@@ -35,7 +35,6 @@ interface DoiTac {
   SDT: string;
   DiaChi?: string;
   Email: string;
-  WalletAddress?: string;
   MaSoThueCaNhan?: string;
   SoDonHang?: number;
 }
@@ -54,7 +53,6 @@ export default function DoiTacPage() {
     SDT: '',
     DiaChi: '',
     Email: '',
-    WalletAddress: '',
     MaSoThueCaNhan: ''
   });
 
@@ -108,7 +106,6 @@ export default function DoiTacPage() {
         SDT: '',
         DiaChi: '',
         Email: '',
-        WalletAddress: '',
         MaSoThueCaNhan: ''
       });
     }
@@ -145,7 +142,7 @@ export default function DoiTacPage() {
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Khach-Hang");
-    XLSX.writeFile(workbook, `VTSC_Khach_Hang_${new Date().getTime()}.xlsx`);
+    XLSX.writeFile(workbook, `VTSC_Danh_Sach_Khach_Hang_${new Date().toLocaleDateString().replace(/\//g, '_')}.xlsx`);
   };
 
   const handleDelete = async (id: string) => {
@@ -160,32 +157,28 @@ export default function DoiTacPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Header section with Action */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <span className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
-              <Users size={22} />
-            </span>
-            Quản lý Khách Hàng
-          </h1>
-          <p className="text-slate-400 font-medium mt-1">Hệ thống CRM đồng bộ dữ liệu B2B/B2C & Đối tác Đại lý</p>
+    <div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
+        <div className="kpi-card cyan">
+          <div className="kpi-icon"><Handshake size={22} /></div>
+          <div className="kpi-label">Tổng Đối Tác</div>
+          <div className="kpi-value">{STATS.total}</div>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={exportToExcel}
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer"
-          >
-            <Download size={18} className="text-emerald-600" /> Xuất Excel
-          </button>
-          <button 
-            onClick={() => openForm()}
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer"
-          >
-            <Plus size={18} /> Thêm Đối Tác
-          </button>
+        <div className="kpi-card emerald">
+          <div className="kpi-icon"><Building2 size={22} /></div>
+          <div className="kpi-label">Khách Doanh Nghiệp (B2B)</div>
+          <div className="kpi-value">{STATS.b2b}</div>
+        </div>
+        <div className="kpi-card purple">
+          <div className="kpi-icon"><Ribbon size={22} /></div>
+          <div className="kpi-label">Đại Lý Trung Gian</div>
+          <div className="kpi-value">{STATS.daily}</div>
+        </div>
+        <div className="kpi-card amber">
+          <div className="kpi-icon"><Users size={22} /></div>
+          <div className="kpi-label">Khách Lẻ (B2C)</div>
+          <div className="kpi-value">{STATS.b2c}</div>
         </div>
       </div>
 
@@ -226,8 +219,8 @@ export default function DoiTacPage() {
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
               <input
                 type="text"
-                className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all font-medium"
-                placeholder="Tìm tên, mã, email hoặc SĐT..."
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                placeholder="Tìm tên, mã đối tác..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
@@ -242,11 +235,7 @@ export default function DoiTacPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
-                    filter === f.id 
-                      ? 'bg-white text-indigo-600 shadow-sm' 
-                      : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
-                  }`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -484,30 +473,18 @@ export default function DoiTacPage() {
                 </div>
               </div>
 
-              {/* Section 3: Thông tin định danh Web3 / Thuế (Conditional) */}
-              {(formData.PhanLoai === 'B2B' || formData.PhanLoai === 'Đại lý') && (
-                <div className="space-y-6 pt-4 animate-in slide-in-from-top-4 duration-500">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-1.5 h-6 bg-purple-600 rounded-full"></div>
-                    <h4 className="text-[13px] font-black text-slate-900 uppercase tracking-wider">Định danh doanh nghiệp / Web3</h4>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-6">
-                    {formData.PhanLoai === 'B2B' && (
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1 flex items-center gap-2">
-                          Địa chỉ ví Metamask (Blockchain Identity)
-                          <ExternalLink size={12} className="text-indigo-400" />
-                        </label>
-                        <input 
-                          type="text" 
-                          className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-mono font-bold text-indigo-600 placeholder:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
-                          placeholder="0x..." 
-                          value={formData.WalletAddress || ''} 
-                          onChange={e => setFormData({ ...formData, WalletAddress: e.target.value })} 
-                        />
-                      </div>
-                    )}
+              {formData.PhanLoai === 'B2B' && (
+                <div>
+                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Địa chỉ ví Metamask (Blockchain Identity)</label>
+                  <input
+                    type="text"
+                    style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }}
+                    placeholder="0x..."
+                    value={formData.WalletAddress || ''}
+                    onChange={e => setFormData({ ...formData, WalletAddress: e.target.value })}
+                  />
+                </div>
+              )}
 
                     {formData.PhanLoai === 'Đại lý' && (
                       <div className="space-y-2">
