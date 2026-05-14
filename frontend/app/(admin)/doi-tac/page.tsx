@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  Users, 
-  Building2, 
-  Ribbon, 
-  Handshake, 
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Users,
+  Building2,
+  Ribbon,
+  Handshake,
   Download,
   Mail,
   Phone,
@@ -37,7 +37,6 @@ interface DoiTac {
   Email: string;
   MaSoThueCaNhan?: string;
   SoDonHang?: number;
-  WalletAddress?: string;
 }
 
 export default function DoiTacPage() {
@@ -83,7 +82,7 @@ export default function DoiTacPage() {
   };
 
   const filteredData = data.filter(item => {
-    const matchSearch = 
+    const matchSearch =
       item.TenKhachHang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.MaKH?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.Email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,22 +127,22 @@ export default function DoiTacPage() {
     }
   };
 
-  const exportToExcel = () => {
-    const dataToExport = filteredData.map(item => ({
-      'Mã KH': item.MaKH,
-      'Phân loại': item.PhanLoai,
-      'Tên KH': item.TenKhachHang,
-      'Email': item.Email || '',
-      'SĐT': item.SDT || '',
-      'Địa chỉ': item.DiaChi || '',
-      'Ví Web3': item.WalletAddress || '',
-      'Số đơn đã đặt': item.SoDonHang || 0
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Khach-Hang");
-    XLSX.writeFile(workbook, `VTSC_Danh_Sach_Khach_Hang_${new Date().toLocaleDateString().replace(/\//g, '_')}.xlsx`);
+  const exportToExcel = async () => {
+    try {
+      const res = await api.get(`/export/customers/excel?search=${encodeURIComponent(searchTerm)}&filter=${encodeURIComponent(filter)}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `VTSC_Danh_Sach_Khach_Hang_${new Date().toLocaleDateString('vi-VN').replace(/\//g, '_')}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (err) {
+      console.error('Lỗi tải file', err);
+      alert('Có lỗi xảy ra khi tải file Excel');
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -159,27 +158,27 @@ export default function DoiTacPage() {
 
   return (
     <div>
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><Handshake size={22} /></div>
-          <div className="kpi-label">Tổng Đối Tác</div>
-          <div className="kpi-value">{STATS.total}</div>
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Quản lý Đối tác & Khách hàng</h1>
+          <p className="text-slate-500 font-medium text-sm">Quản lý danh sách, phân loại và thông tin liên hệ đối tác của VTSC.</p>
         </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><Building2 size={22} /></div>
-          <div className="kpi-label">Khách Doanh Nghiệp (B2B)</div>
-          <div className="kpi-value">{STATS.b2b}</div>
-        </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><Ribbon size={22} /></div>
-          <div className="kpi-label">Đại Lý Trung Gian</div>
-          <div className="kpi-value">{STATS.daily}</div>
-        </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><Users size={22} /></div>
-          <div className="kpi-label">Khách Lẻ (B2C)</div>
-          <div className="kpi-value">{STATS.b2c}</div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={exportToExcel}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm cursor-pointer"
+          >
+            <Download size={18} className="text-emerald-600" />
+            <span>Xuất Excel</span>
+          </button>
+          <button
+            onClick={() => openForm()}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md shadow-indigo-600/20 cursor-pointer"
+          >
+            <Plus size={18} />
+            <span>Thêm mới</span>
+          </button>
         </div>
       </div>
 
@@ -201,9 +200,9 @@ export default function DoiTacPage() {
                 <p className="text-[12px] font-medium text-slate-400 mt-1">{kpi.sub}</p>
               </div>
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300
-                ${kpi.color === 'indigo' ? 'bg-indigo-50 text-indigo-600' : 
-                  kpi.color === 'blue' ? 'bg-blue-50 text-blue-600' : 
-                  kpi.color === 'purple' ? 'bg-purple-50 text-purple-600' : 'bg-amber-50 text-amber-600'}`}
+                ${kpi.color === 'indigo' ? 'bg-indigo-50 text-indigo-600' :
+                  kpi.color === 'blue' ? 'bg-blue-50 text-blue-600' :
+                    kpi.color === 'purple' ? 'bg-purple-50 text-purple-600' : 'bg-amber-50 text-amber-600'}`}
               >
                 <kpi.icon size={24} />
               </div>
@@ -220,7 +219,7 @@ export default function DoiTacPage() {
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
               <input
                 type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Tìm tên, mã đối tác..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -236,7 +235,7 @@ export default function DoiTacPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border ${filter === f.id ? 'border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'border-transparent bg-transparent text-slate-500 hover:bg-slate-200 hover:text-slate-700'}`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -261,8 +260,8 @@ export default function DoiTacPage() {
             </div>
             <h3 className="text-lg font-black text-slate-900">Không tìm thấy kết quả</h3>
             <p className="text-slate-400 font-medium max-w-sm mt-1">Chúng tôi không tìm thấy khách hàng nào khớp với tìm kiếm của bạn. Thử từ khóa khác xem sao?</p>
-            <button 
-              onClick={() => {setSearchTerm(''); setFilter('all');}}
+            <button
+              onClick={() => { setSearchTerm(''); setFilter('all'); }}
               className="mt-6 text-indigo-600 font-bold text-sm hover:underline"
             >
               Xóa tất cả bộ lọc
@@ -297,7 +296,7 @@ export default function DoiTacPage() {
                     </td>
                     <td className="px-6 py-5">
                       <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-tight
-                        ${item.PhanLoai === 'B2B' ? 'bg-blue-50 text-blue-600' : 
+                        ${item.PhanLoai === 'B2B' ? 'bg-blue-50 text-blue-600' :
                           item.PhanLoai === 'Đại lý' ? 'bg-purple-50 text-purple-600' : 'bg-amber-50 text-amber-600'}`}
                       >
                         {item.PhanLoai}
@@ -328,14 +327,14 @@ export default function DoiTacPage() {
                     </td>
                     <td className="px-6 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => openForm(item)}
                           className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 flex items-center justify-center transition-all cursor-pointer"
                           title="Chỉnh sửa"
                         >
                           <Edit size={18} />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(item._id!)}
                           className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center transition-all cursor-pointer"
                           title="Xóa"
@@ -369,7 +368,7 @@ export default function DoiTacPage() {
                   <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Hồ sơ CRM định danh khách hàng</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
               >
@@ -385,24 +384,24 @@ export default function DoiTacPage() {
                   <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
                   <h4 className="text-[13px] font-black text-slate-900 uppercase tracking-wider">Thông tin nhận diện</h4>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Họ và Tên / Tên Pháp Nhân *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
-                      placeholder="VD: Cty TNHH VTSC Aluminium" 
-                      value={formData.TenKhachHang} 
-                      onChange={e => setFormData({ ...formData, TenKhachHang: e.target.value })} 
+                      placeholder="VD: Cty TNHH VTSC Aluminium"
+                      value={formData.TenKhachHang}
+                      onChange={e => setFormData({ ...formData, TenKhachHang: e.target.value })}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Nhóm Khách Hàng *</label>
-                    <select 
+                    <select
                       className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all cursor-pointer"
-                      value={formData.PhanLoai} 
+                      value={formData.PhanLoai}
                       onChange={e => setFormData({ ...formData, PhanLoai: e.target.value as 'B2B' | 'B2C' | 'Đại lý' })}
                     >
                       <option value="B2C">Khách Lẻ (B2C)</option>
@@ -413,22 +412,22 @@ export default function DoiTacPage() {
 
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Mã Khách Hàng (Tự động)</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="w-full bg-slate-100 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-400 cursor-not-allowed outline-none"
-                      placeholder="VTSC-KH-XXX" 
-                      value={formData.MaKH} 
-                      disabled 
+                      placeholder="VTSC-KH-XXX"
+                      value={formData.MaKH}
+                      disabled
                     />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Ngày sinh / Ngày cấp phép</label>
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
-                      value={formData.NgaySinh} 
-                      onChange={e => setFormData({ ...formData, NgaySinh: e.target.value })} 
+                      value={formData.NgaySinh}
+                      onChange={e => setFormData({ ...formData, NgaySinh: e.target.value })}
                     />
                   </div>
                 </div>
@@ -444,72 +443,61 @@ export default function DoiTacPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Số điện thoại *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
                       placeholder="098..."
-                      value={formData.SDT} 
-                      onChange={e => setFormData({ ...formData, SDT: e.target.value })} 
+                      value={formData.SDT}
+                      onChange={e => setFormData({ ...formData, SDT: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Địa chỉ Email</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
                       placeholder="example@gmail.com"
-                      value={formData.Email} 
-                      onChange={e => setFormData({ ...formData, Email: e.target.value })} 
+                      value={formData.Email}
+                      onChange={e => setFormData({ ...formData, Email: e.target.value })}
                     />
                   </div>
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Địa chỉ Giao hàng / Trụ sở</label>
-                    <textarea 
+                    <textarea
                       className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all min-h-[100px] resize-none"
                       placeholder="Nhập địa chỉ chi tiết..."
-                      value={formData.DiaChi} 
+                      value={formData.DiaChi}
                       onChange={e => setFormData({ ...formData, DiaChi: e.target.value })}
                     />
                   </div>
                 </div>
               </div>
 
-              {formData.PhanLoai === 'B2B' && (
-                <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Địa chỉ ví Metamask (Blockchain Identity)</label>
+
+
+              {formData.PhanLoai === 'Đại lý' && (
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Mã số thuế / Giấy phép KD</label>
                   <input
                     type="text"
-                    style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', outline: 'none' }}
-                    placeholder="0x..."
-                    value={formData.WalletAddress || ''}
-                    onChange={e => setFormData({ ...formData, WalletAddress: e.target.value })}
+                    className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                    placeholder="Nhập MST đối tác..."
+                    value={formData.MaSoThueCaNhan || ''}
+                    onChange={e => setFormData({ ...formData, MaSoThueCaNhan: e.target.value })}
                   />
                 </div>
               )}
-
-                    {formData.PhanLoai === 'Đại lý' && (
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Mã số thuế / Giấy phép KD</label>
-                        <input 
-                          type="text" 
-                          className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
-                          placeholder="Nhập MST đối tác..." 
-                          value={formData.MaSoThueCaNhan || ''} 
-                          onChange={e => setFormData({ ...formData, MaSoThueCaNhan: e.target.value })} 
-                        />
-                      </div>
-                    )}
             </div>
 
             {/* Modal Footer */}
             <div className="px-8 py-6 bg-slate-50/80 border-t border-slate-50 flex flex-col sm:flex-row items-center justify-end gap-3">
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-500 rounded-2xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer shadow-sm border border-slate-200"
               >
                 Hủy bỏ
               </button>
-              <button 
+              <button
                 onClick={handleSubmit}
                 className="w-full sm:w-auto px-10 py-3.5 bg-indigo-600 text-white rounded-2xl font-bold text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
