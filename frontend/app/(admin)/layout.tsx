@@ -20,7 +20,11 @@ import {
  * Admin:        Tài khoản, Toàn bộ menu
  * NhanVien:     Tài khoản, Dashboard, R&D, Hợp đồng, Nhập dữ liệu, Tra cứu, QR, AI
  * KhachHangB2B: Tài khoản, Hợp đồng B2B, Tra cứu Mã Màu, AI Hỗ trợ, Tra cứu
+<<<<<<< Updated upstream
  * KhachHangB2C: Tài khoản, Tra cứu Mã Màu, QR Tracking, AI Hỗ trợ, 
+=======
+ * KhachHangB2C: Tài khoản, Tra cứu Mã Màu, QR Tracking, AI Hỗ trợ, Tra cứu
+>>>>>>> Stashed changes
  */
 const allNavItems = [
   {
@@ -134,6 +138,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Map pathname to page title
   const getPageTitle = () => {
+<<<<<<< Updated upstream
     if (pathname === '/dashboard') return '📊 Dashboard';
     if (pathname?.startsWith('/san-pham')) return '📦 Quản lý Sản phẩm Sơn';
     if (pathname?.startsWith('/kho')) return '🏭 Quản lý Kho';
@@ -147,6 +152,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (pathname === '/chatbot') return '🤖 AI Hỗ trợ Khách hàng';
     if (pathname === '/import') return '📤 Nhập Dữ Liệu (Excel/CSV)';
     return '📊 Tổng quan';
+=======
+    if (pathname === "/dashboard") return "📊 Dashboard";
+    if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
+    if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
+    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
+    if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
+    if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
+    if (pathname?.startsWith("/contracts")) return "📝 Hợp đồng B2B";
+    if (pathname === "/colors") return "🎨 Tra cứu Mã Màu";
+    if (pathname === "/tracking") return "📦 QR Tracking";
+    if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
+    if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
+    if (pathname === "/import") return "📤 Nhập Dữ Liệu (Excel/CSV)";
+    return "📊 Tổng quan";
+>>>>>>> Stashed changes
   };
 
   return (

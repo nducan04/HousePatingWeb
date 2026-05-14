@@ -34,6 +34,7 @@ export default function ColorsPage() {
   >(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
 
+<<<<<<< Updated upstream
   const sortedColors = [...paintColors].sort((a, b) => {
     const hslA = hexToHSL(a.hex);
     const hslB = hexToHSL(b.hex);
@@ -49,6 +50,19 @@ export default function ColorsPage() {
       categoryFilter === "all" || c.category === categoryFilter;
     return matchesSearch && matchesCat;
   });
+=======
+  const filteredColors = useMemo(() => {
+    return paintColors.filter((c) => {
+      const matchesSearch =
+        c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.hex.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCat =
+        categoryFilter === "all" || c.category === categoryFilter;
+      return matchesSearch && matchesCat;
+    });
+  }, [searchQuery, categoryFilter]);
+>>>>>>> Stashed changes
 
   const categories = [
     "all",
@@ -100,7 +114,11 @@ export default function ColorsPage() {
 
       {/* Color Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<<<<<<< Updated upstream
         {filteredColors.map((color) => (
+=======
+        {sortedColors.map((color) => (
+>>>>>>> Stashed changes
           <div
             key={color.code}
             className="bg-white border border-slate-100 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 hover:border-blue-200 group"

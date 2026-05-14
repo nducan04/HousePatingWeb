@@ -143,10 +143,16 @@ export default function NewRDRequestPage() {
           <div className="space-y-2">
             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Ảnh/Tài liệu Đính kèm</label>
             <div
+<<<<<<< Updated upstream
               className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragOver
                 ? 'border-purple-600 bg-purple-50'
                 : 'border-slate-200 hover:border-purple-600 bg-slate-50/50'
                 }`}
+=======
+              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+                dragOver ? 'border-purple-600 bg-purple-50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-purple-600'
+              }`}
+>>>>>>> Stashed changes
               onDragOver={e => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleFileDrop}
@@ -190,7 +196,11 @@ export default function NewRDRequestPage() {
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-50">
             <Link
               href="/rd-tracking"
+<<<<<<< Updated upstream
               className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer"
+=======
+              className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer no-underline"
+>>>>>>> Stashed changes
             >
               Hủy
             </Link>
