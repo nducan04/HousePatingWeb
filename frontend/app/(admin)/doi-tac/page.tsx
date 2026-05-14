@@ -37,6 +37,7 @@ interface DoiTac {
   Email: string;
   MaSoThueCaNhan?: string;
   SoDonHang?: number;
+  WalletAddress?: string;
 }
 
 export default function DoiTacPage() {
@@ -498,9 +499,6 @@ export default function DoiTacPage() {
                         />
                       </div>
                     )}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Modal Footer */}

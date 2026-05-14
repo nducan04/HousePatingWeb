@@ -680,7 +680,7 @@ export default function SanPhamPage() {
                         Tồn kho hiện tại
                       </p>
                       <p className="text-2xl font-black text-slate-900">
-                        {selectedProduct.TonKho || 0}{" "}
+                        {selectedProduct.TongTonKho || 0}{" "}
                         <span className="text-sm text-slate-400">
                           {selectedProduct.DonViTinh}
                         </span>
