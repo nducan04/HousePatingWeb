@@ -113,10 +113,10 @@ export default function RDTrackingPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
-             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-               <FlaskConical size={22} />
-             </div>
-             Phân tích R&D
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+              <FlaskConical size={22} />
+            </div>
+            Phân tích R&D
           </h1>
           <p className="text-slate-400 font-medium mt-1">Truy xuất và kiểm soát chất lượng (KCS) phòng thí nghiệm</p>
         </div>
@@ -209,7 +209,7 @@ export default function RDTrackingPage() {
             </div>
           </div>
 
-          <button 
+          <button
             className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
             onClick={() => setIsModalOpen(true)}
           >
@@ -320,55 +320,54 @@ export default function RDTrackingPage() {
                   ? (item.LichSuPhienBan.reduce((acc: number, cur: any) => acc + (cur.inputWeight > 0 ? (cur.inputWeight - cur.outputWeight) / cur.inputWeight * 100 : 0), 0) / item.LichSuPhienBan.length).toFixed(1)
                   : '0.0';
 
-                  return (
-                    <tr key={item._id} className="hover:bg-blue-50/30 group transition-colors">
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg text-[13px]">{item.MaNhatKy}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-100 flex-shrink-0" style={{ background: paintColors.find(c => c.code === item.MaMauYeuCau)?.hex || '#333' }} />
-                          <div>
-                            <div className="font-bold text-slate-900 text-[14px]">{item.MaMauYeuCau}</div>
-                            {paintColors.find(c => c.code === item.MaMauYeuCau) && (
-                              <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
-                                {paintColors.find(c => c.code === item.MaMauYeuCau)?.name}
-                              </div>
-                            )}
-                          </div>
+                return (
+                  <tr key={item._id} className="hover:bg-blue-50/30 group transition-colors">
+                    <td className="px-6 py-4 text-center">
+                      <span className="font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg text-[13px]">{item.MaNhatKy}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-100 flex-shrink-0" style={{ background: paintColors.find(c => c.code === item.MaMauYeuCau)?.hex || '#333' }} />
+                        <div>
+                          <div className="font-bold text-slate-900 text-[14px]">{item.MaMauYeuCau}</div>
+                          {paintColors.find(c => c.code === item.MaMauYeuCau) && (
+                            <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
+                              {paintColors.find(c => c.code === item.MaMauYeuCau)?.name}
+                            </div>
+                          )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-600 text-[14px]">{item.ContractID?.MaHopDong || item.ContractID?.contractId || 'N/A'}</div>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-[13px]">{item.LichSuPhienBan?.length || 0}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-black text-amber-600 text-[14px]">{wastage}%</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`status-badge inline-flex items-center gap-1.5 ${item.TrangThai === 'approved' ? 'status-active' : item.TrangThai === 'rejected' ? 'status-error' : 'status-warning'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${item.TrangThai === 'approved' ? 'bg-emerald-500' : item.TrangThai === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'}`}></span>
-                          {(item.TrangThai || 'testing').toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">
-                        {new Date(item.updatedAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end">
-                          <Link href={`/rd-tracking/${item._id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
-                            <Eye size={18} />
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-600 text-[14px]">{item.ContractID?.MaHopDong || item.ContractID?.contractId || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-[13px]">{item.LichSuPhienBan?.length || 0}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="font-black text-amber-600 text-[14px]">{wastage}%</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`status-badge inline-flex items-center gap-1.5 ${item.TrangThai === 'approved' ? 'status-active' : item.TrangThai === 'rejected' ? 'status-error' : 'status-warning'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${item.TrangThai === 'approved' ? 'bg-emerald-500' : item.TrangThai === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'}`}></span>
+                        {(item.TrangThai || 'testing').toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">
+                      {new Date(item.updatedAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end">
+                        <Link href={`/rd-tracking/${item._id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
+                          <Eye size={18} />
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
   );
