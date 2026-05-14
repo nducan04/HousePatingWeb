@@ -36,6 +36,8 @@ import {
   Users,
   Shield,
   ReceiptRussianRubleIcon,
+  Search,
+  Menu,
 } from "lucide-react";
 
 /**
@@ -114,6 +116,12 @@ const allNavItems = [
         label: "Quản lý nhà cung cấp",
         icon: User,
         roles: ["Admin", "NhanVien"],
+      },
+      {
+        href: "/colors",
+        label: "Tra cứu mã màu",
+        icon: Palette,
+        roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
       {
         href: "/import",
@@ -251,6 +259,8 @@ export default function AdminLayout({
 
   const userRole = user?.role || "NhanVien";
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   // Khởi tạo state để mở tab có chứa trang hiện tại
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
@@ -322,7 +332,7 @@ export default function AdminLayout({
     if (pathname === "/dashboard") return "📊 Dashboard";
     if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
     if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
-    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Đối tác";
+    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
     if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
     if (pathname?.startsWith("/contracts")) return "📝 Hợp đồng B2B";
@@ -340,24 +350,26 @@ export default function AdminLayout({
     >
       <div className="flex h-screen bg-[#F8FAFC] font-sans">
         {/* ═══════ Sidebar ═══════ */}
-        <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+        <aside className={`flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-300 ${isSidebarCollapsed ? "w-[88px]" : "w-[280px]"}`}>
           {/* Logo Area */}
-          <div className="px-8 py-7 flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10">
+          <div className={`px-8 py-7 flex items-center gap-4 ${isSidebarCollapsed ? "justify-center px-4" : ""}`}>
+            <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10 shrink-0">
               <img
                 src="/vtsc.png"
                 alt="Logo"
                 className="w-full h-full object-contain brightness-110"
               />
             </div>
-            <div>
-              <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
-                VTSC
+            {!isSidebarCollapsed && (
+              <div className="whitespace-nowrap overflow-hidden">
+                <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
+                  VTSC
+                </div>
+                <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
+                  PaintPro
+                </div>
               </div>
-              <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
-                PaintPro
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Navigation */}
@@ -367,12 +379,14 @@ export default function AdminLayout({
               .map((section) => (
                 <div key={section.section} className="space-y-1.5">
                   {/* Section Title */}
-                  <div className="px-4 mb-2 flex items-center justify-between">
-                    <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-slate-400">
-                      {section.section}
-                    </span>
-                    <div className="h-[1px] flex-1 bg-slate-50 ml-3 opacity-50"></div>
-                  </div>
+                  {!isSidebarCollapsed && (
+                    <div className="px-4 mb-2 flex items-center justify-between">
+                      <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-slate-400">
+                        {section.section}
+                      </span>
+                      <div className="h-[1px] flex-1 bg-slate-50 ml-3 opacity-50"></div>
+                    </div>
+                  )}
 
                   {/* Nav Items */}
                   <div className="space-y-1">
@@ -385,20 +399,22 @@ export default function AdminLayout({
                         <Link
                           key={item.href}
                           href={item.href}
-                          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${
-                            isActive
-                              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
-                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                          }`}
+                          title={isSidebarCollapsed ? item.label : ""}
+                          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${isActive
+                            ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
+                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                            } ${isSidebarCollapsed ? "justify-center" : ""}`}
                         >
                           <div
-                            className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-blue-600" : "text-slate-400"}`}
+                            className={`transition-transform duration-200 group-hover:scale-110 shrink-0 ${isActive ? "text-blue-600" : "text-slate-400"}`}
                           >
                             <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                           </div>
-                          <span className="truncate">{item.label}</span>
-                          {isActive && (
-                            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.6)]"></div>
+                          {!isSidebarCollapsed && (
+                            <span className="truncate">{item.label}</span>
+                          )}
+                          {!isSidebarCollapsed && isActive && (
+                            <div className="ml-auto shrink-0 w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.6)]"></div>
                           )}
                         </Link>
                       );
@@ -410,34 +426,53 @@ export default function AdminLayout({
 
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-slate-50 mt-auto bg-slate-50/30">
-            <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-[12px] font-bold text-white shadow-md">
+            <div className={`flex items-center bg-white p-3 rounded-2xl border border-slate-100 shadow-sm transition-all duration-300 ${isSidebarCollapsed ? "justify-center" : "gap-3"}`}>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-[12px] font-bold text-white shadow-md shrink-0">
                 {initials}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-bold text-slate-800 truncate">
-                  {displayName}
+              {!isSidebarCollapsed && (
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-bold text-slate-800 truncate">
+                    {displayName}
+                  </div>
+                  <div className="text-[11px] text-slate-400 font-medium">
+                    Trưởng phòng Kinh doanh
+                  </div>
                 </div>
-                <div className="text-[11px] text-slate-400 font-medium">
-                  Trưởng phòng Kinh doanh
-                </div>
-              </div>
+              )}
+              {!isSidebarCollapsed && (
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all rounded-xl cursor-pointer shrink-0"
+                  title="Đăng xuất"
+                >
+                  <LogOut size={18} />
+                </button>
+              )}
+            </div>
+            {isSidebarCollapsed && (
               <button
                 onClick={handleLogout}
-                className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all rounded-xl cursor-pointer"
+                className="w-full mt-3 p-3 flex justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all rounded-xl cursor-pointer"
                 title="Đăng xuất"
               >
                 <LogOut size={18} />
               </button>
-            </div>
+            )}
           </div>
         </aside>
 
         {/* ═══════ Main Content ═══════ */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Bar */}
-          <header className="h-[88px] flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-10">
+          <header className="h-[88px] flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-10 transition-all duration-300">
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="p-2 -ml-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                <Menu size={24} />
+              </button>
               <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
                 {(() => {
                   const currentItem = allNavItems
@@ -452,13 +487,30 @@ export default function AdminLayout({
                 })()}
               </div>
               <div>
-                <h1 className="text-[22px] font-black text-slate-900 tracking-tight">
+                <h1 className="text-[22px] font-black text-slate-900 tracking-tight whitespace-nowrap">
                   {getPageTitle()}
                 </h1>
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
+            {/* Search Bar */}
+            <div className="flex-1 max-w-xl mx-8 hidden lg:block">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm nhanh (Khách hàng, Đơn hàng, Sản phẩm...)"
+                  className="block w-full pl-11 pr-4 py-3 bg-slate-50 border-transparent rounded-2xl text-sm placeholder-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-200 shadow-sm">⌘K</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6 shrink-0">
               <div className="h-10 w-[1px] bg-slate-100"></div>
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
