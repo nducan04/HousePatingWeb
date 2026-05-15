@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/lib/store/authStore";
 import ProtectedRoute from "@/lib/components/ProtectedRoute";
 import api from "@/lib/utils/axiosAuth";
@@ -166,7 +166,7 @@ const allNavItems = [
         href: "/hieu-suat",
         label: "Theo dõi hiệu suất",
         icon: SignalHighIcon,
-        roles: ["Admin", "NhanVien"],
+        roles: ["Admin", "Director"],
       },
       {
         href: "/doi-tra",
@@ -230,13 +230,13 @@ const allNavItems = [
         href: "/bao-cao",
         label: "Báo cáo",
         icon: FileSignature,
-        roles: ["Admin", "NhanVien", "KhachHangB2B"],
+        roles: ["Admin", "Director"],
       },
       {
         href: "/thong-ke",
         label: "Thống kê",
         icon: FlaskConical,
-        roles: ["Admin", "NhanVien"],
+        roles: ["Admin", "Director"],
       },
     ],
   },
@@ -282,6 +282,13 @@ export default function AdminLayout({
     }));
   };
 
+  // Chặn nhân viên xem Dashboard - Redirect về Sản phẩm
+  React.useEffect(() => {
+    if (!isLoading && userRole === "NhanVien" && pathname === "/dashboard") {
+      router.push("/san-pham");
+    }
+  }, [userRole, pathname, isLoading, router]);
+
   // Lọc menu theo vai trò người dùng
   const filteredNav = allNavItems
     .map((section) => ({
@@ -308,14 +315,14 @@ export default function AdminLayout({
     user?.username ||
     "Người dùng";
   const displayRole =
-    user?.profile?.ChucVu ||
-    (userRole === "Admin"
+    userRole === "Admin"
       ? "Quản trị viên"
-      : userRole === "NhanVien"
-        ? "Nhân viên"
-        : userRole === "KhachHangB2B"
-          ? "Đối tác B2B"
-          : "Khách hàng");
+      : userRole === "Director"
+        ? "Giám đốc hệ thống"
+        : userRole === "NhanVien"
+          ? "Nhân viên công ty"
+          : user?.profile?.ChucVu ||
+            (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
   const initials = displayName
     .split(" ")
     .map((w: string) => w[0])
@@ -325,7 +332,9 @@ export default function AdminLayout({
 
   // Map pathname to page title
   const getPageTitle = () => {
-    if (pathname === "/dashboard") return "📊 Dashboard";
+    if (pathname === "/dashboard") {
+      return userRole === "NhanVien" ? "📦 Quản lý nghiệp vụ" : "📊 Dashboard";
+    }
     if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
     if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
     if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
@@ -337,13 +346,11 @@ export default function AdminLayout({
     if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
     if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
     if (pathname === "/import") return "📤 Nhập Dữ Liệu (Excel/CSV)";
-    return "📊 Tổng quan";
+    return "📦 Quản lý nghiệp vụ";
   };
 
   return (
-    <ProtectedRoute
-      allowedRoles={["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"]}
-    >
+    <ProtectedRoute allowedRoles={["Admin", "Director", "NhanVien"]}>
       <div className="flex h-screen bg-[#F8FAFC] font-sans">
         {/* ═══════ Sidebar ═══════ */}
         <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
@@ -391,10 +398,11 @@ export default function AdminLayout({
                         <Link
                           key={item.href}
                           href={item.href}
-                          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${isActive
+                          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${
+                            isActive
                               ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
                               : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                            }`}
+                          }`}
                         >
                           <div
                             className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-blue-600" : "text-slate-400"}`}
@@ -424,7 +432,7 @@ export default function AdminLayout({
                   {displayName}
                 </div>
                 <div className="text-[11px] text-slate-400 font-medium">
-                  Trưởng phòng Kinh doanh
+                  {displayRole}
                 </div>
               </div>
               <button
@@ -473,9 +481,13 @@ export default function AdminLayout({
                   <div className="text-[11px] text-blue-600 font-extrabold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-lg inline-block">
                     {userRole === "Admin"
                       ? "Admin"
-                      : userRole === "KhachHangB2B"
-                        ? "B2B"
-                        : "Quản lý"}
+                      : userRole === "Director"
+                        ? "Giám đốc"
+                        : userRole === "NhanVien"
+                          ? "Nhân viên"
+                          : userRole === "KhachHangB2B"
+                            ? "B2B"
+                            : "Khách hàng"}
                   </div>
                 </div>
                 <div className="w-11 h-11 rounded-2xl border-2 border-white shadow-md shadow-slate-200 overflow-hidden bg-slate-100">
