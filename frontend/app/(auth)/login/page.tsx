@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/authStore";
 import api from "@/lib/utils/axiosAuth";
 import Link from "next/link";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, LogIn, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) {
-      setError("Vui lòng nhập email và mật khẩu");
+      setError("Vui lòng nhập đầy đủ thông tin");
       return;
     }
 
@@ -35,13 +35,7 @@ export default function LoginPage() {
         loginState(response.data.user, response.data.accessToken);
 
         const role = response.data.user.role;
-        const systemRoles = [
-          "Admin",
-          "NhanVien",
-          "KhachHangB2B",
-          "KhachHangB2C",
-          "NhaCungCap",
-        ];
+        const systemRoles = ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C", "NhaCungCap"];
 
         if (systemRoles.includes(role)) {
           router.push("/dashboard");
@@ -50,104 +44,82 @@ export default function LoginPage() {
         }
       }
     } catch (err: any) {
-      if (err.response && err.response.data && err.response.data.error) {
-        setError(err.response.data.error);
-      } else {
-        setError("Kết nối thất bại. Vui lòng thử lại.");
-      }
+      setError(err.response?.data?.error || "Đăng nhập thất bại");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-gray-50/80 backdrop-blur-sm font-sans p-4"
-      style={{ background: "linear-gradient(135deg, #06b6d4, #d0dbd7ff)" }}
-    >
-      <div className="bg-white text-gray-500 w-full max-w-96 mx-auto md:p-6 p-4 text-left text-sm rounded-xl shadow-[0px_0px_10px_0px] shadow-black/10">
-        <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">
-          Chào Mừng Trở Lại
-        </h2>
-        <form onSubmit={handleLogin}>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 font-sans p-4 relative overflow-hidden">
+      <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-md p-10 relative z-10 animate-in zoom-in-95 duration-500 border border-slate-100">
+        <Link href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-blue-600 transition-colors text-xs font-bold uppercase tracking-widest no-underline mb-8">
+          <ArrowLeft size={16} /> Trở về trang chủ
+        </Link>
+
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <LogIn size={36} />
+          </div>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Chào Mừng Trở Lại</h2>
+          <p className="text-slate-500 font-medium mt-2">Vui lòng đăng nhập để tiếp tục</p>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-5">
           {error && (
-            <div className="bg-red-50 border border-red-200 p-3 rounded-lg flex items-center gap-3 mb-4">
-              <AlertCircle className="text-red-500 shrink-0" size={16} />
-              <span className="text-xs font-medium text-red-700">{error}</span>
+            <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-xs font-bold animate-in fade-in duration-300">
+              <AlertCircle size={18} /> {error}
             </div>
           )}
 
-          <input
-            id="email"
-            className="w-full bg-transparent border my-3 border-gray-500/30 outline-none rounded-full py-2.5 px-4 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            type="text"
-            placeholder="Nhập Tên Đăng Nhập"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-          <input
-            id="password"
-            className="w-full bg-transparent border mt-1 border-gray-500/30 outline-none rounded-full py-2.5 px-4 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            type="password"
-            placeholder="Nhập Mật Khẩu"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <div className="text-right py-4">
-            <Link className="text-blue-600 underline" href="#">
-              Quên Mật Khẩu
-            </Link>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Tên đăng nhập</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-6 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                placeholder="Nhập tên đăng nhập..."
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Mật khẩu</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-6 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                placeholder="••••••"
+                required
+              />
+            </div>
           </div>
+
+          <div className="text-right">
+            <Link href="#" className="text-[12px] font-bold text-blue-600 hover:underline no-underline">Quên mật khẩu?</Link>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full mb-3 bg-indigo-500 py-2.5 rounded-full text-white font-medium flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
+            className="w-full h-14 bg-[#6366f1] text-white rounded-2xl font-bold text-base flex items-center justify-center shadow-xl shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-1 transition-all disabled:opacity-50 border-none cursor-pointer mt-2"
           >
-            {loading ? (
-              <Loader2 className="animate-spin" size={18} />
-            ) : (
-              "Đăng Nhập"
-            )}
+            {loading ? <Loader2 className="animate-spin" size={20} /> : "Đăng Nhập"}
           </button>
+
+
+          <div className="grid grid-cols-2 gap-4">
+            <button type="button" className="h-14 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer">
+              <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png" className="w-4 h-4" alt="Google" /> Google
+            </button>
+            <button type="button" className="h-14 bg-[#0f172a] text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer">
+              <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png" className="w-4 h-4" alt="Apple" /> Apple
+            </button>
+          </div>
         </form>
-        <p className="text-center mt-4">
-          Chưa có tài khoản?{" "}
-          <Link href="#" className="text-blue-500 underline">
-            Đăng Ký
-          </Link>
-        </p>
-        <button
-          type="button"
-          className="w-full flex items-center gap-2 justify-center mt-5 bg-black py-2.5 rounded-full text-white"
-        >
-          <img
-            className="h-4 w-4"
-            src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png"
-            alt="appleLogo"
-          />
-          Đăng nhập bằng Apple
-        </button>
-        <button
-          type="button"
-          className="w-full flex items-center gap-2 justify-center my-3 bg-white border border-gray-500/30 py-2.5 rounded-full text-gray-800"
-        >
-          <img
-            className="h-4 w-4"
-            src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png"
-            alt="googleFavicon"
-          />
-          Đăng nhập bằng Google
-        </button>
-        <div className="mt-4 text-center">
-          <Link
-            href="/"
-            className="text-xs text-gray-400 hover:text-gray-600 underline"
-          >
-            Trở về trang chủ
-          </Link>
-        </div>
       </div>
     </div>
   );

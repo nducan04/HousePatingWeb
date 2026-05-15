@@ -69,8 +69,8 @@ exports.login = async (req, res) => {
     const cookieOptions = {
       expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       httpOnly: true,       // Bảo vệ khỏi XSS
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: false,        // Tắt secure trên localhost để trình duyệt nhận cookie qua http
+      sameSite: 'lax',      // Dùng lax cho môi trường phát triển
     };
 
     // Truy vấn profile nghiệp vụ
