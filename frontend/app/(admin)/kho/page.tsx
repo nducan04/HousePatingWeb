@@ -508,13 +508,7 @@ export default function QuanLyKhoPage() {
         >
           <Package size={18} style={{ marginRight: 8 }} /> Danh Mục Thành Phẩm
         </button>
-        <button
-          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nvl" ? "btn-primary" : "btn-ghost"}`}
-          onClick={() => setActiveTab("nvl")}
-        >
-          <Beaker size={18} style={{ marginRight: 8 }} /> Nguyên Vật Liệu Pha
-          Chế
-        </button>
+
         <button
           className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nhapxuat" ? "btn-primary" : "btn-ghost"}`}
           onClick={() => setActiveTab("nhapxuat")}

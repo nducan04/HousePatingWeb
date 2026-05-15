@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, FlaskConical, Beaker, CheckCircle2, FlaskRound, Plus, Loader2, X, Droplets } from 'lucide-react';
+import { Search, Eye, FlaskConical, Beaker, CheckCircle2, FlaskRound, Plus, Loader2, X, Droplets, Package } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import Link from 'next/link';
 import { paintColors } from '@/lib/data/colors-data';
@@ -19,10 +19,27 @@ export default function RDTrackingPage() {
   const [selectedColor, setSelectedColor] = useState('');
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
+  
+  const [sampleRequests, setSampleRequests] = useState<any[]>([]);
 
   useEffect(() => {
     fetchLogs();
     fetchContracts();
+    
+    // Load sample requests from localStorage
+    if (typeof window !== 'undefined') {
+      const storedRequests = localStorage.getItem('sampleRequests');
+      if (storedRequests) {
+        setSampleRequests(JSON.parse(storedRequests));
+      } else {
+        const defaultRequests = [
+          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026' },
+          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026' },
+        ];
+        setSampleRequests(defaultRequests);
+        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
+      }
+    }
   }, []);
 
   const fetchLogs = async () => {
@@ -111,10 +128,10 @@ export default function RDTrackingPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
-             <span className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-               <FlaskConical size={22} />
-             </span>
-             Phân tích R&D
+            <span className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+              <FlaskConical size={22} />
+            </span>
+            Phân tích R&D
           </h1>
           <p className="text-slate-400 font-medium mt-1">Truy xuất và kiểm soát chất lượng (KCS) phòng thí nghiệm</p>
         </div>
@@ -185,7 +202,7 @@ export default function RDTrackingPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl">
               {[
                 { id: 'all', label: 'Tất cả' },
@@ -195,11 +212,10 @@ export default function RDTrackingPage() {
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
-                    filter === f.id 
-                      ? 'bg-white text-blue-600 shadow-sm' 
-                      : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
-                  }`}
+                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${filter === f.id
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                    }`}
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -215,7 +231,19 @@ export default function RDTrackingPage() {
             >
               <Droplets size={18} className="text-purple-600" /> Yêu cầu mẫu thử
             </Link>
-            <button 
+            <Link
+              href="/rd-tracking/formulas"
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer no-underline"
+            >
+              <FlaskConical size={18} className="text-emerald-600" /> Quản lý Công thức
+            </Link>
+            <Link
+              href="/rd-tracking/materials"
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer no-underline"
+            >
+              <Package size={18} className="text-amber-600" /> Nguyên vật liệu
+            </Link>
+            <button
               className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
               onClick={() => setIsModalOpen(true)}
             >
@@ -231,10 +259,10 @@ export default function RDTrackingPage() {
           <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300">
             <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
               <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                 <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                    <Beaker size={18} />
-                 </div>
-                 KHỞI TẠO LOG TRUY XUẤT R&D
+                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                  <Beaker size={18} />
+                </div>
+                KHỞI TẠO LOG TRUY XUẤT R&D
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"><X size={20} /></button>
             </div>
@@ -309,7 +337,7 @@ export default function RDTrackingPage() {
           </span>
           Yêu cầu mẫu thử
         </h2>
-        
+
         <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
@@ -325,10 +353,7 @@ export default function RDTrackingPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {[
-                  { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026' },
-                  { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026' },
-                ].map(req => (
+                {sampleRequests.map(req => (
                   <tr key={req.id} className="hover:bg-purple-50/30 group transition-colors">
                     <td className="px-6 py-4 text-center">
                       <span className="font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg text-[13px]">{req.id}</span>
@@ -353,7 +378,7 @@ export default function RDTrackingPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end">
-                        <Link href={`/rd-tracking/new`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-600 transition-all cursor-pointer">
+                        <Link href={`/rd-tracking/${req.id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-600 transition-all cursor-pointer">
                           <Eye size={18} />
                         </Link>
                       </div>
@@ -374,7 +399,7 @@ export default function RDTrackingPage() {
           </span>
           Nhật ký Lab Định Biên
         </h2>
-        
+
         <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
