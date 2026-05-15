@@ -5,12 +5,8 @@ import { ShoppingCart, Search, Eye, Trash2, Box, AlertCircle, CheckCircle2, Tag,
 import { useRouter } from 'next/navigation';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import { useCartStore, CartItem } from '@/lib/store/cartStore';
 
-interface CartItem {
-  _id: string;
-  SanPham: { _id: string, MaSanPham: string, TenDongSon: string, DonGiaCoSo: number, HinhAnh?: string, TonKho?: number };
-  SoLuong: number;
-}
 
 interface KhachHang {
   _id: string;
@@ -22,8 +18,7 @@ interface KhachHang {
 export default function GioHangPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [cartTotal, setCartTotal] = useState(0);
+  const { cartItems, cartTotal, fetchCart, updateQuantity: updateQuantityStore, clearCart: clearCartStore } = useCartStore();
   const [products, setProducts] = useState<any[]>([]);
   const [customers, setCustomers] = useState<KhachHang[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,7 +35,7 @@ export default function GioHangPage() {
 
   useEffect(() => {
     if (user) {
-      fetchCart();
+      fetchCartItems();
       fetchProducts();
       fetchCustomers();
 
@@ -52,13 +47,9 @@ export default function GioHangPage() {
     }
   }, [user, sessionId]);
 
-  const fetchCart = async () => {
+  const fetchCartItems = async () => {
     try {
-      const res = await api.get(`/gio-hang/${sessionId}`);
-      if (res.data.success) {
-        setCartItems(res.data.data.Items || []);
-        setCartTotal(res.data.data.TongTienTamTinh || 0);
-      }
+      await fetchCart(sessionId);
     } catch (err) {
       console.error('Lỗi tải giỏ hàng', err);
     }
@@ -103,11 +94,7 @@ export default function GioHangPage() {
         return;
       }
 
-      const res = await api.post(`/gio-hang/${sessionId}`, { SanPhamId: sanPhamId, SoLuong: soLuong });
-      if (res.data.success) {
-        setCartItems(res.data.data.Items || []);
-        setCartTotal(res.data.data.TongTienTamTinh || 0);
-      }
+      await updateQuantityStore(sessionId, sanPhamId, soLuong);
     } catch (err) {
       console.error('Lỗi cập nhật', err);
     }
@@ -116,8 +103,7 @@ export default function GioHangPage() {
   const clearCart = async () => {
     if (!confirm('Bạn có muốn xóa toàn bộ giỏ hàng?')) return;
     try {
-      await api.delete(`/gio-hang/${sessionId}`);
-      fetchCart();
+      await clearCartStore(sessionId);
       setDiscountCode('');
       setDiscountInfo(null);
       alert('Đã xóa giỏ hàng');

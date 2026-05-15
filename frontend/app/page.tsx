@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import AuthNav from "@/lib/components/AuthNav";
 import {
   Search,
   QrCode,
+  Beaker,
   MessageSquare,
   ShieldCheck,
   ArrowRight,
@@ -32,20 +34,24 @@ import {
   Settings,
   Newspaper,
   Palette,
+  Trash2,
+  AlertCircle,
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
+import { useCartStore } from "@/lib/store/cartStore";
 import { paintColors } from "@/lib/data/colors-data";
 
 const BACKEND_URL = "http://localhost:5000";
 
 export default function HomePage() {
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [products, setProducts] = useState<any[]>([]);
   const [news, setNews] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingNews, setLoadingNews] = useState(true);
-  
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   // Chat state
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
@@ -54,17 +60,114 @@ export default function HomePage() {
   ]);
   const [sendingChat, setSendingChat] = useState(false);
 
+  // Search state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+
   // Product Detail Modal state
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [cartLoading, setCartLoading] = useState("");
   const [cartMessage, setCartMessage] = useState({ id: "", text: "" });
 
+  // Full cart data from store
+  const { cartItems, cartItemCount, fetchCart, addToCart: addToCartStore, removeFromCart: removeFromCartStore } = useCartStore();
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCartLoading, setIsCartLoading] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
   // Trending Color Modal state
   const [selectedTrendingColor, setSelectedTrendingColor] = useState<any | null>(null);
 
+  // News detail modal state
+  const [selectedNews, setSelectedNews] = useState<any | null>(null);
+  const [isNewsOpen, setIsNewsOpen] = useState(false);
+
+  // Policy modal state
+  const [isPolicyOpen, setIsPolicyOpen] = useState(false);
+  const [selectedPolicyType, setSelectedPolicyType] = useState<"return" | "warranty" | "shipping" | null>(null);
+
+  const POLICIES_DATA = {
+    return: {
+      title: "Chính sách đổi trả",
+      icon: <ArrowRight size={24} className="text-blue-600" />,
+      content: `
+        <div class="space-y-6">
+          <section>
+            <h4 class="text-slate-900 font-bold mb-3">1. Điều kiện đổi trả</h4>
+            <p class="text-slate-500 leading-relaxed text-sm">Sản phẩm được đổi trả trong vòng 7 ngày kể từ ngày nhận hàng nếu:</p>
+            <ul class="list-disc pl-5 mt-2 space-y-2 text-slate-500 text-sm">
+              <li>Sản phẩm bị lỗi kỹ thuật do nhà sản xuất (AkzoNobel).</li>
+              <li>Sản phẩm giao không đúng mã màu, chủng loại khách hàng đã đặt.</li>
+              <li>Sản phẩm bị hư hỏng trong quá trình vận chuyển của VTSC.</li>
+              <li>Sản phẩm còn nguyên bao bì, tem nhãn và chưa qua sử dụng.</li>
+            </ul>
+          </section>
+          <section>
+            <h4 class="text-slate-900 font-bold mb-3">2. Quy trình đổi trả</h4>
+            <p class="text-slate-500 leading-relaxed text-sm">Quý khách vui lòng liên hệ hotline: <strong>+84 (028) 3888 9999</strong> hoặc gửi email về <strong>contact@vtscpaint.com</strong> kèm theo hóa đơn và hình ảnh sản phẩm để được hỗ trợ xử lý trong 24h.</p>
+          </section>
+        </div>
+      `
+    },
+    warranty: {
+      title: "Chính sách bảo hành",
+      icon: <ShieldCheck size={24} className="text-emerald-600" />,
+      content: `
+        <div class="space-y-6">
+          <section>
+            <h4 class="text-slate-900 font-bold mb-3">1. Thời hạn bảo hành</h4>
+            <p class="text-slate-500 leading-relaxed text-sm">Tất cả các dòng sơn tĩnh điện AkzoNobel Interpon do VTSC cung cấp được bảo hành từ 12 - 24 tháng tùy dòng sản phẩm theo tiêu chuẩn của nhà sản xuất.</p>
+          </section>
+          <section>
+            <h4 class="text-slate-900 font-bold mb-3">2. Phạm vi bảo hành</h4>
+            <ul class="list-disc pl-5 mt-2 space-y-2 text-slate-500 text-sm">
+              <li>Bảo hành độ bền màu theo tiêu chuẩn ISO của AkzoNobel.</li>
+              <li>Bảo hành độ bám dính bề mặt khi thi công đúng quy trình kỹ thuật.</li>
+              <li>Hỗ trợ kỹ thuật kiểm tra mẫu tại phòng lab VTSC nếu có khiếu nại.</li>
+            </ul>
+          </section>
+          <section>
+            <h4 class="text-slate-900 font-bold mb-3">3. Trường hợp từ chối bảo hành</h4>
+            <p class="text-slate-500 leading-relaxed text-sm">Hư hỏng do sử dụng sai quy trình kỹ thuật, pha trộn tạp chất, hoặc do các tác động ngoại lực, môi trường khắc nghiệt vượt ngoài khuyến cáo kỹ thuật.</p>
+          </section>
+        </div>
+      `
+    },
+    shipping: {
+      title: "Chính sách vận chuyển",
+      icon: <Truck size={24} className="text-amber-600" />,
+      content: `
+        <div class="space-y-6">
+          <section>
+            <h4 class="text-slate-900 font-bold mb-3">1. Khu vực vận chuyển</h4>
+            <p class="text-slate-500 leading-relaxed text-sm">VTSC cung cấp dịch vụ giao hàng chuyên nghiệp trên toàn lãnh thổ Việt Nam.</p>
+          </section>
+          <section>
+            <h4 class="text-slate-900 font-bold mb-3">2. Chi phí & Thời gian</h4>
+            <ul class="list-disc pl-5 mt-2 space-y-2 text-slate-500 text-sm">
+              <li><strong>Nội thành Hải Phòng:</strong> Miễn phí giao hàng cho đơn từ 100kg. Thời gian: 24h.</li>
+              <li><strong>Các tỉnh thành khác:</strong> Hỗ trợ phí vận chuyển ra chành xe hoặc sử dụng dịch vụ chuyển phát nhanh theo yêu cầu. Thời gian: 1-3 ngày.</li>
+            </ul>
+          </section>
+          <section>
+            <h4 class="text-slate-900 font-bold mb-3">3. Kiểm tra hàng hóa</h4>
+            <p class="text-slate-500 leading-relaxed text-sm">Khách hàng vui lòng kiểm tra tình trạng bao bì và số lượng ngay khi nhận hàng từ nhân viên giao nhận.</p>
+          </section>
+        </div>
+      `
+    }
+  };
+
+  const handleOpenPolicy = (type: "return" | "warranty" | "shipping") => {
+    setSelectedPolicyType(type);
+    setIsPolicyOpen(true);
+  };
   // Cart quantity state
-  const [cartItemCount, setCartItemCount] = useState(0);
   const [productQuantities, setProductQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -74,8 +177,9 @@ export default function HomePage() {
         if (productRes.data.success) {
           setProducts(productRes.data.data);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching products:", err);
+        setFetchError(err.message || String(err));
       } finally {
         setLoadingProducts(false);
       }
@@ -83,7 +187,7 @@ export default function HomePage() {
       try {
         const newsRes = await api.get("/tin-tuc");
         if (newsRes.data.success) {
-          setNews(newsRes.data.data.slice(0, 3));
+          setNews(newsRes.data.data);
         }
       } catch (err) {
         console.error("Error fetching news:", err);
@@ -93,11 +197,7 @@ export default function HomePage() {
 
       try {
         const sessionId = user?.id || "GUEST_SESSION";
-        const cartRes = await api.get(`/gio-hang/${sessionId}`);
-        if (cartRes.data.success && cartRes.data.data?.items) {
-          const totalItems = cartRes.data.data.items.reduce((acc: number, item: any) => acc + item.SoLuong, 0);
-          setCartItemCount(totalItems);
-        }
+        await fetchCart(sessionId);
       } catch (err) {
         // Ignore errors if cart doesn't exist yet
       }
@@ -105,6 +205,23 @@ export default function HomePage() {
 
     fetchData();
   }, [user?.id]);
+
+  // Click outside to close cart dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (isCartOpen && !target.closest('.relative.group.cursor-pointer')) {
+        setIsCartOpen(false);
+      }
+    };
+
+    if (isCartOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCartOpen]);
 
   const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,26 +270,69 @@ export default function HomePage() {
     }
   };
 
+  const router = useRouter();
+
   const addToCart = async (sp: any) => {
+    if (!isAuthenticated) {
+      setIsLoginOpen(true);
+      return;
+    }
     setCartLoading(sp._id);
     const qty = productQuantities[sp._id] || 1;
     try {
       const sessionId = user?.id || "GUEST_SESSION";
-      const res = await api.post(`/gio-hang/${sessionId}`, {
-        SanPhamId: sp._id,
-        SoLuong: qty,
-      });
-      if (res.data.success) {
-        setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
-        setCartItemCount(prev => prev + qty);
-        setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
-      }
+      await addToCartStore(sessionId, sp._id, qty);
+      setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
+      setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
     } catch (err) {
       console.error(err);
       setCartMessage({ id: sp._id, text: "Lỗi!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
     } finally {
       setCartLoading("");
+    }
+  };
+
+  const removeFromCart = async (sanPhamId: string) => {
+    try {
+      const sessionId = user?.id || "GUEST_SESSION";
+      await removeFromCartStore(sessionId, sanPhamId);
+    } catch (err) {
+      console.error("Error removing from cart:", err);
+    }
+  };
+
+  const handlePageLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginEmail || !loginPassword) {
+      setLoginError("Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+    const { loginState } = useAuthStore.getState();
+    try {
+      setIsLoggingIn(true);
+      setLoginError(null);
+      const res = await api.post("/auth/login", {
+        TenDangNhap: loginEmail,
+        MatKhau: loginPassword
+      });
+      if (res.data.success) {
+        loginState(res.data.user, res.data.accessToken);
+        setIsLoginOpen(false);
+        
+        const role = res.data.user.role;
+        if (role === "Admin" || role === "Director") {
+          router.push("/dashboard");
+        } else if (role === "NhanVien") {
+          router.push("/san-pham");
+        } else {
+          router.push("/");
+        }
+      }
+    } catch (err: any) {
+      setLoginError(err.response?.data?.error || "Đăng nhập thất bại");
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -188,34 +348,125 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white selection:bg-blue-100 selection:text-blue-900 font-sans text-slate-900 antialiased">
-      
+    <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900 antialiased">
+
       {/* ═══════ HEADER / NAVBAR ═══════ */}
-      <header className="sticky top-0 z-[100] bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
-        <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-[100] bg-white/70 backdrop-blur-xl border-b border-slate-200/40 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+        <div className="max-w-[1400px] mx-auto px-8 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 no-underline">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-blue-600/20">V</div>
             <span className="font-bold text-xl text-slate-900 tracking-tight">VTSC PaintPro</span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-8">
-            <Link href="/" className="text-[15px] font-bold text-blue-600 no-underline">Trang chủ</Link>
-            <Link href="#san-pham" className="text-[15px] font-bold text-slate-600 hover:text-blue-600 transition-colors no-underline">Sản phẩm</Link>
-            <Link href="/colors" className="text-[15px] font-bold text-slate-600 hover:text-blue-600 transition-colors no-underline">Bảng màu</Link>
-            <Link href="#dich-vu" className="text-[15px] font-bold text-slate-600 hover:text-blue-600 transition-colors no-underline">Dịch vụ</Link>
-            <Link href="#tin-tuc" className="text-[15px] font-bold text-slate-600 hover:text-blue-600 transition-colors no-underline">Tin tức</Link>
+          <nav className="hidden xl:flex items-center gap-0.5">
+            <Link href="/" className="text-[13px] font-bold text-blue-600 no-underline px-3 py-2 rounded-xl bg-blue-50 whitespace-nowrap">Trang chủ</Link>
+            <Link href="#san-pham" className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap">Sản phẩm</Link>
+            <Link href="/colors" className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap">Bảng màu</Link>
+            <Link href="#quy-trinh" className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap">Quy trình</Link>
+            <Link href="#tin-tuc" className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap">Tin tức</Link>
+            <Link href="#footer" className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap">Liên hệ</Link>
           </nav>
 
-          <div className="flex items-center gap-6">
-            <button className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"><Search size={22} /></button>
-            <div className="relative group cursor-pointer">
-              <ShoppingCart size={22} className="text-slate-400 group-hover:text-blue-600" />
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center w-[220px] bg-slate-100 rounded-2xl px-4 h-10 border border-slate-200/50">
+              <Search size={18} className="text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm sản phẩm, màu sơn..."
+                className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 ml-3 w-full placeholder:text-slate-400"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="relative group cursor-pointer" onClick={async () => {
+              const nextState = !isCartOpen;
+              setIsCartOpen(nextState);
+              if (nextState) {
+                // Refresh cart when opening
+                const sessionId = user?.id || "GUEST_SESSION";
+                fetchCart(sessionId);
+              }
+            }}>
+              <ShoppingCart size={22} className={`transition-colors ${isCartOpen ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`} />
               {cartItemCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white">{cartItemCount}</span>
               )}
+
+              {/* Cart Dropdown */}
+              {isCartOpen && (
+                <div className="absolute top-full right-0 mt-4 w-[350px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 z-[110]" onClick={(e) => e.stopPropagation()}>
+                  <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                    <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                      <ShoppingCart size={18} className="text-blue-600" /> Giỏ hàng của bạn
+                    </h4>
+                    <span className="text-[10px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full uppercase tracking-widest">{cartItemCount} món</span>
+                  </div>
+
+                  <div className="max-h-[350px] overflow-y-auto p-4 space-y-4">
+                    {cartItems.length === 0 ? (
+                      <div className="py-12 text-center">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                          <Package size={32} />
+                        </div>
+                        <p className="text-sm text-slate-400 font-medium">Giỏ hàng đang trống</p>
+                      </div>
+                    ) : (
+                      cartItems.map((item: any, idx: number) => (
+                        <div key={item._id || idx} className="flex gap-4 p-2 rounded-2xl hover:bg-slate-50 transition-colors group">
+                          <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                            <img
+                              src={getImageUrl(item.SanPham?.HinhAnh)}
+                              alt={item.SanPham?.TenDongSon}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0 flex flex-col justify-center">
+                            <h5 className="text-[13px] font-bold text-slate-900 truncate mb-0.5">{item.SanPham?.TenDongSon}</h5>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{item.SanPham?.MaSanPham}</span>
+                              <span className="text-[10px] font-bold text-blue-600/70 uppercase tracking-tighter bg-blue-50 px-1.5 rounded">{item.SanPham?.PhanLoai}</span>
+                            </div>
+                            <div className="flex justify-between items-center mt-1">
+                              <span className="text-[12px] font-bold text-blue-600">x{item.SoLuong}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-[12px] font-bold text-slate-900">{(item.SanPham?.DonGiaCoSo * item.SoLuong)?.toLocaleString()} ₫</span>
+                                <button
+                                  onClick={() => removeFromCart(item.SanPham?._id)}
+                                  className="text-slate-300 hover:text-red-500 transition-colors p-1"
+                                  title="Xóa khỏi giỏ hàng"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {cartItems.length > 0 && (
+                    <div className="p-6 bg-slate-50 border-t border-slate-100">
+                      <div className="flex justify-between items-center mb-6">
+                        <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Tổng cộng</span>
+                        <span className="text-lg font-bold text-blue-600">
+                          {cartItems.reduce((acc, item) => acc + (item.SanPham?.DonGiaCoSo * item.SoLuong), 0).toLocaleString()} ₫
+                        </span>
+                      </div>
+                      <Link
+                        href="/checkout"
+                        className="w-full h-12 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 no-underline"
+                        onClick={() => setIsCartOpen(false)}
+                      >
+                        Thanh toán ngay <ArrowRight size={16} />
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="h-6 w-px bg-slate-200"></div>
-            <AuthNav />
+            <AuthNav onOpenLogin={() => setIsLoginOpen(true)} />
           </div>
         </div>
       </header>
@@ -224,32 +475,32 @@ export default function HomePage() {
       <section className="relative h-[550px] sm:h-[650px] w-full overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img src="/paint_factory_exterior_1778742118407.png" alt="VTSC Factory" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/40 to-transparent" />
+          <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent" />
         </div>
 
-        <div className="relative z-10 h-full max-w-[1400px] mx-auto px-10 flex flex-col justify-center items-start text-white">
+        <div className="relative z-10 h-full max-w-[1400px] mx-auto px-10 flex flex-col justify-center items-start">
           <div className="space-y-6 max-w-3xl animate-in fade-in slide-in-from-left-10 duration-1000">
-             <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-blue-600/20 backdrop-blur-md border border-blue-400/30 rounded-lg">
-                <Sparkles size={16} className="text-blue-400" />
-                <span className="text-xs font-bold uppercase tracking-widest text-blue-200">Hệ thống VTSC Paint Technology</span>
-             </div>
-             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight uppercase">
-               Đại lý phân phối
-               <br />
-               <span className="text-blue-500">Sơn tĩnh điện</span>
-               <br />
-               hàng đầu Việt Nam
-             </h1>
-             <p className="text-lg sm:text-xl text-slate-200 font-medium leading-relaxed max-w-2xl">
-               Giải pháp sơn tĩnh điện AkzoNobel Interpon chuyên nghiệp. 
-               Đảm bảo chất lượng bền bỉ, thẩm mỹ cao cho mọi bề mặt kim loại.
-             </p>
-             <div className="pt-6">
-                <Link href="#dich-vu" className="px-10 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg no-underline shadow-xl shadow-blue-600/30 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 w-fit">
-                  Khám phá dịch vụ <ArrowRight size={22} />
-                </Link>
-             </div>
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-blue-50 border border-blue-100 rounded-lg">
+              <Sparkles size={16} className="text-blue-600" />
+              <span className="text-xs font-bold uppercase tracking-widest text-blue-600">Hệ thống VTSC Paint Technology</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight uppercase text-slate-900">
+              Đại lý phân phối
+              <br />
+              <span className="text-blue-600">Sơn tĩnh điện</span>
+              <br />
+              hàng đầu Việt Nam
+            </h1>
+            <p className="text-lg sm:text-xl text-slate-500 font-medium leading-relaxed max-w-2xl">
+              Giải pháp sơn tĩnh điện AkzoNobel Interpon chuyên nghiệp.
+              Đảm bảo chất lượng bền bỉ, thẩm mỹ cao cho mọi bề mặt kim loại.
+            </p>
+            <div className="pt-6">
+              <Link href="#dich-vu" className="px-10 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg no-underline shadow-xl shadow-blue-600/30 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 w-fit">
+                Khám phá dịch vụ <ArrowRight size={22} />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -259,10 +510,10 @@ export default function HomePage() {
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
-               <Settings className="text-blue-600" size={28} />
-               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight uppercase">
-                 Dịch vụ & Thế mạnh của VTSC
-               </h2>
+              <Settings className="text-blue-600" size={28} />
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight uppercase">
+                Dịch vụ & Thế mạnh của VTSC
+              </h2>
             </div>
             <p className="text-slate-500 max-w-2xl mx-auto font-medium text-base">
               Cam kết chất lượng và sự hài lòng tuyệt đối cho mọi khách hàng.
@@ -298,6 +549,93 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ═══════ QUY TRÌNH PHA CHẾ SƠN (Mới) ═══════ */}
+      <section id="quy-trinh" className="px-8 py-24 bg-slate-50 scroll-mt-24">
+        <div className="max-w-[1300px] mx-auto">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
+              <Beaker size={18} className="text-blue-600" />
+              <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">Tiêu chuẩn AkzoNobel</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight uppercase mb-6">
+              Quy trình <span className="text-blue-600">Pha chế mẫu</span> chuyên nghiệp
+            </h2>
+            <p className="text-slate-500 max-w-2xl mx-auto font-medium text-lg">
+              Giải pháp R&D hàng đầu giúp hiện thực hóa mọi ý tưởng màu sắc cho công trình của bạn.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8 relative">
+            {/* Steps with Connectors (visible on desktop) */}
+            <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-slate-200 -z-0" />
+
+            {[
+              {
+                step: "01",
+                title: "Tiếp nhận",
+                desc: "Gửi mẫu vật lý hoặc mã màu RAL/Interpon yêu cầu.",
+                icon: <Send className="text-blue-600" />,
+                color: "bg-blue-50"
+              },
+              {
+                step: "02",
+                title: "Phân tích Lab",
+                desc: "Chuyên gia phân tích hạt màu & đặc tính kỹ thuật bề mặt.",
+                icon: <FlaskConical className="text-emerald-600" />,
+                color: "bg-emerald-50"
+              },
+              {
+                step: "03",
+                title: "Lab Mixing",
+                desc: "Pha chế mẫu thử chính xác bằng thiết bị R&D hiện đại.",
+                icon: <Beaker className="text-purple-600" />,
+                color: "bg-purple-50"
+              },
+              {
+                step: "04",
+                title: "Kiểm định",
+                desc: "Test độ bám dính, độ bền va đập & KCS nghiêm ngặt.",
+                icon: <ShieldCheck className="text-amber-600" />,
+                color: "bg-amber-50"
+              },
+              {
+                step: "05",
+                title: "Duyệt mẫu",
+                desc: "Bàn giao tấm test cho khách duyệt trước khi sản xuất.",
+                icon: <Sparkles className="text-rose-600" />,
+                color: "bg-rose-50"
+              }
+            ].map((item, idx) => (
+              <div key={idx} className="relative z-10 group">
+                <div className="flex flex-col items-center text-center">
+                  <div className={`w-20 h-20 ${item.color} rounded-[30px] flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 group-hover:shadow-xl transition-all duration-500 border border-white`}>
+                    {item.icon}
+                  </div>
+                  <span className="text-[10px] font-black text-blue-600 mb-2 tracking-[0.2em] uppercase">Bước {item.step}</span>
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">{item.title}</h3>
+                  <p className="text-sm text-slate-500 font-medium leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-20 p-8 bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-blue-900/5 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20 flex-shrink-0">
+                <MessageSquare size={28} />
+              </div>
+              <div>
+                <h4 className="text-xl font-bold text-slate-900 mb-1">Cần màu sơn độc bản cho dự án?</h4>
+                <p className="text-slate-500 font-medium">Đội ngũ kỹ thuật của VTSC sẵn sàng hỗ trợ bạn 24/7.</p>
+              </div>
+            </div>
+            <button className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-bold text-base hover:bg-blue-600 hover:-translate-y-1 transition-all shadow-xl cursor-pointer border-none">
+              Gửi yêu cầu R&D ngay
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* ═══════ BẢNG MÀU XU HƯỚNG ═══════ */}
       <section id="bang-mau" className="px-8 py-20 bg-slate-50">
         <div className="max-w-[1300px] mx-auto">
@@ -321,7 +659,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
             {paintColors.slice(0, 12).map((color) => (
               <div onClick={() => setSelectedTrendingColor(color)} key={color.code} className="group flex flex-col items-center no-underline cursor-pointer">
-                <div 
+                <div
                   className="w-full aspect-square rounded-3xl shadow-sm border border-slate-200 mb-5 transition-transform duration-300 group-hover:-translate-y-2 group-hover:shadow-xl"
                   style={{ backgroundColor: color.hex }}
                 ></div>
@@ -358,38 +696,64 @@ export default function HomePage() {
               Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="animate-pulse bg-white rounded-3xl h-[400px]"></div>
               ))
-            ) : (
-              products.map((sp) => (
-                <div key={sp._id} className="group bg-white rounded-3xl border border-slate-100 p-5 transition-all hover:shadow-xl hover:-translate-y-2 relative">
-                  <div className="aspect-square rounded-2xl overflow-hidden mb-6 bg-slate-50 relative cursor-pointer" onClick={() => handleViewProduct(sp)}>
-                    <img src={getImageUrl(sp.HinhAnh)} alt={sp.TenDongSon} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                    <div className="absolute top-4 left-4 bg-white/95 px-3 py-1 rounded-lg text-[10px] font-bold text-blue-600 uppercase tracking-widest shadow-sm">{sp.PhanLoai}</div>
-                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                       <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-xl scale-75 group-hover:scale-100 transition-all duration-300"><Eye size={24} /></div>
-                    </div>
-                  </div>
-                  <div className="px-1">
-                    <h3 className="text-lg font-bold text-slate-900 mb-1 cursor-pointer hover:text-blue-600 transition-colors line-clamp-1" onClick={() => handleViewProduct(sp)}>{sp.TenDongSon}</h3>
-                    <p className="text-[11px] text-slate-400 font-bold mb-6 uppercase tracking-widest">{sp.ThuongHieu}</p>
-                    <div className="flex justify-between items-end">
-                      <div className="flex flex-col">
-                        <span className="text-emerald-600 font-bold text-xl">{sp.DonGiaCoSo?.toLocaleString()} ₫</span>
-                        <span className="text-xs text-slate-400 font-medium">/ {sp.DonViTinh || 'Kg'}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-3">
-                      <div className="flex items-center bg-slate-100 rounded-xl p-1 h-10">
-                        <button onClick={() => updateQuantity(sp._id, -1)} className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer">-</button>
-                        <input type="number" min="1" value={productQuantities[sp._id] || 1} onChange={(e) => handleQuantityChange(sp._id, e.target.value)} onBlur={() => handleQuantityBlur(sp._id)} className="w-8 text-center bg-transparent border-none text-sm font-bold text-slate-800 outline-none appearance-none" />
-                        <button onClick={() => updateQuantity(sp._id, 1)} className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer">+</button>
-                      </div>
-                      <button onClick={() => addToCart(sp)} disabled={cartLoading === sp._id} className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? "bg-emerald-500 text-white" : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}>
-                        {cartLoading === sp._id ? <Loader2 size={16} className="animate-spin" /> : cartMessage.id === sp._id ? <ShoppingCart size={16} /> : <><Plus size={16} /> Thêm</>}
-                      </button>
-                    </div>
-                  </div>
+            ) : products.filter(sp => {
+              const search = searchTerm.toLowerCase();
+              return (
+                sp.TenDongSon?.toLowerCase().includes(search) ||
+                sp.MaSanPham?.toLowerCase().includes(search) ||
+                sp.PhanLoai?.toLowerCase().includes(search) ||
+                sp.ThuongHieu?.toLowerCase().includes(search)
+              );
+            }).length === 0 ? (
+              <div className="col-span-full p-12 text-center bg-white rounded-[40px] border border-slate-100">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
+                  <Search size={40} />
                 </div>
-              ))
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Không tìm thấy sản phẩm phù hợp</h3>
+                <p className="text-slate-500 font-medium">Vui lòng thử lại với từ khóa khác như "màu đỏ", "sơn bóng", "RAL..."</p>
+              </div>
+            ) : (
+              products
+                .filter(sp => {
+                  const search = searchTerm.toLowerCase();
+                  return (
+                    sp.TenDongSon?.toLowerCase().includes(search) ||
+                    sp.MaSanPham?.toLowerCase().includes(search) ||
+                    sp.PhanLoai?.toLowerCase().includes(search) ||
+                    sp.ThuongHieu?.toLowerCase().includes(search)
+                  );
+                })
+                .map((sp) => (
+                  <div key={sp._id} className="group bg-white rounded-3xl border border-slate-100 p-5 transition-all hover:shadow-xl hover:-translate-y-2 relative">
+                    <div className="aspect-square rounded-2xl overflow-hidden mb-6 bg-slate-50 relative cursor-pointer" onClick={() => handleViewProduct(sp)}>
+                      <img src={getImageUrl(sp.HinhAnh)} alt={sp.TenDongSon} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      <div className="absolute top-4 left-4 bg-white/95 px-3 py-1 rounded-lg text-[10px] font-bold text-blue-600 uppercase tracking-widest shadow-sm">{sp.PhanLoai}</div>
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-xl scale-75 group-hover:scale-100 transition-all duration-300"><Eye size={24} /></div>
+                      </div>
+                    </div>
+                    <div className="px-1">
+                      <h3 className="text-lg font-bold text-slate-900 mb-1 cursor-pointer hover:text-blue-600 transition-colors line-clamp-1" onClick={() => handleViewProduct(sp)}>{sp.TenDongSon}</h3>
+                      <p className="text-[11px] text-slate-400 font-bold mb-6 uppercase tracking-widest">{sp.ThuongHieu}</p>
+                      <div className="flex justify-between items-end">
+                        <div className="flex flex-col">
+                          <span className="text-emerald-600 font-bold text-xl">{sp.DonGiaCoSo?.toLocaleString()} ₫</span>
+                          <span className="text-xs text-slate-400 font-medium">/ {sp.DonViTinh || 'Kg'}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-3">
+                        <div className="flex items-center bg-slate-100 rounded-xl p-1 h-10">
+                          <button onClick={() => updateQuantity(sp._id, -1)} className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer">-</button>
+                          <input type="number" min="1" value={productQuantities[sp._id] || 1} onChange={(e) => handleQuantityChange(sp._id, e.target.value)} onBlur={() => handleQuantityBlur(sp._id)} className="w-8 text-center bg-transparent border-none text-sm font-bold text-slate-800 outline-none appearance-none" />
+                          <button onClick={() => updateQuantity(sp._id, 1)} className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer">+</button>
+                        </div>
+                        <button onClick={() => addToCart(sp)} disabled={cartLoading === sp._id} className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? "bg-emerald-500 text-white" : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}>
+                          {cartLoading === sp._id ? <Loader2 size={16} className="animate-spin" /> : cartMessage.id === sp._id ? <ShoppingCart size={16} /> : <><Plus size={16} /> Thêm</>}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
             )}
           </div>
         </div>
@@ -402,11 +766,11 @@ export default function HomePage() {
             <div className="flex items-center justify-center gap-3 mb-4">
               <Newspaper className="text-blue-600" size={28} />
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight uppercase">
-                Tin tức & Khuyến mãi
+                Bản tin & Quảng bá sản phẩm
               </h2>
             </div>
             <p className="text-slate-500 max-w-lg mx-auto font-medium text-base">
-              Cập nhật xu hướng công nghệ sơn và ưu đãi hấp dẫn.
+              Cập nhật xu hướng công nghệ sơn, dự án mới và các sản phẩm nổi bật từ VTSC.
             </p>
           </div>
 
@@ -415,9 +779,20 @@ export default function HomePage() {
               Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="animate-pulse bg-slate-50 rounded-3xl h-[400px]"></div>
               ))
+            ) : news.length === 0 ? (
+              <div className="col-span-full p-8 text-center bg-red-50 text-red-600 font-bold rounded-xl border border-red-100">
+                Không thể tải danh sách tin tức. Lỗi: {fetchError || "API trả về mảng rỗng hoặc undefined!"}
+              </div>
             ) : (
               news.map((item) => (
-                <div key={item._id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-lg transition-all group">
+                <div
+                  key={item._id}
+                  className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-lg transition-all group cursor-pointer"
+                  onClick={() => {
+                    setSelectedNews(item);
+                    setIsNewsOpen(true);
+                  }}
+                >
                   <div className="h-56 overflow-hidden relative">
                     <img src={getImageUrl(item.HinhAnh)} alt={item.TieuDe} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -442,40 +817,54 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ FOOTER ═══════ */}
-      <footer className="bg-slate-900 text-white pt-20 pb-10">
+      <footer id="footer" className="bg-slate-900 text-white pt-20 pb-10 scroll-mt-20">
         <div className="max-w-[1300px] mx-auto px-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-16">
+            {/* Column 1: Company Info */}
             <div className="lg:col-span-5">
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-2xl text-white">V</div>
-                <span className="font-bold text-2xl tracking-tight uppercase">VTSC PaintPro</span>
+                <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-2xl text-white shadow-lg shadow-blue-600/20">V</div>
+                <span className="font-bold text-xl tracking-tight uppercase text-white">CÔNG TY CP TMDV VOSCO (VTSC)</span>
               </div>
-              <p className="text-slate-400 leading-relaxed mb-10 max-w-sm text-[15px] font-medium">Đại lý cấp 1 AkzoNobel Interpon. Tiên phong giải pháp bề mặt công nghiệp thông minh.</p>
-              <div className="flex gap-4">
+              <div className="space-y-5">
+                <ContactItem icon={<MapPin size={20} className="text-blue-400" />} text="215 Lạch Tray, Phường Gia Viên, Thành phố Hải Phòng" />
+                <ContactItem icon={<Phone size={20} className="text-blue-400" />} text="+84 (028) 3888 9999" />
+                <ContactItem icon={<Mail size={20} className="text-blue-400" />} text="contact@vtscpaint.com" />
+              </div>
+              <div className="flex gap-4 mt-10">
                 <SocialLink icon={<Facebook size={20} />} href="#" />
                 <SocialLink icon={<Twitter size={20} />} href="#" />
                 <SocialLink icon={<Instagram size={20} />} href="#" />
               </div>
             </div>
+
+            {/* Column 2: Policies */}
             <div className="lg:col-span-3">
-              <h4 className="text-sm font-bold mb-8 uppercase tracking-widest text-slate-300">Hệ thống</h4>
-              <ul className="space-y-4 text-slate-400 font-medium text-sm">
-                <li><Link href="/colors" className="hover:text-blue-500 transition-colors no-underline">Bảng màu sơn</Link></li>
-                <li><Link href="/tracking" className="hover:text-blue-500 transition-colors no-underline">QR Tracking</Link></li>
-                <li><Link href="/login" className="hover:text-blue-500 transition-colors no-underline">Đối tác B2B</Link></li>
+              <h4 className="text-sm font-bold mb-8 uppercase tracking-widest text-slate-400">CHÍNH SÁCH</h4>
+              <ul className="space-y-4 text-slate-300 font-medium text-sm">
+                <li><button onClick={() => handleOpenPolicy("return")} className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left">- Chính sách đổi trả</button></li>
+                <li><button onClick={() => handleOpenPolicy("warranty")} className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left">- Chính sách bảo hành</button></li>
+                <li><button onClick={() => handleOpenPolicy("shipping")} className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left">- Chính sách vận chuyển</button></li>
               </ul>
             </div>
+
+            {/* Column 3: Quick Links */}
             <div className="lg:col-span-4">
-              <h4 className="text-sm font-bold mb-8 uppercase tracking-widest text-slate-300">Liên hệ</h4>
-              <div className="space-y-5">
-                <ContactItem icon={<Mail size={20} className="text-blue-500" />} text="contact@vtscpaint.com" />
-                <ContactItem icon={<Phone size={20} className="text-blue-500" />} text="+84 (028) 3888 9999" />
-                <ContactItem icon={<MapPin size={20} className="text-blue-500" />} text="Landmark 81, Quận Bình Thạnh, TP. Hồ Chí Minh" />
-              </div>
+              <h4 className="text-sm font-bold mb-8 uppercase tracking-widest text-slate-400">LIÊN KẾT NHANH</h4>
+              <ul className="space-y-4 text-slate-300 font-medium text-sm">
+                <li><Link href="/tracking" className="hover:text-blue-400 transition-colors no-underline text-slate-300">- Theo dõi đơn hàng</Link></li>
+                <li><Link href="/admin/contracts" className="hover:text-blue-400 transition-colors no-underline text-slate-300">- Tra cứu hợp đồng</Link></li>
+                <li><Link href="/admin/rd-tracking" className="hover:text-blue-400 transition-colors no-underline text-slate-300">- Gửi yêu cầu R&D</Link></li>
+              </ul>
             </div>
           </div>
-          <div className="border-t border-white/10 pt-10 text-slate-500 text-xs font-medium text-center sm:text-left">
-             © 2026 VTSC PaintPro. All rights reserved. Đồ án Nhóm 41.
+
+          <div className="border-t border-white/10 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-slate-500 text-xs font-medium">
+            <p>© 2026 VTSC. Bản quyền thuộc về Nhóm dự án.</p>
+            <div className="flex gap-8">
+              <Link href="#" className="hover:text-white transition-colors no-underline text-slate-500">Privacy Policy</Link>
+              <Link href="#" className="hover:text-white transition-colors no-underline text-slate-500">Terms of Service</Link>
+            </div>
           </div>
         </div>
       </footer>
@@ -486,51 +875,51 @@ export default function HomePage() {
           <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row max-h-[90vh] relative">
             <button onClick={() => setIsViewOpen(false)} className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center text-slate-950"><X size={24} /></button>
             <div className="md:w-5/12 bg-slate-50 p-10 flex items-center justify-center">
-               <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-xl bg-white border-8 border-white"><img src={getImageUrl(selectedProduct.HinhAnh)} alt={selectedProduct.TenDongSon} className="w-full h-full object-cover" /></div>
+              <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-xl bg-white border-8 border-white"><img src={getImageUrl(selectedProduct.HinhAnh)} alt={selectedProduct.TenDongSon} className="w-full h-full object-cover" /></div>
             </div>
             <div className="md:w-7/12 p-10 sm:p-14 overflow-y-auto">
-               <div className="space-y-8">
-                  <div>
-                    <div className="inline-flex items-center px-4 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 text-white uppercase tracking-widest mb-4">{selectedProduct.PhanLoai}</div>
-                    <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-2">{selectedProduct.TenDongSon}</h2>
-                    <p className="text-lg text-slate-400 font-bold uppercase tracking-wider">{selectedProduct.ThuongHieu}</p>
-                  </div>
-                  <div className="flex items-center gap-8 py-6 border-y border-slate-100">
-                    <div><p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Giá đề xuất</p><p className="text-3xl font-bold text-emerald-600">{selectedProduct.DonGiaCoSo?.toLocaleString()} ₫</p></div>
-                    <div className="h-12 w-px bg-slate-100"></div>
-                    <div><p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Quy cách</p><p className="text-2xl font-bold text-slate-800">{selectedProduct.DonViTinh || 'Kg'}</p></div>
-                  </div>
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Mô tả sản phẩm</h4>
-                    <p className="text-slate-500 text-base leading-relaxed font-medium">{selectedProduct.MoTa || "Dòng sơn tĩnh điện AkzoNobel cao cấp..."}</p>
-                  </div>
-                  {selectedProduct.DanhSachMaMau && selectedProduct.DanhSachMaMau.length > 0 && (
-                    <div className="space-y-4">
-                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Màu sắc sẵn có ({selectedProduct.DanhSachMaMau.length})</h4>
-                      <div className="flex flex-wrap gap-3">
-                        {selectedProduct.DanhSachMaMau.map((m: any, i: number) => (
-                          <div key={i} className="group/item relative">
-                            <div className="w-10 h-10 rounded-xl border border-slate-200 shadow-sm transition-all hover:scale-110" style={{ background: m.HexCode }} />
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/item:opacity-100 transition-all whitespace-nowrap pointer-events-none">{m.MaMau} — {m.TenMau}</div>
-                          </div>
-                        ))}
-                      </div>
+              <div className="space-y-8">
+                <div>
+                  <div className="inline-flex items-center px-4 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 text-white uppercase tracking-widest mb-4">{selectedProduct.PhanLoai}</div>
+                  <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-2">{selectedProduct.TenDongSon}</h2>
+                  <p className="text-lg text-slate-400 font-bold uppercase tracking-wider">{selectedProduct.ThuongHieu}</p>
+                </div>
+                <div className="flex items-center gap-8 py-6 border-y border-slate-100">
+                  <div><p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Giá đề xuất</p><p className="text-3xl font-bold text-emerald-600">{selectedProduct.DonGiaCoSo?.toLocaleString()} ₫</p></div>
+                  <div className="h-12 w-px bg-slate-100"></div>
+                  <div><p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Quy cách</p><p className="text-2xl font-bold text-slate-800">{selectedProduct.DonViTinh || 'Kg'}</p></div>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Mô tả sản phẩm</h4>
+                  <p className="text-slate-500 text-base leading-relaxed font-medium">{selectedProduct.MoTa || "Dòng sơn tĩnh điện AkzoNobel cao cấp..."}</p>
+                </div>
+                {selectedProduct.DanhSachMaMau && selectedProduct.DanhSachMaMau.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Màu sắc sẵn có ({selectedProduct.DanhSachMaMau.length})</h4>
+                    <div className="flex flex-wrap gap-3">
+                      {selectedProduct.DanhSachMaMau.map((m: any, i: number) => (
+                        <div key={i} className="group/item relative">
+                          <div className="w-10 h-10 rounded-xl border border-slate-200 shadow-sm transition-all hover:scale-110" style={{ background: m.HexCode }} />
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/item:opacity-100 transition-all whitespace-nowrap pointer-events-none">{m.MaMau} — {m.TenMau}</div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  <div className="pt-6 space-y-4">
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Số lượng</span>
-                      <div className="flex items-center bg-slate-100 rounded-xl p-1 w-32">
-                        <button onClick={() => updateQuantity(selectedProduct._id, -1)} className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer">-</button>
-                        <input type="number" min="1" value={productQuantities[selectedProduct._id] || 1} onChange={(e) => handleQuantityChange(selectedProduct._id, e.target.value)} onBlur={() => handleQuantityBlur(selectedProduct._id)} className="w-12 text-center bg-transparent border-none text-base font-bold text-slate-900 outline-none appearance-none" />
-                        <button onClick={() => updateQuantity(selectedProduct._id, 1)} className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer">+</button>
-                      </div>
-                    </div>
-                    <button onClick={() => addToCart(selectedProduct)} disabled={cartLoading === selectedProduct._id} className="w-full h-16 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer">
-                      {cartLoading === selectedProduct._id ? <Loader2 className="animate-spin" size={24} /> : <><ShoppingCart size={24} />{cartMessage.id === selectedProduct._id ? "Đã vào giỏ!" : "Thêm vào giỏ hàng"}</>}
-                    </button>
                   </div>
-               </div>
+                )}
+                <div className="pt-6 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Số lượng</span>
+                    <div className="flex items-center bg-slate-100 rounded-xl p-1 w-32">
+                      <button onClick={() => updateQuantity(selectedProduct._id, -1)} className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer">-</button>
+                      <input type="number" min="1" value={productQuantities[selectedProduct._id] || 1} onChange={(e) => handleQuantityChange(selectedProduct._id, e.target.value)} onBlur={() => handleQuantityBlur(selectedProduct._id)} className="w-12 text-center bg-transparent border-none text-base font-bold text-slate-900 outline-none appearance-none" />
+                      <button onClick={() => updateQuantity(selectedProduct._id, 1)} className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer">+</button>
+                    </div>
+                  </div>
+                  <button onClick={() => addToCart(selectedProduct)} disabled={cartLoading === selectedProduct._id} className="w-full h-16 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer">
+                    {cartLoading === selectedProduct._id ? <Loader2 className="animate-spin" size={24} /> : <><ShoppingCart size={24} />{cartMessage.id === selectedProduct._id ? "Đã vào giỏ!" : "Thêm vào giỏ hàng"}</>}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -549,13 +938,13 @@ export default function HomePage() {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="p-6">
-              <div 
+              <div
                 className="w-full h-40 rounded-2xl shadow-inner border border-slate-200 mb-6"
                 style={{ backgroundColor: selectedTrendingColor.hex }}
               />
-              
+
               <div className="space-y-0 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100">
                 <DetailRow label="Mã Màu" value={selectedTrendingColor.code} />
                 <DetailRow label="HEX" value={selectedTrendingColor.hex} />
@@ -608,6 +997,171 @@ export default function HomePage() {
           {isChatOpen ? <X size={28} /> : <MessageSquare size={28} />}
         </button>
       </div>
+
+      {/* ═══════ LOGIN MODAL (Screenshot Style) ═══════ */}
+      {isLoginOpen && (
+        <div className="fixed inset-0 z-[400] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm p-8 relative animate-in zoom-in-95 duration-300">
+            <button
+              onClick={() => setIsLoginOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-all cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">Chào Mừng Trở Lại</h2>
+
+            <form onSubmit={handlePageLogin} className="space-y-4">
+              {loginError && (
+                <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
+                  <AlertCircle size={16} /> {loginError}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                  placeholder="admin / nhanvien"
+                />
+
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                  placeholder="••••••"
+                />
+              </div>
+
+              <div className="text-right">
+                <Link href="#" className="text-[11px] font-bold text-blue-600 hover:underline no-underline">Quên Mật Khẩu?</Link>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                >
+                  {isLoggingIn ? <Loader2 className="animate-spin" size={18} /> : "Đăng Nhập"}
+                </button>
+              </div>
+
+              <div className="space-y-3 pt-4">
+                <button type="button" className="w-full h-12 bg-[#0f172a] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer">
+                  <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png" className="w-4 h-4" alt="Apple" />
+                  Đăng nhập bằng Apple
+                </button>
+                <button type="button" className="w-full h-12 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer">
+                  <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png" className="w-4 h-4" alt="Google" />
+                  Đăng nhập bằng Google
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* ═══════ NEWS DETAIL MODAL ═══════ */}
+      {isNewsOpen && selectedNews && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] relative animate-in zoom-in-95 duration-300">
+            <button
+              onClick={() => setIsNewsOpen(false)}
+              className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-white/80 backdrop-blur-md shadow-lg border border-slate-100 hover:bg-slate-50 transition-all flex items-center justify-center text-slate-950 cursor-pointer"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="h-[300px] sm:h-[400px] w-full relative overflow-hidden">
+              <img
+                src={getImageUrl(selectedNews.HinhAnh)}
+                alt={selectedNews.TieuDe}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
+              <div className="absolute bottom-10 left-10 right-10">
+                <span className="inline-flex items-center px-4 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 text-white uppercase tracking-widest mb-4">
+                  {new Date(selectedNews.createdAt).toLocaleDateString("vi-VN", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight">
+                  {selectedNews.TieuDe}
+                </h2>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-10 sm:p-14 bg-white">
+              <div className="max-w-2xl mx-auto space-y-8">
+                <div className="prose prose-slate prose-lg max-w-none">
+                  {selectedNews.NoiDung ? (
+                    <div
+                      className="text-slate-600 leading-relaxed font-medium space-y-4 whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ __html: selectedNews.NoiDung }}
+                    />
+                  ) : (
+                    <p className="text-slate-500 font-medium leading-relaxed italic">
+                      {selectedNews.Abstract || "Thông tin đang được cập nhật..."}
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-10 border-t border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">V</div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">Ban biên tập VTSC</p>
+                      <p className="text-xs text-slate-400 font-medium">Chuyên trang quảng bá sản phẩm</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsNewsOpen(false)}
+                    className="px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-sm transition-all cursor-pointer border-none"
+                  >
+                    Đóng bài viết
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ POLICY MODAL ═══════ */}
+      {isPolicyOpen && selectedPolicyType && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-300">
+            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                  {POLICIES_DATA[selectedPolicyType].icon}
+                </div>
+                {POLICIES_DATA[selectedPolicyType].title}
+              </h2>
+              <button onClick={() => setIsPolicyOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"><X size={20} /></button>
+            </div>
+            <div className="p-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div
+                className="prose prose-slate max-w-none"
+                dangerouslySetInnerHTML={{ __html: POLICIES_DATA[selectedPolicyType].content }}
+              />
+            </div>
+            <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-50 flex justify-end">
+              <button
+                onClick={() => setIsPolicyOpen(false)}
+                className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+              >
+                Đã hiểu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -626,11 +1180,11 @@ function ServiceCard({
 }
 
 function SocialLink({ icon, href }: any) {
-  return <Link href={href} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all">{icon}</Link>;
+  return <Link href={href} className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm">{icon}</Link>;
 }
 
 function ContactItem({ icon, text }: any) {
-  return <div className="flex items-start gap-4"><div className="mt-1 flex-shrink-0">{icon}</div><p className="text-slate-400 font-medium text-base leading-relaxed">{text}</p></div>;
+  return <div className="flex items-start gap-4"><div className="mt-1 flex-shrink-0">{icon}</div><p className="text-slate-500 font-medium text-base leading-relaxed">{text}</p></div>;
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {

@@ -20,7 +20,7 @@ exports.getCart = async (req, res) => {
     const { sessionId } = req.params;
     let cart = await GioHang.findOne({ SessionId: sessionId }).populate({
       path: 'Items.SanPham',
-      select: 'MaSanPham TenDongSon DonGiaCoSo HinhAnh TonKho'
+      select: 'MaSanPham TenDongSon DonGiaCoSo HinhAnh TonKho PhanLoai'
     });
 
     if (!cart) {
@@ -68,7 +68,7 @@ exports.updateCart = async (req, res) => {
     // Lấy lại cart info với populate
     const updatedCart = await GioHang.findById(cart._id).populate({
       path: 'Items.SanPham',
-      select: 'MaSanPham TenDongSon DonGiaCoSo HinhAnh TonKho'
+      select: 'MaSanPham TenDongSon DonGiaCoSo HinhAnh TonKho PhanLoai'
     });
 
     res.status(200).json({ success: true, data: updatedCart });

@@ -1,0 +1,138 @@
+import { create } from 'zustand';
+import api from '@/lib/utils/axiosAuth';
+
+export interface CartItem {
+  _id: string;
+  SanPham: {
+    _id: string;
+    MaSanPham: string;
+    TenDongSon: string;
+    DonGiaCoSo: number;
+    HinhAnh?: string;
+    PhanLoai?: string;
+    ThuongHieu?: string;
+    TonKho?: number;
+  };
+  SoLuong: number;
+}
+
+interface CartState {
+  cartItems: CartItem[];
+  cartItemCount: number;
+  cartTotal: number;
+  isLoading: boolean;
+  fetchCart: (sessionId: string) => Promise<void>;
+  addToCart: (sessionId: string, sanPhamId: string, soLuong: number) => Promise<void>;
+  updateQuantity: (sessionId: string, sanPhamId: string, soLuong: number) => Promise<void>;
+  removeFromCart: (sessionId: string, sanPhamId: string) => Promise<void>;
+  clearCart: (sessionId: string) => Promise<void>;
+}
+
+export const useCartStore = create<CartState>((set, get) => ({
+  cartItems: [],
+  cartItemCount: 0,
+  cartTotal: 0,
+  isLoading: false,
+
+  fetchCart: async (sessionId: string) => {
+    if (!sessionId) return;
+    set({ isLoading: true });
+    try {
+      const res = await api.get(`/gio-hang/${sessionId}`);
+      if (res.data.success && res.data.data) {
+        const items = res.data.data.Items || res.data.data.items || [];
+        const totalCount = items.reduce((acc: number, item: any) => acc + (item.SoLuong || 0), 0);
+        const totalAmount = res.data.data.TongTienTamTinh || 0;
+        set({
+          cartItems: items,
+          cartItemCount: totalCount,
+          cartTotal: totalAmount,
+          isLoading: false
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching cart:', err);
+      set({ isLoading: false });
+    }
+  },
+
+  addToCart: async (sessionId: string, sanPhamId: string, soLuong: number) => {
+    try {
+      const res = await api.post(`/gio-hang/${sessionId}`, {
+        SanPhamId: sanPhamId,
+        SoLuong: soLuong,
+      });
+      if (res.data.success) {
+        const items = res.data.data.Items || res.data.data.items || [];
+        const totalCount = items.reduce((acc: number, item: any) => acc + (item.SoLuong || 0), 0);
+        const totalAmount = res.data.data.TongTienTamTinh || 0;
+        set({
+          cartItems: items,
+          cartItemCount: totalCount,
+          cartTotal: totalAmount,
+        });
+      }
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      throw err;
+    }
+  },
+
+  updateQuantity: async (sessionId: string, sanPhamId: string, soLuong: number) => {
+    try {
+      const res = await api.post(`/gio-hang/${sessionId}`, {
+        SanPhamId: sanPhamId,
+        SoLuong: soLuong,
+      });
+      if (res.data.success) {
+        const items = res.data.data.Items || res.data.data.items || [];
+        const totalCount = items.reduce((acc: number, item: any) => acc + (item.SoLuong || 0), 0);
+        const totalAmount = res.data.data.TongTienTamTinh || 0;
+        set({
+          cartItems: items,
+          cartItemCount: totalCount,
+          cartTotal: totalAmount,
+        });
+      }
+    } catch (err) {
+      console.error('Error updating quantity:', err);
+      throw err;
+    }
+  },
+
+  removeFromCart: async (sessionId: string, sanPhamId: string) => {
+    try {
+      const res = await api.post(`/gio-hang/${sessionId}`, {
+        SanPhamId: sanPhamId,
+        SoLuong: 0
+      });
+      if (res.data.success) {
+        const items = res.data.data.Items || res.data.data.items || [];
+        const totalCount = items.reduce((acc: number, item: any) => acc + (item.SoLuong || 0), 0);
+        const totalAmount = res.data.data.TongTienTamTinh || 0;
+        set({
+          cartItems: items,
+          cartItemCount: totalCount,
+          cartTotal: totalAmount,
+        });
+      }
+    } catch (err) {
+      console.error('Error removing from cart:', err);
+      throw err;
+    }
+  },
+
+  clearCart: async (sessionId: string) => {
+    try {
+      await api.delete(`/gio-hang/${sessionId}`);
+      set({
+        cartItems: [],
+        cartItemCount: 0,
+        cartTotal: 0,
+      });
+    } catch (err) {
+      console.error('Error clearing cart:', err);
+      throw err;
+    }
+  },
+}));
