@@ -28,6 +28,7 @@ const sanPhamSonSchema = new mongoose.Schema({
   
   // Tính tổng tự động từ mảng MaMau (Không nhập tay)
   TongTonKho: { type: Number, default: 0 }, 
+  TonKho: { type: Number }, // Legacy field for compatibility
   SoLuongDaBan: { type: Number, default: 0 },
   
   DanhGia: [{
