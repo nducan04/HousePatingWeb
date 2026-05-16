@@ -20,12 +20,12 @@ const seedOrders = async () => {
         await DonHang.deleteMany({});
 
         const statuses = ['CHO_XAC_NHAN', 'DANG_XU_LY', 'DANG_GIAO', 'DA_GIAO', 'DA_HUY'];
-        
+
         const orders = [];
         for (let i = 1; i <= 10; i++) {
             const kh = khs[Math.floor(Math.random() * khs.length)];
             const selectedSps = sps.sort(() => 0.5 - Math.random()).slice(0, 2);
-            
+
             const items = selectedSps.map(sp => ({
                 SanPham: sp._id,
                 TenSanPham: sp.TenDongSon,
