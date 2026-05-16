@@ -2,10 +2,19 @@ const express = require('express');
 const router = express.Router();
 const rdController = require('../controllers/rdController');
 
+// @route   GET /api/rd-tracking
 router.get('/', rdController.getRDLogs);
+
+// @route   GET /api/rd-tracking/:id
 router.get('/:id', rdController.getRDLogById);
+
+// @route   POST /api/rd-tracking
 router.post('/', rdController.createRDLog);
+
+// @route   POST /api/rd-tracking/:id/versions
 router.post('/:id/versions', rdController.addVersion);
+
+// @route   PATCH /api/rd-tracking/:id/sign-kcs
 router.patch('/:id/sign-kcs', rdController.signKCS);
 
 module.exports = router;
