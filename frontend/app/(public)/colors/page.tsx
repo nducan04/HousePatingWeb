@@ -1,8 +1,5 @@
 "use client";
 
-<<<<<<< Updated upstream
-import { useState, useMemo } from "react";
-=======
 function hexToHSL(hex: string) {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -25,7 +22,6 @@ function hexToHSL(hex: string) {
 }
 
 import { useState, useMemo, useEffect } from "react";
->>>>>>> Stashed changes
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Palette, Sparkles, X, ArrowLeft } from "lucide-react";
@@ -70,9 +66,7 @@ export default function ColorsPage() {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [searchQuery, categoryFilter]);
-
-  const filteredColors = filteredAndSortedColors;
+  }, [searchQuery, categoryFilter, filteredColors]);
 
   return (
     <div>

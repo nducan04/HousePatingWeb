@@ -45,7 +45,7 @@ export default function HomePage() {
   const [news, setNews] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingNews, setLoadingNews] = useState(true);
-  
+
   // Chat state
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
@@ -189,7 +189,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white selection:bg-blue-100 selection:text-blue-900 font-sans text-slate-900 antialiased">
-      
+
       {/* ═══════ HEADER / NAVBAR ═══════ */}
       <header className="sticky top-0 z-[100] bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
         <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
@@ -230,26 +230,26 @@ export default function HomePage() {
 
         <div className="relative z-10 h-full max-w-[1400px] mx-auto px-10 flex flex-col justify-center items-start text-white">
           <div className="space-y-6 max-w-3xl animate-in fade-in slide-in-from-left-10 duration-1000">
-             <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-blue-600/20 backdrop-blur-md border border-blue-400/30 rounded-lg">
-                <Sparkles size={16} className="text-blue-400" />
-                <span className="text-xs font-bold uppercase tracking-widest text-blue-200">Hệ thống VTSC Paint Technology</span>
-             </div>
-             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight uppercase">
-               Đại lý phân phối
-               <br />
-               <span className="text-blue-500">Sơn tĩnh điện</span>
-               <br />
-               hàng đầu Việt Nam
-             </h1>
-             <p className="text-lg sm:text-xl text-slate-200 font-medium leading-relaxed max-w-2xl">
-               Giải pháp sơn tĩnh điện AkzoNobel Interpon chuyên nghiệp. 
-               Đảm bảo chất lượng bền bỉ, thẩm mỹ cao cho mọi bề mặt kim loại.
-             </p>
-             <div className="pt-6">
-                <Link href="#dich-vu" className="px-10 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg no-underline shadow-xl shadow-blue-600/30 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 w-fit">
-                  Khám phá dịch vụ <ArrowRight size={22} />
-                </Link>
-             </div>
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-blue-600/20 backdrop-blur-md border border-blue-400/30 rounded-lg">
+              <Sparkles size={16} className="text-blue-400" />
+              <span className="text-xs font-bold uppercase tracking-widest text-blue-200">Hệ thống VTSC Paint Technology</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight uppercase">
+              Đại lý phân phối
+              <br />
+              <span className="text-blue-500">Sơn tĩnh điện</span>
+              <br />
+              hàng đầu Việt Nam
+            </h1>
+            <p className="text-lg sm:text-xl text-slate-200 font-medium leading-relaxed max-w-2xl">
+              Giải pháp sơn tĩnh điện AkzoNobel Interpon chuyên nghiệp.
+              Đảm bảo chất lượng bền bỉ, thẩm mỹ cao cho mọi bề mặt kim loại.
+            </p>
+            <div className="pt-6">
+              <Link href="#dich-vu" className="px-10 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg no-underline shadow-xl shadow-blue-600/30 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 w-fit">
+                Khám phá dịch vụ <ArrowRight size={22} />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -259,10 +259,10 @@ export default function HomePage() {
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
-               <Settings className="text-blue-600" size={28} />
-               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight uppercase">
-                 Dịch vụ & Thế mạnh của VTSC
-               </h2>
+              <Settings className="text-blue-600" size={28} />
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight uppercase">
+                Dịch vụ & Thế mạnh của VTSC
+              </h2>
             </div>
             <p className="text-slate-500 max-w-2xl mx-auto font-medium text-base">
               Cam kết chất lượng và sự hài lòng tuyệt đối cho mọi khách hàng.
@@ -321,7 +321,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
             {paintColors.slice(0, 12).map((color) => (
               <div onClick={() => setSelectedTrendingColor(color)} key={color.code} className="group flex flex-col items-center no-underline cursor-pointer">
-                <div 
+                <div
                   className="w-full aspect-square rounded-3xl shadow-sm border border-slate-200 mb-5 transition-transform duration-300 group-hover:-translate-y-2 group-hover:shadow-xl"
                   style={{ backgroundColor: color.hex }}
                 ></div>
@@ -365,7 +365,7 @@ export default function HomePage() {
                     <img src={getImageUrl(sp.HinhAnh)} alt={sp.TenDongSon} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                     <div className="absolute top-4 left-4 bg-white/95 px-3 py-1 rounded-lg text-[10px] font-bold text-blue-600 uppercase tracking-widest shadow-sm">{sp.PhanLoai}</div>
                     <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                       <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-xl scale-75 group-hover:scale-100 transition-all duration-300"><Eye size={24} /></div>
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-xl scale-75 group-hover:scale-100 transition-all duration-300"><Eye size={24} /></div>
                     </div>
                   </div>
                   <div className="px-1">
@@ -475,7 +475,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-white/10 pt-10 text-slate-500 text-xs font-medium text-center sm:text-left">
-             © 2026 VTSC PaintPro. All rights reserved. Đồ án Nhóm 41.
+            © 2026 VTSC PaintPro. All rights reserved. Đồ án Nhóm 41.
           </div>
         </div>
       </footer>
@@ -486,51 +486,51 @@ export default function HomePage() {
           <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row max-h-[90vh] relative">
             <button onClick={() => setIsViewOpen(false)} className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center text-slate-950"><X size={24} /></button>
             <div className="md:w-5/12 bg-slate-50 p-10 flex items-center justify-center">
-               <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-xl bg-white border-8 border-white"><img src={getImageUrl(selectedProduct.HinhAnh)} alt={selectedProduct.TenDongSon} className="w-full h-full object-cover" /></div>
+              <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-xl bg-white border-8 border-white"><img src={getImageUrl(selectedProduct.HinhAnh)} alt={selectedProduct.TenDongSon} className="w-full h-full object-cover" /></div>
             </div>
             <div className="md:w-7/12 p-10 sm:p-14 overflow-y-auto">
-               <div className="space-y-8">
-                  <div>
-                    <div className="inline-flex items-center px-4 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 text-white uppercase tracking-widest mb-4">{selectedProduct.PhanLoai}</div>
-                    <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-2">{selectedProduct.TenDongSon}</h2>
-                    <p className="text-lg text-slate-400 font-bold uppercase tracking-wider">{selectedProduct.ThuongHieu}</p>
-                  </div>
-                  <div className="flex items-center gap-8 py-6 border-y border-slate-100">
-                    <div><p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Giá đề xuất</p><p className="text-3xl font-bold text-emerald-600">{selectedProduct.DonGiaCoSo?.toLocaleString()} ₫</p></div>
-                    <div className="h-12 w-px bg-slate-100"></div>
-                    <div><p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Quy cách</p><p className="text-2xl font-bold text-slate-800">{selectedProduct.DonViTinh || 'Kg'}</p></div>
-                  </div>
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Mô tả sản phẩm</h4>
-                    <p className="text-slate-500 text-base leading-relaxed font-medium">{selectedProduct.MoTa || "Dòng sơn tĩnh điện AkzoNobel cao cấp..."}</p>
-                  </div>
-                  {selectedProduct.DanhSachMaMau && selectedProduct.DanhSachMaMau.length > 0 && (
-                    <div className="space-y-4">
-                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Màu sắc sẵn có ({selectedProduct.DanhSachMaMau.length})</h4>
-                      <div className="flex flex-wrap gap-3">
-                        {selectedProduct.DanhSachMaMau.map((m: any, i: number) => (
-                          <div key={i} className="group/item relative">
-                            <div className="w-10 h-10 rounded-xl border border-slate-200 shadow-sm transition-all hover:scale-110" style={{ background: m.HexCode }} />
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/item:opacity-100 transition-all whitespace-nowrap pointer-events-none">{m.MaMau} — {m.TenMau}</div>
-                          </div>
-                        ))}
-                      </div>
+              <div className="space-y-8">
+                <div>
+                  <div className="inline-flex items-center px-4 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 text-white uppercase tracking-widest mb-4">{selectedProduct.PhanLoai}</div>
+                  <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-2">{selectedProduct.TenDongSon}</h2>
+                  <p className="text-lg text-slate-400 font-bold uppercase tracking-wider">{selectedProduct.ThuongHieu}</p>
+                </div>
+                <div className="flex items-center gap-8 py-6 border-y border-slate-100">
+                  <div><p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Giá đề xuất</p><p className="text-3xl font-bold text-emerald-600">{selectedProduct.DonGiaCoSo?.toLocaleString()} ₫</p></div>
+                  <div className="h-12 w-px bg-slate-100"></div>
+                  <div><p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Quy cách</p><p className="text-2xl font-bold text-slate-800">{selectedProduct.DonViTinh || 'Kg'}</p></div>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Mô tả sản phẩm</h4>
+                  <p className="text-slate-500 text-base leading-relaxed font-medium">{selectedProduct.MoTa || "Dòng sơn tĩnh điện AkzoNobel cao cấp..."}</p>
+                </div>
+                {selectedProduct.DanhSachMaMau && selectedProduct.DanhSachMaMau.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Màu sắc sẵn có ({selectedProduct.DanhSachMaMau.length})</h4>
+                    <div className="flex flex-wrap gap-3">
+                      {selectedProduct.DanhSachMaMau.map((m: any, i: number) => (
+                        <div key={i} className="group/item relative">
+                          <div className="w-10 h-10 rounded-xl border border-slate-200 shadow-sm transition-all hover:scale-110" style={{ background: m.HexCode }} />
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/item:opacity-100 transition-all whitespace-nowrap pointer-events-none">{m.MaMau} — {m.TenMau}</div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  <div className="pt-6 space-y-4">
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Số lượng</span>
-                      <div className="flex items-center bg-slate-100 rounded-xl p-1 w-32">
-                        <button onClick={() => updateQuantity(selectedProduct._id, -1)} className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer">-</button>
-                        <input type="number" min="1" value={productQuantities[selectedProduct._id] || 1} onChange={(e) => handleQuantityChange(selectedProduct._id, e.target.value)} onBlur={() => handleQuantityBlur(selectedProduct._id)} className="w-12 text-center bg-transparent border-none text-base font-bold text-slate-900 outline-none appearance-none" />
-                        <button onClick={() => updateQuantity(selectedProduct._id, 1)} className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer">+</button>
-                      </div>
-                    </div>
-                    <button onClick={() => addToCart(selectedProduct)} disabled={cartLoading === selectedProduct._id} className="w-full h-16 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer">
-                      {cartLoading === selectedProduct._id ? <Loader2 className="animate-spin" size={24} /> : <><ShoppingCart size={24} />{cartMessage.id === selectedProduct._id ? "Đã vào giỏ!" : "Thêm vào giỏ hàng"}</>}
-                    </button>
                   </div>
-               </div>
+                )}
+                <div className="pt-6 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Số lượng</span>
+                    <div className="flex items-center bg-slate-100 rounded-xl p-1 w-32">
+                      <button onClick={() => updateQuantity(selectedProduct._id, -1)} className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer">-</button>
+                      <input type="number" min="1" value={productQuantities[selectedProduct._id] || 1} onChange={(e) => handleQuantityChange(selectedProduct._id, e.target.value)} onBlur={() => handleQuantityBlur(selectedProduct._id)} className="w-12 text-center bg-transparent border-none text-base font-bold text-slate-900 outline-none appearance-none" />
+                      <button onClick={() => updateQuantity(selectedProduct._id, 1)} className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer">+</button>
+                    </div>
+                  </div>
+                  <button onClick={() => addToCart(selectedProduct)} disabled={cartLoading === selectedProduct._id} className="w-full h-16 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer">
+                    {cartLoading === selectedProduct._id ? <Loader2 className="animate-spin" size={24} /> : <><ShoppingCart size={24} />{cartMessage.id === selectedProduct._id ? "Đã vào giỏ!" : "Thêm vào giỏ hàng"}</>}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -549,13 +549,13 @@ export default function HomePage() {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="p-6">
-              <div 
+              <div
                 className="w-full h-40 rounded-2xl shadow-inner border border-slate-200 mb-6"
                 style={{ backgroundColor: selectedTrendingColor.hex }}
               />
-              
+
               <div className="space-y-0 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100">
                 <DetailRow label="Mã Màu" value={selectedTrendingColor.code} />
                 <DetailRow label="HEX" value={selectedTrendingColor.hex} />

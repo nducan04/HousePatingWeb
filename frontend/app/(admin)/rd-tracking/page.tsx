@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Eye, FlaskConical, Beaker, CheckCircle2, FlaskRound, Plus, Loader2, X } from 'lucide-react';
+import { Search, Eye, FlaskConical, Beaker, CheckCircle2, FlaskRound, Plus, X, Droplets, Package } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import Link from 'next/link';
 import { paintColors } from '@/lib/data/colors-data';
@@ -12,7 +12,6 @@ export default function RDTrackingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
 
-  // Create Log Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [contracts, setContracts] = useState<any[]>([]);
   const [selectedContract, setSelectedContract] = useState('');
@@ -20,9 +19,25 @@ export default function RDTrackingPage() {
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
 
+  const [sampleRequests, setSampleRequests] = useState<any[]>([]);
+
   useEffect(() => {
     fetchLogs();
     fetchContracts();
+
+    if (typeof window !== 'undefined') {
+      const storedRequests = localStorage.getItem('sampleRequests');
+      if (storedRequests) {
+        setSampleRequests(JSON.parse(storedRequests));
+      } else {
+        const defaultRequests = [
+          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026' },
+          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026' },
+        ];
+        setSampleRequests(defaultRequests);
+        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
+      }
+    }
   }, []);
 
   const fetchLogs = async () => {
@@ -113,9 +128,9 @@ export default function RDTrackingPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+            <span className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
               <FlaskConical size={22} />
-            </div>
+            </span>
             Phân tích R&D
           </h1>
           <p className="text-slate-400 font-medium mt-1">Truy xuất và kiểm soát chất lượng (KCS) phòng thí nghiệm</p>
@@ -209,12 +224,23 @@ export default function RDTrackingPage() {
             </div>
           </div>
 
-          <button
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <Plus size={18} /> Tạo Log R&D Mới
-          </button>
+          <div className="flex items-center gap-3">
+            <Link href="/rd-tracking/new" className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all no-underline">
+              <Droplets size={18} className="text-purple-600" /> Yêu cầu mẫu thử
+            </Link>
+            <Link href="/rd-tracking/formulas" className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all no-underline">
+              <FlaskConical size={18} className="text-emerald-600" /> Quản lý Công thức
+            </Link>
+            <Link href="/rd-tracking/materials" className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all no-underline">
+              <Package size={18} className="text-amber-600" /> Nguyên vật liệu
+            </Link>
+            <button
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all"
+              onClick={() => setIsModalOpen(true)}
+            >
+              <Plus size={18} /> Tạo Log R&D Mới
+            </button>
+          </div>
         </div>
       </div>
 
@@ -229,7 +255,9 @@ export default function RDTrackingPage() {
                 </div>
                 KHỞI TẠO LOG TRUY XUẤT R&D
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"><X size={20} /></button>
+              <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400">
+                <X size={20} />
+              </button>
             </div>
 
             <div className="p-8 space-y-6">
@@ -285,8 +313,8 @@ export default function RDTrackingPage() {
             </div>
 
             <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
-              <button onClick={() => setIsModalOpen(false)} disabled={creating} className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer">Hủy</button>
-              <button onClick={handleCreateLog} disabled={creating || !selectedContract || !selectedColor} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={() => setIsModalOpen(false)} disabled={creating} className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all">Hủy</button>
+              <button onClick={handleCreateLog} disabled={creating || !selectedContract || !selectedColor} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                 {creating ? 'Đang tạo...' : 'Xác nhận Khởi tạo'}
               </button>
             </div>
@@ -294,81 +322,145 @@ export default function RDTrackingPage() {
         </div>
       )}
 
-      {/* Data Table */}
-      <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="premium-table">
-            <thead>
-              <tr>
-                <th>ID Lab Định Biên</th>
-                <th>Mã Màu Yêu Cầu</th>
-                <th>Hợp Đồng</th>
-                <th className="text-center">Số Mẻ Test</th>
-                <th className="text-center">Hao Hụt % (Avg)</th>
-                <th className="text-center">Status</th>
-                <th>Cập nhật cuối</th>
-                <th className="text-right">Log Tracking</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={8} className="text-center py-20 text-blue-600 font-bold">Đang tải dữ liệu...</td></tr>
-              ) : filteredData.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-20 text-slate-400 font-medium italic">Không tìm thấy log R&D nào.</td></tr>
-              ) : filteredData.map(item => {
-                const wastage = item.LichSuPhienBan?.length > 0
-                  ? (item.LichSuPhienBan.reduce((acc: number, cur: any) => acc + (cur.inputWeight > 0 ? (cur.inputWeight - cur.outputWeight) / cur.inputWeight * 100 : 0), 0) / item.LichSuPhienBan.length).toFixed(1)
-                  : '0.0';
+      {/* Sample Requests Table */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+          <span className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+            <Droplets size={18} />
+          </span>
+          Yêu cầu mẫu thử
+        </h2>
 
-                return (
-                  <tr key={item._id} className="hover:bg-blue-50/30 group transition-colors">
+        <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Mã Yêu Cầu</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Khách hàng</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Mã Màu</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Bề mặt</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Trạng thái</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Ngày tạo</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {sampleRequests.map(req => (
+                  <tr key={req.id} className="hover:bg-purple-50/30 group transition-colors">
                     <td className="px-6 py-4 text-center">
-                      <span className="font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg text-[13px]">{item.MaNhatKy}</span>
+                      <span className="font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg text-[13px]">{req.id}</span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-100 flex-shrink-0" style={{ background: paintColors.find(c => c.code === item.MaMauYeuCau)?.hex || '#333' }} />
-                        <div>
-                          <div className="font-bold text-slate-900 text-[14px]">{item.MaMauYeuCau}</div>
-                          {paintColors.find(c => c.code === item.MaMauYeuCau) && (
-                            <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
-                              {paintColors.find(c => c.code === item.MaMauYeuCau)?.name}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-600 text-[14px]">{item.ContractID?.MaHopDong || item.ContractID?.contractId || 'N/A'}</div>
-                    </td>
+                    <td className="px-6 py-4 font-bold text-slate-900 text-[14px]">{req.customer}</td>
+                    <td className="px-6 py-4 font-bold text-slate-600 text-[14px]">{req.colorCode}</td>
+                    <td className="px-6 py-4 text-slate-500 text-[14px]">{req.surface}</td>
                     <td className="px-6 py-4 text-center">
-                      <span className="font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-[13px]">{item.LichSuPhienBan?.length || 0}</span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="font-black text-amber-600 text-[14px]">{wastage}%</span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`status-badge inline-flex items-center gap-1.5 ${item.TrangThai === 'approved' ? 'status-active' : item.TrangThai === 'rejected' ? 'status-error' : 'status-warning'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${item.TrangThai === 'approved' ? 'bg-emerald-500' : item.TrangThai === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'}`}></span>
-                        {(item.TrangThai || 'testing').toUpperCase()}
+                      <span className={`status-badge inline-flex items-center gap-1.5 ${req.status === 'processing' ? 'status-active' : 'status-warning'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${req.status === 'processing' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                        {req.status.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">
-                      {new Date(item.updatedAt).toLocaleDateString()}
-                    </td>
+                    <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">{req.date}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end">
-                        <Link href={`/rd-tracking/${item._id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
+                        <Link href={`/rd-tracking/${req.id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-600 transition-all">
                           <Eye size={18} />
                         </Link>
                       </div>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
+
+      {/* Main R&D Logs Table */}
+      <div className="space-y-4 mt-8">
+        <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+          <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+            <FlaskConical size={18} />
+          </span>
+          Nhật ký Lab Định Biên
+        </h2>
+
+        <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">ID Lab Định Biên</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Mã Màu Yêu Cầu</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Hợp Đồng</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Số Mẻ Test</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Hao Hụt % (Avg)</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Cập nhật cuối</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Log Tracking</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr><td colSpan={8} className="text-center py-20 text-blue-600 font-bold">Đang tải dữ liệu...</td></tr>
+                ) : filteredData.length === 0 ? (
+                  <tr><td colSpan={8} className="text-center py-20 text-slate-400 font-medium italic">Không tìm thấy log R&D nào.</td></tr>
+                ) : filteredData.map(item => {
+                  const wastage = item.LichSuPhienBan?.length > 0
+                    ? (item.LichSuPhienBan.reduce((acc: number, cur: any) => acc + (cur.inputWeight > 0 ? (cur.inputWeight - cur.outputWeight) / cur.inputWeight * 100 : 0), 0) / item.LichSuPhienBan.length).toFixed(1)
+                    : '0.0';
+
+                  return (
+                    <tr key={item._id} className="hover:bg-blue-50/30 group transition-colors">
+                      <td className="px-6 py-4 text-center">
+                        <span className="font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg text-[13px]">{item.MaNhatKy}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-100 flex-shrink-0" style={{ background: paintColors.find(c => c.code === item.MaMauYeuCau)?.hex || '#333' }} />
+                          <div>
+                            <div className="font-bold text-slate-900 text-[14px]">{item.MaMauYeuCau}</div>
+                            {paintColors.find(c => c.code === item.MaMauYeuCau) && (
+                              <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
+                                {paintColors.find(c => c.code === item.MaMauYeuCau)?.name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-slate-600 text-[14px]">{item.ContractID?.MaHopDong || item.ContractID?.contractId || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-[13px]">{item.LichSuPhienBan?.length || 0}</span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="font-black text-amber-600 text-[14px]">{wastage}%</span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`status-badge inline-flex items-center gap-1.5 ${item.TrangThai === 'approved' ? 'status-active' : item.TrangThai === 'rejected' ? 'status-error' : 'status-warning'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${item.TrangThai === 'approved' ? 'bg-emerald-500' : item.TrangThai === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'}`}></span>
+                          {(item.TrangThai || 'testing').toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">
+                        {new Date(item.updatedAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end">
+                          <Link href={`/rd-tracking/${item._id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                            <Eye size={18} />
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
