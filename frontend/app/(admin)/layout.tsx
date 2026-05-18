@@ -170,14 +170,8 @@ const allNavItems = [
       },
       {
         href: "/doi-tra",
-        label: "Quản lý đổi trả",
+        label: "Trung Tâm Giải Quyết Khiếu Nại",
         icon: ReceiptRussianRubleIcon,
-        roles: ["Admin", "NhanVien"],
-      },
-      {
-        href: "/bao-hanh",
-        label: "Bảo hành và hậu mãi",
-        icon: Shield,
         roles: ["Admin", "NhanVien"],
       },
       {
@@ -337,6 +331,7 @@ export default function AdminLayout({
     }
     if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
     if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
+    if (pathname?.startsWith("/doi-tra")) return "🎯 Trung Tâm Giải Quyết Khiếu Nại";
     if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
     if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";

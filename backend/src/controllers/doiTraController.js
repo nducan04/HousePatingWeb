@@ -19,7 +19,7 @@ exports.getReturns = async (req, res) => {
 // @desc    Tạo lệnh đổi trả thủ công
 exports.createReturn = async (req, res) => {
     try {
-        const { MaDoiTra, DonHang, KhachHang, LyDo, DuKienDenHang, GiaTriTru } = req.body;
+        const { MaDoiTra, DonHang, KhachHang, LyDo, LoaiYeuCau, DuKienDenHang, GiaTriTru } = req.body;
 
         let nvPhuTrach = null;
         if (req.user) {
@@ -32,6 +32,7 @@ exports.createReturn = async (req, res) => {
             DonHang,
             KhachHang,
             LyDo,
+            LoaiYeuCau: LoaiYeuCau || 'Đổi trả',
             DuKienDenHang,
             GiaTriTru,
             NhanVienPhuTrach: nvPhuTrach

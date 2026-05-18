@@ -12,7 +12,6 @@ export default function RDTrackingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
 
-  // Create Log Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [contracts, setContracts] = useState<any[]>([]);
   const [selectedContract, setSelectedContract] = useState('');
@@ -266,7 +265,9 @@ export default function RDTrackingPage() {
                 </div>
                 KHỞI TẠO LOG TRUY XUẤT R&D
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"><X size={20} /></button>
+              <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400">
+                <X size={20} />
+              </button>
             </div>
 
             <div className="p-8 space-y-6">
@@ -322,8 +323,8 @@ export default function RDTrackingPage() {
             </div>
 
             <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
-              <button onClick={() => setIsModalOpen(false)} disabled={creating} className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer">Hủy</button>
-              <button onClick={handleCreateLog} disabled={creating || !selectedContract || !selectedColor} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={() => setIsModalOpen(false)} disabled={creating} className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all">Hủy</button>
+              <button onClick={handleCreateLog} disabled={creating || !selectedContract || !selectedColor} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                 {creating ? 'Đang tạo...' : 'Xác nhận Khởi tạo'}
               </button>
             </div>
