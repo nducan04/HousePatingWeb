@@ -41,6 +41,29 @@ export default function MaterialsPage() {
 
   const fetchMaterials = async () => {
     setLoading(true);
+    try {
+      const res = await api.get('/kho/nguyen-vat-lieu');
+      if (res.data.success && res.data.data.length > 0) {
+        const mapped = res.data.data.map((item: any) => ({
+          id: item.MaNVL || `MAT-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
+          name: item.TenNguyenVatLieu,
+          category: item.PhanLoai || 'Resin',
+          stock: item.TonKho || 0,
+          unit: item.DonViTinh || 'kg',
+          cost: item.DonGia || 0,
+          supplier: item.NhaCungCap?.TenNCC || 'Local'
+        }));
+        setMaterials(mapped);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('rdMaterials', JSON.stringify(mapped));
+        }
+        setLoading(false);
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to sync raw materials from DB:', error);
+    }
+
     if (typeof window !== 'undefined') {
       const storedMaterials = localStorage.getItem('rdMaterials');
       if (storedMaterials) {
@@ -138,7 +161,7 @@ export default function MaterialsPage() {
     alert('✅ Đã xóa nguyên liệu!');
   };
 
-  const filteredMaterials = materials.filter(m => 
+  const filteredMaterials = materials.filter(m =>
     m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -161,7 +184,7 @@ export default function MaterialsPage() {
           </div>
         </div>
 
-        <button 
+        <button
           onClick={() => openModal()}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-[14px] bg-amber-600 text-white hover:bg-amber-700 shadow-lg shadow-amber-600/20 transition-all cursor-pointer"
         >
@@ -216,17 +239,16 @@ export default function MaterialsPage() {
                 <td className="px-6 py-4 text-sm font-bold text-slate-700 flex items-center gap-2">
                   <Droplet size={14} className={
                     material.category === 'Resin' ? 'text-blue-500' :
-                    material.category === 'Pigment' ? 'text-emerald-500' :
-                    material.category === 'Filler' ? 'text-slate-500' : 'text-amber-500'
+                      material.category === 'Pigment' ? 'text-emerald-500' :
+                        material.category === 'Filler' ? 'text-slate-500' : 'text-amber-500'
                   } />
                   {material.name}
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase ${
-                    material.category === 'Resin' ? 'bg-blue-50 text-blue-600' :
+                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase ${material.category === 'Resin' ? 'bg-blue-50 text-blue-600' :
                     material.category === 'Pigment' ? 'bg-emerald-50 text-emerald-600' :
-                    material.category === 'Filler' ? 'bg-slate-50 text-slate-600' : 'bg-amber-50 text-amber-600'
-                  }`}>
+                      material.category === 'Filler' ? 'bg-slate-50 text-slate-600' : 'bg-amber-50 text-amber-600'
+                    }`}>
                     {material.category}
                   </span>
                 </td>

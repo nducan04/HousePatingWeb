@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, CheckCircle2, XCircle, Clock, Plus, PenTool, User,
   Calendar, Layers, MessageSquare, ImageIcon, Scale, AlertTriangle,
@@ -14,6 +15,7 @@ import { paintColors } from '@/lib/data/colors-data';
 export default function RDDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const { user } = useAuthStore();
+  const router = useRouter();
 
   const [request, setRequest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,29 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
     fetchMaterials();
   }, [id]);
 
-  const fetchMaterials = () => {
+  const fetchMaterials = async () => {
+    try {
+      const res = await api.get('/kho/nguyen-vat-lieu');
+      if (res.data.success && res.data.data.length > 0) {
+        const mapped = res.data.data.map((item: any) => ({
+          id: item.MaNVL,
+          name: item.TenNguyenVatLieu,
+          category: item.PhanLoai || 'Resin',
+          stock: item.TonKho || 0,
+          unit: item.DonViTinh || 'kg',
+          cost: item.DonGia || 0,
+          supplier: item.NhaCungCap?.TenNCC || 'Local'
+        }));
+        setMaterials(mapped);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('rdMaterials', JSON.stringify(mapped));
+        }
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to sync raw materials from DB in R&D Details:', error);
+    }
+
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('rdMaterials');
       if (stored) {
@@ -78,7 +102,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           const data = res.data.data;
           const fixedLichSu = (data.LichSuPhienBan || []).map((v: any) => ({
             ...v,
-            tester: v.tester === 'Unknown Tester' || !v.tester ? (user?.name || 'Phi Binh Minh') : v.tester
+            tester: v.tester === 'Unknown Tester' || !v.tester ? ((user as any)?.name || 'Phi Binh Minh') : v.tester
           }));
           setRequest({ ...data, LichSuPhienBan: fixedLichSu });
           setIsSigned(data.TrangThai === 'approved' || data.TrangThai === 'complete');
@@ -92,6 +116,41 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
   };
 
   const handleAddVersion = async (result: 'pass' | 'fail' | 'pending') => {
+    // Check if there is enough stock for each selected component
+    if (typeof window !== 'undefined') {
+      const storedMaterials = localStorage.getItem('rdMaterials');
+      if (storedMaterials) {
+        const materialsList = JSON.parse(storedMaterials);
+        
+        // Sum up quantities by materialId to handle potential duplicate selections
+        const sumQuantities: { [key: string]: number } = {};
+        for (const comp of newVersion.components) {
+          if (!comp.materialId) continue;
+          sumQuantities[comp.materialId] = (sumQuantities[comp.materialId] || 0) + parseFloat(comp.quantity as any || 0);
+        }
+
+        // Validate each material and collect deficient quantities
+        const outOfStockList: string[] = [];
+        for (const [materialId, reqQty] of Object.entries(sumQuantities)) {
+          const mat = materialsList.find((m: any) => m.id === materialId);
+          if (mat) {
+            const currentStock = parseFloat(mat.stock || 0);
+            if (reqQty > currentStock) {
+              const deficit = reqQty - currentStock;
+              outOfStockList.push(`${mat.id}:${deficit}`);
+            }
+          }
+        }
+
+        if (outOfStockList.length > 0) {
+          alert(`❌ Hiện không còn đủ hàng trong kho vui lòng nhập thêm!\nHệ thống sẽ tự động chuyển hướng bạn sang trang Nhập Kho để lập phiếu nhập.`);
+          const prefill = outOfStockList.join(",");
+          router.push(`/kho?tab=nhapxuat&openNX=true&prefillMaterials=${prefill}`);
+          return;
+        }
+      }
+    }
+
     try {
       if (id.startsWith('REQ-')) {
         // Handle in localStorage
@@ -132,7 +191,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 feedback: newVersion.feedback,
                 inputWeight: parseFloat(newVersion.inputWeight) || 0,
                 outputWeight: parseFloat(newVersion.outputWeight) || 0,
-                tester: user?.name || 'Admin',
+                tester: (user as any)?.name || 'Admin',
                 testerCode: (user as any)?.MaNhanVien || 'N/A',
                 components: newVersion.components
               });
@@ -157,10 +216,24 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         const res = await api.post(`/rd-tracking/${id}/versions`, {
           ...newVersion,
           result,
-          tester: user?.name || 'Admin',
+          tester: (user as any)?.name || 'Admin',
           testerCode: (user as any)?.MaNhanVien || 'N/A'
         });
         if (res.data.success) {
+          // Deduct stock locally upon success to keep the inventory synced
+          const storedMaterials = localStorage.getItem('rdMaterials');
+          if (storedMaterials) {
+            const materialsList = JSON.parse(storedMaterials);
+            newVersion.components.forEach((comp: any) => {
+              const matIndex = materialsList.findIndex((m: any) => m.id === comp.materialId);
+              if (matIndex !== -1) {
+                materialsList[matIndex].stock -= parseFloat(comp.quantity || 0);
+              }
+            });
+            localStorage.setItem('rdMaterials', JSON.stringify(materialsList));
+            setMaterials(materialsList);
+          }
+
           setRequest(res.data.data);
           setShowAddVersion(false);
           setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', result: 'pending', components: [{ materialId: '', quantity: 0 }] });
@@ -247,7 +320,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
   const colorInfo = paintColors.find(c => c.code === request.MaMauYeuCau);
 
-  const isKCSManager = user?.role?.toLowerCase() === 'admin' || user?.name === 'Phi Binh Minh';
+  const isKCSManager = user?.role?.toLowerCase() === 'admin' || (user as any)?.name === 'Phi Binh Minh';
 
   const contract = request.ContractID || {};
 
