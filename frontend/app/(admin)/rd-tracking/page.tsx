@@ -1,12 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Eye, FlaskConical, Beaker, CheckCircle2, FlaskRound, Plus, Loader2, X, Droplets, Package } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import Link from 'next/link';
 import { paintColors } from '@/lib/data/colors-data';
+import { useAuthStore } from '@/lib/store/authStore';
+import { useRouter } from 'next/navigation';
 
 export default function RDTrackingPage() {
+  const { user } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C')) {
+      router.push('/');
+    }
+  }, [user, router]);
+
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -101,12 +112,14 @@ export default function RDTrackingPage() {
     }
   };
 
-  const STATS = useMemo(() => ({
-    total: data.length,
-    testing: data.filter(d => d.TrangThai === 'testing' || d.TrangThai === 'pending').length,
-    success: data.filter(d => d.TrangThai === 'approved').length,
-    fail: data.filter(d => d.TrangThai === 'rejected').length,
-  }), [data]);
+  const STATS = useMemo(() => {
+    return {
+      total: data.length,
+      testing: data.filter(d => d.TrangThai === 'testing' || d.TrangThai === 'pending').length,
+      success: data.filter(d => d.TrangThai === 'approved').length,
+      fail: data.filter(d => d.TrangThai === 'rejected').length,
+    };
+  }, [data]);
 
   const filteredData = useMemo(() => {
     return data.filter(item => {
@@ -254,6 +267,8 @@ export default function RDTrackingPage() {
         </div>
       </div>
 
+<<<<<<< HEAD
+=======
       {/* Create Log Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
@@ -332,6 +347,7 @@ export default function RDTrackingPage() {
         </div>
       )}
 
+>>>>>>> develop
       {/* Sample Requests Table */}
       <div className="space-y-4">
         <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
@@ -428,54 +444,56 @@ export default function RDTrackingPage() {
                     ? (item.LichSuPhienBan.reduce((acc: number, cur: any) => acc + (cur.inputWeight > 0 ? (cur.inputWeight - cur.outputWeight) / cur.inputWeight * 100 : 0), 0) / item.LichSuPhienBan.length).toFixed(1)
                     : '0.0';
 
-                return (
-                  <tr key={item._id} className="hover:bg-blue-50/30 group transition-colors">
-                    <td className="px-6 py-4 text-center">
-                      <span className="font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg text-[13px]">{item.MaNhatKy}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-100 flex-shrink-0" style={{ background: paintColors.find(c => c.code === item.MaMauYeuCau)?.hex || '#333' }} />
-                        <div>
-                          <div className="font-bold text-slate-900 text-[14px]">{item.MaMauYeuCau}</div>
-                          {paintColors.find(c => c.code === item.MaMauYeuCau) && (
-                            <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
-                              {paintColors.find(c => c.code === item.MaMauYeuCau)?.name}
-                            </div>
-                          )}
+                  return (
+                    <tr key={item._id} className="hover:bg-blue-50/30 group transition-colors">
+                      <td className="px-6 py-4 text-center">
+                        <span className="font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg text-[13px]">{item.MaNhatKy}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-100 flex-shrink-0" style={{ background: paintColors.find(c => c.code === item.MaMauYeuCau)?.hex || '#333' }} />
+                          <div>
+                            <div className="font-bold text-slate-900 text-[14px]">{item.MaMauYeuCau}</div>
+                            {paintColors.find(c => c.code === item.MaMauYeuCau) && (
+                              <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
+                                {paintColors.find(c => c.code === item.MaMauYeuCau)?.name}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-600 text-[14px]">{item.ContractID?.MaHopDong || item.ContractID?.contractId || 'N/A'}</div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-[13px]">{item.LichSuPhienBan?.length || 0}</span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="font-black text-amber-600 text-[14px]">{wastage}%</span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`status-badge inline-flex items-center gap-1.5 ${item.TrangThai === 'approved' ? 'status-active' : item.TrangThai === 'rejected' ? 'status-error' : 'status-warning'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${item.TrangThai === 'approved' ? 'bg-emerald-500' : item.TrangThai === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'}`}></span>
-                        {(item.TrangThai || 'testing').toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">
-                      {new Date(item.updatedAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end">
-                        <Link href={`/rd-tracking/${item._id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
-                          <Eye size={18} />
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-slate-700 text-[14px]">{item.ContractID?.MaHopDong || 'N/A'}</div>
+                        <div className="text-[12px] text-slate-400 font-medium truncate max-w-[150px]">{item.ContractID?.title || 'Unknown'}</div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-[13px]">{item.LichSuPhienBan?.length || 0}</span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="font-black text-amber-600 text-[14px]">{wastage}%</span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`status-badge inline-flex items-center gap-1.5 ${item.TrangThai === 'approved' ? 'status-active' : item.TrangThai === 'rejected' ? 'status-error' : 'status-warning'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${item.TrangThai === 'approved' ? 'bg-emerald-500' : item.TrangThai === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'}`}></span>
+                          {(item.TrangThai || 'testing').toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">
+                        {new Date(item.updatedAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end">
+                          <Link href={`/rd-tracking/${item._id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
+                            <Eye size={18} />
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

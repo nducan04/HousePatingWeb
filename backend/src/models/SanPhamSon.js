@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 
 // 1. CHUYỂN TỒN KHO VÀO TRONG MÃ MÀU
 const maMauSchema = new mongoose.Schema({
-  MaMau: { type: String, required: true, trim: true, uppercase: true },
-  TenMau: { type: String, required: true, trim: true },
-  HexCode: { type: String, trim: true, match: [/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Mã Hex không hợp lệ'] },
+  MaMau: { type: String, required: [true, 'Vui lòng nhập mã màu'], trim: true, uppercase: true },
+  TenMau: { type: String, required: [true, 'Vui lòng nhập tên màu'], trim: true },
+  HexCode: { type: String, trim: true, match: [/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Mã màu Hex không hợp lệ'] },
   HinhAnh: { type: String, trim: true },
   
   // NÂNG CẤP TỒN KHO CHUẨN B2B (Đưa vào từng mã màu)
@@ -17,13 +17,26 @@ const maMauSchema = new mongoose.Schema({
 
 // 2. BẢNG CHA CHỈ CHỨA THÔNG TIN CHUNG
 const sanPhamSonSchema = new mongoose.Schema({
-  MaSanPham: { type: String, required: true, unique: true, trim: true, uppercase: true },
-  TenDongSon: { type: String, required: true, trim: true },
+  MaSanPham: { type: String, required: [true, 'Vui lòng nhập mã sản phẩm'], unique: true, trim: true, uppercase: true },
+  TenDongSon: { type: String, required: [true, 'Vui lòng nhập tên dòng sơn'], trim: true },
   ThuongHieu: { type: String, default: 'AkzoNobel' },
-  PhanLoai: { type: String, enum: ['Sơn tĩnh điện', 'Sơn tàu biển', 'Sơn công nghiệp', 'Sơn nội thất'] },
+  PhanLoai: { 
+    type: String, 
+    enum: {
+      values: ['Sơn tĩnh điện', 'Sơn tàu biển', 'Sơn công nghiệp', 'Sơn nội thất'],
+      message: 'Phân loại sản phẩm không hợp lệ'
+    }
+  },
   MoTa: { type: String, trim: true },
-  DonViTinh: { type: String, enum: ['Thùng', 'Kg'], default: 'Kg' }, // Bán sơn theo Kg chuẩn hơn
-  DonGiaCoSo: { type: Number, required: true, min: 0 },
+  DonViTinh: { 
+    type: String, 
+    enum: {
+      values: ['Thùng', 'Kg'],
+      message: 'Đơn vị tính không hợp lệ'
+    }, 
+    default: 'Kg' 
+  },
+  DonGiaCoSo: { type: Number, required: [true, 'Vui lòng nhập đơn giá'], min: [0, 'Giá không được âm'] },
   HinhAnh: { type: String, trim: true },
   
   // Tính tổng tự động từ mảng MaMau (Không nhập tay)

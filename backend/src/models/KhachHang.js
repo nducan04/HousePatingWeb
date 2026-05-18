@@ -19,7 +19,10 @@ const khachHangSchema = new mongoose.Schema({
   },
   PhanLoai: {
     type: String,
-    enum: ['B2C', 'B2B', 'Đại lý'],
+    enum: {
+      values: ['B2C', 'B2B', 'Đại lý'],
+      message: 'Phân loại khách hàng không hợp lệ'
+    },
     required: [true, 'Vui lòng chọn phân loại khách hàng'],
   },
   TenKhachHang: {
