@@ -240,7 +240,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="h-[350px] w-full">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%" minHeight={350}>
               <AreaChart data={stats.monthlyTrends}>
                 <defs>
                   <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
@@ -324,7 +324,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="h-[350px] w-full">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%" minHeight={350}>
               <ComposedChart data={stats.monthlyTrends}>
                 <CartesianGrid
                   strokeDasharray="3 3"

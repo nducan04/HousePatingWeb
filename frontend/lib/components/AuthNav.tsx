@@ -69,11 +69,13 @@ export default function AuthNav({ onOpenLogin }: AuthNavProps) {
             <div className="absolute top-full right-0 mt-3 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 p-2 z-[200] animate-in fade-in zoom-in-95 duration-200">
               <div className="p-4 border-b border-slate-50">
                 <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Tài khoản</p>
-                <p className="text-sm font-bold text-slate-900 truncate">
+                <p className="text-sm font-black text-slate-900 truncate">
                   {user.profile?.HoTen || user.profile?.TenKhachHang || user.username}
                 </p>
-                <p className="text-[11px] text-slate-400 font-medium mt-1">ID: {user.id || (user as any)._id}</p>
-                <p className="text-[11px] text-slate-400 font-medium mt-1">Vai trò: {user.role}</p>
+                <p className="text-[11px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">ID: {user.id || (user as any)._id}</p>
+                <div className="mt-2 text-[10px] text-blue-600 font-extrabold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-lg inline-block">
+                  {user.role === "Admin" ? "Quản trị viên" : user.role === "NhanVien" ? "Nhân viên" : user.role === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng"}
+                </div>
               </div>
 
               <div className="p-2">

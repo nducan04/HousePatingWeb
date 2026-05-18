@@ -12,6 +12,10 @@ import {
   FileSignature,
   Palette,
   QrCode,
+  PanelsRightBottom,
+  SignalHigh,
+  TrainFront,
+  ReceiptRussianRuble,
   Settings,
   Clock,
   Bell,
@@ -22,7 +26,6 @@ import {
   MessageSquare,
   FileUp,
   CloudSync,
-  QrCodeIcon,
   LogOut,
   Loader2,
   ClipboardList,
@@ -30,12 +33,9 @@ import {
   DollarSign,
   ShoppingCart,
   ListOrdered,
-  PanelsRightBottomIcon,
-  SignalHighIcon,
-  TrainFrontIcon,
   Users,
   Shield,
-  ReceiptRussianRubleIcon,
+  Droplets,
 } from "lucide-react";
 
 /**
@@ -153,25 +153,25 @@ const allNavItems = [
       {
         href: "/thanh-toan",
         label: "Quản lý thanh toán",
-        icon: QrCodeIcon,
+        icon: QrCode,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
         href: "/van-chuyen",
         label: "Theo dõi vận chuyển",
-        icon: TrainFrontIcon,
+        icon: TrainFront,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
         href: "/hieu-suat",
         label: "Theo dõi hiệu suất",
-        icon: SignalHighIcon,
+        icon: SignalHigh,
         roles: ["Admin", "Director"],
       },
       {
         href: "/doi-tra",
         label: "Quản lý đổi trả",
-        icon: ReceiptRussianRubleIcon,
+        icon: ReceiptRussianRuble,
         roles: ["Admin", "NhanVien"],
       },
       {
@@ -183,7 +183,7 @@ const allNavItems = [
       {
         href: "/khuyen-mai",
         label: "Quản lý khuyến mãi",
-        icon: PanelsRightBottomIcon,
+        icon: PanelsRightBottom,
         roles: ["Admin", "NhanVien"],
       },
       {
@@ -210,9 +210,15 @@ const allNavItems = [
         roles: ["Admin", "NhanVien"],
       },
       {
+        href: "/rd-tracking/new",
+        label: "Yêu cầu mẫu thử",
+        icon: Droplets,
+        roles: ["KhachHangB2B", "KhachHangB2C"],
+      },
+      {
         href: "/quy-trinh",
         label: "Quản lý quy trình gói đơn hàng",
-        icon: QrCodeIcon,
+        icon: QrCode,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
@@ -350,7 +356,7 @@ export default function AdminLayout({
   };
 
   return (
-    <ProtectedRoute allowedRoles={["Admin", "Director", "NhanVien"]}>
+    <ProtectedRoute allowedRoles={["Admin", "Director", "NhanVien", "KhachHangB2B", "KhachHangB2C"]}>
       <div className="flex h-screen bg-[#F8FAFC] font-sans">
         {/* ═══════ Sidebar ═══════ */}
         <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
@@ -428,11 +434,11 @@ export default function AdminLayout({
                 {initials}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-bold text-slate-800 truncate">
-                  {displayName}
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
+                  Tài Khoản
                 </div>
-                <div className="text-[11px] text-slate-400 font-medium">
-                  {displayRole}
+                <div className="text-[14px] font-black text-slate-800 truncate">
+                  {displayName}
                 </div>
               </div>
               <button
@@ -475,19 +481,11 @@ export default function AdminLayout({
               <div className="h-10 w-[1px] bg-slate-100"></div>
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
-                  <div className="text-[14px] font-bold text-slate-800 leading-none mb-1">
-                    {displayName}
+                  <div className="text-[10px] font-extrabold text-blue-600 uppercase tracking-[0.2em] leading-none mb-1 opacity-70">
+                    Tài Khoản
                   </div>
-                  <div className="text-[11px] text-blue-600 font-extrabold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-lg inline-block">
-                    {userRole === "Admin"
-                      ? "Admin"
-                      : userRole === "Director"
-                        ? "Giám đốc"
-                        : userRole === "NhanVien"
-                          ? "Nhân viên"
-                          : userRole === "KhachHangB2B"
-                            ? "B2B"
-                            : "Khách hàng"}
+                  <div className="text-[15px] font-black text-slate-900 leading-tight">
+                    {displayName}
                   </div>
                 </div>
                 <div className="w-11 h-11 rounded-2xl border-2 border-white shadow-md shadow-slate-200 overflow-hidden bg-slate-100">

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, CheckCircle2, XCircle, Clock, Plus, PenTool, User,
-  Calendar, Layers, MessageSquare, ImageIcon, Scale, AlertTriangle,
+  Calendar, Layers, MessageSquare, Image as ImageIcon, Scale, AlertTriangle,
   Beaker, Trash2
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
@@ -78,7 +78,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           const data = res.data.data;
           const fixedLichSu = (data.LichSuPhienBan || []).map((v: any) => ({
             ...v,
-            tester: v.tester === 'Unknown Tester' || !v.tester ? (user?.name || 'Phi Binh Minh') : v.tester
+            tester: v.tester === 'Unknown Tester' || !v.tester ? ((user as any)?.name || 'Phi Binh Minh') : v.tester
           }));
           setRequest({ ...data, LichSuPhienBan: fixedLichSu });
           setIsSigned(data.TrangThai === 'approved' || data.TrangThai === 'complete');
@@ -132,7 +132,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 feedback: newVersion.feedback,
                 inputWeight: parseFloat(newVersion.inputWeight) || 0,
                 outputWeight: parseFloat(newVersion.outputWeight) || 0,
-                tester: user?.name || 'Admin',
+                tester: (user as any)?.name || 'Admin',
                 testerCode: (user as any)?.MaNhanVien || 'N/A',
                 components: newVersion.components
               });
@@ -157,7 +157,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         const res = await api.post(`/rd-tracking/${id}/versions`, {
           ...newVersion,
           result,
-          tester: user?.name || 'Admin',
+          tester: (user as any)?.name || 'Admin',
           testerCode: (user as any)?.MaNhanVien || 'N/A'
         });
         if (res.data.success) {
@@ -247,7 +247,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
   const colorInfo = paintColors.find(c => c.code === request.MaMauYeuCau);
 
-  const isKCSManager = user?.role?.toLowerCase() === 'admin' || user?.name === 'Phi Binh Minh';
+  const isKCSManager = user?.role?.toLowerCase() === 'admin' || (user as any)?.name === 'Phi Binh Minh';
 
   const contract = request.ContractID || {};
 

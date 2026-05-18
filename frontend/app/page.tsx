@@ -79,6 +79,26 @@ export default function HomePage() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [registerUsername, setRegisterUsername] = useState("");
+  const [registerFullName, setRegisterFullName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [registerRole, setRegisterRole] = useState("KhachHangB2C");
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+  const [registerSuccess, setRegisterSuccess] = useState(false);
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
+
+  // Forgot Password state
+  const [isForgotMode, setIsForgotMode] = useState(false);
+  const [forgotUsername, setForgotUsername] = useState("");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotNewPassword, setForgotNewPassword] = useState("");
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
+  const [forgotError, setForgotError] = useState<string | null>(null);
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Trending Color Modal state
   const [selectedTrendingColor, setSelectedTrendingColor] = useState<any | null>(null);
@@ -319,7 +339,14 @@ export default function HomePage() {
       if (res.data.success) {
         loginState(res.data.user, res.data.accessToken);
         setIsLoginOpen(false);
-        
+
+        // Handle redirect if exists
+        if (redirectPath) {
+          router.push(redirectPath);
+          setRedirectPath(null);
+          return;
+        }
+
         const role = res.data.user.role;
         if (role === "Admin" || role === "Director") {
           router.push("/dashboard");
@@ -333,6 +360,78 @@ export default function HomePage() {
       setLoginError(err.response?.data?.error || "Đăng nhập thất bại");
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  const handlePageRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registerUsername || !registerFullName || !registerEmail || !registerPassword || !registerRole) {
+      setRegisterError("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+
+    try {
+      setRegisterLoading(true);
+      setRegisterError(null);
+      const res = await api.post("/auth/register", {
+        TenDangNhap: registerUsername,
+        HoTen: registerFullName,
+        Email: registerEmail,
+        MatKhau: registerPassword,
+        VaiTro: registerRole
+      });
+
+      if (res.data.success) {
+        setRegisterSuccess(true);
+        setTimeout(() => {
+          setIsRegisterMode(false);
+          setRegisterSuccess(false);
+          setLoginEmail(registerUsername);
+        }, 2000);
+      }
+    } catch (err: any) {
+      setRegisterError(err.response?.data?.error || "Đăng ký thất bại");
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotUsername || !forgotEmail || !forgotNewPassword || !forgotConfirmPassword) {
+      setForgotError("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setForgotError("Mật khẩu nhập lại không khớp");
+      return;
+    }
+
+    try {
+      setIsResetting(true);
+      setForgotError(null);
+      const res = await api.post("/auth/reset-password", {
+        TenDangNhap: forgotUsername,
+        Email: forgotEmail,
+        MatKhauMoi: forgotNewPassword
+      });
+
+      if (res.data.success) {
+        setForgotSuccess(true);
+        setTimeout(() => {
+          setIsForgotMode(false);
+          setForgotSuccess(false);
+          setForgotUsername("");
+          setForgotEmail("");
+          setForgotNewPassword("");
+          setForgotConfirmPassword("");
+          setLoginEmail(forgotUsername);
+        }, 2000);
+      }
+    } catch (err: any) {
+      setForgotError(err.response?.data?.error || "Đặt lại mật khẩu thất bại");
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -962,7 +1061,17 @@ export default function HomePage() {
             </div>
 
             <div className="p-6 pt-0 flex gap-3">
-              <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 cursor-pointer">
+              <button
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    setRedirectPath("/rd-tracking/new");
+                    setIsLoginOpen(true);
+                  } else {
+                    router.push("/rd-tracking/new");
+                  }
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 cursor-pointer"
+              >
                 <Sparkles size={16} /> Yêu cầu mẫu thử
               </button>
               <button onClick={() => setSelectedTrendingColor(null)} className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 py-3.5 rounded-xl font-bold text-sm transition-colors shadow-sm cursor-pointer">
@@ -998,69 +1107,253 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* ═══════ LOGIN MODAL (Screenshot Style) ═══════ */}
       {isLoginOpen && (
         <div className="fixed inset-0 z-[400] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm p-8 relative animate-in zoom-in-95 duration-300">
             <button
-              onClick={() => setIsLoginOpen(false)}
+              onClick={() => {
+                setIsLoginOpen(false);
+                setIsRegisterMode(false);
+              }}
               className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-all cursor-pointer"
             >
               <X size={18} />
             </button>
 
-            <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">Chào Mừng Trở Lại</h2>
+            <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">
+              {isForgotMode ? "Đặt Lại Mật Khẩu" : isRegisterMode ? "Đăng Ký Tài Khoản" : "Chào Mừng Trở Lại"}
+            </h2>
 
-            <form onSubmit={handlePageLogin} className="space-y-4">
-              {loginError && (
-                <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
-                  <AlertCircle size={16} /> {loginError}
+            {isForgotMode ? (
+              <form onSubmit={handleForgotSubmit} className="space-y-4">
+                {forgotError && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
+                    <AlertCircle size={16} /> {forgotError}
+                  </div>
+                )}
+                {forgotSuccess && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3 text-emerald-600 text-xs font-bold">
+                    <ShieldCheck size={16} /> Đặt lại mật khẩu thành công!
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    value={forgotUsername}
+                    onChange={(e) => setForgotUsername(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Tên đăng nhập"
+                    required
+                  />
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Email đã đăng ký"
+                    required
+                  />
+                  <input
+                    type="password"
+                    value={forgotNewPassword}
+                    onChange={(e) => setForgotNewPassword(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Mật khẩu mới"
+                    required
+                  />
+                  <input
+                    type="password"
+                    value={forgotConfirmPassword}
+                    onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Nhập lại mật khẩu mới"
+                    required
+                  />
                 </div>
-              )}
 
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                  placeholder="admin / nhanvien"
-                />
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isResetting}
+                    className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                  >
+                    {isResetting ? <Loader2 className="animate-spin" size={18} /> : "Cập Nhật Mật Khẩu"}
+                  </button>
+                </div>
 
-                <input
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                  placeholder="••••••"
-                />
-              </div>
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotMode(false)}
+                    className="text-[11px] font-bold text-slate-400 hover:text-blue-600 bg-transparent border-none cursor-pointer transition-colors"
+                  >
+                    Quay lại đăng nhập
+                  </button>
+                </div>
+              </form>
+            ) : !isRegisterMode ? (
+              <form onSubmit={handlePageLogin} className="space-y-4">
+                {loginError && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
+                    <AlertCircle size={16} /> {loginError}
+                  </div>
+                )}
 
-              <div className="text-right">
-                <Link href="#" className="text-[11px] font-bold text-blue-600 hover:underline no-underline">Quên Mật Khẩu?</Link>
-              </div>
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Tên đăng nhập"
+                  />
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={isLoggingIn}
-                  className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
-                >
-                  {isLoggingIn ? <Loader2 className="animate-spin" size={18} /> : "Đăng Nhập"}
-                </button>
-              </div>
+                  <input
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="••••••"
+                  />
+                </div>
 
-              <div className="space-y-3 pt-4">
-                <button type="button" className="w-full h-12 bg-[#0f172a] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer">
-                  <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png" className="w-4 h-4" alt="Apple" />
-                  Đăng nhập bằng Apple
-                </button>
-                <button type="button" className="w-full h-12 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer">
-                  <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png" className="w-4 h-4" alt="Google" />
-                  Đăng nhập bằng Google
-                </button>
-              </div>
-            </form>
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotMode(true)}
+                    className="text-[11px] font-bold text-blue-600 hover:underline bg-transparent border-none cursor-pointer"
+                  >
+                    Quên Mật Khẩu?
+                  </button>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isLoggingIn}
+                    className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                  >
+                    {isLoggingIn ? <Loader2 className="animate-spin" size={18} /> : "Đăng Nhập"}
+                  </button>
+                </div>
+
+                <div className="text-center pt-4">
+                  <p className="text-sm text-slate-500 font-medium">
+                    Chưa có tài khoản?{" "}
+                    <button
+                      type="button"
+                      onClick={() => setIsRegisterMode(true)}
+                      className="text-blue-600 font-bold hover:underline bg-transparent border-none cursor-pointer"
+                    >
+                      Đăng kí ngay
+                    </button>
+                  </p>
+                </div>
+
+                <div className="relative py-4">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400 font-bold">Hoặc</span></div>
+                </div>
+
+                <div className="space-y-3">
+                  <button type="button" className="w-full h-12 bg-[#0f172a] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer">
+                    <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png" className="w-4 h-4" alt="Apple" />
+                    Đăng nhập bằng Apple
+                  </button>
+                  <button type="button" className="w-full h-12 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer">
+                    <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png" className="w-4 h-4" alt="Google" />
+                    Đăng nhập bằng Google
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handlePageRegister} className="space-y-4">
+                {registerError && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
+                    <AlertCircle size={16} /> {registerError}
+                  </div>
+                )}
+                {registerSuccess && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3 text-emerald-600 text-xs font-bold">
+                    <ShieldCheck size={16} /> Đăng ký thành công! Đang chuyển sang đăng nhập...
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    value={registerUsername}
+                    onChange={(e) => setRegisterUsername(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Tên đăng nhập"
+                    required
+                  />
+
+                  <input
+                    type="text"
+                    value={registerFullName}
+                    onChange={(e) => setRegisterFullName(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Họ và tên đầy đủ / Tên doanh nghiệp"
+                    required
+                  />
+
+                  <input
+                    type="email"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Email"
+                    required
+                  />
+
+                  <input
+                    type="password"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Mật khẩu"
+                    required
+                  />
+
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Loại khách hàng</label>
+                    <select
+                      value={registerRole}
+                      onChange={(e) => setRegisterRole(e.target.value)}
+                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all cursor-pointer"
+                    >
+                      <option value="KhachHangB2C">Khách hàng cá nhân</option>
+                      <option value="KhachHangB2B">Khách hàng doanh nghiệp</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={registerLoading || registerSuccess}
+                    className="w-full h-12 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                  >
+                    {registerLoading ? <Loader2 className="animate-spin" size={18} /> : "Đăng Ký"}
+                  </button>
+                </div>
+
+                <div className="text-center pt-4">
+                  <p className="text-sm text-slate-500 font-medium">
+                    Đã có tài khoản?{" "}
+                    <button
+                      type="button"
+                      onClick={() => setIsRegisterMode(false)}
+                      className="text-blue-600 font-bold hover:underline bg-transparent border-none cursor-pointer"
+                    >
+                      Đăng nhập ngay
+                    </button>
+                  </p>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

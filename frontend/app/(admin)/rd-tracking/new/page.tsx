@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Upload, Plus, Droplets, X } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Droplets, X, User as UserIcon } from "lucide-react";
 import Link from "next/link";
+import { useAuthStore } from "@/lib/store/authStore";
 
 export default function NewRDRequestPage() {
+  const { user } = useAuthStore();
+  const isCustomer = user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C";
+  const backPath = isCustomer ? "/" : "/rd-tracking";
+
   const router = useRouter();
+  
+  const displayName =
+    user?.profile?.HoTen ||
+    user?.profile?.TenKhachHang ||
+    user?.username ||
+    "";
+
   const [formData, setFormData] = useState({
     customer: "",
     colorCode: "",
@@ -16,6 +28,12 @@ export default function NewRDRequestPage() {
     requirements: "",
     deadline: "",
   });
+
+  useEffect(() => {
+    if (isCustomer && displayName) {
+      setFormData(prev => ({ ...prev, customer: displayName }));
+    }
+  }, [isCustomer, displayName]);
   const [dragOver, setDragOver] = useState(false);
   const [files, setFiles] = useState<string[]>([]);
 
@@ -68,7 +86,7 @@ export default function NewRDRequestPage() {
     }
 
     alert("✅ Yêu cầu R&D đã được tạo thành công! (Version 1.0)");
-    router.push("/rd-tracking");
+    router.push(backPath);
   };
 
   const handleFileDrop = (e: React.DragEvent) => {
@@ -81,7 +99,7 @@ export default function NewRDRequestPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 animate-in fade-in duration-700">
       <Link
-        href="/rd-tracking"
+        href={backPath}
         className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 font-medium transition-colors mb-6 group no-underline"
       >
         <ArrowLeft
@@ -113,22 +131,28 @@ export default function NewRDRequestPage() {
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                 Khách hàng *
               </label>
-              <select
-                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
-                required
-                value={formData.customer}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, customer: e.target.value }))
-                }
-              >
-                <option value="">Chọn khách hàng</option>
-                <option value="NCC Aluminium">NCC Aluminium</option>
-                <option value="VPIC Steel">VPIC Steel</option>
-                <option value="Daikin Vietnam">Daikin Vietnam</option>
-                <option value="Huihoang Interior">Huihoang Interior</option>
-                <option value="Eurowindow">Eurowindow</option>
-                <option value="Austdoor Group">Austdoor Group</option>
-              </select>
+              {isCustomer ? (
+                <div className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 flex items-center gap-2 cursor-not-allowed">
+                  <UserIcon size={16} /> {formData.customer}
+                </div>
+              ) : (
+                <select
+                  className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
+                  required
+                  value={formData.customer}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, customer: e.target.value }))
+                  }
+                >
+                  <option value="">Chọn khách hàng</option>
+                  <option value="NCC Aluminium">NCC Aluminium</option>
+                  <option value="VPIC Steel">VPIC Steel</option>
+                  <option value="Daikin Vietnam">Daikin Vietnam</option>
+                  <option value="Huihoang Interior">Huihoang Interior</option>
+                  <option value="Eurowindow">Eurowindow</option>
+                  <option value="Austdoor Group">Austdoor Group</option>
+                </select>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -239,11 +263,10 @@ export default function NewRDRequestPage() {
               Ảnh/Tài liệu Đính kèm
             </label>
             <div
-              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-                dragOver
+              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragOver
                   ? "border-purple-500 bg-purple-50/50"
                   : "border-slate-200 bg-slate-50 hover:bg-slate-100"
-              }`}
+                }`}
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);
@@ -313,7 +336,7 @@ export default function NewRDRequestPage() {
             }}
           >
             <Link
-              href="/rd-tracking"
+              href={backPath}
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200"
             >
               Hủy

@@ -12,6 +12,13 @@ export default function ThongTinCaNhanPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
   const [formData, setFormData] = useState({
     displayName: '',
@@ -85,6 +92,40 @@ export default function ThongTinCaNhanPage() {
       setError(err.response?.data?.error || 'Có lỗi xảy ra khi cập nhật thông tin.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      setError('Vui lòng điền đầy đủ thông tin mật khẩu.');
+      return;
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setError('Mật khẩu mới nhập lại không khớp.');
+      return;
+    }
+
+    setPasswordLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await api.post('/auth/change-password', {
+        MatKhauCu: passwordData.oldPassword,
+        MatKhauMoi: passwordData.newPassword,
+      });
+
+      if (res.data.success) {
+        setSuccess('Đổi mật khẩu thành công!');
+        setIsChangePasswordOpen(false);
+        setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Có lỗi xảy ra khi đổi mật khẩu.');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -252,7 +293,11 @@ export default function ThongTinCaNhanPage() {
               </div>
 
               <div className="mt-8 pt-6 border-t border-slate-100">
-                <button type="button" className="text-blue-600 hover:text-blue-500 flex items-center gap-2 text-sm font-semibold transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setIsChangePasswordOpen(true)}
+                  className="text-blue-600 hover:text-blue-500 flex items-center gap-2 text-sm font-semibold transition-colors bg-transparent border-none cursor-pointer"
+                >
                   <Lock size={14} /> Đổi mật khẩu đăng nhập
                 </button>
               </div>
@@ -260,6 +305,69 @@ export default function ThongTinCaNhanPage() {
           </form>
         </div>
       </div>
+
+      {/* Change Password Modal */}
+      {isChangePasswordOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Đổi Mật Khẩu</h2>
+              
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 mb-1">Mật khẩu hiện tại</label>
+                  <input
+                    type="password"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    value={passwordData.oldPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, oldPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 mb-1">Mật khẩu mới</label>
+                  <input
+                    type="password"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 mb-1">Nhập lại mật khẩu mới</label>
+                  <input
+                    type="password"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsChangePasswordOpen(false)}
+                    className="flex-1 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-all border-none cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={passwordLoading}
+                    className="flex-1 px-4 py-3 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center border-none cursor-pointer"
+                  >
+                    {passwordLoading ? <Loader2 size={18} className="animate-spin" /> : 'Cập nhật'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       <p className="mt-8 text-center text-slate-500 text-sm">
         VTSC PaintPro System — Thông tin này được bảo mật và chỉ dùng cho mục đích quản lý nội bộ/đối tác.
