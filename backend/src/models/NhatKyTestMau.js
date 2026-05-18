@@ -24,7 +24,7 @@ const nhatKyTestMauSchema = new mongoose.Schema({
   MaMauYeuCau: { type: String, required: true },
   TrangThai: { 
     type: String, 
-    enum: ['pending', 'testing', 'approved', 'rejected'], 
+    enum: ['pending', 'testing', 'approved', 'rejected', 'complete', 'completed'], 
     default: 'pending' 
   },
   LichSuPhienBan: [lichSuPhienBanSchema],

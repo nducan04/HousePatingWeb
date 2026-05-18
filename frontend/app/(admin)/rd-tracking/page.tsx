@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Eye, FlaskConical, Beaker, CheckCircle2, FlaskRound, Plus, X, Droplets, Package } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Eye, FlaskConical, Beaker, CheckCircle2, FlaskRound, Plus, Loader2, X, Droplets, Package } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import Link from 'next/link';
 import { paintColors } from '@/lib/data/colors-data';
@@ -18,13 +18,14 @@ export default function RDTrackingPage() {
   const [selectedColor, setSelectedColor] = useState('');
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
-
+  
   const [sampleRequests, setSampleRequests] = useState<any[]>([]);
 
   useEffect(() => {
     fetchLogs();
     fetchContracts();
-
+    
+    // Load sample requests from localStorage
     if (typeof window !== 'undefined') {
       const storedRequests = localStorage.getItem('sampleRequests');
       if (storedRequests) {
@@ -225,17 +226,26 @@ export default function RDTrackingPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link href="/rd-tracking/new" className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all no-underline">
+            <Link
+              href="/rd-tracking/new"
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer no-underline"
+            >
               <Droplets size={18} className="text-purple-600" /> Yêu cầu mẫu thử
             </Link>
-            <Link href="/rd-tracking/formulas" className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all no-underline">
+            <Link
+              href="/rd-tracking/formulas"
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer no-underline"
+            >
               <FlaskConical size={18} className="text-emerald-600" /> Quản lý Công thức
             </Link>
-            <Link href="/rd-tracking/materials" className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all no-underline">
+            <Link
+              href="/rd-tracking/materials"
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer no-underline"
+            >
               <Package size={18} className="text-amber-600" /> Nguyên vật liệu
             </Link>
             <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all"
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
               onClick={() => setIsModalOpen(true)}
             >
               <Plus size={18} /> Tạo Log R&D Mới
@@ -351,19 +361,27 @@ export default function RDTrackingPage() {
                     <td className="px-6 py-4 text-center">
                       <span className="font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg text-[13px]">{req.id}</span>
                     </td>
-                    <td className="px-6 py-4 font-bold text-slate-900 text-[14px]">{req.customer}</td>
-                    <td className="px-6 py-4 font-bold text-slate-600 text-[14px]">{req.colorCode}</td>
-                    <td className="px-6 py-4 text-slate-500 text-[14px]">{req.surface}</td>
+                    <td className="px-6 py-4 font-bold text-slate-900 text-[14px]">
+                      {req.customer}
+                    </td>
+                    <td className="px-6 py-4 font-bold text-slate-600 text-[14px]">
+                      {req.colorCode}
+                    </td>
+                    <td className="px-6 py-4 text-slate-500 text-[14px]">
+                      {req.surface}
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`status-badge inline-flex items-center gap-1.5 ${req.status === 'processing' ? 'status-active' : 'status-warning'}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${req.status === 'processing' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
                         {req.status.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">{req.date}</td>
+                    <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">
+                      {req.date}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end">
-                        <Link href={`/rd-tracking/${req.id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-600 transition-all">
+                        <Link href={`/rd-tracking/${req.id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-600 transition-all cursor-pointer">
                           <Eye size={18} />
                         </Link>
                       </div>
@@ -376,7 +394,7 @@ export default function RDTrackingPage() {
         </div>
       </div>
 
-      {/* Main R&D Logs Table */}
+      {/* Existing Data Table with Title */}
       <div className="space-y-4 mt-8">
         <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
           <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
@@ -410,55 +428,54 @@ export default function RDTrackingPage() {
                     ? (item.LichSuPhienBan.reduce((acc: number, cur: any) => acc + (cur.inputWeight > 0 ? (cur.inputWeight - cur.outputWeight) / cur.inputWeight * 100 : 0), 0) / item.LichSuPhienBan.length).toFixed(1)
                     : '0.0';
 
-                  return (
-                    <tr key={item._id} className="hover:bg-blue-50/30 group transition-colors">
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg text-[13px]">{item.MaNhatKy}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-100 flex-shrink-0" style={{ background: paintColors.find(c => c.code === item.MaMauYeuCau)?.hex || '#333' }} />
-                          <div>
-                            <div className="font-bold text-slate-900 text-[14px]">{item.MaMauYeuCau}</div>
-                            {paintColors.find(c => c.code === item.MaMauYeuCau) && (
-                              <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
-                                {paintColors.find(c => c.code === item.MaMauYeuCau)?.name}
-                              </div>
-                            )}
-                          </div>
+                return (
+                  <tr key={item._id} className="hover:bg-blue-50/30 group transition-colors">
+                    <td className="px-6 py-4 text-center">
+                      <span className="font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg text-[13px]">{item.MaNhatKy}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-100 flex-shrink-0" style={{ background: paintColors.find(c => c.code === item.MaMauYeuCau)?.hex || '#333' }} />
+                        <div>
+                          <div className="font-bold text-slate-900 text-[14px]">{item.MaMauYeuCau}</div>
+                          {paintColors.find(c => c.code === item.MaMauYeuCau) && (
+                            <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
+                              {paintColors.find(c => c.code === item.MaMauYeuCau)?.name}
+                            </div>
+                          )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-600 text-[14px]">{item.ContractID?.MaHopDong || item.ContractID?.contractId || 'N/A'}</div>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-[13px]">{item.LichSuPhienBan?.length || 0}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-black text-amber-600 text-[14px]">{wastage}%</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`status-badge inline-flex items-center gap-1.5 ${item.TrangThai === 'approved' ? 'status-active' : item.TrangThai === 'rejected' ? 'status-error' : 'status-warning'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${item.TrangThai === 'approved' ? 'bg-emerald-500' : item.TrangThai === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'}`}></span>
-                          {(item.TrangThai || 'testing').toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">
-                        {new Date(item.updatedAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end">
-                          <Link href={`/rd-tracking/${item._id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all">
-                            <Eye size={18} />
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-600 text-[14px]">{item.ContractID?.MaHopDong || item.ContractID?.contractId || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-[13px]">{item.LichSuPhienBan?.length || 0}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="font-black text-amber-600 text-[14px]">{wastage}%</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`status-badge inline-flex items-center gap-1.5 ${item.TrangThai === 'approved' ? 'status-active' : item.TrangThai === 'rejected' ? 'status-error' : 'status-warning'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${item.TrangThai === 'approved' ? 'bg-emerald-500' : item.TrangThai === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'}`}></span>
+                        {(item.TrangThai || 'testing').toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">
+                      {new Date(item.updatedAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end">
+                        <Link href={`/rd-tracking/${item._id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
+                          <Eye size={18} />
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

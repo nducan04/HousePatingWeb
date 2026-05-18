@@ -23,7 +23,7 @@ const taiKhoanSchema = new mongoose.Schema({
   },
   VaiTro: {
     type: String,
-    enum: ['Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C', 'NhaCungCap'],
+    enum: ['Admin', 'Director', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C', 'NhaCungCap'],
     required: true,
   },
   TrangThai: {
