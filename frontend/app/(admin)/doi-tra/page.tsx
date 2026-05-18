@@ -1,232 +1,181 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, RefreshCcw, Handshake, CheckSquare, XSquare, Plus, X, Package, User, Calendar, FileText, DollarSign, Clock } from 'lucide-react';
+import { Plus, UserPlus } from 'lucide-react';
+import SupportTicketModal from './SupportTicketModal';
+import TicketProcessingDrawer from './TicketProcessingDrawer';
+import type { Ticket, TicketStatus } from './TicketProcessingDrawer';
 import api from '@/lib/utils/axiosAuth';
 
-interface DoiTra {
-  _id: string;
-  MaDoiTra: string;
-  DonHang?: { _id: string, MaDonHang: string, Items?: any[] };
-  KhachHang?: { _id: string, MaKH: string, TenKhachHang: string };
-  LyDo: string;
-  DuKienDenHang?: string;
-  GiaTriTru: number;
-  NhanVienPhuTrach?: { MaNV: string, HoTen: string };
-  TrangThai: string;
-  createdAt: string;
-}
+const initialTickets: Ticket[] = [
+  {
+    id: 'BH-20260516-001',
+    type: 'Bảo hành',
+    customer: 'Công ty XD Thái Hưng',
+    phoneOrContract: 'HD-GC-2601',
+    description: 'Bong tróc mảng lớn tại vị trí hàn sau 2 tuần thi công',
+    status: 'Đang xử lý',
+    assignee: 'KTV-08 Nguyễn Văn T',
+    resolution: 'Cử đội kỹ thuật xuống kiểm tra và sơn lại toàn bộ khu vực lỗi.',
+    createdAt: '16/05/2026',
+  },
+  {
+    id: 'KN-20260515-003',
+    type: 'Khiếu nại',
+    customer: 'Lê Văn Khách',
+    phoneOrContract: '0987 654 321',
+    description: 'Màu sơn không đúng mã RAL 7016 theo hợp đồng',
+    status: 'Chờ tiếp nhận',
+    createdAt: '15/05/2026',
+  },
+];
 
-export default function DoiTraPage() {
-  const [data, setData] = useState<DoiTra[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [isLoading, setIsLoading] = useState(true);
+const STATUS_BADGE: Record<TicketStatus, string> = {
+  'Chờ tiếp nhận': 'bg-rose-100 text-rose-700',
+  'Đang xử lý': 'bg-amber-100 text-amber-700',
+  'Đã hoàn tất': 'bg-emerald-100 text-emerald-700',
+};
 
-  // Modals
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [selectedReturn, setSelectedReturn] = useState<DoiTra | null>(null);
-  const [orders, setOrders] = useState<any[]>([]);
+const TYPE_BADGE: Record<string, string> = {
+  'Bảo hành': 'bg-blue-100 text-blue-700',
+  'Khiếu nại': 'bg-rose-100 text-rose-700',
+  'Đổi trả': 'bg-orange-100 text-orange-700',
+};
 
-  const [formData, setFormData] = useState({
-    DonHang: '',
-    KhachHang: '', // Display only or auto-assigned
-    TenKhachHang: '', // Display label
-    LyDo: '',
-    DuKienDenHang: '',
-    GiaTriTru: 0
-  });
+export default function HelpdeskTicketPage() {
+  const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [dbStaffs, setDbStaffs] = useState<any[]>([]);
 
+  // ── Fetch tickets từ API ──
+  const fetchTickets = async () => {
+    try {
+      const res = await api.get('/doi-tra');
+      if (res.data?.success && res.data.data.length > 0) {
+        const mapped: Ticket[] = res.data.data.map((item: any) => ({
+          id: item.MaDoiTra || item._id,
+          type: (item.LoaiYeuCau as Ticket['type']) || 'Đổi trả',
+          customer: item.KhachHang?.TenKhachHang || 'Khách hàng',
+          phoneOrContract: item.DonHang?.MaHopDong || item.DonHang?.MaDonHang || 'N/A',
+          description: item.LyDo || '',
+          status: (item.TrangThai === 'draft'
+            ? 'Chờ tiếp nhận'
+            : (item.TrangThai || 'Chờ tiếp nhận')) as TicketStatus,
+          assignee: item.NhanVienPhuTrach?.HoTen || '',
+          resolution: item.PhuongAnGiaiQuyet || '',
+          deadline: item.DuKienDenHang || '',
+          createdAt: new Date(item.createdAt).toLocaleDateString('vi-VN'),
+        }));
+        setTickets(mapped);
+      }
+    } catch (err) {
+      console.error('Lỗi fetch tickets:', err);
+    }
+  };
+
+  useEffect(() => { fetchTickets(); }, []);
+
+  // ── Fetch nhân viên ──
   useEffect(() => {
-    fetchData();
+    api.get('/nhan-vien')
+      .then(res => setDbStaffs(res.data.data || []))
+      .catch(err => console.error('Lỗi fetch nhân viên:', err));
   }, []);
 
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      const res = await api.get('/doi-tra');
-      if (res.data.success) setData(res.data.data);
-    } catch (error) {
-      console.error('Lỗi tải dữ liệu đổi trả:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  // ── Toast ──
+  const triggerToast = () => {
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2500);
   };
 
-  const fetchOrders = async () => {
-    try {
-      const res = await api.get('/don-hang');
-      if (res.data.success) setOrders(res.data.data);
-    } catch (error) {
-      console.error('Lỗi tải danh sách đơn hàng:', error);
-    }
+  // ── Mở Drawer ──
+  const openTicketDetail = (ticket: Ticket) => {
+    setSelectedTicket({ ...ticket });
+    setIsDrawerOpen(true);
   };
 
-  const openCreateModal = () => {
-    setFormData({ DonHang: '', KhachHang: '', TenKhachHang: '', LyDo: '', DuKienDenHang: '', GiaTriTru: 0 });
-    fetchOrders();
-    setIsModalOpen(true);
+  // ── Cập nhật ticket state (local) ──
+  const handleUpdateTicket = (updatedData: Partial<Ticket>) => {
+    if (!selectedTicket) return;
+    const updated = { ...selectedTicket, ...updatedData };
+    setTickets(prev => prev.map(t => t.id === selectedTicket.id ? updated : t));
+    setSelectedTicket(updated);
   };
-
-  const handleOrderChange = (orderId: string) => {
-    const order = orders.find(o => o._id === orderId);
-    if (order) {
-      setFormData({
-        ...formData,
-        DonHang: orderId,
-        KhachHang: order.KhachHang?._id || '',
-        TenKhachHang: order.KhachHang?.TenKhachHang || 'N/A'
-      });
-    }
-  };
-
-  const handleSubmit = async () => {
-    try {
-      if (!formData.DonHang || !formData.LyDo) return alert('Vui lòng điền đủ thông tin bắt buộc');
-      const res = await api.post('/doi-tra', formData);
-      if (res.data.success) {
-        alert('Lập lệnh đổi trả thành công!');
-        setIsModalOpen(false);
-        fetchData();
-      }
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Lỗi lưu lệnh đổi trả');
-    }
-  };
-
-  const openDetail = async (id: string) => {
-    try {
-      const res = await api.get(`/doi-tra/${id}`);
-      if (res.data.success) {
-        setSelectedReturn(res.data.data);
-        setIsDetailOpen(true);
-      }
-    } catch (error) {
-      console.error('Lỗi tải chi tiết:', error);
-    }
-  };
-
-  const STATS = {
-    total: data.length,
-    processing: data.filter(d => d.TrangThai === 'Đang xử lý' || d.TrangThai === 'Yêu cầu mới').length,
-    resolved: data.filter(d => d.TrangThai === 'Đã hoàn tiền').length,
-    lostValue: data.filter(d => d.TrangThai === 'Đã hoàn tiền').reduce((sum, d) => sum + (d.GiaTriTru || 0), 0),
-  };
-
-  const filteredData = data.filter(item => {
-    const searchLow = searchTerm.toLowerCase();
-    const matchSearch = item.MaDoiTra.toLowerCase().includes(searchLow) ||
-      item.DonHang?.MaDonHang.toLowerCase().includes(searchLow) ||
-      item.KhachHang?.TenKhachHang.toLowerCase().includes(searchLow);
-
-    const matchFilter = filter === 'all' ||
-      (filter === 'processing' && (item.TrangThai === 'Đang xử lý' || item.TrangThai === 'Yêu cầu mới')) ||
-      (filter === 'resolved' && item.TrangThai === 'Đã hoàn tiền') ||
-      (filter === 'rejected' && item.TrangThai === 'Bị từ chối');
-    return matchSearch && matchFilter;
-  });
 
   return (
-    <div>
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><RefreshCcw size={22} /></div>
-          <div className="kpi-label">Tổng Yêu Cầu Đổi Trả</div>
-          <div className="kpi-value">{STATS.total}</div>
+    <div className="min-h-screen bg-slate-50/50 p-6">
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Trung Tâm Xử Lý Khiếu Nại - Bảo Hành</h1>
+          <p className="text-slate-500 mt-1">Quản lý và xử lý tất cả yêu cầu hỗ trợ khách hàng</p>
         </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><Handshake size={22} /></div>
-          <div className="kpi-label">Đang Xử Lý</div>
-          <div className="kpi-value">{STATS.processing}</div>
-        </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><CheckSquare size={22} /></div>
-          <div className="kpi-label">Đã Chấp Thuận / Bồi thường</div>
-          <div className="kpi-value">{STATS.resolved}</div>
-        </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><XSquare size={22} /></div>
-          <div className="kpi-label">Tổng Tổn Thất Hoàn Trả (VND)</div>
-          <div className="kpi-value">{STATS.lostValue.toLocaleString()}</div>
-        </div>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-black text-white text-sm font-medium rounded-xl transition-colors"
+        >
+          <Plus size={18} strokeWidth={1.5} /> Tạo Ticket Mới
+        </button>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <input
-                type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                placeholder="Tra cứu Mã Đổi Trả, Đơn Hàng..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {[
-                { id: 'all', label: 'Tất cả' },
-                { id: 'processing', label: 'Chờ duyệt' },
-                { id: 'resolved', label: 'Đã hoàn tất' },
-                { id: 'rejected', label: 'Từ chối (Hủy)' }
-              ].map(f => (
-                <button
-                  key={f.id}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
-                  onClick={() => setFilter(f.id)}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button onClick={openCreateModal} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
-            <Plus size={16} /> Submit Lệnh Đổi Trả Thủ Công
-          </button>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="w-full text-left text-sm">
+      {/* ── Bảng danh sách ── */}
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <table className="w-full">
           <thead>
-            <tr>
-              <th>ID Report Đổi Trả</th>
-              <th>Mã Đơn Hàng</th>
-              <th>Khách Hàng</th>
-              <th>Lý Do Đổi Trả</th>
-              <th>Dự Kiến Đền</th>
-              <th>Nhân Viên Phụ Trách</th>
-              <th>Trạng Thái</th>
-              <th>Ngày Tạo</th>
-              <th style={{ textAlign: 'right' }}>Thao tác</th>
+            <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="text-left px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Mã Ticket</th>
+              <th className="text-left px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Khách hàng</th>
+              <th className="text-left px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Loại</th>
+              <th className="text-left px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Trạng thái</th>
+              <th className="text-left px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Phụ trách</th>
+              <th className="text-left px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Ngày tạo</th>
+              <th className="w-12"></th>
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }}>Đang tải dữ liệu...</td></tr>
-            ) : filteredData.length === 0 ? (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }}>Không tìm thấy yêu cầu đổi trả nào.</td></tr>
-            ) : filteredData.map(item => (
-              <tr key={item._id}>
-                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaDoiTra}</td>
-                <td style={{ fontWeight: 600, color: '#475569' }}>{item.DonHang?.MaDonHang}</td>
-                <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.KhachHang?.TenKhachHang}</td>
-                <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.LyDo}>{item.LyDo}</td>
-                <td style={{ fontWeight: 700, color: item.GiaTriTru > 0 ? '#d97706' : '#94a3b8' }}>{item.GiaTriTru?.toLocaleString() || 0} ₫</td>
-                <td style={{ fontWeight: 600, color: '#94a3b8' }}>{item.NhanVienPhuTrach ? `${item.NhanVienPhuTrach.MaNV}` : '---'}</td>
-                <td>
-                  <span className={`badge ${item.TrangThai === 'Đã hoàn tiền' ? 'approved' : item.TrangThai === 'Bị từ chối' ? 'rejected' : 'testing'}`}>
-                    {item.TrangThai}
+            {tickets.length === 0 && (
+              <tr>
+                <td colSpan={7} className="text-center py-16 text-slate-400 text-sm italic">
+                  Chưa có ticket nào. Hãy tạo ticket mới!
+                </td>
+              </tr>
+            )}
+            {tickets.map((ticket) => (
+              <tr
+                key={ticket.id}
+                onClick={() => openTicketDetail(ticket)}
+                className="border-b border-slate-100 hover:bg-slate-50/70 cursor-pointer transition-colors"
+              >
+                <td className="px-6 py-4 font-mono text-sm font-semibold text-slate-900">{ticket.id}</td>
+                <td className="px-6 py-4">
+                  <div className="font-medium text-slate-900">{ticket.customer}</div>
+                  <div className="text-xs text-slate-400">{ticket.phoneOrContract}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${TYPE_BADGE[ticket.type] || 'bg-slate-100 text-slate-600'}`}>
+                    {ticket.type}
                   </span>
                 </td>
-                <td>{new Date(item.createdAt).toLocaleDateString()}</td>
-                <td style={{ textAlign: 'right' }}>
-                  <button onClick={() => openDetail(item._id)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Eye size={16} /></button>
+                <td className="px-6 py-4">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_BADGE[ticket.status]}`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                    {ticket.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-slate-600">
+                  {ticket.assignee || <span className="text-slate-300 italic">Chưa phân công</span>}
+                </td>
+                <td className="px-6 py-4 text-sm text-slate-500">{ticket.createdAt}</td>
+                <td className="px-6 py-4 text-right">
+                  <button
+                    className="p-2 hover:bg-slate-100 rounded-lg"
+                    onClick={e => { e.stopPropagation(); openTicketDetail(ticket); }}
+                  >
+                    <UserPlus size={16} className="text-slate-400" strokeWidth={1.5} />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -234,151 +183,33 @@ export default function DoiTraPage() {
         </table>
       </div>
 
-      {/* Manual Return Modal */}
-      {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: '500px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', margin: '2rem auto', color: '#0f172a' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: 'bold' }}>Lập Lệnh Đổi Trả Thủ Công</h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}><X size={24} /></button>
-            </div>
+      {/* ── Modal tạo Ticket ── */}
+      <SupportTicketModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          triggerToast();
+          fetchTickets();
+          setIsCreateModalOpen(false);
+        }}
+      />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Chọn Đơn Hàng Gốc</label>
-                <select
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  style={{ width: '100%', background: 'black' }}
-                  value={formData.DonHang}
-                  onChange={e => handleOrderChange(e.target.value)}
-                >
-                  <option value="">-- Chọn đơn hàng --</option>
-                  {orders.map(o => <option key={o._id} value={o._id}>{o.MaDonHang} - {o.KhachHang?.TenKhachHang}</option>)}
-                </select>
-              </div>
+      {/* ── Ticket Processing Drawer ── */}
+      <TicketProcessingDrawer
+        isOpen={isDrawerOpen}
+        ticket={selectedTicket}
+        staffList={dbStaffs}
+        onClose={() => setIsDrawerOpen(false)}
+        onUpdate={handleUpdateTicket}
+      />
 
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Khách Hàng</label>
-                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%', opacity: 0.7 }} value={formData.TenKhachHang} readOnly disabled />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Lý Do Đổi Trả / Khiếu Nại</label>
-                <textarea
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  style={{ width: '100%', minHeight: '80px', resize: 'vertical' }}
-                  placeholder="Ghi rõ lỗi sản phẩm hoặc yêu cầu của khách..."
-                  value={formData.LyDo}
-                  onChange={e => setFormData({ ...formData, LyDo: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Dự Kiến Đền Hàng (Mô tả)</label>
-                <input
-                  type="text"
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  style={{ width: '100%' }}
-                  placeholder="Vd: Đổi 2 thùng sơn mịn xanh, bồi thường 500k..."
-                  value={formData.DuKienDenHang}
-                  onChange={e => setFormData({ ...formData, DuKienDenHang: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Giá Trị Phải Đền / Cấn Trừ (₫)</label>
-                <input
-                  type="number"
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  style={{ width: '100%' }}
-                  value={formData.GiaTriTru}
-                  onChange={e => setFormData({ ...formData, GiaTriTru: Number(e.target.value) })}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginTop: '32px' }}>
-              <button
-                onClick={handleSubmit}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                style={{ width: '100%', padding: '12px', fontSize: '16px' }}>
-                Xác Nhận Xuất Lệnh Report
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Detail Modal */}
-      {isDetailOpen && selectedReturn && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: '750px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '32px', margin: '2rem auto', color: '#0f172a' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                  <h2 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: '#2563eb' }}>{selectedReturn.MaDoiTra}</h2>
-                  <span className={`badge ${selectedReturn.TrangThai === 'Đã hoàn tiền' ? 'approved' : 'testing'}`}>{selectedReturn.TrangThai}</span>
-                </div>
-                <div style={{ color: '#475569', display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={14} /> Created: {new Date(selectedReturn.createdAt).toLocaleString()}</span>
-                </div>
-              </div>
-              <button onClick={() => setIsDetailOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}><X size={24} /></button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 32 }}>
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
-                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><Package size={18} /> Thông tin đơn hàng gốc</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div><label style={{ fontSize: 12, color: '#475569' }}>Mã Đơn Hàng</label><div style={{ fontWeight: 600 }}>{selectedReturn.DonHang?.MaDonHang}</div></div>
-                  <div><label style={{ fontSize: 12, color: '#475569' }}>Danh sách sản phẩm trong đơn</label>
-                    <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {selectedReturn.DonHang?.Items?.map((p: any, idx: number) => (
-                        <div key={idx} style={{ fontSize: 13, display: 'flex', justifyContent: 'space-between', padding: '4px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: 4 }}>
-                          <span>{p.SanPham?.TenDongSon}</span>
-                          <span style={{ fontWeight: 600 }}>x{p.SoLuong}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
-                <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><User size={18} /> Khách hàng & Phụ trách</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div><label style={{ fontSize: 12, color: '#475569' }}>Tên Khách Hàng</label><div style={{ fontWeight: 600 }}>{selectedReturn.KhachHang?.TenKhachHang}</div></div>
-                  <div><label style={{ fontSize: 12, color: '#475569' }}>Mã Khách Hàng</label><div style={{ fontWeight: 600 }}>{selectedReturn.KhachHang?.MaKH}</div></div>
-                  <div><label style={{ fontSize: 12, color: '#475569' }}>Nhân viên phụ trách</label><div style={{ fontWeight: 600, color: '#2563eb' }}>{selectedReturn.NhanVienPhuTrach?.HoTen} ({selectedReturn.NhanVienPhuTrach?.MaNV})</div></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, marginBottom: 24, borderLeft: '4px solid #d97706' }}>
-              <div style={{ marginBottom: 20 }}>
-                <h4 style={{ margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: 8 }}><FileText size={18} /> Lý Do & Yêu Cầu</h4>
-                <p style={{ margin: 0, fontStyle: 'italic', color: '#0f172a' }}>{selectedReturn.LyDo}</p>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h4 style={{ margin: '0 0 8px 0' }}>Dự Kiến Đền</h4>
-                  <div style={{ color: '#059669', fontWeight: 600 }}>{selectedReturn.DuKienDenHang || 'Đang chờ xác nhận hàng đền...'}</div>
-                </div>
-
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <h4 style={{ margin: '0 0 8px 0' }}>Giá Trị Cấn Trừ</h4>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#d97706' }}><DollarSign size={24} inline-block /> {selectedReturn.GiaTriTru?.toLocaleString()} ₫</div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-              <button onClick={() => setIsDetailOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700">Đóng chi tiết</button>
-              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => alert('Chức năng In Ticket đang được phát triển')}>In Ticket Report</button>
-            </div>
-          </div>
+      {/* ── Toast ── */}
+      {showToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-[100]">
+          <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+          Đã tạo ticket thành công!
         </div>
       )}
     </div>
   );
 }
-

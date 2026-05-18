@@ -170,14 +170,8 @@ const allNavItems = [
       },
       {
         href: "/doi-tra",
-        label: "Quản lý đổi trả",
-        icon: ReceiptRussianRuble,
-        roles: ["Admin", "NhanVien"],
-      },
-      {
-        href: "/bao-hanh",
-        label: "Bảo hành và hậu mãi",
-        icon: Shield,
+        label: "Trung Tâm Giải Quyết Khiếu Nại",
+        icon: ReceiptRussianRubleIcon,
         roles: ["Admin", "NhanVien"],
       },
       {
@@ -343,6 +337,8 @@ export default function AdminLayout({
     }
     if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
     if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
+    if (pathname?.startsWith("/doi-tra"))
+      return "🎯 Trung Tâm Giải Quyết Khiếu Nại";
     if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
     if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
@@ -356,7 +352,15 @@ export default function AdminLayout({
   };
 
   return (
-    <ProtectedRoute allowedRoles={["Admin", "Director", "NhanVien", "KhachHangB2B", "KhachHangB2C"]}>
+    <ProtectedRoute
+      allowedRoles={[
+        "Admin",
+        "Director",
+        "NhanVien",
+        "KhachHangB2B",
+        "KhachHangB2C",
+      ]}
+    >
       <div className="flex h-screen bg-[#F8FAFC] font-sans">
         {/* ═══════ Sidebar ═══════ */}
         <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">

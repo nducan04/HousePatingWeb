@@ -6,9 +6,12 @@ import {
   X, Search, Filter, RefreshCcw, Shield, Package, AlertCircle,
   TrendingDown, TrendingUp, CheckCircle2, Clock, Eye, Settings,
   FileText, Check, Activity, ChevronRight, ShoppingBag, CreditCard,
-  UserCheck, ClipboardList, PenTool
+  UserCheck, ClipboardList, PenTool, Plus, UserPlus
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
+import SupportTicketModal from '../doi-tra/SupportTicketModal';
+import TicketProcessingDrawer from '../doi-tra/TicketProcessingDrawer';
+import type { Ticket, TicketStatus } from '../doi-tra/TicketProcessingDrawer';
 
 interface Message {
   id: string;
@@ -74,6 +77,17 @@ export default function ChatbotPage() {
 
   const [allStaff, setAllStaff] = useState<any[]>([]);
 
+  // ── Main Tab ──
+  const [mainTab, setMainTab] = useState<'dashboard' | 'tickets'>('dashboard');
+
+  // ── Ticket Management States ──
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [showTicketToast, setShowTicketToast] = useState(false);
+  const [dbStaffs, setDbStaffs] = useState<any[]>([]);
+
   useEffect(() => {
     // Session Init
     const sid = localStorage.getItem('vtsc_chat_session') || `session_${Date.now()}`;
@@ -97,6 +111,7 @@ export default function ChatbotPage() {
 
     fetchDashboardData();
     fetchStaffList();
+    fetchTickets();
   }, []);
 
   const fetchStaffList = async () => {
@@ -112,6 +127,83 @@ export default function ChatbotPage() {
     } catch (err) {
       console.error('Lỗi tải danh sách nhân viên:', err);
     }
+  };
+
+  const fetchTickets = async () => {
+    try {
+      const res = await api.get('/doi-tra');
+      if (res.data?.success && res.data.data.length > 0) {
+        const mapped: Ticket[] = res.data.data.map((item: any) => ({
+          id: item.MaDoiTra || item._id,
+          type: (item.LoaiYeuCau as Ticket['type']) || 'Đổi trả',
+          customer: item.KhachHang?.TenKhachHang || 'Khách hàng',
+          phoneOrContract: item.DonHang?.MaHopDong || item.DonHang?.MaDonHang || 'N/A',
+          description: item.LyDo || '',
+          status: (item.TrangThai === 'draft' ? 'Chờ tiếp nhận' : (item.TrangThai || 'Chờ tiếp nhận')) as TicketStatus,
+          assignee: item.NhanVienPhuTrach?.HoTen || '',
+          resolution: item.PhuongAnGiaiQuyet || '',
+          deadline: item.DuKienDenHang || '',
+          createdAt: new Date(item.createdAt).toLocaleDateString('vi-VN'),
+        }));
+        setTickets(mapped);
+      }
+    } catch (err) { console.error('Lỗi fetch tickets:', err); }
+  };
+
+  const openTicketDetail = (ticket: Ticket) => {
+    setSelectedTicket({ ...ticket });
+    setDbStaffs(allStaff);
+    setIsDrawerOpen(true);
+  };
+
+  const handleDashboardEntryClick = (entry: SupportEntry) => {
+    if (entry.type === 'ORDER') {
+      openOrderSpecs(entry.id, 'ORDER');
+      return;
+    }
+
+    const mappedTicket: Ticket = {
+      id: entry.refId || entry.id,
+      type: entry.type === 'RETURN' ? 'Đổi trả' : 'Bảo hành',
+      customer: entry.customerName,
+      phoneOrContract: entry.raw?.DonHang?.MaHopDong || entry.raw?.DonHang?.MaDonHang || 'N/A',
+      description: entry.issue,
+      status: (entry.status === 'draft' ? 'Chờ tiếp nhận' :
+        entry.status === 'Yêu cầu mới' ? 'Chờ tiếp nhận' :
+          ['Đã hoàn tất', 'DA_GIAO', 'Đã khắc phục', 'Đã hoàn tiền'].includes(entry.status) ? 'Đã hoàn tất' :
+            'Đang xử lý') as TicketStatus,
+      assignee: entry.staffName !== 'N/A' ? entry.staffName : '',
+      resolution: entry.phuongAn || '',
+      deadline: entry.raw?.DuKienDenHang || '',
+      createdAt: new Date(entry.date).toLocaleDateString('vi-VN'),
+    };
+
+    openTicketDetail(mappedTicket);
+  };
+
+  const handleUpdateTicket = (updatedData: Partial<Ticket>) => {
+    if (!selectedTicket) return;
+    const updated = { ...selectedTicket, ...updatedData };
+    setTickets(prev => prev.map(t => t.id === selectedTicket.id ? updated : t));
+    setSelectedTicket(updated);
+
+    // Sync state with entries for dashboard & monitoring
+    setEntries(prev => prev.map(e => {
+      if (e.refId === selectedTicket.id || e.id === selectedTicket.id) {
+        return {
+          ...e,
+          status: updated.status,
+          staffName: updated.assignee || 'N/A',
+          phuongAn: updated.resolution || '',
+        };
+      }
+      return e;
+    }));
+  };
+
+  const triggerTicketToast = () => {
+    setShowTicketToast(true);
+    setTimeout(() => setShowTicketToast(false), 2500);
   };
 
   const fetchDashboardData = async () => {
@@ -304,196 +396,489 @@ export default function ChatbotPage() {
       if (data.success) setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', content: data.data.response, timestamp: new Date() }]);
     } catch (error: any) {
       setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', content: `❌ Lỗi: ${error.message || 'Không thể kết nối đến máy chủ AI.'}`, timestamp: new Date() }]);
-    } finally { setIsChatLoading(false); }
+    } finally {
+      setIsChatLoading(false);
+    }
   };
 
   return (
-    <div style={{ position: 'relative', minHeight: 'calc(100vh - 100px)' }}>
-      {/* Background decorations removed as per prism removal request */}
-
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '2.8rem', fontWeight: 900, background: 'linear-gradient(to right, #0267ffff, #2563eb)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
-          AI & Trung Tâm Hỗ Trợ
-        </h1>
-        <p style={{ color: '#475569', fontSize: '1.1rem', marginTop: '0.25rem' }}>Giám sát tương tác & xử lý khiếu nại khách hàng VTSC</p>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><RefreshCcw size={22} /></div>
-          <div className="kpi-label">Tổng Sự Vụ Đổi Trả</div>
-          <div className="kpi-value">{entries.filter(e => e.type === 'RETURN').length}</div>
-        </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><Shield size={22} /></div>
-          <div className="kpi-label">Khiếu Nại Kỹ Thuật (BH)</div>
-          <div className="kpi-value">{entries.filter(e => e.type === 'WARRANTY').length}</div>
-        </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><CheckCircle2 size={22} /></div>
-          <div className="kpi-label">Đơn Hàng Gần Đây</div>
-          <div className="kpi-value">{STATS.normal}</div>
-        </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><Clock size={22} /></div>
-          <div className="kpi-label">Việc Cần Xử Lý Ngay</div>
-          <div className="kpi-value">{STATS.pending}</div>
+    <div className="min-h-screen bg-slate-50/50 p-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-extrabold">AI</span> &amp; Trung Tâm Hỗ Trợ
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">Giám sát tương tác &amp; xử lý khiếu nại khách hàng VTSC</p>
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Tìm Mã #, Khách hàng..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+      {/* Main Tab Switcher (Pill Tabs) */}
+      <div className="bg-slate-100 p-1 rounded-xl flex gap-1.5 w-fit mb-8">
+        <button
+          onClick={() => setMainTab('dashboard')}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer border-none ${mainTab === 'dashboard'
+            ? 'bg-white text-slate-900 shadow-sm'
+            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50 bg-transparent'
+            }`}
+        >
+          <Activity size={16} className={mainTab === 'dashboard' ? 'text-blue-600' : 'text-slate-400'} /> Dashboard &amp; Giám Sát
+        </button>
+        <button
+          onClick={() => setMainTab('tickets')}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer border-none ${mainTab === 'tickets'
+            ? 'bg-white text-slate-900 shadow-sm'
+            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50 bg-transparent'
+            }`}
+        >
+          <ClipboardList size={16} className={mainTab === 'tickets' ? 'text-blue-600' : 'text-slate-400'} /> Quản Lý Ticket {tickets.length > 0 && `(${tickets.length})`}
+        </button>
+      </div>
+
+      {/* ── DASHBOARD TAB ── */}
+      {mainTab === 'dashboard' && (
+        <>
+          {/* Grid 4 KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* Card 1 */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between h-32 hover:border-slate-300 transition-all">
+              <div className="flex justify-between items-start">
+                <span className="text-sm text-slate-500 font-medium">Tổng Sự Vụ Đổi Trả</span>
+                <div className="p-2 bg-orange-50 rounded-lg">
+                  <RefreshCcw size={18} className="text-orange-600" />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-slate-800">
+                {entries.filter(e => e.type === 'RETURN').length}
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {[{ id: 'ALL', label: 'Tất cả' }, { id: 'PROBLEM', label: 'Hỗ trợ đặc biệt' }, { id: 'NORMAL', label: 'Vận hành chuẩn' }].map(tab => (
-                <button key={tab.id} className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${activeTab === tab.id ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setActiveTab(tab.id as any)}>{tab.label}</button>
-              ))}
+
+            {/* Card 2 */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between h-32 hover:border-slate-300 transition-all">
+              <div className="flex justify-between items-start">
+                <span className="text-sm text-slate-500 font-medium">Khiếu Nại Kỹ Thuật (BH)</span>
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <Shield size={18} className="text-blue-600" />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-slate-800">
+                {entries.filter(e => e.type === 'WARRANTY').length}
+              </div>
+            </div>
+
+            {/* Card 3 */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between h-32 hover:border-slate-300 transition-all">
+              <div className="flex justify-between items-start">
+                <span className="text-sm text-slate-500 font-medium">Đơn Hàng Gần Đây</span>
+                <div className="p-2 bg-emerald-50 rounded-lg">
+                  <CheckCircle2 size={18} className="text-emerald-600" />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-slate-800">
+                {STATS.normal}
+              </div>
+            </div>
+
+            {/* Card 4 */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between h-32 hover:border-slate-300 transition-all">
+              <div className="flex justify-between items-start">
+                <span className="text-sm text-slate-500 font-medium">Việc Cần Xử Lý Ngay</span>
+                <div className="p-2 bg-amber-50 rounded-lg">
+                  <Clock size={18} className="text-amber-600" />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-slate-800">
+                {STATS.pending}
+              </div>
             </div>
           </div>
-          <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" onClick={fetchDashboardData}><RefreshCcw size={16} /> Làm mới dữ liệu</button>
-        </div>
-      </div>
 
-      {/* Main Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0 }}>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr>
-              <th>Phân loại</th>
-              <th>Mã Đơn Hàng</th>
-              <th>Khách hàng</th>
-              <th>Nội dung / Khiếu nại</th>
-              <th>NV Phụ Trách (ĐT/BH)</th>
-              <th>Trạng thái</th>
-              <th>Thời gian</th>
-              <th style={{ textAlign: 'right' }}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoadingDashboard ? (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: '3rem' }}><Loader2 className="animate-spin" style={{ display: 'inline' }} /> Đang xử lý dữ liệu thực tế...</td></tr>
-            ) : filteredEntries.map(entry => (
-              <tr key={`${entry.type}-${entry.id}`}>
-                <td>
-                  <span className={`badge ${entry.type === 'RETURN' ? 'rejected' : entry.type === 'WARRANTY' ? 'testing' : 'approved'}`}>
-                    {entry.type === 'RETURN' ? 'Đổi Trả' : entry.type === 'WARRANTY' ? 'Bảo Hành' : 'Đơn Hàng'}
-                  </span>
-                </td>
-                <td>
+          {/* Toolbar (Search & Filter) */}
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none sm:w-64">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  placeholder="Tìm Mã #, Khách hàng..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              {/* Segmented Control */}
+              <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 self-start sm:self-auto">
+                {[{ id: 'ALL', label: 'Tất cả' }, { id: 'PROBLEM', label: 'Hỗ trợ đặc biệt' }, { id: 'NORMAL', label: 'Vận hành chuẩn' }].map(tab => (
                   <button
-                    onClick={() => openOrderSpecs(entry.id, entry.type)}
-                    className="hover:underline transition-all"
-                    style={{ fontWeight: 800, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all border-none ${activeTab === tab.id
+                      ? 'bg-white text-slate-800 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800 bg-transparent'
+                      }`}
                   >
-                    #{entry.refId}
+                    {tab.label}
                   </button>
-                </td>
-                <td>
-                  <button onClick={() => openCustomerDetails(entry.customerId, entry.customerName)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', fontWeight: 600 }} className="hover:text-[#2563eb] transition-colors">
-                    {entry.customerName}
-                  </button>
-                </td>
-                <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={entry.issue}>{entry.issue}</td>
-                <td>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 700, color: '#7c3aed', fontSize: 13 }}>{entry.staffName}</span>
-                    <span style={{ fontSize: 11, color: '#94a3b8' }}>ID: {entry.staffId}</span>
-                  </div>
-                </td>
-                <td>
-                  <span className={`badge ${['Đã hoàn tất', 'DA_GIAO', 'Đã khắc phục', 'Đã hoàn tiền'].includes(entry.status) ? 'approved' : 'warning'}`}>
-                    {entry.status}
-                  </span>
-                </td>
-                <td>{new Date(entry.date).toLocaleDateString()}</td>
-                <td style={{ textAlign: 'right' }}>
-                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" title="Quản lý & Giải quyết" onClick={() => openActionModal(entry)}><Settings size={16} /></button>
-                    <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" title="Hỗ trợ AI" onClick={() => setIsChatOpen(true)}><Bot size={16} /></button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={fetchDashboardData}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-sm font-medium transition-all duration-200 w-full sm:w-auto cursor-pointer"
+            >
+              <RefreshCcw size={15} className="text-slate-500" />
+              Làm mới dữ liệu
+            </button>
+          </div>
+
+          {/* Data Table */}
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Phân loại</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Mã Đơn Hàng</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Khách hàng</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Nội dung / Khiếu nại</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">NV Phụ Trách</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Trạng thái</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Thời gian</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoadingDashboard ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-16 text-slate-500">
+                        <Loader2 className="animate-spin inline-block mr-2" size={18} /> Đang xử lý dữ liệu thực tế...
+                      </td>
+                    </tr>
+                  ) : filteredEntries.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-16 text-slate-400 italic">
+                        Không tìm thấy kết quả nào phù hợp.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredEntries.map(entry => (
+                      <tr
+                        key={`${entry.type}-${entry.id}`}
+                        onClick={() => handleDashboardEntryClick(entry)}
+                        className="border-b border-slate-100 hover:bg-slate-50/80 cursor-pointer transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${entry.type === 'RETURN'
+                            ? 'bg-orange-100 text-orange-700'
+                            : entry.type === 'WARRANTY'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-slate-100 text-slate-700'
+                            }`}>
+                            {entry.type === 'RETURN' ? 'Đổi Trả' : entry.type === 'WARRANTY' ? 'Bảo Hành' : 'Đơn Hàng'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                          <button
+                            onClick={() => openOrderSpecs(entry.id, entry.type)}
+                            className="font-mono font-bold text-blue-600 hover:underline bg-transparent border-none cursor-pointer p-0 text-left"
+                          >
+                            #{entry.refId}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                          <button
+                            onClick={() => openCustomerDetails(entry.customerId, entry.customerName)}
+                            className="bg-transparent border-none p-0 cursor-pointer text-left font-semibold text-slate-800 hover:text-blue-600 transition-colors"
+                          >
+                            {entry.customerName}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 max-w-[200px] truncate text-slate-600" title={entry.issue}>
+                          {entry.issue}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 border border-slate-200">
+                              {entry.staffName ? entry.staffName.charAt(0) : 'U'}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-slate-800 text-sm">{entry.staffName}</span>
+                              <span className="text-xs text-slate-400">ID: {entry.staffId}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${['Đã hoàn tất', 'DA_GIAO', 'Đã khắc phục', 'Đã hoàn tiền'].includes(entry.status)
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : ['Yêu cầu mới', 'CHO_XAC_NHAN'].includes(entry.status)
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-amber-100 text-amber-700'
+                            }`}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                            {entry.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-500 text-sm">
+                          {new Date(entry.date).toLocaleDateString('vi-VN')}
+                        </td>
+                        <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
+                          <div className="flex justify-end gap-1.5">
+                            <button
+                              onClick={() => handleDashboardEntryClick(entry)}
+                              className="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                              title="Xem chi tiết"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDashboardEntryClick(entry)}
+                              className="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                              title="Quản lý & Giải quyết"
+                            >
+                              <Settings size={16} />
+                            </button>
+                            <button
+                              onClick={() => setIsChatOpen(true)}
+                              className="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                              title="Hỗ trợ AI"
+                            >
+                              <Bot size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── TICKET TAB ── */}
+      {mainTab === 'tickets' && (
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Trung Tâm Xử Lý Khiếu Nại</h2>
+              <p className="text-sm text-slate-500 mt-1">Quản lý và xử lý tất cả yêu cầu hỗ trợ khách hàng</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={fetchTickets}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-sm font-medium transition-all cursor-pointer"
+              >
+                <RefreshCcw size={15} /> Làm mới
+              </button>
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-xl transition-all cursor-pointer"
+              >
+                <Plus size={16} /> Tạo Ticket Mới
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Mã Ticket</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Khách hàng</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Loại</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Trạng thái</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Phụ trách</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Ngày tạo</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tickets.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-16 text-slate-400 italic">
+                        Chưa có ticket nào. Hãy tạo ticket mới!
+                      </td>
+                    </tr>
+                  ) : (
+                    tickets.map((ticket) => {
+                      const typeBadge: Record<string, string> = {
+                        'Bảo hành': 'bg-blue-100 text-blue-700',
+                        'Khiếu nại': 'bg-rose-100 text-rose-700',
+                        'Đổi trả': 'bg-orange-100 text-orange-700'
+                      };
+                      const statusBadge: Record<string, string> = {
+                        'Chờ tiếp nhận': 'bg-rose-100 text-rose-700',
+                        'Đang xử lý': 'bg-amber-100 text-amber-700',
+                        'Đã hoàn tất': 'bg-emerald-100 text-emerald-700'
+                      };
+                      return (
+                        <tr
+                          key={ticket.id}
+                          onClick={() => openTicketDetail(ticket)}
+                          className="border-b border-slate-100 hover:bg-slate-50/80 cursor-pointer transition-colors"
+                        >
+                          <td className="px-6 py-4 font-mono font-semibold text-slate-900">{ticket.id}</td>
+                          <td className="px-6 py-4">
+                            <div className="font-semibold text-slate-800">{ticket.customer}</div>
+                            <div className="text-xs text-slate-400 mt-0.5">{ticket.phoneOrContract}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${typeBadge[ticket.type] || 'bg-slate-100 text-slate-600'}`}>
+                              {ticket.type}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusBadge[ticket.status] || 'bg-slate-100 text-slate-600'}`}>
+                              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                              {ticket.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 border border-slate-200">
+                                {ticket.assignee ? ticket.assignee.charAt(0) : 'U'}
+                              </div>
+                              <span className="text-sm font-medium text-slate-700">
+                                {ticket.assignee || <span className="text-slate-300 italic font-normal">Chưa phân công</span>}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-500">{ticket.createdAt}</td>
+                          <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
+                            <button
+                              className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition-colors"
+                              onClick={() => openTicketDetail(ticket)}
+                            >
+                              <UserPlus size={16} strokeWidth={1.5} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Modals for ticket tab */}
+          <SupportTicketModal
+            isOpen={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            onSuccess={() => { triggerTicketToast(); fetchTickets(); setIsCreateModalOpen(false); }}
+          />
+          <TicketProcessingDrawer
+            isOpen={isDrawerOpen}
+            ticket={selectedTicket}
+            staffList={dbStaffs}
+            onClose={() => setIsDrawerOpen(false)}
+            onUpdate={handleUpdateTicket}
+          />
+          {showTicketToast && (
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-[100]">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              Đã tạo ticket thành công!
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Specific Order Specs Modal */}
       {isSpecOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.9)' }}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '90%', maxWidth: '850px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', animation: 'slideUp 0.3s', background: '#ffffff' }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ padding: 10, background: 'rgba(37, 99, 235, 0.08)', borderRadius: '12px' }}><ShoppingBag className="text-[#2563eb]" /></div>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-lg w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-50 rounded-lg text-blue-600"><ShoppingBag size={20} /></div>
                 <div>
-                  <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>Chi Tiết Đơn Hàng Thành Phẩm</h3>
-                  {orderDetails && <span style={{ color: '#2563eb', fontWeight: 700 }}>Mã đơn: #{orderDetails.MaDonHang}</span>}
+                  <h3 className="text-lg font-bold text-slate-950">Chi Tiết Đơn Hàng Thành Phẩm</h3>
+                  {orderDetails && <span className="text-blue-600 font-semibold text-sm">Mã đơn: #{orderDetails.MaDonHang}</span>}
                 </div>
               </div>
-              <button onClick={() => { setIsSpecOpen(false); setOrderDetails(null); }} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"><X size={24} /></button>
+              <button
+                onClick={() => { setIsSpecOpen(false); setOrderDetails(null); }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200 transition-colors"
+              >
+                <X size={20} />
+              </button>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {isLoadingSpecs ? (
-                <div style={{ textAlign: 'center', padding: '4rem' }}><Loader2 className="animate-spin mx-auto mb-4" /> Đang truy xuất thông số kỹ thuật lớp phủ...</div>
+                <div className="text-center py-16 text-slate-500">
+                  <Loader2 className="animate-spin mx-auto mb-3" size={24} /> Đang truy xuất thông số kỹ thuật...
+                </div>
               ) : !orderDetails ? (
-                <div style={{ textAlign: 'center', padding: '4rem', opacity: 0.5 }}>Không tìm thấy thông tin đơn hàng gốc cho sự vụ này.</div>
+                <div className="text-center py-16 text-slate-400 italic">Không tìm thấy thông tin đơn hàng gốc cho sự vụ này.</div>
               ) : (
                 <>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
-                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 16, background: 'rgba(50, 121, 121, 0.02)' }}>
-                      <div style={{ fontSize: 11, opacity: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Tổng thanh toán</div>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: '#2563eb' }}>{orderDetails.TongTien?.toLocaleString()} ₫</div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                      <div className="text-xs text-slate-500 uppercase font-semibold mb-1">Tổng thanh toán</div>
+                      <div className="text-lg font-bold text-slate-900">{orderDetails.TongTien?.toLocaleString()} ₫</div>
                     </div>
-                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 16, background: 'rgba(255,255,255,0.02)' }}>
-                      <div style={{ fontSize: 11, opacity: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Phương thức</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}><CreditCard size={14} /> {orderDetails.PhuongThucThanhToan}</div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                      <div className="text-xs text-slate-500 uppercase font-semibold mb-1">Phương thức</div>
+                      <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+                        <CreditCard size={14} /> {orderDetails.PhuongThucThanhToan}
+                      </div>
                     </div>
-                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 16, background: 'rgba(255,255,255,0.02)' }}>
-                      <div style={{ fontSize: 11, opacity: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Trạng thái giao</div>
-                      <div style={{ fontWeight: 600 }}><div className="badge approved">{orderDetails.TrangThai}</div></div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                      <div className="text-xs text-slate-500 uppercase font-semibold mb-1">Trạng thái giao</div>
+                      <div className="mt-1">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                          {orderDetails.TrangThai}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><ClipboardList size={20} /> Danh mục sản phẩm & Hệ màu</h4>
-                  <table className="w-full text-left text-sm" style={{ fontSize: '0.9rem' }}>
-                    <thead>
-                      <tr>
-                        <th>Tên Sản Phẩm / Dòng Sơn</th>
-                        <th>Mã Màu (AkzoNobel)</th>
-                        <th>Màu Sắc</th>
-                        <th style={{ textAlign: 'right' }}>Số Lượng</th>
-                        <th style={{ textAlign: 'right' }}>Đơn Giá</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {orderDetails.Items?.map((item: any, idx: number) => (
-                        <tr key={idx}>
-                          <td style={{ fontWeight: 600 }}>{item.SanPham?.TenDongSon || item.TenSanPham}</td>
-                          <td style={{ fontWeight: 700, color: '#7c3aed' }}>{item.MaMau}</td>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <div style={{ width: 24, height: 24, borderRadius: '4px', background: item.HexCode || '#888', border: '1px solid rgba(255,255,255,0.1)' }}></div>
-                              <span style={{ fontSize: 12 }}>{item.TenMau || 'Tiêu chuẩn'}</span>
-                            </div>
-                          </td>
-                          <td style={{ textAlign: 'right' }}>{item.SoLuong} Thùng</td>
-                          <td style={{ textAlign: 'right' }}>{item.DonGia?.toLocaleString()} ₫</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                      <ClipboardList size={18} className="text-blue-500" /> Danh mục sản phẩm &amp; Hệ màu
+                    </h4>
+                    <div className="border border-slate-200 rounded-xl overflow-hidden">
+                      <table className="w-full text-left text-sm border-collapse">
+                        <thead className="bg-slate-50">
+                          <tr className="border-b border-slate-200">
+                            <th className="px-4 py-3 font-semibold text-slate-700">Tên Sản Phẩm / Dòng Sơn</th>
+                            <th className="px-4 py-3 font-semibold text-slate-700">Mã Màu (AkzoNobel)</th>
+                            <th className="px-4 py-3 font-semibold text-slate-700">Màu Sắc</th>
+                            <th className="px-4 py-3 font-semibold text-slate-700 text-right">Số Lượng</th>
+                            <th className="px-4 py-3 font-semibold text-slate-700 text-right">Đơn Giá</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {orderDetails.Items?.map((item: any, idx: number) => (
+                            <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/50">
+                              <td className="px-4 py-3 font-semibold text-slate-900">{item.SanPham?.TenDongSon || item.TenSanPham}</td>
+                              <td className="px-4 py-3 font-mono font-bold text-purple-700">{item.MaMau}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="w-5 h-5 rounded border border-slate-200 shadow-sm"
+                                    style={{ background: item.HexCode || '#888' }}
+                                  />
+                                  <span className="text-xs text-slate-600">{item.TenMau || 'Tiêu chuẩn'}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-right font-medium text-slate-800">{item.SoLuong} Thùng</td>
+                              <td className="px-4 py-3 text-right font-semibold text-slate-900">{item.DonGia?.toLocaleString()} ₫</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
 
                   {orderDetails.GhiChu && (
-                    <div style={{ marginTop: 20, padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 12, borderLeft: '4px solid #d97706' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Ghi chú kỹ thuật đơn hàng:</div>
-                      <div style={{ fontSize: 13, opacity: 0.8 }}>{orderDetails.GhiChu}</div>
+                    <div className="p-4 bg-amber-50/50 border-l-4 border-amber-500 rounded-r-xl">
+                      <div className="text-xs font-bold text-amber-800 mb-1">Ghi chú kỹ thuật đơn hàng:</div>
+                      <div className="text-sm text-amber-900 leading-relaxed">{orderDetails.GhiChu}</div>
                     </div>
                   )}
                 </>
@@ -505,22 +890,26 @@ export default function ChatbotPage() {
 
       {/* Enhanced Action Modal */}
       {isActionOpen && targetEntry && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1400, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.92)' }}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '500px', display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', animation: 'slideUp 0.3s', background: '#ffffff' }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontWeight: 800 }}>Quản Lý & Giải Quyết</h3>
-              <button onClick={() => setIsActionOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"><X size={20} /></button>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="text-lg font-bold text-slate-950">Quản Lý &amp; Giải Quyết</h3>
+              <button
+                onClick={() => setIsActionOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200 transition-colors"
+              >
+                <X size={20} />
+              </button>
             </div>
 
-            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div className="p-6 space-y-5">
               {/* Staff Assignment */}
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, marginBottom: 8, color: '#2563eb' }}>
+                <label className="block text-sm font-semibold text-blue-600 mb-2 flex items-center gap-1.5">
                   <UserCheck size={16} /> Nhân viên phụ trách hỗ trợ (CSKH/Bảo hành)
                 </label>
                 <select
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  style={{ width: '100%', background: '#000000' }}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                   value={selectedStaffId}
                   onChange={e => setSelectedStaffId(e.target.value)}
                 >
@@ -533,12 +922,11 @@ export default function ChatbotPage() {
 
               {/* Resolution Plan */}
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, marginBottom: 8, color: '#2563eb' }}>
-                  <PenTool size={16} /> Phương án giải quyết & Thực thi
+                <label className="block text-sm font-semibold text-blue-600 mb-2 flex items-center gap-1.5">
+                  <PenTool size={16} /> Phương án giải quyết &amp; Thực thi
                 </label>
                 <textarea
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  style={{ width: '100%', minHeight: 120, resize: 'none' }}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all h-28 resize-none leading-relaxed"
                   placeholder="Ghi rõ các bước giải quyết cho khách hàng (Vd: Hoàn 50% tiền, Gửi mẫu sơn mới, KT xuống tận nhà...)"
                   value={resolutionPlan}
                   onChange={e => setResolutionPlan(e.target.value)}
@@ -546,25 +934,29 @@ export default function ChatbotPage() {
               </div>
 
               {/* Action Buttons */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   disabled={isUpdating}
                   onClick={() => updateEntryStatus(targetEntry.type === 'WARRANTY' ? 'Đang khảo sát' : targetEntry.type === 'ORDER' ? 'DANG_XU_LY' : 'Đang xử lý')}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ justifyContent: 'center', height: 48, fontWeight: 700 }}
-                >Xử lý yêu cầu</button>
+                  className="w-full py-2.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-xl transition-all cursor-pointer"
+                >
+                  Xử lý yêu cầu
+                </button>
                 <button
                   disabled={isUpdating}
                   onClick={() => updateEntryStatus(targetEntry.type === 'WARRANTY' ? 'Đang khảo sát' : targetEntry.type === 'ORDER' ? 'DANG_GIAO' : 'Đang xử lý')}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ justifyContent: 'center', height: 48, fontWeight: 700 }}
-                >Đang thực hiện...</button>
+                  className="w-full py-2.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-xl transition-all cursor-pointer"
+                >
+                  Đang thực hiện...
+                </button>
               </div>
 
               <button
                 disabled={isUpdating}
                 onClick={() => updateEntryStatus(targetEntry.type === 'WARRANTY' ? 'Đã khắc phục' : targetEntry.type === 'ORDER' ? 'DA_GIAO' : 'Đã hoàn tiền')}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ width: '100%', height: 52, fontWeight: 800, background: '#059669', border: 'none' }}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 border-none cursor-pointer"
               >
-                <Check size={20} /> HOÀN TẤT & ĐÓNG SỰ VỤ
+                <Check size={18} /> HOÀN TẤT &amp; ĐÓNG SỰ VỤ
               </button>
             </div>
           </div>
@@ -573,60 +965,104 @@ export default function ChatbotPage() {
 
       {/* Customer Detail Modal (Order History) */}
       {isDetailOpen && selectedCustomer && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.9)' }}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '90%', maxWidth: '800px', height: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', animation: 'slideUp 0.3s', background: '#ffffff' }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontWeight: 800 }}>Lịch sử giao dịch: {selectedCustomer.name}</h3>
-              <button onClick={() => setIsDetailOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"><X size={24} /></button>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="text-lg font-bold text-slate-950">Lịch sử giao dịch: {selectedCustomer.name}</h3>
+              <button
+                onClick={() => setIsDetailOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200 transition-colors"
+              >
+                <X size={20} />
+              </button>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-              {isLoadingOrders ? <Loader2 className="animate-spin mx-auto" /> : customerOrders.map((o: any) => (
-                <div key={o._id} className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 16, marginBottom: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ fontWeight: 800, color: '#2563eb' }}>#{o.MaDonHang}</span>
-                    <span className="badge approved">{o.TrangThai}</span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', fontSize: 12 }}>
-                    <div>Ngày: {new Date(o.createdAt).toLocaleDateString()}</div>
-                    <div>Tổng: {o.TongTien?.toLocaleString()} ₫</div>
-                    <button onClick={() => { setIsDetailOpen(false); openOrderSpecs(o._id, 'ORDER'); }} className="text-[#2563eb] hover:underline" style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>Xem chi tiết hàng hóa</button>
-                  </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30">
+              {isLoadingOrders ? (
+                <div className="text-center py-16">
+                  <Loader2 className="animate-spin mx-auto text-slate-500" size={24} />
                 </div>
-              ))}
+              ) : customerOrders.length === 0 ? (
+                <div className="text-center py-16 text-slate-400 italic">Khách hàng chưa có đơn hàng giao dịch nào.</div>
+              ) : (
+                customerOrders.map((o: any) => (
+                  <div key={o._id} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+                    <div className="flex justify-between items-start">
+                      <span className="font-mono font-bold text-blue-600 text-base">#{o.MaDonHang}</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                        {o.TrangThai}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-slate-600">
+                      <div>Ngày: {new Date(o.createdAt).toLocaleDateString('vi-VN')}</div>
+                      <div className="font-semibold text-slate-800">Tổng: {o.TongTien?.toLocaleString()} ₫</div>
+                      <button
+                        onClick={() => { setIsDetailOpen(false); openOrderSpecs(o._id, 'ORDER'); }}
+                        className="text-blue-600 hover:underline bg-transparent border-none p-0 cursor-pointer text-left font-medium"
+                      >
+                        Xem chi tiết hàng hóa
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* Floating Chat Bubble */}
-      <button onClick={() => setIsChatOpen(!isChatOpen)} style={{ position: 'fixed', bottom: '30px', right: '30px', width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', zIndex: 1000 }}>
-        {isChatOpen ? <X size={28} color="white" /> : <Bot size={28} color="white" />}
+      <button
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 z-50 border-none cursor-pointer"
+      >
+        {isChatOpen ? <X size={24} className="text-white" /> : <Bot size={24} className="text-white" />}
       </button>
 
       {/* Chat Window */}
       {isChatOpen && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ position: 'fixed', bottom: '100px', right: '30px', width: '400px', height: '550px', display: 'flex', flexDirection: 'column', zIndex: 999, overflow: 'hidden', padding: 0, background: '#ffffff' }}>
-          <div style={{ background: 'linear-gradient(to right, #2563eb, #7c3aed)', padding: '16px', color: 'white' }}>
-            <Bot size={24} /> <span style={{ fontWeight: 800 }}>VTSC AI Support</span>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-xl transition-all duration-300 flex flex-col fixed bottom-24 right-8 w-96 h-[500px] z-50 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-4 text-white flex items-center gap-2">
+            <Bot size={20} />
+            <div>
+              <span className="font-bold text-sm block">VTSC AI Support</span>
+              <span className="text-[10px] text-blue-100">Hỗ trợ tra cứu &amp; CSKH thời gian thực</span>
+            </div>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: 'rgba(0,0,0,0.2)' }}>
+          <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50 space-y-3">
             {messages.map((msg) => (
-              <div key={msg.id} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', marginBottom: 15 }}>
-                <div style={{ padding: '12px 16px', borderRadius: '16px', background: msg.role === 'user' ? '#2563eb' : '#ffffff', color: msg.role === 'user' ? 'white' : '#0f172a' }}>{msg.content}</div>
+              <div
+                key={msg.id}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${msg.role === 'user'
+                    ? 'bg-blue-600 text-white rounded-tr-none'
+                    : 'bg-white text-slate-800 rounded-tl-none border border-slate-200'
+                    }`}
+                >
+                  {msg.content}
+                </div>
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
-          <form onSubmit={handleSubmitChat} style={{ padding: '16px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: 10 }}>
-            <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ flex: 1, borderRadius: '20px' }} placeholder="Hỏi AI..." value={input} onChange={e => setInput(e.target.value)} />
-            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0 }}><Send size={18} /></button>
+          <form
+            onSubmit={handleSubmitChat}
+            className="p-4 border-t border-slate-200 bg-white flex gap-2"
+          >
+            <input
+              type="text"
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:bg-white transition-all"
+              placeholder="Hỏi AI..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+            />
+            <button className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors border-none cursor-pointer">
+              <Send size={16} />
+            </button>
           </form>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-      `}</style>
     </div>
   );
 }
