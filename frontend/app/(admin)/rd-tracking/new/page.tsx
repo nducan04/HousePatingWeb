@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Upload, Plus, Droplets, X, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -12,6 +12,9 @@ export default function NewRDRequestPage() {
   const backPath = isCustomer ? "/" : "/rd-tracking";
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryColorCode = searchParams ? searchParams.get("colorCode") || "" : "";
+  const queryColorName = searchParams ? searchParams.get("colorName") || "" : "";
   
   const displayName =
     user?.profile?.HoTen ||
@@ -21,8 +24,8 @@ export default function NewRDRequestPage() {
 
   const [formData, setFormData] = useState({
     customer: "",
-    colorCode: "",
-    colorName: "",
+    colorCode: queryColorCode,
+    colorName: queryColorName,
     surface: "",
     substrate: "",
     requirements: "",

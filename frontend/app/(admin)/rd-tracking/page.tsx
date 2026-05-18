@@ -267,8 +267,6 @@ export default function RDTrackingPage() {
         </div>
       </div>
 
-<<<<<<< HEAD
-=======
       {/* Create Log Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
@@ -313,7 +311,7 @@ export default function RDTrackingPage() {
                     const info = paintColors.find(c => c.code === color);
                     return (
                       <option key={color} value={color}>
-                        {color} {info ? `- ${info.name}` : ''}
+                         {color} {info ? `- ${info.name}` : ''}
                       </option>
                     );
                   })}
@@ -346,8 +344,6 @@ export default function RDTrackingPage() {
           </div>
         </div>
       )}
-
->>>>>>> develop
       {/* Sample Requests Table */}
       <div className="space-y-4">
         <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">

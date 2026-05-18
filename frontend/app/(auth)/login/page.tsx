@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/lib/store/authStore";
 import api from "@/lib/utils/axiosAuth";
 import Link from "next/link";
@@ -9,6 +9,9 @@ import { Loader2, AlertCircle, LogIn, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams ? searchParams.get("redirect") || "" : "";
+  
   const { loginState } = useAuthStore();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -33,6 +36,11 @@ export default function LoginPage() {
 
       if (response.data.success) {
         loginState(response.data.user, response.data.accessToken);
+
+        if (redirect) {
+          router.push(redirect);
+          return;
+        }
 
         const role = response.data.user.role;
         const systemRoles = ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C", "NhaCungCap"];

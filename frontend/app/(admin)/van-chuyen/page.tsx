@@ -219,7 +219,7 @@ export default function VanChuyenPage() {
             <ArrowLeft size={20} /> Quay lại
           </button>
           <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, textTransform: 'uppercase', letterSpacing: 1 }}>
-            THEO DÕI VẬN CHUYỂN ĐƠN HÀNG #{selectedTracking.DonHang.MaDonHang}
+            THEO DÕI VẬN CHUYỂN ĐƠN HÀNG #{selectedTracking.DonHang?.MaDonHang || 'N/A'}
           </h2>
         </div>
 
@@ -315,7 +315,7 @@ export default function VanChuyenPage() {
                       }}>
                         {isDelivered ? <CheckCircle2 size={24} color="#059669" /> : <User size={20} color="#94a3b8" />}
                       </div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: isDelivered ? '#059669' : '#94a3b8' }}>{selectedTracking.DonHang.KhachHang.TenKhachHang}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: isDelivered ? '#059669' : '#94a3b8' }}>{selectedTracking.DonHang?.KhachHang?.TenKhachHang || 'N/A'}</div>
                     </div>
                   </div>
 
@@ -408,15 +408,15 @@ export default function VanChuyenPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             <div>
               <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase' }}>Người nhận hàng:</div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>{selectedTracking.DonHang.KhachHang?.TenKhachHang || 'N/A'}</div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>{selectedTracking.DonHang?.KhachHang?.TenKhachHang || 'N/A'}</div>
             </div>
             <div>
               <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase' }}>Số điện thoại:</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#d97706' }}>{getReceiverPhone(selectedTracking.DonHang.GhiChu || '')}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#d97706' }}>{getReceiverPhone(selectedTracking.DonHang?.GhiChu || '')}</div>
             </div>
             <div>
               <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase' }}>Địa chỉ bàn giao:</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#475569' }}>{selectedTracking.DonHang.DiaChiGiaoHang}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#475569' }}>{selectedTracking.DonHang?.DiaChiGiaoHang || 'N/A'}</div>
             </div>
           </div>
         </div>
@@ -595,8 +595,8 @@ export default function VanChuyenPage() {
             {filteredData.map(item => (
               <tr key={item._id}>
                 <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaVanChuyen}</td>
-                <td style={{ fontWeight: 600 }}>{item.DonHang.MaDonHang}</td>
-                <td>{item.DonHang.KhachHang.TenKhachHang}</td>
+                <td style={{ fontWeight: 600 }}>{item.DonHang?.MaDonHang || 'N/A'}</td>
+                <td>{item.DonHang?.KhachHang?.TenKhachHang || 'N/A'}</td>
                 <td>{item.LoHang.SoKien} kiện - {item.LoHang.KhoiLuong}kg</td>
                 <td style={{ fontWeight: 600, color: '#d97706' }}>{item.VanChuyenInfo.NhanVien?.HoTen || 'Chưa phân công'}</td>
                 <td>
