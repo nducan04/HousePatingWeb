@@ -116,6 +116,12 @@ const allNavItems = [
         roles: ["Admin", "NhanVien"],
       },
       {
+        href: "/nha-cung-cap/portal",
+        label: "Cổng Nhà Cung Cấp",
+        icon: ShoppingCart,
+        roles: ["Admin", "NhaCungCap"],
+      },
+      {
         href: "/colors",
         label: "Tra cứu mã màu",
         icon: Palette,

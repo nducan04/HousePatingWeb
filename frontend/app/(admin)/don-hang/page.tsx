@@ -212,10 +212,10 @@ export default function OrderManagementPage() {
         try {
             const res = await api.get('/nhan-vien');
             if (res.data.success) {
-                // Filter for Logistics/Warehouse/Shipping departments & Technical Staff
+                // Filter for Logistics/Warehouse/Shipping departments & Delivery/Technical Staff
                 const eligibleDrivers = res.data.data.filter((nv: any) =>
                     (nv.BoPhan === 'Kho / Logistics' || nv.BoPhan === 'Kho' || nv.BoPhan === 'Logistic' || nv.BoPhan === 'Vận tải' || nv.BoPhan === 'Giao nhận') &&
-                    (nv.ChucVu === 'Nhân viên kỹ thuật' || nv.ChucVu === 'Trưởng bộ phận kho / logistic' || nv.BoPhan === 'Vận tải' || nv.BoPhan === 'Giao nhận')
+                    (nv.ChucVu === 'Nhân viên giao hàng' || nv.ChucVu === 'Tài xế' || nv.ChucVu === 'Nhân viên kỹ thuật' || nv.ChucVu === 'Trưởng bộ phận kho / logistic' || nv.BoPhan === 'Vận tải' || nv.BoPhan === 'Giao nhận')
                 );
                 setDrivers(eligibleDrivers);
             }
@@ -1257,11 +1257,11 @@ export default function OrderManagementPage() {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                 <span style={{ fontWeight: 700 }}>{(selectedOrder.DaCoc || 0).toLocaleString()}đ ({Math.round(((selectedOrder.DaCoc || 0) / selectedOrder.TongTien) * 100)}%)</span>
                                                 {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             setDepositAmount(selectedOrder.DaCoc || 0);
                                                             setIsPaymentModalOpen(true);
-                                                        }} 
+                                                        }}
                                                         className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                                                         style={{ padding: '2px 8px', fontSize: '10px', color: '#2563eb', border: '1px solid #2563eb' }}
                                                     >
@@ -1295,14 +1295,14 @@ export default function OrderManagementPage() {
                                         <span style={{ color: '#475569' }}>[{new Date().toLocaleDateString()}]</span> Đơn hàng đang được xử lý <span style={{ fontWeight: 700 }}>[Thanh toán nốt]</span>
                                     </div>
                                     {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
-                                        <button 
+                                        <button
                                             onClick={() => {
                                                 if ((selectedOrder.DaCoc || 0) <= 0) {
                                                     alert('Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.');
                                                     return;
                                                 }
                                                 handleUpdateStatus(selectedOrder._id, 'DANG_XU_LY');
-                                            }} 
+                                            }}
                                             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                                             style={{ background: (selectedOrder.DaCoc || 0) <= 0 ? '#94a3b8' : 'var(--accent-primary)', opacity: (selectedOrder.DaCoc || 0) <= 0 ? 0.7 : 1 }}
                                         >
@@ -1442,8 +1442,8 @@ export default function OrderManagementPage() {
                                     </div>
                                 ))}
                                 {drivers.length === 0 && (
-                                    <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
-                                        Không tìm thấy nhân viên Kỹ thuật phù hợp ở bộ phận Kho/Logistics.
+                                    <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '13px', fontWeight: 500 }}>
+                                        Không tìm thấy nhân viên giao hàng phù hợp ở bộ phận Kho & Logistics.
                                     </div>
                                 )}
                             </div>
@@ -1585,17 +1585,17 @@ export default function OrderManagementPage() {
                         <div style={{ padding: '24px' }}>
                             <div style={{ marginBottom: 20 }}>
                                 <label style={{ fontSize: 13, color: '#475569', marginBottom: 8, display: 'block' }}>Số tiền khách đã trả (VNĐ)</label>
-                                <input 
-                                    type="number" 
-                                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
+                                <input
+                                    type="number"
+                                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                     style={{ width: '100%', fontSize: 20, fontWeight: 700, textAlign: 'right', color: '#059669' }}
                                     value={depositAmount}
                                     onChange={(e) => setDepositAmount(Number(e.target.value))}
                                 />
                                 <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
                                     {[0.3, 0.5, 1].map(p => (
-                                        <button 
-                                            key={p} 
+                                        <button
+                                            key={p}
                                             onClick={() => setDepositAmount(Math.round(selectedOrder!.TongTien * p))}
                                             style={{ flex: 1, padding: '6px', fontSize: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid #e2e8f0', borderRadius: 4, cursor: 'pointer' }}
                                         >

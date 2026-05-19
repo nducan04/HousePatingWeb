@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import * as XLSX from "xlsx";
+import { paintColors } from "@/lib/data/colors-data";
 
 const API_KHO = "/kho";
 
@@ -30,6 +31,7 @@ interface MaMauItem {
   _id: string;
   MaMau: string;
   TenMau: string;
+  HexCode?: string;
   TonKhoKhaDung: number;
   TonKhoTamGiu: number;
   NguongCanhBao: number;
@@ -83,6 +85,7 @@ interface NhaCungCapItem {
   _id: string;
   MaNCC: string;
   TenNCC: string;
+  congno: number;
 }
 
 interface PhieuNhapXuat {
@@ -214,9 +217,9 @@ export default function QuanLyKhoPage() {
 
   const handleSubmitKiemKho = async () => {
     try {
-      const validItems = kiemKhoItems.filter((i) => i.Sanpham !== "" && i.MaMau !== "");
+      const validItems = kiemKhoItems.filter((i) => i.Sanpham !== "");
       if (validItems.length === 0)
-        return alert("Vui lòng chọn sản phẩm VÀ mã màu cụ thể để kiểm kê");
+        return alert("Vui lòng chọn sản phẩm để kiểm kê");
 
       await api.post(`${API_KHO}/kiem-kho`, {
         ChiTiet: validItems,
@@ -226,7 +229,7 @@ export default function QuanLyKhoPage() {
         "Kiểm kê thành công! Vui lòng vào Danh sách Phiếu để xem và chốt số lượng.",
       );
       setIsKiemKhoModal(false);
-      setKiemKhoItems([{ Sanpham: "", MaMau: "", TenMau: "", TonThucTe: 0 }]);
+      setKiemKhoItems([{ Sanpham: "", TonThucTe: 0 }]);
       setMaNVKiemKe("");
       fetchPhieuKiemKho();
     } catch (error: any) {
@@ -330,7 +333,7 @@ export default function QuanLyKhoPage() {
       GhiChu: "",
       NhaCungCapID: "",
     });
-    setNxItems([{ ItemId: "", MaMau: "", TenMau: "", MaItem: "", TenItem: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 }]);
+    setNxItems([{ ItemId: "", MaItem: "", TenItem: "", MaMau: "", TenMau: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 }]);
     setIsNXModal(true);
   };
 
@@ -394,7 +397,7 @@ export default function QuanLyKhoPage() {
   const handleAddNXItem = () => {
     setNxItems([
       ...nxItems,
-      { ItemId: "", MaMau: "", TenMau: "", MaItem: "", TenItem: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 },
+      { ItemId: "", MaItem: "", TenItem: "", MaMau: "", TenMau: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 },
     ]);
   };
 
@@ -413,11 +416,11 @@ export default function QuanLyKhoPage() {
           nxForm.LoaiHang === "SAN_PHAM"
             ? (itemObj as KhoItem).DonGiaCoSo
             : (itemObj as NguyenVatLieu).DonGia;
-        newItems[idx].MaItem = nxForm.LoaiHang === "SAN_PHAM" 
-          ? (itemObj as KhoItem).MaSanPham 
+        newItems[idx].MaItem = nxForm.LoaiHang === "SAN_PHAM"
+          ? (itemObj as KhoItem).MaSanPham
           : (itemObj as NguyenVatLieu).MaNVL;
-        newItems[idx].TenItem = nxForm.LoaiHang === "SAN_PHAM" 
-          ? (itemObj as KhoItem).TenDongSon 
+        newItems[idx].TenItem = nxForm.LoaiHang === "SAN_PHAM"
+          ? (itemObj as KhoItem).TenDongSon
           : (itemObj as NguyenVatLieu).TenNguyenVatLieu;
       }
       // Reset MaMau khi đổi sản phẩm
@@ -430,7 +433,12 @@ export default function QuanLyKhoPage() {
       const sp = data.find((d) => d._id === newItems[idx].ItemId);
       if (sp) {
         const mau = sp.DanhSachMaMau?.find((m) => m.MaMau === val);
-        newItems[idx].TenMau = mau?.TenMau || "";
+        if (mau) {
+          newItems[idx].TenMau = mau.TenMau || "";
+        } else {
+          const globalColor = paintColors.find((c) => c.code === val);
+          newItems[idx].TenMau = globalColor?.name || "";
+        }
       }
     }
 
@@ -443,6 +451,13 @@ export default function QuanLyKhoPage() {
       const validItems = nxItems.filter((i) => i.ItemId !== "");
       if (validItems.length === 0)
         return alert("Vui lòng chọn ít nhất 1 hàng hóa");
+
+      if (nxForm.LoaiHang === "SAN_PHAM") {
+        const missingColor = validItems.find((i) => !i.MaMau);
+        if (missingColor) {
+          return alert(`Sản phẩm "${missingColor.TenItem}" chưa chọn mã màu.`);
+        }
+      }
 
       const tongTien = nxItems.reduce((acc, curr) => acc + curr.ThanhTien, 0);
 
@@ -464,7 +479,7 @@ export default function QuanLyKhoPage() {
       }
       setIsNXModal(false);
       setEditingNXId(null);
-      setNxItems([{ ItemId: "", MaMau: "", TenMau: "", MaItem: "", TenItem: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 }]);
+      setNxItems([{ ItemId: "", MaItem: "", TenItem: "", MaMau: "", TenMau: "", SoLuong: 1, DonGia: 0, ThanhTien: 0 }]);
       fetchPhieuNhapXuat();
       fetchTonKho();
       fetchNguyenVatLieu();
@@ -602,41 +617,37 @@ export default function QuanLyKhoPage() {
 
       <div className="flex flex-wrap gap-3 mb-8 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm w-fit">
         <button
-          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${
-            activeTab === "kho"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-              : "bg-transparent text-slate-500 hover:bg-slate-50"
-          }`}
+          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kho"
+            ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+            : "bg-transparent text-slate-500 hover:bg-slate-50"
+            }`}
           onClick={() => setActiveTab("kho")}
         >
           <Package size={18} /> Danh Mục Thành Phẩm
         </button>
         <button
-          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${
-            activeTab === "nvl"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-              : "bg-transparent text-slate-500 hover:bg-slate-50"
-          }`}
+          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nvl"
+            ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+            : "bg-transparent text-slate-500 hover:bg-slate-50"
+            }`}
           onClick={() => setActiveTab("nvl")}
         >
           <Beaker size={18} /> Nguyên Vật Liệu Pha Chế
         </button>
         <button
-          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${
-            activeTab === "nhapxuat"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-              : "bg-transparent text-slate-500 hover:bg-slate-50"
-          }`}
+          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nhapxuat"
+            ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+            : "bg-transparent text-slate-500 hover:bg-slate-50"
+            }`}
           onClick={() => setActiveTab("nhapxuat")}
         >
           <ArrowRightLeft size={18} /> Lịch Sử Nhập / Xuất
         </button>
         <button
-          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${
-            activeTab === "kiemke"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-              : "bg-transparent text-slate-500 hover:bg-slate-50"
-          }`}
+          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kiemke"
+            ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+            : "bg-transparent text-slate-500 hover:bg-slate-50"
+            }`}
           onClick={() => setActiveTab("kiemke")}
         >
           <ClipboardList size={18} /> Phiếu Kiểm Kê
@@ -732,13 +743,12 @@ export default function QuanLyKhoPage() {
                             <div className="flex items-center justify-end gap-3">
                               <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner max-w-[80px]">
                                 <div
-                                  className={`h-full rounded-full transition-all duration-1000 shadow-sm ${
-                                    tk >= 200
-                                      ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                                      : tk > 0
-                                        ? "bg-gradient-to-r from-amber-400 to-amber-500"
-                                        : "bg-gradient-to-r from-rose-400 to-rose-500"
-                                  }`}
+                                  className={`h-full rounded-full transition-all duration-1000 shadow-sm ${tk >= 200
+                                    ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                                    : tk > 0
+                                      ? "bg-gradient-to-r from-amber-400 to-amber-500"
+                                      : "bg-gradient-to-r from-rose-400 to-rose-500"
+                                    }`}
                                   style={{ width: `${pct}%` }}
                                 />
                               </div>
@@ -757,22 +767,20 @@ export default function QuanLyKhoPage() {
                           </td>
                           <td className="px-6 py-4 text-center">
                             <div
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm border ${
-                                tk >= 200
-                                  ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                  : tk > 0
-                                    ? "bg-amber-50 text-amber-600 border-amber-100"
-                                    : "bg-rose-50 text-rose-600 border-rose-100"
-                              }`}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm border ${tk >= 200
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                : tk > 0
+                                  ? "bg-amber-50 text-amber-600 border-amber-100"
+                                  : "bg-rose-50 text-rose-600 border-rose-100"
+                                }`}
                             >
                               <div
-                                className={`w-1.5 h-1.5 rounded-full ${tk < 200 ? "animate-pulse" : ""} ${
-                                  tk >= 200
-                                    ? "bg-emerald-500"
-                                    : tk > 0
-                                      ? "bg-amber-500"
-                                      : "bg-rose-500"
-                                }`}
+                                className={`w-1.5 h-1.5 rounded-full ${tk < 200 ? "animate-pulse" : ""} ${tk >= 200
+                                  ? "bg-emerald-500"
+                                  : tk > 0
+                                    ? "bg-amber-500"
+                                    : "bg-rose-500"
+                                  }`}
                               />
                               {tk >= 200
                                 ? "Đủ điều kiện (Sẵn sàng)"
@@ -1018,11 +1026,10 @@ export default function QuanLyKhoPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center px-2.5 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm border ${
-                            item.LoaiPhieu === "NHAP"
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                              : "bg-rose-50 text-rose-600 border-rose-100"
-                          }`}
+                          className={`inline-flex items-center px-2.5 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm border ${item.LoaiPhieu === "NHAP"
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                            : "bg-rose-50 text-rose-600 border-rose-100"
+                            }`}
                         >
                           {item.LoaiPhieu === "NHAP" ? "NHẬP KHO" : "XUẤT KHO"}
                         </span>
@@ -1030,13 +1037,12 @@ export default function QuanLyKhoPage() {
                       {/* ★ TRẠNG THÁI */}
                       <td className="px-6 py-4 text-center">
                         <span
-                          className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-tight ${
-                            item.TrangThai === "DA_DUYET"
-                              ? "bg-green-50 text-green-600"
-                              : item.TrangThai === "TU_CHOI"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-amber-50 text-amber-600"
-                          }`}
+                          className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-tight ${item.TrangThai === "DA_DUYET"
+                            ? "bg-green-50 text-green-600"
+                            : item.TrangThai === "TU_CHOI"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-amber-50 text-amber-600"
+                            }`}
                         >
                           {item.TrangThai === "DA_DUYET"
                             ? "✅ Đã duyệt"
@@ -1212,11 +1218,10 @@ export default function QuanLyKhoPage() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span
-                          className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm border ${
-                            item.TrangThai === "HOAN_THANH"
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                              : "bg-amber-50 text-amber-600 border-amber-100"
-                          }`}
+                          className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm border ${item.TrangThai === "HOAN_THANH"
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                            : "bg-amber-50 text-amber-600 border-amber-100"
+                            }`}
                         >
                           {item.TrangThai === "HOAN_THANH"
                             ? "Đã Chốt Số"
@@ -1278,7 +1283,7 @@ export default function QuanLyKhoPage() {
                 </div>
                 {editingNVLId ? "CẬP NHẬT NVL" : "KHAI BÁO NVL MỚI"}
               </h2>
-              <button 
+              <button
                 onClick={() => setIsNVLModal(false)}
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
               >
@@ -1411,7 +1416,7 @@ export default function QuanLyKhoPage() {
                 </div>
                 {editingNXId ? `CHỈNH SỬA PHIẾU ${nxForm.MaPhieu}` : "LẬP LỆNH KHO MỚI"}
               </h2>
-              <button 
+              <button
                 onClick={() => { setIsNXModal(false); setEditingNXId(null); }}
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
               >
@@ -1510,40 +1515,57 @@ export default function QuanLyKhoPage() {
                           <option value="">-- Chọn mặt hàng --</option>
                           {nxForm.LoaiHang === "SAN_PHAM"
                             ? data.map((d) => (
-                                <option key={d._id} value={d._id}>
-                                  {d.MaSanPham} - {d.TenDongSon} ({d.TongTonKho || 0} {d.DonViTinh})
-                                </option>
-                              ))
+                              <option key={d._id} value={d._id}>
+                                {d.MaSanPham} - {d.TenDongSon} ({d.TongTonKho || 0} {d.DonViTinh})
+                              </option>
+                            ))
                             : nvlData.map((d) => (
-                                <option key={d._id} value={d._id}>
-                                  {d.MaNVL} - {d.TenNguyenVatLieu} ({d.TonKho || 0} {d.DonViTinh})
-                                </option>
-                              ))}
+                              <option key={d._id} value={d._id}>
+                                {d.MaNVL} - {d.TenNguyenVatLieu} ({d.TonKho || 0} {d.DonViTinh})
+                              </option>
+                            ))}
                         </select>
                       </div>
-
-                      {nxForm.LoaiHang === "SAN_PHAM" && k.ItemId && (
-                        <div className="md:col-span-3 space-y-1.5">
-                          <label className="text-[11px] font-black text-blue-500 uppercase tracking-tighter">Mã Màu (SKU)</label>
-                          <select
-                            className="w-full bg-blue-50/50 border border-blue-100 rounded-xl px-4 py-2.5 text-[13px] text-blue-700 outline-none focus:border-blue-500 transition-all font-bold disabled:opacity-50"
-                            value={k.MaMau}
-                            onChange={(e) => handleNXItemChange(idx, "MaMau", e.target.value)}
-                            disabled={!!editingNXId}
-                          >
-                            <option value="">-- Chọn màu --</option>
+                      {nxForm.LoaiHang === "SAN_PHAM" && (
+                        <div className="md:col-span-3 space-y-1.5 animate-in fade-in duration-200">
+                          <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">Mã Màu (SKU)</label>
+                          <div className="relative flex items-center">
+                            <select
+                              className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-6 py-2.5 text-[13px] text-slate-800 outline-none focus:border-blue-500 transition-all font-bold appearance-none disabled:opacity-50"
+                              value={k.MaMau || ""}
+                              onChange={(e) => handleNXItemChange(idx, "MaMau", e.target.value)}
+                              disabled={!k.ItemId || !!editingNXId}
+                            >
+                              <option value="">-- Chọn màu --</option>
+                              {k.ItemId && paintColors.map((c, cIdx) => {
+                                const sp = data.find((d) => d._id === k.ItemId);
+                                const currentSpColor = sp?.DanhSachMaMau?.find((m: any) => m.MaMau.toUpperCase() === c.code.toUpperCase());
+                                const stock = currentSpColor ? currentSpColor.TonKhoKhaDung || 0 : 0;
+                                return (
+                                  <option key={cIdx} value={c.code}>
+                                    {c.code} - {c.name} ({c.category}) {currentSpColor ? `[Sẵn có: ${stock}]` : "[Mới]"}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                              <span className="text-[10px]">▼</span>
+                            </div>
                             {(() => {
                               const sp = data.find((d) => d._id === k.ItemId);
-                              return sp?.DanhSachMaMau?.filter(m => m.TrangThai !== false).map((m, mIdx) => (
-                                <option key={mIdx} value={m.MaMau}>
-                                  {m.MaMau} ({m.TonKhoKhaDung || 0})
-                                </option>
-                              )) || [];
+                              const m = sp?.DanhSachMaMau?.find((m: any) => m.MaMau === k.MaMau);
+                              const matchColor = paintColors.find((c) => c.code === k.MaMau);
+                              const hex = matchColor?.hex || m?.HexCode || "#cbd5e1";
+                              return (
+                                <div
+                                  className="absolute left-3 w-4 h-4 rounded-full border border-slate-200 shadow-sm"
+                                  style={{ backgroundColor: hex }}
+                                />
+                              );
                             })()}
-                          </select>
+                          </div>
                         </div>
                       )}
-
                       <div className={`${nxForm.LoaiHang === "SAN_PHAM" ? "md:col-span-2" : "md:col-span-3"} space-y-1.5`}>
                         <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">Số lượng</label>
                         <input
@@ -1590,7 +1612,7 @@ export default function QuanLyKhoPage() {
               <div className="flex flex-col">
                 <span className="text-[11px] font-black text-slate-400 uppercase">Tổng giá trị lệnh</span>
                 <span className="text-2xl font-black text-slate-900">
-                  {nxItems.reduce((acc, curr) => acc + (curr.ThanhTien || 0), 0).toLocaleString("vi-VN")} 
+                  {nxItems.reduce((acc, curr) => acc + (curr.ThanhTien || 0), 0).toLocaleString("vi-VN")}
                   <span className="text-sm ml-1 text-slate-400 uppercase">đ</span>
                 </span>
               </div>
@@ -1625,7 +1647,7 @@ export default function QuanLyKhoPage() {
                 </div>
                 KIỂM KÊ KHO THỰC TẾ
               </h2>
-              <button 
+              <button
                 onClick={() => setIsKiemKhoModal(false)}
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
               >

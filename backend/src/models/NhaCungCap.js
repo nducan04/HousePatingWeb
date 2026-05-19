@@ -48,6 +48,10 @@ const nhaCungCapSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  AccountID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TaiKhoan',
+  },
 }, {
   timestamps: true,
 });

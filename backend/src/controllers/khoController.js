@@ -423,6 +423,14 @@ exports.createPhieuNhapXuat = async (req, res) => {
         // pre('save') sẽ tự tính ThanhTien + TongTien
         await newPhieu.save();
 
+        // Cộng công nợ của nhà cung cấp nếu là phiếu NHẬP hàng từ NCC
+        if (LoaiPhieu === 'NHAP' && NhaCungCapID) {
+            const NhaCungCap = require('../models/NhaCungCap');
+            await NhaCungCap.findByIdAndUpdate(NhaCungCapID, {
+                $inc: { CongNo: newPhieu.TongTien || 0 }
+            });
+        }
+
         res.status(201).json({
             success: true,
             message: `Đã lập phiếu ${phieuCode} — Đang chờ duyệt.`,
@@ -473,14 +481,28 @@ exports.duyetPhieuNhapXuat = async (req, res) => {
                 }
 
                 // Tìm đúng SKU (mã màu) trong mảng DanhSachMaMau
-                const sku = sanPham.DanhSachMaMau.find(
+                let sku = sanPham.DanhSachMaMau.find(
                     m => m.MaMau.toUpperCase() === item.MaMau.toUpperCase()
                 );
                 if (!sku) {
-                    throw new Error(
-                        `Mã màu "${item.MaMau}" không tồn tại trong sản phẩm "${sanPham.TenDongSon}". ` +
-                        `Các mã có sẵn: ${sanPham.DanhSachMaMau.map(m => m.MaMau).join(', ')}`
-                    );
+                    if (phieu.LoaiPhieu === 'NHAP') {
+                        sanPham.DanhSachMaMau.push({
+                            MaMau: item.MaMau.toUpperCase(),
+                            TenMau: item.TenMau || `Màu ${item.MaMau.toUpperCase()}`,
+                            TonKhoKhaDung: 0,
+                            TonKhoTamGiu: 0,
+                            NguongCanhBao: 10,
+                            TrangThai: true
+                        });
+                        sku = sanPham.DanhSachMaMau.find(
+                            m => m.MaMau.toUpperCase() === item.MaMau.toUpperCase()
+                        );
+                    } else {
+                        throw new Error(
+                            `Mã màu "${item.MaMau}" không tồn tại trong sản phẩm "${sanPham.TenDongSon}". ` +
+                            `Các mã có sẵn: ${sanPham.DanhSachMaMau.map(m => m.MaMau).join(', ')}`
+                        );
+                    }
                 }
 
                 if (phieu.LoaiPhieu === 'NHAP') {
@@ -593,6 +615,14 @@ exports.tuChoiPhieu = async (req, res) => {
 
         await phieu.save();
 
+        // Hoàn trả (trừ) công nợ của nhà cung cấp nếu là phiếu NHẬP
+        if (phieu.LoaiPhieu === 'NHAP' && phieu.NhaCungCapID) {
+            const NhaCungCap = require('../models/NhaCungCap');
+            await NhaCungCap.findByIdAndUpdate(phieu.NhaCungCapID, {
+                $inc: { CongNo: -(phieu.TongTien || 0) }
+            });
+        }
+
         res.status(200).json({
             success: true,
             message: `Phiếu ${phieu.MaPhieu} đã bị từ chối.`,
@@ -618,6 +648,11 @@ exports.updatePhieuNhapXuat = async (req, res) => {
             });
         }
 
+        // Lưu thông tin cũ để cập nhật lại công nợ
+        const oldSupplierID = phieu.NhaCungCapID;
+        const oldTongTien = phieu.TongTien || 0;
+        const oldLoaiPhieu = phieu.LoaiPhieu;
+
         const { LoaiPhieu, LoaiHang, ChiTiet, MoTa, GhiChu, NhaCungCapID } = req.body;
         if (LoaiPhieu) phieu.LoaiPhieu = LoaiPhieu;
         if (LoaiHang) phieu.LoaiHang = LoaiHang;
@@ -628,6 +663,21 @@ exports.updatePhieuNhapXuat = async (req, res) => {
 
         // pre('save') sẽ tự tính lại TongTien
         await phieu.save();
+
+        // Cập nhật lại công nợ
+        const NhaCungCap = require('../models/NhaCungCap');
+        // 1. Hoàn trả công nợ cũ (trừ công nợ)
+        if (oldLoaiPhieu === 'NHAP' && oldSupplierID) {
+            await NhaCungCap.findByIdAndUpdate(oldSupplierID, {
+                $inc: { CongNo: -oldTongTien }
+            });
+        }
+        // 2. Cộng công nợ mới
+        if (phieu.LoaiPhieu === 'NHAP' && phieu.NhaCungCapID) {
+            await NhaCungCap.findByIdAndUpdate(phieu.NhaCungCapID, {
+                $inc: { CongNo: phieu.TongTien || 0 }
+            });
+        }
 
         res.status(200).json({ success: true, message: 'Cập nhật phiếu thành công', data: phieu });
     } catch (error) {
@@ -651,6 +701,15 @@ exports.deletePhieuNhapXuat = async (req, res) => {
         }
 
         await PhieuNhapXuatKho.findByIdAndDelete(req.params.id);
+
+        // Hoàn trả (trừ) công nợ của nhà cung cấp nếu là phiếu NHẬP
+        if (phieu.LoaiPhieu === 'NHAP' && phieu.NhaCungCapID) {
+            const NhaCungCap = require('../models/NhaCungCap');
+            await NhaCungCap.findByIdAndUpdate(phieu.NhaCungCapID, {
+                $inc: { CongNo: -(phieu.TongTien || 0) }
+            });
+        }
+
         res.status(200).json({ success: true, message: `Đã xóa phiếu ${phieu.MaPhieu}` });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });

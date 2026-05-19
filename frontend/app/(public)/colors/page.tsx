@@ -34,14 +34,13 @@ export default function ColorsPage() {
   >(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-<<<<<<< Updated upstream
-  const sortedColors = [...paintColors].sort((a, b) => {
+  const initialSortedColors = [...paintColors].sort((a, b) => {
     const hslA = hexToHSL(a.hex);
     const hslB = hexToHSL(b.hex);
     return hslA.h - hslB.h;
   });
 
-  const filteredColors = sortedColors.filter((c) => {
+  const filteredColors = initialSortedColors.filter((c) => {
     const matchesSearch =
       c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -50,23 +49,10 @@ export default function ColorsPage() {
       categoryFilter === "all" || c.category === categoryFilter;
     return matchesSearch && matchesCat;
   });
-=======
-  const filteredColors = useMemo(() => {
-    return sortedColorsList.filter((c) => {
-      const matchesSearch =
-        c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.hex.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCat =
-        categoryFilter === "all" || c.category === categoryFilter;
-      return matchesSearch && matchesCat;
-    });
-  }, [searchQuery, categoryFilter]);
->>>>>>> Stashed changes
 
   const categories = [
     "all",
-    ...Array.from(new Set(sortedColors.map((c) => c.category))),
+    ...Array.from(new Set(initialSortedColors.map((c) => c.category))),
   ];
 
   const sortedColors = useMemo(() => {

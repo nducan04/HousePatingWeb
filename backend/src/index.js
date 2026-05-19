@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./utils/db');
+// Trigger nodemon restart after port 5000 release
 
 // Load env vars
 dotenv.config();
@@ -54,6 +55,7 @@ app.use('/api/hieu-suat', require('./routes/hieuSuatRoutes'));
 app.use('/api/doi-tra', require('./routes/doiTraRoutes'));
 app.use('/api/bao-hanh', require('./routes/baoHanhRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/rd-tracking', require('./routes/rdRoutes'));
 app.use('/api/formulas', require('./routes/congThucRoutes'));
 app.use('/api/packaging', require('./routes/packagingRoutes'));
