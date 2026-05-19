@@ -27,6 +27,11 @@ const doiTraSchema = new mongoose.Schema({
     required: [true, 'Vui lòng nhập lý do đổi trả'],
     trim: true
   },
+  LoaiYeuCau: {
+    type: String,
+    enum: ['Bảo hành', 'Khiếu nại', 'Đổi trả'],
+    default: 'Đổi trả'
+  },
   DuKienDenHang: {
     type: String,
     trim: true

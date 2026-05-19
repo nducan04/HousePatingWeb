@@ -46,9 +46,9 @@ export default function QuyTrinhPage() {
   };
 
   const filteredData = data.filter(item => {
-    const matchSearch = item.MaLenhSanXuat.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        item.ContractID?.MaHopDong.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    const matchSearch = item.MaLenhSanXuat.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.ContractID?.MaHopDong.toLowerCase().includes(searchTerm.toLowerCase());
+
     if (filter === 'all') return matchSearch;
     if (filter === 'mixing') return matchSearch && item.TrangThai === 'in_progress';
     if (filter === 'packing') return matchSearch && item.TrangThai === 'completed';
@@ -152,7 +152,7 @@ export default function QuyTrinhPage() {
                   {item.Assignee?.HoTen} <br />
                   <span style={{ fontSize: 10 }}>{item.Assignee?.MaNV}</span>
                 </td>
-                <td>{new Date(item.updatedAt).toLocaleString('vi-VN')}</td>
+                <td>{item.updatedAt}</td>
                 <td style={{ textAlign: 'right' }}>
                   <Link href={`/production/${item._id}`} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Eye size={16} /></Link>
                 </td>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/lib/store/authStore";
 import ProtectedRoute from "@/lib/components/ProtectedRoute";
 import api from "@/lib/utils/axiosAuth";
@@ -12,6 +12,10 @@ import {
   FileSignature,
   Palette,
   QrCode,
+  PanelsRightBottom,
+  SignalHigh,
+  TrainFront,
+  ReceiptRussianRuble,
   Settings,
   Clock,
   Bell,
@@ -22,7 +26,6 @@ import {
   MessageSquare,
   FileUp,
   CloudSync,
-  QrCodeIcon,
   LogOut,
   Loader2,
   ClipboardList,
@@ -30,12 +33,10 @@ import {
   DollarSign,
   ShoppingCart,
   ListOrdered,
-  PanelsRightBottomIcon,
-  SignalHighIcon,
-  TrainFrontIcon,
   Users,
   Shield,
-  ReceiptRussianRubleIcon,
+  Droplets,
+  Home,
 } from "lucide-react";
 
 /**
@@ -159,37 +160,31 @@ const allNavItems = [
       {
         href: "/thanh-toan",
         label: "Quản lý thanh toán",
-        icon: QrCodeIcon,
+        icon: QrCode,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
         href: "/van-chuyen",
         label: "Theo dõi vận chuyển",
-        icon: TrainFrontIcon,
+        icon: TrainFront,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
         href: "/hieu-suat",
         label: "Theo dõi hiệu suất",
-        icon: SignalHighIcon,
-        roles: ["Admin", "NhanVien"],
+        icon: SignalHigh,
+        roles: ["Admin", "Director"],
       },
       {
         href: "/doi-tra",
-        label: "Quản lý đổi trả",
-        icon: ReceiptRussianRubleIcon,
-        roles: ["Admin", "NhanVien"],
-      },
-      {
-        href: "/bao-hanh",
-        label: "Bảo hành và hậu mãi",
-        icon: Shield,
+        label: "Trung Tâm Giải Quyết Khiếu Nại",
+        icon: ReceiptRussianRuble,
         roles: ["Admin", "NhanVien"],
       },
       {
         href: "/khuyen-mai",
         label: "Quản lý khuyến mãi",
-        icon: PanelsRightBottomIcon,
+        icon: PanelsRightBottom,
         roles: ["Admin", "NhanVien"],
       },
       {
@@ -216,10 +211,10 @@ const allNavItems = [
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/quy-trinh",
-        label: "Quản lý quy trình gói đơn hàng",
-        icon: QrCodeIcon,
-        roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
+        href: "/rd-tracking/new",
+        label: "Yêu cầu mẫu thử",
+        icon: Droplets,
+        roles: ["KhachHangB2B", "KhachHangB2C"],
       },
       {
         href: "/thanh-toan-hd",
@@ -236,13 +231,13 @@ const allNavItems = [
         href: "/bao-cao",
         label: "Báo cáo",
         icon: FileSignature,
-        roles: ["Admin", "NhanVien", "KhachHangB2B"],
+        roles: ["Admin", "Director"],
       },
       {
         href: "/thong-ke",
         label: "Thống kê",
         icon: FlaskConical,
-        roles: ["Admin", "NhanVien"],
+        roles: ["Admin", "Director"],
       },
     ],
   },
@@ -262,6 +257,7 @@ export default function AdminLayout({
   const { user, isLoading, logoutState } = useAuthStore();
 
   const userRole = user?.role || "NhanVien";
+  const isCustomer = userRole === "KhachHangB2B" || userRole === "KhachHangB2C";
 
   // Khởi tạo state để mở tab có chứa trang hiện tại
   const [expandedSections, setExpandedSections] = useState<
@@ -287,6 +283,13 @@ export default function AdminLayout({
       [sectionName]: !prev[sectionName],
     }));
   };
+
+  // Chặn nhân viên xem Dashboard - Redirect về Sản phẩm
+  React.useEffect(() => {
+    if (!isLoading && userRole === "NhanVien" && pathname === "/dashboard") {
+      router.push("/san-pham");
+    }
+  }, [userRole, pathname, isLoading, router]);
 
   // Lọc menu theo vai trò người dùng
   const filteredNav = allNavItems
@@ -314,14 +317,14 @@ export default function AdminLayout({
     user?.username ||
     "Người dùng";
   const displayRole =
-    user?.profile?.ChucVu ||
-    (userRole === "Admin"
+    userRole === "Admin"
       ? "Quản trị viên"
-      : userRole === "NhanVien"
-        ? "Nhân viên"
-        : userRole === "KhachHangB2B"
-          ? "Đối tác B2B"
-          : "Khách hàng");
+      : userRole === "Director"
+        ? "Giám đốc hệ thống"
+        : userRole === "NhanVien"
+          ? "Nhân viên công ty"
+          : user?.profile?.ChucVu ||
+            (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
   const initials = displayName
     .split(" ")
     .map((w: string) => w[0])
@@ -331,10 +334,14 @@ export default function AdminLayout({
 
   // Map pathname to page title
   const getPageTitle = () => {
-    if (pathname === "/dashboard") return "📊 Dashboard";
+    if (pathname === "/dashboard") {
+      return userRole === "NhanVien" ? "📦 Quản lý nghiệp vụ" : "📊 Dashboard";
+    }
     if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
     if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
-    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Đối tác";
+    if (pathname?.startsWith("/doi-tra"))
+      return "🎯 Trung Tâm Giải Quyết Khiếu Nại";
+    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
     if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
     if (pathname?.startsWith("/contracts")) return "📝 Hợp đồng B2B";
@@ -343,113 +350,130 @@ export default function AdminLayout({
     if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
     if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
     if (pathname === "/import") return "📤 Nhập Dữ Liệu (Excel/CSV)";
-    return "📊 Tổng quan";
+    return "📦 Quản lý nghiệp vụ";
   };
 
   return (
     <ProtectedRoute
-      allowedRoles={["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"]}
+      allowedRoles={[
+        "Admin",
+        "Director",
+        "NhanVien",
+        "KhachHangB2B",
+        "KhachHangB2C",
+      ]}
     >
       <div className="flex h-screen bg-[#F8FAFC] font-sans">
         {/* ═══════ Sidebar ═══════ */}
-        <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-          {/* Logo Area */}
-          <div className="px-8 py-7 flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10">
-              <img
-                src="/vtsc.png"
-                alt="Logo"
-                className="w-full h-full object-contain brightness-110"
-              />
-            </div>
-            <div>
-              <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
-                VTSC
+        {!isCustomer && (
+          <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+            {/* Logo Area */}
+            <div className="px-8 py-7 flex items-center gap-4">
+              <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10">
+                <img
+                  src="/vtsc.png"
+                  alt="Logo"
+                  className="w-full h-full object-contain brightness-110"
+                />
               </div>
-              <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
-                PaintPro
+              <div>
+                <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
+                  VTSC
+                </div>
+                <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
+                  PaintPro
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-6">
-            {filteredNav
-              .filter((s) => s.section !== "Hệ thống")
-              .map((section) => (
-                <div key={section.section} className="space-y-1.5">
-                  {/* Section Title */}
-                  <div className="px-4 mb-2 flex items-center justify-between">
-                    <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-slate-400">
-                      {section.section}
-                    </span>
-                    <div className="h-[1px] flex-1 bg-slate-50 ml-3 opacity-50"></div>
-                  </div>
+            {/* Navigation */}
+            <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-6">
+              {filteredNav
+                .filter((s) => s.section !== "Hệ thống")
+                .map((section) => (
+                  <div key={section.section} className="space-y-1.5">
+                    {/* Section Title */}
+                    <div className="px-4 mb-2 flex items-center justify-between">
+                      <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-slate-400">
+                        {section.section}
+                      </span>
+                      <div className="h-[1px] flex-1 bg-slate-50 ml-3 opacity-50"></div>
+                    </div>
 
-                  {/* Nav Items */}
-                  <div className="space-y-1">
-                    {section.items.map((item) => {
-                      const Icon = item.icon;
-                      const isActive =
-                        pathname === item.href ||
-                        pathname?.startsWith(item.href + "/");
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${
-                            isActive
-                              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
-                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                          }`}
-                        >
-                          <div
-                            className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-blue-600" : "text-slate-400"}`}
+                    {/* Nav Items */}
+                    <div className="space-y-1">
+                      {section.items.map((item) => {
+                        const Icon = item.icon;
+                        const isActive =
+                          pathname === item.href ||
+                          pathname?.startsWith(item.href + "/");
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${
+                              isActive
+                                ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
+                                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                            }`}
                           >
-                            <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-                          </div>
-                          <span className="truncate">{item.label}</span>
-                          {isActive && (
-                            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.6)]"></div>
-                          )}
-                        </Link>
-                      );
-                    })}
+                            <div
+                              className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-blue-600" : "text-slate-400"}`}
+                            >
+                              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                            </div>
+                            <span className="truncate">{item.label}</span>
+                            {isActive && (
+                              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.6)]"></div>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+            </nav>
+
+            {/* Sidebar Footer */}
+            <div className="p-4 border-t border-slate-50 mt-auto bg-slate-50/30">
+              <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-[12px] font-bold text-white shadow-md">
+                  {initials}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
+                    Tài Khoản
+                  </div>
+                  <div className="text-[14px] font-black text-slate-800 truncate">
+                    {displayName}
                   </div>
                 </div>
-              ))}
-          </nav>
-
-          {/* Sidebar Footer */}
-          <div className="p-4 border-t border-slate-50 mt-auto bg-slate-50/30">
-            <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-[12px] font-bold text-white shadow-md">
-                {initials}
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all rounded-xl cursor-pointer"
+                  title="Đăng xuất"
+                >
+                  <LogOut size={18} />
+                </button>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-bold text-slate-800 truncate">
-                  {displayName}
-                </div>
-                <div className="text-[11px] text-slate-400 font-medium">
-                  Trưởng phòng Kinh doanh
-                </div>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all rounded-xl cursor-pointer"
-                title="Đăng xuất"
-              >
-                <LogOut size={18} />
-              </button>
             </div>
-          </div>
-        </aside>
+          </aside>
+        )}
 
         {/* ═══════ Main Content ═══════ */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Bar */}
           <header className="h-[88px] flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-10">
             <div className="flex items-center gap-4">
+              {isCustomer && (
+                <Link
+                  href="/"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-150 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl text-[13px] font-bold transition-all no-underline shadow-sm border border-slate-200 cursor-pointer mr-2"
+                >
+                  <Home size={16} />
+                  Về Trang Chủ
+                </Link>
+              )}
               <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
                 {(() => {
                   const currentItem = allNavItems
@@ -474,15 +498,11 @@ export default function AdminLayout({
               <div className="h-10 w-[1px] bg-slate-100"></div>
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
-                  <div className="text-[14px] font-bold text-slate-800 leading-none mb-1">
-                    {displayName}
+                  <div className="text-[10px] font-extrabold text-blue-600 uppercase tracking-[0.2em] leading-none mb-1 opacity-70">
+                    Tài Khoản
                   </div>
-                  <div className="text-[11px] text-blue-600 font-extrabold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-lg inline-block">
-                    {userRole === "Admin"
-                      ? "Admin"
-                      : userRole === "KhachHangB2B"
-                        ? "B2B"
-                        : "Quản lý"}
+                  <div className="text-[15px] font-black text-slate-900 leading-tight">
+                    {displayName}
                   </div>
                 </div>
                 <div className="w-11 h-11 rounded-2xl border-2 border-white shadow-md shadow-slate-200 overflow-hidden bg-slate-100">

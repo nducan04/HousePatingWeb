@@ -1,27 +1,95 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Upload, Plus, Droplets, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, Upload, Plus, Droplets, X, User as UserIcon } from "lucide-react";
 import Link from "next/link";
+import { useAuthStore } from "@/lib/store/authStore";
 
 export default function NewRDRequestPage() {
+  const { user } = useAuthStore();
+  const isCustomer = user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C";
+  const backPath = isCustomer ? "/" : "/rd-tracking";
+
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryColorCode = searchParams ? searchParams.get("colorCode") || "" : "";
+  const queryColorName = searchParams ? searchParams.get("colorName") || "" : "";
+  
+  const displayName =
+    user?.profile?.HoTen ||
+    user?.profile?.TenKhachHang ||
+    user?.username ||
+    "";
+
   const [formData, setFormData] = useState({
     customer: "",
-    colorCode: "",
-    colorName: "",
+    colorCode: queryColorCode,
+    colorName: queryColorName,
     surface: "",
     substrate: "",
     requirements: "",
+    deadline: "",
   });
+
+  useEffect(() => {
+    if (isCustomer && displayName) {
+      setFormData(prev => ({ ...prev, customer: displayName }));
+    }
+  }, [isCustomer, displayName]);
   const [dragOver, setDragOver] = useState(false);
   const [files, setFiles] = useState<string[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Save to localStorage
+    if (typeof window !== "undefined") {
+      const storedRequests = localStorage.getItem("sampleRequests");
+      let requests = [];
+      if (storedRequests) {
+        requests = JSON.parse(storedRequests);
+      } else {
+        requests = [
+          {
+            id: "REQ-001",
+            customer: "NCC Aluminium",
+            colorCode: "INT-D2525",
+            surface: "Nhôm định hình",
+            status: "pending",
+            date: "12/05/2026",
+          },
+          {
+            id: "REQ-002",
+            customer: "VPIC Steel",
+            colorCode: "RAL-9005",
+            surface: "Thép tấm",
+            status: "processing",
+            date: "11/05/2026",
+          },
+        ];
+      }
+
+      const now = new Date();
+      const dateStr = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+
+      const nextId = `REQ-${String(requests.length + 1).padStart(3, "0")}`;
+      const newRequest = {
+        id: nextId,
+        customer: formData.customer,
+        colorCode: formData.colorCode,
+        surface: formData.surface,
+        status: "pending",
+        date: dateStr,
+        deadline: formData.deadline,
+      };
+
+      requests.push(newRequest);
+      localStorage.setItem("sampleRequests", JSON.stringify(requests));
+    }
+
     alert("✅ Yêu cầu R&D đã được tạo thành công! (Version 1.0)");
-    router.push("/rd-tracking");
+    router.push(backPath);
   };
 
   const handleFileDrop = (e: React.DragEvent) => {
@@ -32,13 +100,16 @@ export default function NewRDRequestPage() {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto" }}>
+    <div className="max-w-4xl mx-auto px-4 py-8 animate-in fade-in duration-700">
       <Link
-        href="/rd-tracking"
-        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-        style={{ marginBottom: "1.75rem" }}
+        href={backPath}
+        className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 font-medium transition-colors mb-6 group no-underline"
       >
-        <ArrowLeft size={16} /> Quay lại
+        <ArrowLeft
+          size={16}
+          className="group-hover:-translate-x-1 transition-transform"
+        />
+        Quay lại
       </Link>
 
       <div className="bg-white border border-slate-100 rounded-[24px] shadow-xl shadow-slate-100/50 overflow-hidden">
@@ -57,38 +128,42 @@ export default function NewRDRequestPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "1.75rem",
-            }}
-          >
-            <div className="form-group">
-              <label className="form-label">Khách hàng *</label>
-              <select
-                className="form-select"
-                required
-                value={formData.customer}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, customer: e.target.value }))
-                }
-              >
-                <option value="">Chọn khách hàng</option>
-                <option value="NCC Aluminium">NCC Aluminium</option>
-                <option value="VPIC Steel">VPIC Steel</option>
-                <option value="Daikin Vietnam">Daikin Vietnam</option>
-                <option value="Huihoang Interior">Huihoang Interior</option>
-                <option value="Eurowindow">Eurowindow</option>
-                <option value="Austdoor Group">Austdoor Group</option>
-              </select>
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
+                Khách hàng *
+              </label>
+              {isCustomer ? (
+                <div className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 flex items-center gap-2 cursor-not-allowed">
+                  <UserIcon size={16} /> {formData.customer}
+                </div>
+              ) : (
+                <select
+                  className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
+                  required
+                  value={formData.customer}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, customer: e.target.value }))
+                  }
+                >
+                  <option value="">Chọn khách hàng</option>
+                  <option value="NCC Aluminium">NCC Aluminium</option>
+                  <option value="VPIC Steel">VPIC Steel</option>
+                  <option value="Daikin Vietnam">Daikin Vietnam</option>
+                  <option value="Huihoang Interior">Huihoang Interior</option>
+                  <option value="Eurowindow">Eurowindow</option>
+                  <option value="Austdoor Group">Austdoor Group</option>
+                </select>
+              )}
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Mã Màu Mục tiêu *</label>
+            <div className="space-y-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
+                Mã Màu Mục tiêu *
+              </label>
               <input
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
                 type="text"
                 placeholder="VD: INT-D2525"
                 required
@@ -99,10 +174,12 @@ export default function NewRDRequestPage() {
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Tên Màu</label>
+            <div className="space-y-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
+                Tên Màu
+              </label>
               <input
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
                 type="text"
                 placeholder="VD: Silver Metallic"
                 value={formData.colorName}
@@ -112,10 +189,12 @@ export default function NewRDRequestPage() {
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Loại Bề mặt *</label>
+            <div className="space-y-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
+                Loại Bề mặt *
+              </label>
               <select
-                className="form-select"
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
                 required
                 value={formData.surface}
                 onChange={(e) =>
@@ -132,10 +211,12 @@ export default function NewRDRequestPage() {
               </select>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Lớp nền (Substrate)</label>
+            <div className="space-y-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
+                Lớp nền (Substrate)
+              </label>
               <input
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
                 type="text"
                 placeholder="VD: Primer + Topcoat"
                 value={formData.substrate}
@@ -144,12 +225,29 @@ export default function NewRDRequestPage() {
                 }
               />
             </div>
+
+            <div className="space-y-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
+                Hạn pha chế *
+              </label>
+              <input
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+                type="date"
+                required
+                value={formData.deadline}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, deadline: e.target.value }))
+                }
+              />
+            </div>
           </div>
 
-          <div className="form-group" style={{ marginTop: "1.75rem" }}>
-            <label className="form-label">Yêu cầu Chi tiết</label>
+          <div className="space-y-2">
+            <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
+              Yêu cầu Chi tiết
+            </label>
             <textarea
-              className="form-textarea"
+              className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
               rows={4}
               placeholder="Mô tả yêu cầu kỹ thuật, độ bóng, ΔE cho phép, ứng dụng..."
               value={formData.requirements}
@@ -168,7 +266,10 @@ export default function NewRDRequestPage() {
               Ảnh/Tài liệu Đính kèm
             </label>
             <div
-              className={`upload-zone ${dragOver ? "dragover" : ""}`}
+              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragOver
+                  ? "border-purple-500 bg-purple-50/50"
+                  : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                }`}
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);
@@ -238,7 +339,7 @@ export default function NewRDRequestPage() {
             }}
           >
             <Link
-              href="/rd-tracking"
+              href={backPath}
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200"
             >
               Hủy

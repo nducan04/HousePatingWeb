@@ -11,8 +11,8 @@ const taiKhoanSchema = new mongoose.Schema({
   MatKhau: {
     type: String,
     required: [true, 'Vui lòng nhập mật khẩu'],
-    minlength: 6,
-    select: false, // Không trả về mật khẩu khi query mặc định
+    minlength: [6, 'Mật khẩu phải có ít nhất 6 ký tự'],
+    select: false,
   },
   Email: {
     type: String,
@@ -20,11 +20,15 @@ const taiKhoanSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     lowercase: true,
+    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Vui lòng nhập email hợp lệ']
   },
   VaiTro: {
     type: String,
-    enum: ['Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C', 'NhaCungCap'],
-    required: true,
+    enum: {
+      values: ['Admin', 'Director', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C', 'NhaCungCap'],
+      message: 'Vai trò không hợp lệ'
+    },
+    required: [true, 'Vui lòng chọn vai trò'],
   },
   TrangThai: {
     type: Boolean,

@@ -54,6 +54,10 @@ exports.create = async (req, res) => {
     if (error.code === 11000) {
       return res.status(400).json({ success: false, error: 'Tên đăng nhập hoặc Email đã tồn tại' });
     }
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({ success: false, error: messages[0] });
+    }
     res.status(400).json({ success: false, error: error.message });
   }
 };

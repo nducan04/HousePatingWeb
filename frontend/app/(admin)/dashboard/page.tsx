@@ -47,19 +47,29 @@ function GaugeChart({ value }: { value: number }) {
   const angle = -180 + (pct / 100) * 180;
   const rad = (angle * Math.PI) / 180;
 
-  const cx = 100, cy = 100, r = 70;
+  const cx = 100,
+    cy = 100,
+    r = 70;
   const needleX = cx + r * Math.cos(rad);
   const needleY = cy + r * Math.sin(rad);
 
   const color =
-    pct >= 100 ? "#10b981" : pct >= 75 ? "#f59e0b" : pct >= 50 ? "#f97316" : "#ef4444";
+    pct >= 100
+      ? "#10b981"
+      : pct >= 75
+        ? "#f59e0b"
+        : pct >= 50
+          ? "#f97316"
+          : "#ef4444";
 
   // Arc path helper
   const describeArc = (startDeg: number, endDeg: number) => {
     const s = ((startDeg - 90) * Math.PI) / 180;
     const e = ((endDeg - 90) * Math.PI) / 180;
-    const x1 = cx + r * Math.cos(s), y1 = cy + r * Math.sin(s);
-    const x2 = cx + r * Math.cos(e), y2 = cy + r * Math.sin(e);
+    const x1 = cx + r * Math.cos(s),
+      y1 = cy + r * Math.sin(s);
+    const x2 = cx + r * Math.cos(e),
+      y2 = cy + r * Math.sin(e);
     const large = endDeg - startDeg > 180 ? 1 : 0;
     return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
   };
@@ -67,7 +77,13 @@ function GaugeChart({ value }: { value: number }) {
   return (
     <svg viewBox="0 0 200 120" className="w-full max-w-[220px]">
       {/* Track */}
-      <path d={describeArc(180, 360)} fill="none" stroke="#e2e8f0" strokeWidth="16" strokeLinecap="round" />
+      <path
+        d={describeArc(180, 360)}
+        fill="none"
+        stroke="#e2e8f0"
+        strokeWidth="16"
+        strokeLinecap="round"
+      />
       {/* Fill */}
       <path
         d={describeArc(180, 180 + (pct / 100) * 180)}
@@ -77,14 +93,35 @@ function GaugeChart({ value }: { value: number }) {
         strokeLinecap="round"
       />
       {/* Needle */}
-      <line x1={cx} y1={cy} x2={needleX} y2={needleY} stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" />
+      <line
+        x1={cx}
+        y1={cy}
+        x2={needleX}
+        y2={needleY}
+        stroke="#1e293b"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
       <circle cx={cx} cy={cy} r="5" fill="#1e293b" />
       {/* Labels */}
-      <text x="30" y="115" fontSize="9" fill="#94a3b8" fontWeight="700">0%</text>
-      <text x="86" y="28" fontSize="9" fill="#94a3b8" fontWeight="700">50%</text>
-      <text x="158" y="115" fontSize="9" fill="#94a3b8" fontWeight="700">100%</text>
+      <text x="30" y="115" fontSize="9" fill="#94a3b8" fontWeight="700">
+        0%
+      </text>
+      <text x="86" y="28" fontSize="9" fill="#94a3b8" fontWeight="700">
+        50%
+      </text>
+      <text x="158" y="115" fontSize="9" fill="#94a3b8" fontWeight="700">
+        100%
+      </text>
       {/* Center value */}
-      <text x={cx} y={cy + 30} textAnchor="middle" fontSize="18" fill={color} fontWeight="900">
+      <text
+        x={cx}
+        y={cy + 30}
+        textAnchor="middle"
+        fontSize="18"
+        fill={color}
+        fontWeight="900"
+      >
         {value.toFixed(1)}%
       </text>
     </svg>
@@ -94,7 +131,21 @@ function GaugeChart({ value }: { value: number }) {
 // ───────────────────────────────────────────────
 // Horizontal bar for staff ranking
 // ───────────────────────────────────────────────
-function HBar({ rank, label, value, max, color, unit }: { rank: number; label: string; value: number; max: number; color: string; unit: string }) {
+function HBar({
+  rank,
+  label,
+  value,
+  max,
+  color,
+  unit,
+}: {
+  rank: number;
+  label: string;
+  value: number;
+  max: number;
+  color: string;
+  unit: string;
+}) {
   const pct = Math.min((value / max) * 100, 100);
 
   // Top 3 rank styling với màu gradient chuyên nghiệp
@@ -104,14 +155,17 @@ function HBar({ rank, label, value, max, color, unit }: { rank: number; label: s
     "from-orange-400 to-orange-500 text-white shadow-orange-200/50",
   ];
 
-  const rankStyle = rank <= 3
-    ? `bg-gradient-to-br ${rankColors[rank - 1]} shadow-sm font-black`
-    : "bg-slate-50 text-slate-400 border border-slate-100 font-bold";
+  const rankStyle =
+    rank <= 3
+      ? `bg-gradient-to-br ${rankColors[rank - 1]} shadow-sm font-black`
+      : "bg-slate-50 text-slate-400 border border-slate-100 font-bold";
 
   return (
     <div className="flex items-center gap-3.5 py-1.5 px-2 rounded-xl hover:bg-slate-50/70 transition-all duration-300 group">
       {/* Rank Indicator */}
-      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs shrink-0 transition-transform group-hover:scale-105 ${rankStyle}`}>
+      <div
+        className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs shrink-0 transition-transform group-hover:scale-105 ${rankStyle}`}
+      >
         {rank}
       </div>
 
@@ -123,7 +177,9 @@ function HBar({ rank, label, value, max, color, unit }: { rank: number; label: s
           </span>
           <span className="text-xs font-black text-slate-900 shrink-0 tabular-nums">
             {value.toLocaleString("vi-VN", { maximumFractionDigits: 1 })}{" "}
-            <span className="text-[9px] font-extrabold text-slate-400 tracking-wider uppercase ml-0.5">{unit}</span>
+            <span className="text-[9px] font-extrabold text-slate-400 tracking-wider uppercase ml-0.5">
+              {unit}
+            </span>
           </span>
         </div>
 
@@ -146,7 +202,20 @@ function HBar({ rank, label, value, max, color, unit }: { rank: number; label: s
 // Main Dashboard Page
 // ───────────────────────────────────────────────
 const YEARS = ["2026", "2025", "2024"];
-const MONTHS = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"];
+const MONTHS = [
+  "T1",
+  "T2",
+  "T3",
+  "T4",
+  "T5",
+  "T6",
+  "T7",
+  "T8",
+  "T9",
+  "T10",
+  "T11",
+  "T12",
+];
 const REGIONS = ["Miền Bắc", "Miền Trung", "Miền Nam"];
 
 export default function DashboardPage() {
@@ -179,12 +248,10 @@ export default function DashboardPage() {
       if (statsRes.data.success) setStats(statsRes.data.data);
       if (detailRes.data.success && detailRes.data.data.topSalesStaff) {
         setStaffRanking(
-          detailRes.data.data.topSalesStaff
-            .slice(0, 10)
-            .map((s: any) => ({
-              name: s.hoTen || s.maNV || "Nhân viên",
-              revenue: Math.round((s.revenue || 0) / 1_000_000), // Tr.đ
-            }))
+          detailRes.data.data.topSalesStaff.slice(0, 10).map((s: any) => ({
+            name: s.hoTen || s.maNV || "Nhân viên",
+            revenue: Math.round((s.revenue || 0) / 1_000_000), // Tr.đ
+          })),
         );
       }
     } catch (err) {
@@ -194,16 +261,19 @@ export default function DashboardPage() {
     }
   }, [activeYears, activeMonths]);
 
-  useEffect(() => { fetchStats(); }, [fetchStats]);
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const toggle = (arr: string[], val: string, set: (v: string[]) => void) => {
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
   };
 
   // Derived KPIs
-  const totalRevenue = stats?.kpi?.totalRevenue?.value ?? 0;           // Tr.đ
-  const revenueTarget = 500;                                            // Tr.đ default target
-  const gaugeValue = revenueTarget > 0 ? (totalRevenue / revenueTarget) * 100 : 0;
+  const totalRevenue = stats?.kpi?.totalRevenue?.value ?? 0; // Tr.đ
+  const revenueTarget = 500; // Tr.đ default target
+  const gaugeValue =
+    revenueTarget > 0 ? (totalRevenue / revenueTarget) * 100 : 0;
   const topCustomers: any[] = stats?.topCustomers ?? [];
   const trends: any[] = stats?.monthlyTrends ?? [];
   const maxStaffRev = staffRanking[0]?.revenue || 1;
@@ -213,9 +283,12 @@ export default function DashboardPage() {
 
   // KPI change helper
   const kpiChange = (change: number) => (
-    <span className={`flex items-center gap-0.5 font-black text-xs ${change >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+    <span
+      className={`flex items-center gap-0.5 font-black text-xs ${change >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+    >
       {change >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-      {change >= 0 ? "+" : ""}{change}%
+      {change >= 0 ? "+" : ""}
+      {change}%
     </span>
   );
 
@@ -239,7 +312,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500">
-
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
@@ -250,11 +322,19 @@ export default function DashboardPage() {
             Báo cáo Bán hàng
           </h1>
           <p className="text-slate-400 font-medium text-sm mt-0.5">
-            Hệ thống phân tích dữ liệu kinh doanh &amp; sản xuất theo thời gian thực
+            Hệ thống phân tích dữ liệu kinh doanh &amp; sản xuất theo thời gian
+            thực
           </p>
         </div>
         <button
-          onClick={() => exportDashboardToExcel(stats, staffRanking, topCustomers, buildPeriod())}
+          onClick={() =>
+            exportDashboardToExcel(
+              stats,
+              staffRanking,
+              topCustomers,
+              buildPeriod(),
+            )
+          }
           className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm transition-all shadow-sm shadow-emerald-500/20 cursor-pointer"
         >
           <FileSpreadsheet size={16} /> Xuất báo cáo
@@ -266,16 +346,19 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center gap-6">
           {/* Year selector */}
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Năm</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              Năm
+            </span>
             <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
               {YEARS.map((y) => (
                 <button
                   key={y}
                   onClick={() => setActiveYears([y])}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeYears.includes(y)
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-500 hover:bg-slate-100"
-                    }`}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    activeYears.includes(y)
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-slate-500 hover:bg-slate-100"
+                  }`}
                 >
                   {y}
                 </button>
@@ -285,16 +368,19 @@ export default function DashboardPage() {
 
           {/* Month selector */}
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tháng</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              Tháng
+            </span>
             <div className="flex flex-wrap items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100 max-w-[550px]">
               {MONTHS.map((m) => (
                 <button
                   key={m}
                   onClick={() => toggle(activeMonths, m, setActiveMonths)}
-                  className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${activeMonths.includes(m)
-                    ? "bg-indigo-500 text-white shadow-sm"
-                    : "text-slate-500 hover:bg-slate-100"
-                    }`}
+                  className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
+                    activeMonths.includes(m)
+                      ? "bg-indigo-500 text-white shadow-sm"
+                      : "text-slate-500 hover:bg-slate-100"
+                  }`}
                 >
                   {m}
                 </button>
@@ -304,7 +390,11 @@ export default function DashboardPage() {
         </div>
 
         <button
-          onClick={() => { setActiveYears(["2026"]); setActiveMonths([]); setActiveRegions([]); }}
+          onClick={() => {
+            setActiveYears(["2026"]);
+            setActiveMonths([]);
+            setActiveRegions([]);
+          }}
           className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 self-end lg:self-auto shadow-sm cursor-pointer"
         >
           <Filter size={12} /> Đặt lại bộ lọc
@@ -313,7 +403,6 @@ export default function DashboardPage() {
 
       {/* ── Main content: full width ── */}
       <div className="w-full space-y-5">
-
         {/* KPI Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
@@ -361,16 +450,25 @@ export default function DashboardPage() {
               amber: "bg-amber-50 text-amber-600",
             };
             return (
-              <div key={i} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 hover:shadow-md transition-shadow">
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 hover:shadow-md transition-shadow"
+              >
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{k.label}</p>
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${palette[k.color]}`}>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    {k.label}
+                  </p>
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center ${palette[k.color]}`}
+                  >
                     {k.icon}
                   </div>
                 </div>
                 <p className="text-[22px] font-black text-slate-900 leading-none">
                   {k.value}
-                  <span className="text-xs font-bold text-slate-400 ml-1">{k.unit}</span>
+                  <span className="text-xs font-bold text-slate-400 ml-1">
+                    {k.unit}
+                  </span>
                 </p>
                 <div className="flex items-center gap-1.5 mt-2">
                   {kpiChange(k.change)}
@@ -393,8 +491,7 @@ export default function DashboardPage() {
               So với cùng kỳ năm trước
             </p>
             <div className="flex items-center gap-1 text-emerald-500 font-black text-sm">
-              <TrendingUp size={14} />
-              +{stats.kpi.totalRevenue.change}%
+              <TrendingUp size={14} />+{stats.kpi.totalRevenue.change}%
             </div>
           </div>
 
@@ -409,13 +506,19 @@ export default function DashboardPage() {
 
         {/* Bottom row: Staff ranking + Customer ranking */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
           {/* Top Staff by Revenue */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-black text-slate-900 text-sm" style={{ fontSize: '14px' }}>Top 10 Nhân viên Doanh thu</h3>
-                <p className="text-slate-400" style={{ fontSize: '12px' }}>Dựa trên đơn hàng &amp; hợp đồng</p>
+                <h3
+                  className="font-black text-slate-900 text-sm"
+                  style={{ fontSize: "14px" }}
+                >
+                  Top 10 Nhân viên Doanh thu
+                </h3>
+                <p className="text-slate-400" style={{ fontSize: "12px" }}>
+                  Dựa trên đơn hàng &amp; hợp đồng
+                </p>
               </div>
               <Award size={18} className="text-amber-400" />
             </div>
@@ -426,9 +529,28 @@ export default function DashboardPage() {
                 </p>
               ) : (
                 staffRanking.map((s: any, i: number) => {
-                  const colors = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#84cc16", "#f97316", "#6366f1", "#ec4899"];
+                  const colors = [
+                    "#3b82f6",
+                    "#8b5cf6",
+                    "#10b981",
+                    "#f59e0b",
+                    "#ef4444",
+                    "#06b6d4",
+                    "#84cc16",
+                    "#f97316",
+                    "#6366f1",
+                    "#ec4899",
+                  ];
                   return (
-                    <HBar key={s.name + i} rank={i + 1} label={s.name} value={s.revenue} max={maxStaffRev} color={colors[i % colors.length]} unit="TR.Đ" />
+                    <HBar
+                      key={s.name + i}
+                      rank={i + 1}
+                      label={s.name}
+                      value={s.revenue}
+                      max={maxStaffRev}
+                      color={colors[i % colors.length]}
+                      unit="TR.Đ"
+                    />
                   );
                 })
               )}
@@ -437,21 +559,156 @@ export default function DashboardPage() {
 
           {/* Top Customers */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-4">uu
+            <div className="flex items-center justify-between mb-4">
+              uu
               <div>
-                <h3 className="font-black text-slate-900 text-sm">Top Khách hàng trọng tâm</h3>
-                <p className="text-[11px] text-slate-400 font-medium">Theo sản lượng tích lũy</p>
+                <h3 className="font-black text-slate-900 text-sm">
+                  Top Khách hàng trọng tâm
+                </h3>
+                <p className="text-[11px] text-slate-400 font-medium">
+                  Theo sản lượng tích lũy
+                </p>
               </div>
               <Target size={18} className="text-blue-500" />
             </div>
-            <div className="space-y-2.5">
-              {topCustomers.slice(0, 10).map((c: any, i: number) => {
-                const colors = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#84cc16", "#f97316", "#6366f1", "#ec4899"];
-                return (
-                  <HBar key={c.name + i} rank={i + 1} label={c.name} value={c.volume} max={maxCustVol} color={colors[i % colors.length]} unit="KG" />
-                );
-              })}
+          </div>
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%" minHeight={350}>
+              <AreaChart data={stats.monthlyTrends}>
+                <defs>
+                  <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#F1F5F9"
+                />
+                <XAxis
+                  dataKey="month"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 700 }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 700 }}
+                  dx={-10}
+                />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{
+                    stroke: "#2563eb",
+                    strokeWidth: 1,
+                    strokeDasharray: "4 4",
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{
+                    paddingTop: 30,
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                  iconType="circle"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenuePlan"
+                  name="Kế hoạch"
+                  stroke="#CBD5E1"
+                  strokeWidth={2}
+                  fill="transparent"
+                  strokeDasharray="5 5"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenueActual"
+                  name="Thực tế"
+                  stroke="#2563eb"
+                  strokeWidth={4}
+                  fill="url(#gradActual)"
+                  dot={{
+                    r: 6,
+                    fill: "#2563eb",
+                    strokeWidth: 3,
+                    stroke: "#fff",
+                  }}
+                  activeDot={{ r: 8, strokeWidth: 0 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Production Chart */}
+        <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-[18px] font-black text-slate-900 tracking-tight">
+                Sản lượng Thực tế vs Kế hoạch
+              </h3>
+              <p className="text-sm text-slate-400 font-medium mt-1">
+                Đơn vị: Kilogram (KG)
+              </p>
             </div>
+          </div>
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%" minHeight={350}>
+              <ComposedChart data={stats.monthlyTrends}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#F1F5F9"
+                />
+                <XAxis
+                  dataKey="month"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 700 }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 700 }}
+                  dx={-10}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend
+                  wrapperStyle={{
+                    paddingTop: 30,
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                  iconType="rect"
+                />
+                <Bar
+                  dataKey="prodActual"
+                  name="Sản lượng thực"
+                  fill="#8b5cf6"
+                  radius={[12, 12, 0, 0]}
+                  barSize={40}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="prodPlan"
+                  name="Mục tiêu"
+                  stroke="#f59e0b"
+                  strokeWidth={3}
+                  dot={{
+                    r: 5,
+                    fill: "#f59e0b",
+                    strokeWidth: 3,
+                    stroke: "#fff",
+                  }}
+                  strokeDasharray="8 4"
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -464,11 +721,19 @@ export default function DashboardPage() {
               Bảng chi tiết tiến độ Khách hàng trọng tâm
             </h3>
             <p className="text-xs text-slate-400 font-medium mt-0.5">
-              Thống kê sản lượng và doanh thu tích lũy dựa theo mục tiêu kế hoạch đề ra
+              Thống kê sản lượng và doanh thu tích lũy dựa theo mục tiêu kế
+              hoạch đề ra
             </p>
           </div>
           <button
-            onClick={() => exportDashboardToExcel(stats, staffRanking, topCustomers, buildPeriod())}
+            onClick={() =>
+              exportDashboardToExcel(
+                stats,
+                staffRanking,
+                topCustomers,
+                buildPeriod(),
+              )
+            }
             className="flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl font-bold text-xs transition-all cursor-pointer"
           >
             <FileSpreadsheet size={14} /> Xuất dữ liệu
@@ -513,14 +778,15 @@ export default function DashboardPage() {
                   >
                     <td className="px-6 py-3.5">
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shadow-sm ${i === 0
-                          ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
-                          : i === 1
-                            ? "bg-gradient-to-br from-slate-300 to-slate-400 text-white"
-                            : i === 2
-                              ? "bg-gradient-to-br from-orange-300 to-orange-400 text-white"
-                              : "bg-slate-50 text-slate-400 border border-slate-100"
-                          }`}
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shadow-sm ${
+                          i === 0
+                            ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
+                            : i === 1
+                              ? "bg-gradient-to-br from-slate-300 to-slate-400 text-white"
+                              : i === 2
+                                ? "bg-gradient-to-br from-orange-300 to-orange-400 text-white"
+                                : "bg-slate-50 text-slate-400 border border-slate-100"
+                        }`}
                       >
                         {i + 1}
                       </div>
@@ -551,12 +817,13 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-3">
                         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                           <div
-                            className={`h-full rounded-full transition-all duration-1000 shadow-sm ${pct >= 90
-                              ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                              : pct >= 70
-                                ? "bg-gradient-to-r from-amber-400 to-amber-500"
-                                : "bg-gradient-to-r from-rose-400 to-rose-500"
-                              }`}
+                            className={`h-full rounded-full transition-all duration-1000 shadow-sm ${
+                              pct >= 90
+                                ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                                : pct >= 70
+                                  ? "bg-gradient-to-r from-amber-400 to-amber-500"
+                                  : "bg-gradient-to-r from-rose-400 to-rose-500"
+                            }`}
                             style={{ width: `${Math.min(pct, 100)}%` }}
                           />
                         </div>
@@ -567,27 +834,28 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-6 py-3.5 text-center">
                       <div
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight shadow-sm border ${pct >= 90
-                          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                          : pct >= 70
-                            ? "bg-amber-50 text-amber-600 border-amber-100"
-                            : "bg-rose-50 text-rose-600 border-rose-100"
-                          }`}
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight shadow-sm border ${
+                          pct >= 90
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                            : pct >= 70
+                              ? "bg-amber-50 text-amber-600 border-amber-100"
+                              : "bg-rose-50 text-rose-600 border-rose-100"
+                        }`}
                       >
                         <div
-                          className={`w-1 h-1 rounded-full animate-pulse ${pct >= 90
-                            ? "bg-emerald-500"
-                            : pct >= 70
-                              ? "bg-amber-500"
-                              : "bg-rose-500"
-                            }`}
+                          className={`w-1 h-1 rounded-full animate-pulse ${
+                            pct >= 90
+                              ? "bg-emerald-500"
+                              : pct >= 70
+                                ? "bg-amber-500"
+                                : "bg-rose-500"
+                          }`}
                         />
                         {pct >= 90
                           ? "Vượt chỉ tiêu"
                           : pct >= 70
                             ? "Cần cố gắng"
-                            : "Cảnh báo rủi ro"
-                        }
+                            : "Cảnh báo rủi ro"}
                       </div>
                     </td>
                   </tr>
