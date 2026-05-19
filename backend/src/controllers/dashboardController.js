@@ -6,33 +6,48 @@ const NhatKyTestMau = require('../models/NhatKyTestMau');
 const SalesTarget = require('../models/SalesTarget');
 const mongoose = require('mongoose');
 
+// Helper giải quyết khoảng thời gian động dựa trên tham số period từ frontend
+const resolvePeriodDates = (period) => {
+  let queryYear = 2026;
+  if (period) {
+    const yearMatch = period.match(/\d{4}/);
+    if (yearMatch) {
+      queryYear = parseInt(yearMatch[0], 10);
+    }
+  }
+
+  let startDate, endDate, prevStartDate, prevEndDate;
+
+  if (period && period.startsWith('Tháng')) {
+    const month = parseInt(period.split(' ')[1].split('/')[0]);
+    startDate = new Date(queryYear, month - 1, 1);
+    endDate = new Date(queryYear, month, 0, 23, 59, 59);
+    prevStartDate = new Date(queryYear, month - 2, 1);
+    prevEndDate = new Date(queryYear, month - 1, 0, 23, 59, 59);
+  } else if (period && period.startsWith('Quý')) {
+    const quarter = parseInt(period.split(' ')[1].split('/')[0]);
+    startDate = new Date(queryYear, (quarter - 1) * 3, 1);
+    endDate = new Date(queryYear, quarter * 3, 0, 23, 59, 59);
+    prevStartDate = new Date(queryYear, (quarter - 2) * 3, 1);
+    prevEndDate = new Date(queryYear, (quarter - 1) * 3, 0, 23, 59, 59);
+  } else {
+    // Mặc định lọc theo năm
+    startDate = new Date(queryYear, 0, 1);
+    endDate = new Date(queryYear, 11, 31, 23, 59, 59);
+    prevStartDate = new Date(queryYear - 1, 0, 1);
+    prevEndDate = new Date(queryYear - 1, 11, 31, 23, 59, 59);
+  }
+
+  return { queryYear, startDate, endDate, prevStartDate, prevEndDate };
+};
+
 // @desc    Get global dashboard stats
 // @route   GET /api/dashboard/stats
 exports.getDashboardStats = async (req, res) => {
   try {
     const { period } = req.query;
     const now = new Date();
-    let startDate, endDate, prevStartDate, prevEndDate;
-
-    if (period && period.startsWith('Tháng')) {
-      const month = parseInt(period.split(' ')[1].split('/')[0]);
-      startDate = new Date(2026, month - 1, 1);
-      endDate = new Date(2026, month, 0, 23, 59, 59);
-      prevStartDate = new Date(2026, month - 2, 1);
-      prevEndDate = new Date(2026, month - 1, 0, 23, 59, 59);
-    } else if (period && period.startsWith('Quý')) {
-      const quarter = parseInt(period.split(' ')[1].split('/')[0]);
-      startDate = new Date(2026, (quarter - 1) * 3, 1);
-      endDate = new Date(2026, quarter * 3, 0, 23, 59, 59);
-      prevStartDate = new Date(2026, (quarter - 2) * 3, 1);
-      prevEndDate = new Date(2026, (quarter - 1) * 3, 0, 23, 59, 59);
-    } else {
-      // Default to current year
-      startDate = new Date(2026, 0, 1);
-      endDate = new Date(2026, 11, 31, 23, 59, 59);
-      prevStartDate = new Date(2025, 0, 1);
-      prevEndDate = new Date(2025, 11, 31, 23, 59, 59);
-    }
+    const { queryYear, startDate, endDate, prevStartDate, prevEndDate } = resolvePeriodDates(period);
 
     // 1. KPI: Customer Count (Filtered by period)
     const totalCustomers = await KhachHang.countDocuments({
@@ -86,13 +101,13 @@ exports.getDashboardStats = async (req, res) => {
       const quarter = parseInt(period.split(' ')[1].split('/')[0]);
       monthsToShow = 3;
       endMonth = quarter * 3 - 1;
-    } else if (period === 'Năm 2026') {
+    } else if (period && period.startsWith('Năm')) {
       monthsToShow = 12;
       endMonth = 11;
     }
 
     for (let i = monthsToShow - 1; i >= 0; i--) {
-      const d = new Date(2026, endMonth - i, 1);
+      const d = new Date(queryYear, endMonth - i, 1);
       const m = d.getMonth() + 1;
       const y = d.getFullYear();
       const monthStart = new Date(y, m - 1, 1);
@@ -181,20 +196,7 @@ exports.getDashboardStats = async (req, res) => {
 exports.getDetailedStats = async (req, res) => {
   try {
     const { period } = req.query;
-    let startDate, endDate;
-
-    if (period && period.startsWith('Tháng')) {
-      const month = parseInt(period.split(' ')[1].split('/')[0]);
-      startDate = new Date(2026, month - 1, 1);
-      endDate = new Date(2026, month, 0, 23, 59, 59);
-    } else if (period && period.startsWith('Quý')) {
-      const quarter = parseInt(period.split(' ')[1].split('/')[0]);
-      startDate = new Date(2026, (quarter - 1) * 3, 1);
-      endDate = new Date(2026, quarter * 3, 0, 23, 59, 59);
-    } else {
-      startDate = new Date(2026, 0, 1);
-      endDate = new Date(2026, 11, 31, 23, 59, 59);
-    }
+    const { startDate, endDate } = resolvePeriodDates(period);
 
     // 1. Order Status Distribution
     const orderStatusDist = await DonHang.aggregate([
@@ -408,19 +410,7 @@ exports.getDetailedStats = async (req, res) => {
 exports.getInventoryStats = async (req, res) => {
   try {
     const { period } = req.query;
-    let startDate, endDate;
-    if (period && period.startsWith('Tháng')) {
-      const month = parseInt(period.split(' ')[1].split('/')[0]);
-      startDate = new Date(2026, month - 1, 1);
-      endDate = new Date(2026, month, 0, 23, 59, 59);
-    } else if (period && period.startsWith('Quý')) {
-      const quarter = parseInt(period.split(' ')[1].split('/')[0]);
-      startDate = new Date(2026, (quarter - 1) * 3, 1);
-      endDate = new Date(2026, quarter * 3, 0, 23, 59, 59);
-    } else {
-      startDate = new Date(2026, 0, 1);
-      endDate = new Date(2026, 11, 31, 23, 59, 59);
-    }
+    const { startDate, endDate } = resolvePeriodDates(period);
 
     const products = await SanPhamSon.find();
     
@@ -485,19 +475,7 @@ exports.getInventoryStats = async (req, res) => {
 exports.getProductionStats = async (req, res) => {
   try {
     const { period } = req.query;
-    let startDate, endDate;
-    if (period && period.startsWith('Tháng')) {
-      const month = parseInt(period.split(' ')[1].split('/')[0]);
-      startDate = new Date(2026, month - 1, 1);
-      endDate = new Date(2026, month, 0, 23, 59, 59);
-    } else if (period && period.startsWith('Quý')) {
-      const quarter = parseInt(period.split(' ')[1].split('/')[0]);
-      startDate = new Date(2026, (quarter - 1) * 3, 1);
-      endDate = new Date(2026, quarter * 3, 0, 23, 59, 59);
-    } else {
-      startDate = new Date(2026, 0, 1);
-      endDate = new Date(2026, 11, 31, 23, 59, 59);
-    }
+    const { startDate, endDate } = resolvePeriodDates(period);
 
     const LenhSanXuat = require('../models/LenhSanXuat');
     
