@@ -30,10 +30,19 @@ function hexToHSL(hex: string) {
   return { h: h * 360, s: s * 100, l: l * 100 };
 }
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Palette, Sparkles, X, ArrowLeft, AlertCircle, ShieldCheck, Loader2 } from "lucide-react";
+import {
+  Search,
+  Palette,
+  Sparkles,
+  X,
+  ArrowLeft,
+  AlertCircle,
+  ShieldCheck,
+  Loader2,
+} from "lucide-react";
 import { paintColors } from "@/lib/data/colors-data";
 import { useAuthStore } from "@/lib/store/authStore";
 import api from "@/lib/utils/axiosAuth";
@@ -46,147 +55,6 @@ export default function ColorsPage() {
     (typeof paintColors)[0] | null
   >(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
-
-  // Auth States for the premium login modal
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [registerUsername, setRegisterUsername] = useState("");
-  const [registerFullName, setRegisterFullName] = useState("");
-  const [registerEmail, setRegisterEmail] = useState("");
-  const [registerPassword, setRegisterPassword] = useState("");
-  const [registerRole, setRegisterRole] = useState("KhachHangB2C");
-  const [registerLoading, setRegisterLoading] = useState(false);
-  const [registerError, setRegisterError] = useState<string | null>(null);
-  const [registerSuccess, setRegisterSuccess] = useState(false);
-  const [redirectPath, setRedirectPath] = useState<string | null>(null);
-
-  // Forgot Password state
-  const [isForgotMode, setIsForgotMode] = useState(false);
-  const [forgotUsername, setForgotUsername] = useState("");
-  const [forgotEmail, setForgotEmail] = useState("");
-  const [forgotNewPassword, setForgotNewPassword] = useState("");
-  const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
-  const [forgotError, setForgotError] = useState<string | null>(null);
-  const [forgotSuccess, setForgotSuccess] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-
-  // Auth Form Handlers
-  const handlePageLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!loginEmail || !loginPassword) {
-      setLoginError("Vui lòng nhập đầy đủ thông tin");
-      return;
-    }
-    const { loginState } = useAuthStore.getState();
-    try {
-      setIsLoggingIn(true);
-      setLoginError(null);
-      const res = await api.post("/auth/login", {
-        TenDangNhap: loginEmail,
-        MatKhau: loginPassword,
-      });
-      if (res.data.success) {
-        loginState(res.data.user, res.data.accessToken);
-        setIsLoginOpen(false);
-
-        // Handle redirect if exists
-        if (redirectPath) {
-          router.push(redirectPath);
-          setRedirectPath(null);
-          return;
-        }
-        const role = res.data.user.role;
-        if (role === "Admin" || role === "Director") {
-          router.push("/dashboard");
-        } else if (role === "NhanVien") {
-          router.push("/san-pham");
-        } else {
-          router.push("/");
-        }
-      }
-    } catch (err: any) {
-      setLoginError(err.response?.data?.error || "Đăng nhập thất bại");
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  const handlePageRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!registerUsername || !registerFullName || !registerEmail || !registerPassword || !registerRole) {
-      setRegisterError("Vui lòng điền đầy đủ thông tin");
-      return;
-    }
-
-    try {
-      setRegisterLoading(true);
-      setRegisterError(null);
-      const res = await api.post("/auth/register", {
-        TenDangNhap: registerUsername,
-        HoTen: registerFullName,
-        Email: registerEmail,
-        MatKhau: registerPassword,
-        VaiTro: registerRole
-      });
-
-      if (res.data.success) {
-        setRegisterSuccess(true);
-        setTimeout(() => {
-          setIsRegisterMode(false);
-          setRegisterSuccess(false);
-          setLoginEmail(registerUsername);
-        }, 2000);
-      }
-    } catch (err: any) {
-      setRegisterError(err.response?.data?.error || "Đăng ký thất bại");
-    } finally {
-      setRegisterLoading(false);
-    }
-  };
-
-  const handleForgotSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!forgotUsername || !forgotEmail || !forgotNewPassword || !forgotConfirmPassword) {
-      setForgotError("Vui lòng điền đầy đủ thông tin");
-      return;
-    }
-    if (forgotNewPassword !== forgotConfirmPassword) {
-      setForgotError("Mật khẩu nhập lại không khớp");
-      return;
-    }
-
-    try {
-      setIsResetting(true);
-      setForgotError(null);
-      const res = await api.post("/auth/reset-password", {
-        TenDangNhap: forgotUsername,
-        Email: forgotEmail,
-        MatKhauMoi: forgotNewPassword
-      });
-
-      if (res.data.success) {
-        setForgotSuccess(true);
-        setTimeout(() => {
-          setIsForgotMode(false);
-          setForgotSuccess(false);
-          setForgotUsername("");
-          setForgotEmail("");
-          setForgotNewPassword("");
-          setForgotConfirmPassword("");
-          setLoginEmail(forgotUsername);
-        }, 2000);
-      }
-    } catch (err: any) {
-      setForgotError(err.response?.data?.error || "Đặt lại mật khẩu thất bại");
-    } finally {
-      setIsResetting(false);
-    }
-  };
-
 
   const sortedColorsList = useMemo(() => {
     return [...paintColors].sort((a, b) => {
@@ -457,7 +325,11 @@ export default function ColorsPage() {
             </button>
 
             <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">
-              {isForgotMode ? "Đặt Lại Mật Khẩu" : isRegisterMode ? "Đăng Ký Tài Khoản" : "Chào Mừng Trở Lại"}
+              {isForgotMode
+                ? "Đặt Lại Mật Khẩu"
+                : isRegisterMode
+                  ? "Đăng Ký Tài Khoản"
+                  : "Chào Mừng Trở Lại"}
             </h2>
 
             {isForgotMode ? (
@@ -514,7 +386,11 @@ export default function ColorsPage() {
                     disabled={isResetting}
                     className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
                   >
-                    {isResetting ? <Loader2 className="animate-spin" size={18} /> : "Cập Nhật Mật Khẩu"}
+                    {isResetting ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      "Cập Nhật Mật Khẩu"
+                    )}
                   </button>
                 </div>
 
@@ -570,7 +446,11 @@ export default function ColorsPage() {
                     disabled={isLoggingIn}
                     className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
                   >
-                    {isLoggingIn ? <Loader2 className="animate-spin" size={18} /> : "Đăng Nhập"}
+                    {isLoggingIn ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      "Đăng Nhập"
+                    )}
                   </button>
                 </div>
 
@@ -588,17 +468,37 @@ export default function ColorsPage() {
                 </div>
 
                 <div className="relative py-4">
-                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400 font-bold">Hoặc</span></div>
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-100"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-slate-400 font-bold">
+                      Hoặc
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
-                  <button type="button" className="w-full h-12 bg-[#0f172a] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer">
-                    <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png" className="w-4 h-4" alt="Apple" />
+                  <button
+                    type="button"
+                    className="w-full h-12 bg-[#0f172a] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer"
+                  >
+                    <img
+                      src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png"
+                      className="w-4 h-4"
+                      alt="Apple"
+                    />
                     Đăng nhập bằng Apple
                   </button>
-                  <button type="button" className="w-full h-12 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer">
-                    <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png" className="w-4 h-4" alt="Google" />
+                  <button
+                    type="button"
+                    className="w-full h-12 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer"
+                  >
+                    <img
+                      src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png"
+                      className="w-4 h-4"
+                      alt="Google"
+                    />
                     Đăng nhập bằng Google
                   </button>
                 </div>
@@ -612,7 +512,8 @@ export default function ColorsPage() {
                 )}
                 {registerSuccess && (
                   <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3 text-emerald-600 text-xs font-bold">
-                    <ShieldCheck size={16} /> Đăng ký thành công! Đang chuyển sang đăng nhập...
+                    <ShieldCheck size={16} /> Đăng ký thành công! Đang chuyển
+                    sang đăng nhập...
                   </div>
                 )}
 
@@ -654,14 +555,18 @@ export default function ColorsPage() {
                   />
 
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Loại khách hàng</label>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                      Loại khách hàng
+                    </label>
                     <select
                       value={registerRole}
                       onChange={(e) => setRegisterRole(e.target.value)}
                       className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all cursor-pointer"
                     >
                       <option value="KhachHangB2C">Khách hàng cá nhân</option>
-                      <option value="KhachHangB2B">Khách hàng doanh nghiệp</option>
+                      <option value="KhachHangB2B">
+                        Khách hàng doanh nghiệp
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -672,7 +577,11 @@ export default function ColorsPage() {
                     disabled={registerLoading}
                     className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
                   >
-                    {registerLoading ? <Loader2 className="animate-spin" size={18} /> : "Đăng Ký Tài Khoản"}
+                    {registerLoading ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      "Đăng Ký Tài Khoản"
+                    )}
                   </button>
                 </div>
 
