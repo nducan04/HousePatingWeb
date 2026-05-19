@@ -164,6 +164,64 @@ export default function QuanLyKhoPage() {
     fetchNhaCungCap();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      const openNX = searchParams.get("openNX");
+      const prefill = searchParams.get("prefillMaterials");
+      
+      if (openNX === "true" && prefill && nvlData.length > 0) {
+        // Set the active tab to History of Imports/Exports
+        setActiveTab("nhapxuat");
+
+        // Parse query params formatting "id:quantity,id2:quantity2"
+        const pairs = prefill.split(",");
+        const itemsToPrefill: any[] = [];
+
+        pairs.forEach((pair) => {
+          const [maNVL, qtyStr] = pair.split(":");
+          if (!maNVL) return;
+          const qty = parseFloat(qtyStr || "0");
+
+          // Match the out-of-stock raw material inside database NVL list
+          const mat = nvlData.find((m) => m.MaNVL === maNVL);
+          if (mat) {
+            itemsToPrefill.push({
+              ItemId: mat._id,
+              MaMau: "",
+              TenMau: "",
+              MaItem: mat.MaNVL,
+              TenItem: mat.TenNguyenVatLieu,
+              SoLuong: qty,
+              DonGia: mat.DonGia || 0,
+              ThanhTien: qty * (mat.DonGia || 0),
+            });
+          }
+        });
+
+        if (itemsToPrefill.length > 0) {
+          // Initialize NX Form preset to NHAP and NGUYEN_VAT_LIEU
+          setNxForm({
+            MaPhieu: "",
+            LoaiPhieu: "NHAP",
+            LoaiHang: "NGUYEN_VAT_LIEU",
+            MoTa: "Nhập nguyên vật liệu bổ sung cho mẻ test R&D",
+            GhiChu: "",
+            NhaCungCapID: "",
+          });
+          setNxItems(itemsToPrefill);
+          setIsNXModal(true);
+
+          // Clean URL parameters immediately
+          const url = new URL(window.location.href);
+          url.searchParams.delete("openNX");
+          url.searchParams.delete("prefillMaterials");
+          window.history.replaceState({}, "", url.toString());
+        }
+      }
+    }
+  }, [nvlData]);
+
   const fetchTonKho = async () => {
     try {
       const res = await api.get(API_KHO);
