@@ -162,7 +162,7 @@ export default function GioHangPage() {
 
       {/* Cột trái: Sản phẩm */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'white' }}>Danh mục sản phẩm</h2>
+        <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>Danh mục sản phẩm</h2>
         <div className="relative bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '0 15px', borderRadius: 12 }}>
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
@@ -178,11 +178,11 @@ export default function GioHangPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredProducts.map(sp => (
             <div key={sp._id} className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden transition-hover" style={{ padding: '15px', display: 'flex', gap: 15, alignItems: 'center' }}>
-              <div style={{ width: 70, height: 70, background: 'rgba(255,255,255,0.05)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <div style={{ width: 70, height: 70, background: '#f8fafc', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
                 {sp.HinhAnh ? <img src={`http://localhost:5000${sp.HinhAnh}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <Box size={24} color="#555" />}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, fontSize: 14, color: 'white' }}>{sp.TenDongSon}</div>
+                <div style={{ fontWeight: 800, fontSize: 14, color: '#1e293b' }}>{sp.TenDongSon}</div>
                 <div style={{ color: '#2563eb', fontWeight: 800, fontSize: 14 }}>{(sp.DonGiaCoSo || 0).toLocaleString()} ₫</div>
                 <div style={{ fontSize: '11px', color: sp.TonKho > 0 ? '#94a3b8' : '#e11d48', marginTop: 4 }}>Tồn kho: {sp.TonKho || 0}</div>
               </div>
@@ -205,7 +205,7 @@ export default function GioHangPage() {
       {/* Cột phải: Checkout */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ display: 'flex', flexDirection: 'column', padding: '2.25rem', borderRadius: 16, border: '1px solid #e2e8f0', position: 'sticky', top: 20, height: 'fit-content' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 25 }}>
-          <h2 style={{ fontSize: '24px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 12, color: 'white' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 12, color: '#1e293b' }}>
             <ShoppingCart size={28} className="text-[#2563eb]" /> Giỏ Hàng
           </h2>
           {cartItems.length > 0 && (
@@ -234,13 +234,13 @@ export default function GioHangPage() {
               </div>
             </div>
           ) : (
-            <div className="p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl mb-4">
+            <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
                   {user?.username?.[0].toUpperCase()}
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-white">{user?.profile?.TenKhachHang}</div>
+                  <div className="text-sm font-bold text-slate-800">{user?.profile?.TenKhachHang}</div>
                   <div className="text-xs text-slate-500">Đặt hàng cho tài khoản này</div>
                 </div>
               </div>
@@ -263,8 +263,8 @@ export default function GioHangPage() {
 
         <div style={{ flex: 1, maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 25, paddingRight: 5 }}>
           {cartItems.map(item => (
-            <div key={item._id} style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ width: 60, height: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 10, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div key={item._id} style={{ display: 'flex', gap: 12, alignItems: 'center', background: '#f8fafc', padding: '12px', borderRadius: 12, border: '1px solid #f1f5f9' }}>
+              <div style={{ width: 60, height: 60, background: '#e2e8f0', borderRadius: 10, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {item.SanPham?.HinhAnh ? (
                   <img src={`http://localhost:5000${item.SanPham.HinhAnh}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                 ) : (
@@ -272,13 +272,13 @@ export default function GioHangPage() {
                 )}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, fontSize: 14, color: 'white', marginBottom: 2 }}>{item.SanPham?.TenDongSon}</div>
+                <div style={{ fontWeight: 800, fontSize: 14, color: '#1e293b', marginBottom: 2 }}>{item.SanPham?.TenDongSon}</div>
                 <div style={{ fontWeight: 700, color: '#2563eb', fontSize: 14 }}>{(item.SanPham?.DonGiaCoSo || 0).toLocaleString()} ₫</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: 8 }}>
-                <button onClick={() => updateQuantity(item.SanPham._id, item.SoLuong - 1)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-2 py-1 rounded-md text-xs text-slate-500 hover:text-white">-</button>
-                <span style={{ fontSize: 15, fontWeight: 900, minWidth: 20, textAlign: 'center', color: 'white' }}>{item.SoLuong}</span>
-                <button onClick={() => updateQuantity(item.SanPham._id, item.SoLuong + 1)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-2 py-1 rounded-md text-xs text-slate-500 hover:text-white">+</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f1f5f9', padding: '4px 8px', borderRadius: 8 }}>
+                <button onClick={() => updateQuantity(item.SanPham._id, item.SoLuong - 1)} style={{ border: 'none', background: 'transparent', color: '#64748b', fontSize: '16px', fontWeight: 'bold', padding: '2px 8px', cursor: 'pointer' }}>-</button>
+                <span style={{ fontSize: 15, fontWeight: 900, minWidth: 20, textAlign: 'center', color: '#1e293b' }}>{item.SoLuong}</span>
+                <button onClick={() => updateQuantity(item.SanPham._id, item.SoLuong + 1)} style={{ border: 'none', background: 'transparent', color: '#64748b', fontSize: '16px', fontWeight: 'bold', padding: '2px 8px', cursor: 'pointer' }}>+</button>
               </div>
             </div>
           ))}
@@ -327,7 +327,7 @@ export default function GioHangPage() {
         <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ fontSize: 14, color: '#475569' }}>Tạm tính:</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{cartTotal.toLocaleString()} ₫</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{cartTotal.toLocaleString()} ₫</span>
           </div>
           {discountInfo && (
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -336,7 +336,7 @@ export default function GioHangPage() {
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, marginBottom: 25 }}>
-            <span style={{ fontSize: 18, fontWeight: 900, color: 'white' }}>TỔNG CỘNG:</span>
+            <span style={{ fontSize: 18, fontWeight: 900, color: '#1e293b' }}>TỔNG CỘNG:</span>
             <span style={{ fontSize: 24, fontWeight: 900, color: '#2563eb' }}>
               {(cartTotal - (discountInfo?.DiscountAmount || 0)).toLocaleString()} ₫
             </span>
@@ -345,7 +345,7 @@ export default function GioHangPage() {
           <button
             onClick={handleCheckout}
             disabled={cartItems.length === 0 || isSubmitting}
-            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline w-full h-14 text-white font-bold text-lg flex items-center justify-center gap-3 shadow-xl transition-all ${cartItems.length > 0 && !isSubmitting ? 'btn-primary shadow-blue-500/20' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline w-full h-14 text-black font-bold text-lg flex items-center justify-center gap-3 shadow-xl transition-all ${cartItems.length > 0 && !isSubmitting ? 'btn-primary shadow-blue-500/20' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
           >
             {isSubmitting ? <><Loader2 className="animate-spin" /> XỬ LÝ...</> : <><CheckCircle2 size={22} /> ĐẶT HÀNG NGAY</>}
           </button>
