@@ -11,8 +11,16 @@ import api from '@/lib/utils/axiosAuth';
 import { paintColors } from '@/lib/data/colors-data';
 import * as XLSX from 'xlsx';
 import { useAuthStore } from '@/lib/store/authStore';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, BorderStyle, WidthType } from 'docx';
+import { saveAs } from 'file-saver';
 
 const API_DON_HANG = '/don-hang';
+
+const PAYMENT_METHODS = [
+    { key: 'TIEN_MAT', label: 'Tiền mặt', icon: Banknote },
+    { key: 'CHUYEN_KHOAN', label: 'Chuyển khoản', icon: CreditCard },
+    { key: 'GHI_NO', label: 'Ghi nợ', icon: FileText }
+];
 
 interface OrderItem {
     SanPham: any;
@@ -565,6 +573,525 @@ export default function OrderManagementPage() {
         XLSX.writeFile(workbook, `VTSC_Danh_Sach_Don_Hang_${new Date().toLocaleDateString().replace(/\//g, '_')}.xlsx`);
     };
 
+    const handleDownloadPhieuCoc = async () => {
+        if (!selectedOrder) {
+            alert('Không tìm thấy thông tin đơn hàng để in phiếu cọc!');
+            return;
+        }
+
+        try {
+            // Mock data values requested as fallbacks
+            const customerName = selectedOrder.KhachHang?.TenKhachHang || 'An Phúc';
+            const customerPhone = selectedOrder.KhachHang?.SDT || 'Chưa cập nhật';
+            const productName = selectedOrder.Items?.[0]?.TenSanPham || 'Majestic Đẹp Nguyên Bản';
+            const quantity = selectedOrder.Items?.reduce((s, i) => s + i.SoLuong, 0) || 1;
+            const colorCode = selectedOrder.Items?.[0]?.MaMau || 'BASE';
+            const powderType = selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon';
+            const totalValue = selectedOrder.TongTien || 1250000;
+            const depositValue = selectedOrder.DaCoc || 625000;
+            const remainingValue = Math.max(0, totalValue - depositValue);
+            const depositPercent = totalValue > 0 ? Math.round((depositValue / totalValue) * 100) : 50;
+
+            const doc = new Document({
+                creator: "VTSC PaintPro",
+                title: `Phieu_Coc_DH${selectedOrder.MaDonHang}`,
+                description: "Phiếu biên nhận đặt cọc",
+                styles: {
+                    default: {
+                        document: {
+                            run: {
+                                font: "Times New Roman",
+                                size: 24, // 12pt (24 half-points)
+                            },
+                        },
+                    },
+                },
+                sections: [
+                    {
+                        properties: {},
+                        children: [
+                            // 1. Header
+                            new Table({
+                                width: { size: 100, type: WidthType.PERCENTAGE },
+                                borders: {
+                                    top: { style: BorderStyle.NONE },
+                                    bottom: { style: BorderStyle.NONE },
+                                    left: { style: BorderStyle.NONE },
+                                    right: { style: BorderStyle.NONE },
+                                    insideHorizontal: { style: BorderStyle.NONE },
+                                    insideVertical: { style: BorderStyle.NONE },
+                                },
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({ text: "CÔNG TY CP TMDV VOSCO (VTSC)", bold: true })
+                                                        ],
+                                                        alignment: AlignmentType.CENTER
+                                                    }),
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({ text: "Hệ thống PaintPro" })
+                                                        ],
+                                                        alignment: AlignmentType.CENTER
+                                                    })
+                                                ]
+                                            }),
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({ text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", bold: true })
+                                                        ],
+                                                        alignment: AlignmentType.CENTER
+                                                    }),
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({ text: "Độc lập - Tự do - Hạnh phúc", bold: true, underline: {} })
+                                                        ],
+                                                        alignment: AlignmentType.CENTER
+                                                    })
+                                                ]
+                                            })
+                                        ]
+                                    })
+                                ]
+                            }),
+
+                            new Paragraph({ text: "", spacing: { after: 400 } }),
+
+                            // 2. Tiêu đề văn bản
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: "PHIẾU BIÊN NHẬN ĐẶT CỌC", bold: true, size: 32 }) // 16pt
+                                ],
+                                alignment: AlignmentType.CENTER,
+                                spacing: { after: 100 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: `Mã đơn hàng: #${selectedOrder.MaDonHang} - Ngày tạo: ${new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN')}`,
+                                        italics: true
+                                    })
+                                ],
+                                alignment: AlignmentType.CENTER,
+                                spacing: { after: 400 }
+                            }),
+
+                            // 3. Nội dung chính
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: "Họ tên khách hàng: ", bold: true }),
+                                    new TextRun({ text: customerName })
+                                ],
+                                spacing: { after: 100 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: "Số điện thoại: ", bold: true }),
+                                    new TextRun({ text: customerPhone })
+                                ],
+                                spacing: { after: 100 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: "Nội dung đặt cọc: ", bold: true }),
+                                    new TextRun({
+                                        text: `Đặt cọc thi công/mua sơn tĩnh điện sản phẩm "${productName} (${quantity} thùng)", Mã màu: ${colorCode}, Loại bột: ${powderType}.`
+                                    })
+                                ],
+                                spacing: { after: 100 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: "Tổng giá trị đơn hàng: ", bold: true }),
+                                    new TextRun({ text: `${totalValue.toLocaleString('vi-VN')} đ` })
+                                ],
+                                spacing: { after: 100 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: `Số tiền đã đặt cọc (${depositPercent}%): `, bold: true }),
+                                    new TextRun({ text: `${depositValue.toLocaleString('vi-VN')} đ` })
+                                ],
+                                spacing: { after: 100 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: "Viết bằng chữ: ", bold: true }),
+                                    new TextRun({ text: "(Sáu trăm hai mươi lăm nghìn đồng chẵn)", italics: true }) // Mặc định mock theo yêu cầu
+                                ],
+                                spacing: { after: 100 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: "Số tiền còn lại cần thanh toán: ", bold: true }),
+                                    new TextRun({ text: `${remainingValue.toLocaleString('vi-VN')} đ` })
+                                ],
+                                spacing: { after: 400 }
+                            }),
+
+                            // 4. Chữ ký (Footer)
+                            new Table({
+                                width: { size: 100, type: WidthType.PERCENTAGE },
+                                borders: {
+                                    top: { style: BorderStyle.NONE },
+                                    bottom: { style: BorderStyle.NONE },
+                                    left: { style: BorderStyle.NONE },
+                                    right: { style: BorderStyle.NONE },
+                                    insideHorizontal: { style: BorderStyle.NONE },
+                                    insideVertical: { style: BorderStyle.NONE },
+                                },
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({ text: "NGƯỜI NỘP TIỀN", bold: true })
+                                                        ],
+                                                        alignment: AlignmentType.CENTER
+                                                    }),
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true })
+                                                        ],
+                                                        alignment: AlignmentType.CENTER
+                                                    }),
+                                                    new Paragraph({ text: "", spacing: { after: 1000 } })
+                                                ]
+                                            }),
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({ text: "ĐẠI DIỆN CÔNG TY", bold: true })
+                                                        ],
+                                                        alignment: AlignmentType.CENTER
+                                                    }),
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true })
+                                                        ],
+                                                        alignment: AlignmentType.CENTER
+                                                    }),
+                                                    new Paragraph({ text: "", spacing: { after: 1000 } })
+                                                ]
+                                            })
+                                        ]
+                                    })
+                                ]
+                            })
+                        ]
+                    }
+                ]
+            });
+
+            Packer.toBlob(doc).then(blob => saveAs(blob, `Phieu_Coc_DH${selectedOrder.MaDonHang}.docx`));
+        } catch (error) {
+            console.error('Error generating document:', error);
+            alert('Đã xảy ra lỗi khi tạo phiếu cọc!');
+        }
+    };
+
+    const handleDownloadHoaDonGTGT = async () => {
+        if (!selectedOrder) {
+            alert('Không tìm thấy thông tin đơn hàng để in hóa đơn!');
+            return;
+        }
+
+        try {
+            // Dùng dữ liệu thật từ đơn hàng thay vì mock data
+            const customerName = selectedOrder.KhachHang?.TenKhachHang || 'Khách vãng lai';
+            const companyName = (selectedOrder.KhachHang as any)?.TenCongTy || '';
+            const taxCode = (selectedOrder.KhachHang as any)?.MaSoThue || '(Khách lẻ)';
+            const address = selectedOrder.DiaChiGiaoHang || selectedOrder.KhachHang?.DiaChi || '(Chưa cập nhật địa chỉ)';
+            const paymentMethod = selectedOrder.PhuongThucThanhToan === 'TIEN_MAT' ? 'Tiền mặt (TM)' : 'Chuyển khoản (CK)';
+
+            const productName = `Sơn tĩnh điện cao cấp ${selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon'} - Dòng ${selectedOrder.Items?.[0]?.TenSanPham || 'Majestic Đẹp Nguyên Bản'} (Mã màu: ${selectedOrder.Items?.[0]?.MaMau || 'BASE'}, Nhiệt độ sấy: ${selectedOrder.TechnicalSpecs?.NhietDoSay || '195°C/15 phút'})`;
+            const quantity = selectedOrder.Items?.reduce((s, i) => s + i.SoLuong, 0) || 1;
+
+            // Financial calculations
+            const totalGross = selectedOrder.TongTien || 1250000;
+            const vatRate = 0.08; // 8% as example
+            const totalNet = Math.round(totalGross / (1 + vatRate));
+            const vatAmount = totalGross - totalNet;
+
+            const doc = new Document({
+                creator: "VTSC PaintPro",
+                title: `Hoa_Don_GTGT_VTSC_${selectedOrder.MaDonHang}`,
+                description: "Hóa đơn Giá trị Gia tăng",
+                styles: {
+                    default: {
+                        document: {
+                            run: {
+                                font: "Arial",
+                                size: 22, // 11pt (22 half-points)
+                            },
+                        },
+                    },
+                },
+                sections: [
+                    {
+                        properties: {
+                            page: {
+                                margin: {
+                                    top: 1134, // 2cm = ~1134 dxas
+                                    bottom: 1134,
+                                    left: 1417, // 2.5cm = ~1417 dxas
+                                    right: 1134,
+                                }
+                            }
+                        },
+                        children: [
+                            // 1. Khối thông tin Hóa đơn & Đơn vị bán hàng (Header)
+                            new Table({
+                                width: { size: 100, type: WidthType.PERCENTAGE },
+                                borders: {
+                                    top: { style: BorderStyle.NONE },
+                                    bottom: { style: BorderStyle.NONE },
+                                    left: { style: BorderStyle.NONE },
+                                    right: { style: BorderStyle.NONE },
+                                    insideHorizontal: { style: BorderStyle.NONE },
+                                    insideVertical: { style: BorderStyle.NONE },
+                                },
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            // Cột trái: Thông tin Người bán
+                                            new TableCell({
+                                                width: { size: 50, type: WidthType.PERCENTAGE },
+                                                children: [
+                                                    new Paragraph({ children: [new TextRun({ text: "CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)", bold: true, size: 24 })], spacing: { after: 120 } }),
+                                                    new Paragraph({ children: [new TextRun({ text: "Mã số thuế: 0100100456", bold: true })], spacing: { after: 120 } }),
+                                                    new Paragraph({ children: [new TextRun({ text: "Địa chỉ: Số 215 Lạch Tray, Gia Viên, Hải Phòng" })], spacing: { after: 120 } }),
+                                                    new Paragraph({ children: [new TextRun({ text: "Điện thoại: 024.3388.xxxx - Số tài khoản: 110000123456 tại VietinBank" })], spacing: { after: 120 } })
+                                                ]
+                                            }),
+                                            // Cột phải: Thông tin Mẫu hóa đơn
+                                            new TableCell({
+                                                width: { size: 50, type: WidthType.PERCENTAGE },
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [new TextRun({ text: "HÓA ĐƠN GIÁ TRỊ GIA TĂNG", bold: true, size: 28, color: "FF0000" })],
+                                                        alignment: AlignmentType.CENTER,
+                                                        spacing: { after: 120 }
+                                                    }),
+                                                    new Paragraph({
+                                                        children: [new TextRun({ text: "Mẫu số (Form): 1C26TAA" })],
+                                                        alignment: AlignmentType.CENTER,
+                                                        spacing: { after: 120 }
+                                                    }),
+                                                    new Paragraph({
+                                                        children: [new TextRun({ text: "Ký hiệu (Serial): K26TBB" })],
+                                                        alignment: AlignmentType.CENTER,
+                                                        spacing: { after: 120 }
+                                                    }),
+                                                    new Paragraph({
+                                                        children: [new TextRun({ text: "Số (No.): 0004512", bold: true, color: "FF0000" })],
+                                                        alignment: AlignmentType.CENTER,
+                                                        spacing: { after: 120 }
+                                                    }),
+                                                    new Paragraph({
+                                                        children: [new TextRun({ text: `Ngày (Date): 21 Tháng 05 Năm 2026`, italics: true })],
+                                                        alignment: AlignmentType.CENTER,
+                                                        spacing: { after: 120 }
+                                                    })
+                                                ]
+                                            })
+                                        ]
+                                    })
+                                ]
+                            }),
+
+                            new Paragraph({ text: "", spacing: { after: 300 } }),
+                            new Paragraph({
+                                border: { bottom: { style: BorderStyle.SINGLE, space: 1, color: "CCCCCC" } },
+                                spacing: { after: 300 }
+                            }),
+
+                            // 2. Khối thông tin Người mua hàng (Buyer Information)
+                            new Paragraph({ children: [new TextRun({ text: "Họ tên người mua hàng: ", italics: true }), new TextRun({ text: customerName, bold: true })], spacing: { after: 120 } }),
+                            new Paragraph({ children: [new TextRun({ text: "Tên đơn vị: " }), new TextRun({ text: companyName || "(Không có)" })], spacing: { after: 120 } }),
+                            new Paragraph({ children: [new TextRun({ text: "Mã số thuế: " }), new TextRun({ text: taxCode })], spacing: { after: 120 } }),
+                            new Paragraph({ children: [new TextRun({ text: "Địa chỉ: " }), new TextRun({ text: address })], spacing: { after: 120 } }),
+                            new Paragraph({ children: [new TextRun({ text: "Hình thức thanh toán: " }), new TextRun({ text: paymentMethod })], spacing: { after: 300 } }),
+
+                            // 3. Bảng chi tiết hàng hóa, dịch vụ (Goods Table)
+                            new Table({
+                                width: { size: 100, type: WidthType.PERCENTAGE },
+                                borders: {
+                                    top: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
+                                    bottom: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
+                                    left: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
+                                    right: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
+                                    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
+                                    insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
+                                },
+                                rows: [
+                                    // Header Row
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "STT", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Tên hàng hóa, dịch vụ", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Đơn vị tính", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Số lượng", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Đơn giá", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Thành tiền", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } })
+                                        ]
+                                    }),
+                                    // Data Row
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "1" })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: productName })] })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Thùng" })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: quantity.toString() })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${totalNet.toLocaleString('vi-VN')} đ` })], alignment: AlignmentType.RIGHT })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${totalNet.toLocaleString('vi-VN')} đ` })], alignment: AlignmentType.RIGHT })], margins: { top: 100, bottom: 100, left: 100, right: 100 } })
+                                        ]
+                                    })
+                                ]
+                            }),
+
+                            new Paragraph({ text: "", spacing: { after: 200 } }),
+
+                            // 4. Khối tính toán tài chính (Financial Summary Rows)
+                            new Table({
+                                width: { size: 100, type: WidthType.PERCENTAGE },
+                                borders: {
+                                    top: { style: BorderStyle.NONE },
+                                    bottom: { style: BorderStyle.NONE },
+                                    left: { style: BorderStyle.NONE },
+                                    right: { style: BorderStyle.NONE },
+                                    insideHorizontal: { style: BorderStyle.NONE },
+                                    insideVertical: { style: BorderStyle.NONE },
+                                },
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: "Cộng tiền hàng (Total Net Amount):", alignment: AlignmentType.RIGHT })] }),
+                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: `${totalNet.toLocaleString('vi-VN')} đ`, alignment: AlignmentType.RIGHT })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: "Thuế suất GTGT (VAT Rate): 8%", alignment: AlignmentType.RIGHT })] }),
+                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: " ", alignment: AlignmentType.RIGHT })] }) // Optional spacing
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: "Tiền thuế GTGT (VAT Amount):", alignment: AlignmentType.RIGHT })] }),
+                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: `${vatAmount.toLocaleString('vi-VN')} đ`, alignment: AlignmentType.RIGHT })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: "Tổng cộng tiền thanh toán (Total Gross Amount):", bold: true })], alignment: AlignmentType.RIGHT })] }),
+                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: `${totalGross.toLocaleString('vi-VN')} đ`, bold: true })], alignment: AlignmentType.RIGHT })] })
+                                        ]
+                                    })
+                                ]
+                            }),
+
+                            new Paragraph({ text: "", spacing: { after: 100 } }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: "Số tiền viết bằng chữ (Amount in words): ", italics: true }),
+                                    new TextRun({ text: "Một triệu hai trăm năm mươi nghìn đồng chẵn.", italics: true, bold: true }) // Dùng mock text
+                                ],
+                                spacing: { after: 400 }
+                            }),
+
+                            // 5. Khối Ký tên (Signatures)
+                            new Table({
+                                width: { size: 100, type: WidthType.PERCENTAGE },
+                                borders: {
+                                    top: { style: BorderStyle.NONE },
+                                    bottom: { style: BorderStyle.NONE },
+                                    left: { style: BorderStyle.NONE },
+                                    right: { style: BorderStyle.NONE },
+                                    insideHorizontal: { style: BorderStyle.NONE },
+                                    insideVertical: { style: BorderStyle.NONE },
+                                },
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({
+                                                width: { size: 50, type: WidthType.PERCENTAGE },
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [new TextRun({ text: "NGƯỜI MUA HÀNG", bold: true })],
+                                                        alignment: AlignmentType.CENTER
+                                                    }),
+                                                    new Paragraph({
+                                                        children: [new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true })],
+                                                        alignment: AlignmentType.CENTER
+                                                    })
+                                                ]
+                                            }),
+                                            new TableCell({
+                                                width: { size: 50, type: WidthType.PERCENTAGE },
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [new TextRun({ text: "NGƯỜI BÁN HÀNG", bold: true })],
+                                                        alignment: AlignmentType.CENTER
+                                                    }),
+                                                    // Giả lập Digital Signature Box
+                                                    new Table({
+                                                        width: { size: 80, type: WidthType.PERCENTAGE },
+                                                        alignment: AlignmentType.CENTER,
+                                                        borders: {
+                                                            top: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
+                                                            bottom: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
+                                                            left: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
+                                                            right: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
+                                                        },
+                                                        rows: [
+                                                            new TableRow({
+                                                                children: [
+                                                                    new TableCell({
+                                                                        margins: { top: 150, bottom: 150, left: 150, right: 150 },
+                                                                        children: [
+                                                                            new Paragraph({
+                                                                                children: [new TextRun({ text: "✔ Ký bởi: CÔNG TY CP TMDV VOSCO - VTSC", bold: true, color: "008800", size: 18 })],
+                                                                                alignment: AlignmentType.CENTER,
+                                                                                spacing: { after: 100 }
+                                                                            }),
+                                                                            new Paragraph({
+                                                                                children: [new TextRun({ text: `Ký ngày: 21/05/2026`, italics: true, size: 16 })],
+                                                                                alignment: AlignmentType.CENTER
+                                                                            })
+                                                                        ]
+                                                                    })
+                                                                ]
+                                                            })
+                                                        ]
+                                                    })
+                                                ]
+                                            })
+                                        ]
+                                    })
+                                ]
+                            })
+                        ]
+                    }
+                ]
+            });
+
+            Packer.toBlob(doc).then(blob => saveAs(blob, `Hoa_Don_GTGT_VTSC_${selectedOrder.MaDonHang}.docx`));
+        } catch (error) {
+            console.error('Error generating document:', error);
+            alert('Đã xảy ra lỗi khi tạo Hóa đơn GTGT!');
+        }
+    };
+
     const STATUS_MAP = {
         'CHO_XAC_NHAN': { label: 'Chờ xác nhận', color: '#d97706', icon: Clock },
         'DANG_XU_LY': { label: 'Đang xử lý', color: '#2563eb', icon: Package },
@@ -579,31 +1106,52 @@ export default function OrderManagementPage() {
         { key: 'DANG_XU_LY', label: 'Đang xử lý' },
         { key: 'DANG_GIAO', label: 'Đang vận chuyển' },
         { key: 'DA_GIAO', label: 'Đã giao hàng' },
-        { key: 'DA_HUY', label: 'Đã hủy' },
-    ];
-
-    const PAYMENT_METHODS = [
-        { key: 'TIEN_MAT', label: 'Tiền mặt', icon: Banknote },
-        { key: 'CHUYEN_KHOAN', label: 'Chuyển khoản', icon: Building },
-        { key: 'GHI_NO', label: 'Ghi nợ', icon: FileText },
+        { key: 'DA_HUY', label: 'Đã hủy' }
     ];
 
     return (
-        <div className="order-page" style={{ padding: '1.75rem' }}>
+        <div className="space-y-8 animate-in fade-in duration-700">
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Quản lý Đơn Hàng</h1>
+                    <p className="text-sm text-slate-400 font-medium mt-1">
+                        Theo dõi, xác nhận và xử lý toàn bộ đơn hàng từ khách hàng lẻ và doanh nghiệp.
+                    </p>
+                </div>
+            </div>
+
             {/* Header Metrics */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.125rem', marginBottom: '2.25rem' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {TABS.slice(1).map(tab => {
                     const count = orders.filter(o => o.TrangThai === tab.key).length;
                     const statusInfo = STATUS_MAP[tab.key as keyof typeof STATUS_MAP];
                     const Icon = statusInfo.icon;
                     return (
-                        <div key={tab.key} className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.125rem', borderLeft: `4px solid ${statusInfo.color}` }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div
+                            key={tab.key}
+                            className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300"
+                        >
+                            <div
+                                className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"
+                                style={{ backgroundColor: `${statusInfo.color}12` }}
+                            ></div>
+                            <div className="relative z-10 flex items-start justify-between">
                                 <div>
-                                    <div style={{ fontSize: '0.875rem', color: '#475569', marginBottom: 4 }}>{tab.label}</div>
-                                    <div style={{ fontSize: '24px', fontWeight: 700 }}>{count}</div>
+                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                        {tab.label}
+                                    </p>
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                                        {count}{' '}
+                                        <span className="text-xs font-bold text-slate-400 ml-1">đơn</span>
+                                    </h3>
                                 </div>
-                                <Icon size={24} style={{ color: statusInfo.color, opacity: 0.8 }} />
+                                <div
+                                    className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm"
+                                    style={{ backgroundColor: `${statusInfo.color}15`, color: statusInfo.color }}
+                                >
+                                    <Icon size={22} />
+                                </div>
                             </div>
                         </div>
                     );
@@ -611,190 +1159,212 @@ export default function OrderManagementPage() {
             </div>
 
             {/* Filters & Search */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.125rem', marginBottom: '1.125rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: '1.125rem', overflowX: 'auto', flex: 1, marginRight: '1.75rem' }}>
-                    {TABS.map(tab => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setActiveTab(tab.key)}
-                            style={{
-                                padding: '8px 16px',
-                                borderRadius: '10px',
-                                border: 'none',
-                                background: activeTab === tab.key ? 'var(--accent-primary)' : 'transparent',
-                                color: activeTab === tab.key ? '#fff' : '#475569',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                whiteSpace: 'nowrap'
-                            }}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <div className="relative" style={{ width: '280px' }}>
-                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        <input
-                            type="text"
-                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                            placeholder="Tìm mã đơn, khách hàng..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                        />
+            <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-6">
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
+                        <div className="relative w-full md:w-80 group">
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                            <input
+                                type="text"
+                                className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                                placeholder="Tìm mã đơn, khách hàng..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl overflow-x-auto max-w-full">
+                            {TABS.map(tab => (
+                                <button
+                                    key={tab.key}
+                                    onClick={() => setActiveTab(tab.key)}
+                                    className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${activeTab === tab.key
+                                        ? "bg-white text-blue-600 shadow-sm"
+                                        : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                                        }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    {isAdminOrEmployee && (
-                        <>
-                            <button onClick={exportToExcel} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ border: '1px solid #e2e8f0', color: '#059669', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
-                                <Download size={18} /> Xuất Excel
-                            </button>
-                            <button onClick={openCreateModal} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
-                                <Plus size={18} /> Tạo đơn hàng
-                            </button>
-                        </>
-                    )}
+
+                    <div className="flex items-center gap-3">
+                        {isAdminOrEmployee && (
+                            <>
+                                <button
+                                    onClick={exportToExcel}
+                                    className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-[14px] bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all border border-emerald-100 cursor-pointer"
+                                >
+                                    <Download size={18} /> Xuất Excel
+                                </button>
+                                <button
+                                    onClick={openCreateModal}
+                                    className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+                                >
+                                    <Plus size={18} /> Tạo đơn hàng
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {/* Orders Table */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0 }}>
-                <table className="w-full text-left text-sm">
-                    <thead>
-                        <tr>
-                            <th>Mã đơn hàng</th>
-                            <th>Khách hàng</th>
-                            <th>Số lượng</th>
-                            <th>Tổng tiền</th>
-                            <th>Thanh toán</th>
-                            <th>Trạng thái</th>
-                            <th>Hạn xác nhận</th>
-                            <th style={{ textAlign: 'right' }}>Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>Đang tải dữ liệu...</td></tr>
-                        ) : filteredOrders.length === 0 ? (
-                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>Không tìm thấy đơn hàng nào.</td></tr>
-                        ) : filteredOrders.map(order => (
-                            <tr key={order._id}>
-                                <td style={{ fontWeight: 700, color: '#2563eb' }}>#{order.MaDonHang}</td>
-                                <td>
-                                    <div style={{ fontWeight: 600 }}>{order.KhachHang?.TenKhachHang}</div>
-                                    <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>{order.KhachHang?.SDT}</div>
-                                </td>
-                                <td>{order.Items.reduce((acc, curr) => acc + curr.SoLuong, 0)} sản phẩm</td>
-                                <td style={{ fontWeight: 600 }}>
-                                    {order.TongTien.toLocaleString()} ₫
-                                    {order.KhuyenMai && (
-                                        <div style={{ fontSize: 10, color: '#059669', marginTop: 2 }}>
-                                            🎁 {order.KhuyenMai.MaVoucher}
+            <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full border-collapse min-w-[1000px]">
+                        <thead>
+                            <tr className="border-b border-slate-50">
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-36">Mã đơn hàng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Khách hàng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Số lượng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Tổng tiền</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Thanh toán</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Hạn xác nhận</th>
+                                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest w-40">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={8} className="text-center py-20 text-blue-600 font-bold">
+                                        Đang tải dữ liệu...
+                                    </td>
+                                </tr>
+                            ) : filteredOrders.length === 0 ? (
+                                <tr>
+                                    <td colSpan={8} className="text-center py-20 text-slate-400 font-medium italic">
+                                        Không tìm thấy đơn hàng nào.
+                                    </td>
+                                </tr>
+                            ) : filteredOrders.map(order => (
+                                <tr key={order._id} className="hover:bg-slate-50/50 transition-colors group">
+                                    <td className="px-6 py-4">
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-blue-50 text-blue-600">
+                                            #{order.MaDonHang}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="font-bold text-slate-900 text-[14px]">{order.KhachHang?.TenKhachHang || 'Vãng lai'}</div>
+                                        <div className="text-[12px] text-slate-400 font-medium mt-0.5">{order.KhachHang?.SDT}</div>
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-600 font-medium text-[14px]">
+                                        {order.Items.reduce((acc, curr) => acc + curr.SoLuong, 0)} sản phẩm
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="font-black text-emerald-600 text-[15px]">
+                                            {order.TongTien.toLocaleString()} ₫
                                         </div>
-                                    )}
-                                </td>
-                                <td>
-                                    <span style={{ fontSize: '0.875rem', color: '#475569' }}>
+                                        {order.KhuyenMai && (
+                                            <div className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                                                🎁 {order.KhuyenMai.MaVoucher}
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-600 font-medium text-[14px]">
                                         {order.PhuongThucThanhToan === 'TIEN_MAT' ? 'Tiền mặt' :
                                             order.PhuongThucThanhToan === 'CHUYEN_KHOAN' ? 'Chuyển khoản' :
                                                 order.PhuongThucThanhToan === 'GHI_NO' ? 'Ghi nợ' :
                                                     order.PhuongThucThanhToan || 'COD'}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span className="badge" style={{
-                                        background: `${STATUS_MAP[order.TrangThai].color}20`,
-                                        color: STATUS_MAP[order.TrangThai].color,
-                                        borderColor: `${STATUS_MAP[order.TrangThai].color}40`
-                                    }}>
-                                        {STATUS_MAP[order.TrangThai].label}
-                                    </span>
-                                </td>
-                                <td style={{ fontSize: '0.875rem' }}>
-                                    {order.TrangThai === 'CHO_XAC_NHAN' ? (
-                                        <div style={{ color: new Date(order.HanXacNhan) < new Date() ? '#e11d48' : '#059669' }}>
-                                            {new Date(order.HanXacNhan).toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider" style={{
+                                            background: `${STATUS_MAP[order.TrangThai].color}15`,
+                                            color: STATUS_MAP[order.TrangThai].color,
+                                        }}>
+                                            {STATUS_MAP[order.TrangThai].label}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-[13px] font-medium">
+                                        {order.TrangThai === 'CHO_XAC_NHAN' ? (
+                                            <div style={{ color: new Date(order.HanXacNhan) < new Date() ? '#e11d48' : '#059669' }}>
+                                                {new Date(order.HanXacNhan).toLocaleString()}
+                                            </div>
+                                        ) : <span className="text-slate-400">-</span>}
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => { setSelectedOrder(order); setIsDetailsModalOpen(true); }}
+                                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer"
+                                                title="Xem chi tiết"
+                                            >
+                                                <Eye size={14} />
+                                            </button>
+                                            {isAdminOrEmployee && (
+                                                <>
+                                                    {order.TrangThai === 'CHO_XAC_NHAN' && (
+                                                        <button
+                                                            onClick={() => {
+                                                                if ((order.DaCoc || 0) <= 0) {
+                                                                    alert('Đơn hàng chưa có tiền cọc. Vui lòng cập nhật tiền cọc TRƯỚC khi xác nhận sản xuất.');
+                                                                    return;
+                                                                }
+                                                                handleUpdateStatus(order._id, 'DANG_XU_LY');
+                                                            }}
+                                                            className="h-8 px-3 flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
+                                                            title="Xác nhận sản xuất"
+                                                        >
+                                                            Xác nhận
+                                                        </button>
+                                                    )}
+                                                    {order.TrangThai === 'DANG_XU_LY' && (
+                                                        <button
+                                                            onClick={() => handleUpdateStatus(order._id, 'DANG_GIAO')}
+                                                            className="h-8 px-3 flex items-center justify-center rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
+                                                            title="Giao hàng"
+                                                        >
+                                                            Giao hàng
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
                                         </div>
-                                    ) : '-'}
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                                        <button
-                                            onClick={() => { setSelectedOrder(order); setIsDetailsModalOpen(true); }}
-                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                                            title="Xem chi tiết"
-                                        >
-                                            <Eye size={16} />
-                                        </button>
-                                        {isAdminOrEmployee && (
-                                            <>
-                                                {order.TrangThai === 'CHO_XAC_NHAN' && (
-                                                    <button
-                                                        onClick={() => {
-                                                            if ((order.DaCoc || 0) <= 0) {
-                                                                alert('Đơn hàng chưa có tiền cọc. Vui lòng cập nhật tiền cọc TRƯỚC khi xác nhận sản xuất.');
-                                                                return;
-                                                            }
-                                                            handleUpdateStatus(order._id, 'DANG_XU_LY');
-                                                        }}
-                                                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg text-xs"
-                                                        title="Xác nhận đơn"
-                                                        style={{ padding: '4px 8px', fontSize: '10px' }}
-                                                    >
-                                                        XÁC NHẬN
-                                                    </button>
-                                                )}
-                                                {order.TrangThai === 'DANG_XU_LY' && (
-                                                    <button
-                                                        onClick={() => handleUpdateStatus(order._id, 'DANG_GIAO')}
-                                                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg text-xs"
-                                                        title="Giao hàng"
-                                                        style={{ padding: '4px 8px', fontSize: '10px', background: '#7c3aed', borderColor: '#7c3aed' }}
-                                                    >
-                                                        GIAO HÀNG
-                                                    </button>
-                                                )}
-                                            </>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* ═══ CREATE ORDER MODAL ═══ */}
             {isCreateModalOpen && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
-                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '95%', maxWidth: '1100px', maxHeight: '92vh', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px', padding: 0 }}>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-6xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
                         {/* Header */}
-                        <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
-                            <h3 style={{ fontSize: '20px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <Plus size={22} color="#2563eb" /> Tạo Đơn Hàng Mới
+                        <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+                            <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                                <Plus size={22} className="text-blue-600" /> Tạo Đơn Hàng Mới
                             </h3>
-                            <button onClick={() => setIsCreateModalOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ fontSize: '24px', padding: '0 12px' }}>&times;</button>
+                            <button
+                                onClick={() => setIsCreateModalOpen(false)}
+                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer"
+                            >
+                                ×
+                            </button>
                         </div>
 
-                        <div style={{ padding: '24px', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px' }}>
+                        <div className="p-8 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-8 custom-scrollbar">
                             {/* Left: Khách hàng + sản phẩm */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div className="lg:col-span-7 flex flex-col gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {/* Khách hàng */}
                                     <div>
-                                        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <User size={16} color="#2563eb" /> Khách hàng <span style={{ color: '#e11d48' }}>*</span>
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                            Khách hàng <span className="text-rose-500">*</span>
                                         </label>
                                         <select
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                            className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
                                             value={selectedCustomerId}
                                             onChange={e => handleSelectCustomer(e.target.value)}
-                                            style={{ width: '100%', background: 'black' }}
                                         >
                                             <option value="">-- Chọn khách hàng --</option>
                                             {customers.map(c => (
-                                                <option key={c._id} value={c._id}>
-                                                    [{c.MaKH}] {c.TenKhachHang} — {c.SDT} ({c.PhanLoai})
+                                                <option key={c._id} value={c._id} className="text-slate-800 bg-white">
+                                                    [{c.MaKH}] {c.TenKhachHang} — {c.SDT} ({c.PhanLoai || 'Chưa phân loại'})
                                                 </option>
                                             ))}
                                         </select>
@@ -802,18 +1372,17 @@ export default function OrderManagementPage() {
 
                                     {/* Khuyến mãi */}
                                     <div>
-                                        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <CreditCard size={16} color="#d97706" /> Chương trình ưu đãi
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                            Chương trình ưu đãi
                                         </label>
                                         <select
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                            className={`w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer ${calculatedDiscount > 0 ? 'ring-2 ring-emerald-500/20' : ''}`}
                                             value={selectedPromotionId}
                                             onChange={e => setSelectedPromotionId(e.target.value)}
-                                            style={{ width: '100%', background: 'black', borderColor: calculatedDiscount > 0 ? '#059669' : '#e2e8f0' }}
                                         >
                                             <option value="">-- Không sử dụng ưu đãi --</option>
                                             {promotions.map(p => (
-                                                <option key={p._id} value={p._id} disabled={orderSubtotal < p.DonHangToiThieu}>
+                                                <option key={p._id} value={p._id} disabled={orderSubtotal < p.DonHangToiThieu} className="text-slate-800 bg-white">
                                                     {p.MaVoucher} — {p.LoaiGiamGia === 'PHAN_TRAM' ? `Giảm ${p.MucGiam}%` : `Giảm ${p.MucGiam.toLocaleString()}₫`} {orderSubtotal < p.DonHangToiThieu ? `(Thiếu ${(p.DonHangToiThieu - orderSubtotal).toLocaleString()}₫)` : ''}
                                                 </option>
                                             ))}
@@ -822,92 +1391,64 @@ export default function OrderManagementPage() {
                                 </div>
 
                                 {/* Thêm sản phẩm */}
-                                <div>
-                                    <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <Package size={16} color="#2563eb" /> Sản phẩm <span style={{ color: '#e11d48' }}>*</span>
+                                <div className="space-y-4">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                        Sản phẩm sơn <span className="text-rose-500">*</span>
                                     </label>
-                                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                                    <div className="flex gap-3">
                                         <select
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                            className="flex-1 bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
                                             value={selectedProductId}
                                             onChange={e => { setSelectedProductId(e.target.value); setSelectedColorCode(''); setColorSearchTerm(''); }}
-                                            style={{ flex: 2, minWidth: 200, background: 'black' }}
                                         >
                                             <option value="">-- Chọn sản phẩm --</option>
                                             {allProducts.filter(p => p.TonKho > 0).map(p => (
-                                                <option key={p._id} value={p._id}>
+                                                <option key={p._id} value={p._id} className="text-slate-800 bg-white">
                                                     {p.TenDongSon} — {p.DonGiaCoSo.toLocaleString()}₫ (Kho: {p.TonKho})
                                                 </option>
                                             ))}
                                         </select>
-                                        <button onClick={handleAddProduct} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg text-xs" disabled={!selectedProductId || !selectedColorCode} style={{ display: 'flex', alignItems: 'center', gap: 4, height: 38 }}>
-                                            <Plus size={16} /> Thêm
+                                        <button
+                                            onClick={handleAddProduct}
+                                            disabled={!selectedProductId || !selectedColorCode}
+                                            className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-[14px] hover:bg-blue-700 shadow-md disabled:opacity-55 disabled:cursor-not-allowed transition-all cursor-pointer border-none"
+                                        >
+                                            Thêm sản phẩm
                                         </button>
                                     </div>
 
-                                    {/* THÔNG SỐ KỸ THUẬT SƠN */}
-                                    <div style={{ marginTop: 20, padding: 16, background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                                        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#2563eb', textTransform: 'uppercase', letterSpacing: 1 }}>Thông số kỹ thuật sơn (MERN)</div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                            <div>
-                                                <label style={{ fontSize: 11, color: '#475569', marginBottom: 4, display: 'block' }}>Loại bột sơn</label>
-                                                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={loaiBot} onChange={e => setLoaiBot(e.target.value)} style={{ width: '100%', fontSize: 12 }} />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: 11, color: '#475569', marginBottom: 4, display: 'block' }}>Nhiệt độ sấy</label>
-                                                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={nhietDoSay} onChange={e => setNhietDoSay(e.target.value)} style={{ width: '100%', fontSize: 12 }} />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: 11, color: '#475569', marginBottom: 4, display: 'block' }}>Độ dày lớp phủ</label>
-                                                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={doDayLopPhu} onChange={e => setDoDayLopPhu(e.target.value)} style={{ width: '100%', fontSize: 12 }} />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: 11, color: '#475569', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    Tổng diện tích sơn (m2)
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsCalculatorOpen(true)}
-                                                        style={{
-                                                            fontSize: 10, color: '#2563eb', background: 'rgba(0,212,255,0.05)',
-                                                            border: '1px solid #2563eb', borderRadius: 4, padding: '2px 6px',
-                                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
-                                                        }}
-                                                    >
-                                                        <Calculator size={10} /> Tính toán
-                                                    </button>
-                                                </label>
-                                                <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={tongDienTichSon} onChange={e => setTongDienTichSon(Number(e.target.value))} style={{ width: '100%', fontSize: 12 }} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/* Bảng màu sơn - luôn hiển khi đã chọn sản phẩm */}
+                                    {/* Bảng màu sơn - luôn hiển thị khi đã chọn sản phẩm */}
                                     {selectedProductId && (
-                                        <div style={{ marginTop: 12 }}>
-                                            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                <Eye size={16} color="#d97706" /> Chọn mã màu sơn <span style={{ color: '#e11d48', background: 'black' }}>*</span>
+                                        <div className="p-5 bg-slate-50/50 border border-slate-100 rounded-2xl space-y-3">
+                                            <label className="text-[11px] font-black text-slate-450 uppercase tracking-wider block">
+                                                Chọn mã màu sơn <span className="text-rose-500">*</span>
                                             </label>
                                             <input
                                                 type="text"
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                                                placeholder="Tìm mã màu hoặc tên màu (VD: RAL-1015, Silver, Red...)"
+                                                className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                                                placeholder="Tìm mã màu hoặc tên màu (RAL-1015, Silver, Red...)"
                                                 value={colorSearchTerm}
                                                 onChange={e => setColorSearchTerm(e.target.value)}
-                                                style={{ width: '100%', marginBottom: 8 }}
                                             />
                                             {selectedColorCode && (() => {
                                                 const c = paintColors.find(pc => pc.code === selectedColorCode);
                                                 return c ? (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'rgba(0,212,255,0.08)', borderRadius: 6, border: '1px solid #2563eb', marginBottom: 8 }}>
-                                                        <div style={{ width: 28, height: 28, borderRadius: 4, background: c.hex, border: '2px solid rgba(255,255,255,0.3)', flexShrink: 0 }} />
-                                                        <div>
-                                                            <div style={{ fontWeight: 700, fontSize: 13, color: '#2563eb' }}>{c.code}</div>
-                                                            <div style={{ fontSize: 11, color: '#475569' }}>{c.name} • {c.category} • {c.gloss}</div>
+                                                    <div className="flex items-center gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
+                                                        <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-200" style={{ background: c.hex }} />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="font-bold text-sm text-blue-700">{c.code}</div>
+                                                            <div className="text-[11px] text-slate-400 truncate">{c.name} • {c.category} • {c.gloss}</div>
                                                         </div>
-                                                        <button onClick={() => { setSelectedColorCode(''); setColorSearchTerm(''); }} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: 16 }}>×</button>
+                                                        <button
+                                                            onClick={() => { setSelectedColorCode(''); setColorSearchTerm(''); }}
+                                                            className="w-6 h-6 rounded-full hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center text-slate-455 transition-colors border-none bg-transparent cursor-pointer font-bold"
+                                                        >
+                                                            ×
+                                                        </button>
                                                     </div>
                                                 ) : null;
                                             })()}
-                                            <div style={{ maxHeight: 180, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 6 }}>
+                                            <div className="bg-white border border-slate-150 rounded-xl overflow-hidden max-h-[160px] overflow-y-auto custom-scrollbar">
                                                 {paintColors
                                                     .filter(c => {
                                                         if (!colorSearchTerm) return true;
@@ -918,21 +1459,19 @@ export default function OrderManagementPage() {
                                                         <div
                                                             key={c.code}
                                                             onClick={() => { setSelectedColorCode(c.code); setColorSearchTerm(''); }}
+                                                            className="flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b border-slate-50 last:border-none transition-colors"
                                                             style={{
-                                                                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
-                                                                cursor: 'pointer', borderBottom: '1px solid #e2e8f0',
-                                                                background: selectedColorCode === c.code ? 'rgba(0,212,255,0.1)' : 'transparent',
-                                                                transition: 'background 0.15s'
+                                                                backgroundColor: selectedColorCode === c.code ? '#eff6ff' : 'transparent'
                                                             }}
-                                                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-                                                            onMouseLeave={e => (e.currentTarget.style.background = selectedColorCode === c.code ? 'rgba(0,212,255,0.1)' : 'transparent')}
+                                                            onMouseEnter={e => { if (selectedColorCode !== c.code) e.currentTarget.style.backgroundColor = '#f8fafc'; }}
+                                                            onMouseLeave={e => { if (selectedColorCode !== c.code) e.currentTarget.style.backgroundColor = 'transparent'; }}
                                                         >
-                                                            <div style={{ width: 22, height: 22, borderRadius: 3, background: c.hex, border: '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                                <div style={{ fontSize: 12, fontWeight: 600 }}>{c.code}</div>
-                                                                <div style={{ fontSize: 10, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name} • {c.category}</div>
+                                                            <div className="w-6 h-6 rounded-md shadow-inner border border-slate-200 flex-shrink-0" style={{ background: c.hex }} />
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="text-xs font-bold text-slate-700">{c.code}</div>
+                                                                <div className="text-[10px] text-slate-400 truncate">{c.name} • {c.category}</div>
                                                             </div>
-                                                            <div style={{ fontSize: 10, color: '#94a3b8', flexShrink: 0 }}>{c.surface}</div>
+                                                            <div className="text-[10px] font-semibold text-slate-400">{c.surface}</div>
                                                         </div>
                                                     ))}
                                             </div>
@@ -941,147 +1480,199 @@ export default function OrderManagementPage() {
                                 </div>
 
                                 {/* Danh sách sản phẩm đã chọn */}
-                                <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                        <thead style={{ background: 'rgba(255,255,255,0.03)' }}>
-                                            <tr>
-                                                <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: 12 }}>Sản phẩm</th>
-                                                <th style={{ padding: '10px', textAlign: 'center', fontSize: 12 }}>Mã màu</th>
-                                                <th style={{ padding: '10px', textAlign: 'center', fontSize: 12 }}>SL</th>
-                                                <th style={{ padding: '10px', textAlign: 'right', fontSize: 12 }}>Đơn giá</th>
-                                                <th style={{ padding: '10px', textAlign: 'right', fontSize: 12 }}>Thành tiền</th>
-                                                <th style={{ padding: '10px', width: 40 }}></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {orderItems.length === 0 ? (
-                                                <tr><td colSpan={6} style={{ padding: 20, textAlign: 'center', color: '#666', fontSize: 13 }}>Chưa có sản phẩm nào</td></tr>
-                                            ) : orderItems.map((item, idx) => (
-                                                <tr key={idx} style={{ borderTop: '1px solid #e2e8f0' }}>
-                                                    <td style={{ padding: '10px 12px' }}>
-                                                        <div style={{ fontWeight: 600, fontSize: 13 }}>{item.tenSanPham}</div>
-                                                        <div style={{ fontSize: 11, color: '#94a3b8' }}>Kho: {item.tonKho}</div>
-                                                    </td>
-                                                    <td style={{ textAlign: 'center' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
-                                                            <div style={{ width: 16, height: 16, borderRadius: 3, background: item.hexCode, border: '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                                                            <div style={{ fontSize: 11, fontWeight: 600 }}>{item.maMau}</div>
-                                                        </div>
-                                                        <div style={{ fontSize: 10, color: '#94a3b8' }}>{item.tenMau}</div>
-                                                    </td>
-                                                    <td style={{ textAlign: 'center' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                                                            <button onClick={() => handleItemQtyChange(idx, item.soLuong - 1)} style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 4, width: 24, height: 24, cursor: 'pointer', color: '#0f172a' }}>-</button>
-                                                            <input
-                                                                type="number"
-                                                                value={item.soLuong}
-                                                                onChange={e => handleItemQtyChange(idx, parseInt(e.target.value) || 1)}
-                                                                style={{ width: 50, textAlign: 'center', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 4, padding: '2px 4px', color: '#0f172a' }}
-                                                                min={1}
-                                                                max={item.tonKho}
-                                                            />
-                                                            <button onClick={() => handleItemQtyChange(idx, item.soLuong + 1)} style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 4, width: 24, height: 24, cursor: 'pointer', color: '#0f172a' }}>+</button>
-                                                        </div>
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', fontSize: 13 }}>{item.donGia.toLocaleString()} ₫</td>
-                                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#2563eb', fontSize: 13 }}>{(item.donGia * item.soLuong).toLocaleString()} ₫</td>
-                                                    <td style={{ textAlign: 'center' }}>
-                                                        <button onClick={() => handleRemoveItem(idx)} style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer' }}>
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    </td>
+                                <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-50/50 border-b border-slate-150">
+                                                    <th className="px-4 py-3 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Sản phẩm</th>
+                                                    <th className="px-4 py-3 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Mã màu</th>
+                                                    <th className="px-4 py-3 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Số lượng</th>
+                                                    <th className="px-4 py-3 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Đơn giá</th>
+                                                    <th className="px-4 py-3 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Thành tiền</th>
+                                                    <th className="px-4 py-3 w-10"></th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                        {orderItems.length > 0 && (
-                                            <tfoot style={{ background: 'rgba(255,255,255,0.03)', fontWeight: 700 }}>
-                                                <tr>
-                                                    <td colSpan={4} style={{ padding: '14px 12px', textAlign: 'right', fontSize: 14 }}>TỔNG CỘNG:</td>
-                                                    <td style={{ textAlign: 'right', color: '#059669', fontSize: 18, paddingRight: 10 }}>{orderSubtotal.toLocaleString()} ₫</td>
-                                                    <td></td>
-                                                </tr>
-                                            </tfoot>
-                                        )}
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-50">
+                                                {orderItems.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={6} className="px-4 py-8 text-center text-slate-405 font-medium italic text-sm">
+                                                            Chưa có sản phẩm nào được chọn
+                                                        </td>
+                                                    </tr>
+                                                ) : orderItems.map((item, idx) => (
+                                                    <tr key={idx} className="hover:bg-slate-50/30 transition-colors">
+                                                        <td className="px-4 py-3">
+                                                            <div className="font-bold text-slate-800 text-xs">{item.tenSanPham}</div>
+                                                            <div className="text-[10px] text-slate-400">Kho: {item.tonKho} thùng</div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <div className="flex items-center gap-1.5 justify-center">
+                                                                <div className="w-4 h-4 rounded-md shadow-inner border border-slate-200 flex-shrink-0" style={{ background: item.hexCode }} />
+                                                                <span className="text-[11px] font-black text-slate-700">{item.maMau}</span>
+                                                            </div>
+                                                            <div className="text-[9px] text-slate-400">{item.tenMau}</div>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <button
+                                                                    onClick={() => handleItemQtyChange(idx, item.soLuong - 1)}
+                                                                    className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center cursor-pointer border-none font-bold text-sm"
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <input
+                                                                    type="number"
+                                                                    value={item.soLuong}
+                                                                    onChange={e => handleItemQtyChange(idx, parseInt(e.target.value) || 1)}
+                                                                    className="w-12 text-center bg-slate-50 border border-slate-150 rounded-lg py-1 font-bold text-slate-805 text-xs outline-none"
+                                                                    min={1}
+                                                                    max={item.tonKho}
+                                                                />
+                                                                <button
+                                                                    onClick={() => handleItemQtyChange(idx, item.soLuong + 1)}
+                                                                    className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center cursor-pointer border-none font-bold text-sm"
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right text-[12px] font-semibold text-slate-700">
+                                                            {item.donGia.toLocaleString()} ₫
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right text-[12px] font-black text-blue-600">
+                                                            {(item.donGia * item.soLuong).toLocaleString()} ₫
+                                                        </td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <button
+                                                                onClick={() => handleRemoveItem(idx)}
+                                                                className="text-slate-400 hover:text-rose-500 transition-colors bg-transparent border-none cursor-pointer"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            {orderItems.length > 0 && (
+                                                <tfoot>
+                                                    <tr className="bg-slate-50/50 font-black text-slate-700 border-t border-slate-150">
+                                                        <td colSpan={4} className="px-4 py-3.5 text-right text-xs uppercase tracking-wider">Tổng cộng sản phẩm:</td>
+                                                        <td className="px-4 py-3.5 text-right text-sm text-emerald-600 font-black">
+                                                            {orderSubtotal.toLocaleString()} ₫
+                                                        </td>
+                                                        <td></td>
+                                                    </tr>
+                                                </tfoot>
+                                            )}
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {/* THÔNG SỐ KỸ THUẬT SƠN */}
+                                <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl space-y-4">
+                                    <div className="text-[12px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                                        <Layers size={16} /> Thông số kỹ thuật sơn (MERN)
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Loại bột sơn</label>
+                                            <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={loaiBot} onChange={e => setLoaiBot(e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Nhiệt độ sấy</label>
+                                            <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={nhietDoSay} onChange={e => setNhietDoSay(e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Độ dày lớp phủ</label>
+                                            <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={doDayLopPhu} onChange={e => setDoDayLopPhu(e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 flex justify-between items-center">
+                                                <span>Diện tích sơn (m2)</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsCalculatorOpen(true)}
+                                                    className="text-[9px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-lg px-2 py-0.5 cursor-pointer transition-colors flex items-center gap-1"
+                                                >
+                                                    <Calculator size={10} /> Công cụ tính
+                                                </button>
+                                            </label>
+                                            <input type="number" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={tongDienTichSon} onChange={e => setTongDienTichSon(Number(e.target.value))} />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Right: Thông tin giao hàng + thanh toán */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, borderLeft: '1px solid #e2e8f0', paddingLeft: 32 }}>
+                            <div className="lg:col-span-5 flex flex-col gap-6 lg:border-l lg:border-slate-100 lg:pl-8">
                                 {/* Địa chỉ giao hàng */}
                                 <div>
-                                    <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <MapPin size={16} color="#2563eb" /> Địa chỉ giao hàng <span style={{ color: '#e11d48' }}>*</span>
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                        Địa chỉ giao hàng <span className="text-rose-500">*</span>
                                     </label>
                                     <textarea
-                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                                        style={{ minHeight: 70, padding: 10, width: '100%' }}
-                                        placeholder="Nhập địa chỉ giao hàng..."
+                                        className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium resize-none min-h-[80px]"
+                                        placeholder="Nhập địa chỉ giao hàng chi tiết..."
                                         value={diaChiGiaoHang}
                                         onChange={e => setDiaChiGiaoHang(e.target.value)}
                                     />
                                 </div>
 
-                                {/* Nhân viên phụ trách */}
-                                <div>
-                                    <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <User size={16} color="#d97706" /> Nhân viên kinh doanh phụ trách
-                                    </label>
-                                    <select
-                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                                        value={selectedSalespersonId}
-                                        onChange={e => setSelectedSalespersonId(e.target.value)}
-                                        style={{ width: '100%', background: 'black' }}
-                                    >
-                                        <option value="">-- Chọn nhân viên --</option>
-                                        {allStaff.filter(s => s.BoPhan === 'Kinh doanh' || s.BoPhan === 'Sale / MKT' || s.BoPhan === 'CSKH Bảo Hành').map(s => (
-                                            <option key={s._id} value={s._id}>{s.MaNV} - {s.HoTen}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* SĐT người nhận */}
+                                    <div>
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                            SĐT người nhận <span className="text-rose-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                                            placeholder="VD: 0912345678"
+                                            value={sdtNguoiNhan}
+                                            onChange={e => setSdtNguoiNhan(e.target.value)}
+                                        />
+                                    </div>
 
-                                {/* SĐT người nhận */}
-                                <div>
-                                    <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <Phone size={16} color="#2563eb" /> Số điện thoại người nhận <span style={{ color: '#e11d48' }}>*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                                        style={{ width: '100%' }}
-                                        placeholder="VD: 0912345678"
-                                        value={sdtNguoiNhan}
-                                        onChange={e => setSdtNguoiNhan(e.target.value)}
-                                    />
+                                    {/* Nhân viên phụ trách */}
+                                    <div>
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                            Nhân viên sales phụ trách
+                                        </label>
+                                        <select
+                                            className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
+                                            value={selectedSalespersonId}
+                                            onChange={e => setSelectedSalespersonId(e.target.value)}
+                                        >
+                                            <option value="">-- Chọn nhân viên --</option>
+                                            {allStaff.filter(s => s.BoPhan === 'Kinh doanh' || s.BoPhan === 'Sale / MKT' || s.BoPhan === 'CSKH Bảo Hành').map(s => (
+                                                <option key={s._id} value={s._id} className="text-slate-800 bg-white">{s.MaNV} - {s.HoTen}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
 
                                 {/* Phương thức thanh toán */}
                                 <div>
-                                    <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <CreditCard size={16} color="#2563eb" /> Phương thức thanh toán
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-3 block">
+                                        Phương thức thanh toán
                                     </label>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    <div className="grid grid-cols-3 gap-2">
                                         {PAYMENT_METHODS.map(pm => {
                                             const PMIcon = pm.icon;
                                             const isActive = phuongThucTT === pm.key;
                                             return (
                                                 <button
                                                     key={pm.key}
+                                                    type="button"
                                                     onClick={() => setPhuongThucTT(pm.key)}
-                                                    style={{
-                                                        display: 'flex', alignItems: 'center', gap: 12,
-                                                        padding: '14px 16px', borderRadius: 8,
-                                                        border: `2px solid ${isActive ? '#2563eb' : '#e2e8f0'}`,
-                                                        background: isActive ? 'rgba(0,212,255,0.08)' : 'transparent',
-                                                        color: isActive ? '#2563eb' : '#475569',
-                                                        cursor: 'pointer', fontWeight: isActive ? 700 : 400,
-                                                        transition: 'all 0.2s',
-                                                        textAlign: 'left'
-                                                    }}
+                                                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all cursor-pointer gap-2 ${isActive
+                                                        ? 'border-blue-600 bg-blue-50/50 text-blue-600 font-bold shadow-sm'
+                                                        : 'border-slate-100 bg-slate-50/30 text-slate-500 hover:bg-slate-50'
+                                                        }`}
                                                 >
-                                                    <PMIcon size={20} />
-                                                    <span>{pm.label}</span>
-                                                    {isActive && <CheckCircle size={16} style={{ marginLeft: 'auto' }} />}
+                                                    <PMIcon size={20} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
+                                                    <span className="text-[11px] whitespace-nowrap">{pm.label}</span>
                                                 </button>
                                             );
                                         })}
@@ -1089,56 +1680,68 @@ export default function OrderManagementPage() {
                                 </div>
 
                                 {/* CHI PHÍ BỔ SUNG & ĐẶT CỌC */}
-                                <div style={{ padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid #e2e8f0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div className="p-5 bg-slate-50/50 border border-slate-100 rounded-3xl grid grid-cols-2 gap-4">
                                     <div>
-                                        <label style={{ fontSize: 11, color: '#475569', marginBottom: 4, display: 'block' }}>Phụ phí (Đóng gói/VC)</label>
-                                        <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={phuPhi} onChange={e => setPhuPhi(Number(e.target.value))} style={{ width: '100%', color: '#d97706', fontWeight: 600 }} />
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Phụ phí (Đóng gói/VC)</label>
+                                        <input
+                                            type="number"
+                                            className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2 text-sm text-amber-600 font-bold outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+                                            value={phuPhi}
+                                            onChange={e => setPhuPhi(Number(e.target.value))}
+                                        />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: 11, color: '#475569', marginBottom: 4, display: 'block' }}>Số tiền đã cọc</label>
-                                        <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={daCoc} onChange={e => setDaCoc(Number(e.target.value))} style={{ width: '100%', color: '#059669', fontWeight: 600 }} />
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Số tiền đã cọc</label>
+                                        <input
+                                            type="number"
+                                            className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2 text-sm text-emerald-600 font-bold outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+                                            value={daCoc}
+                                            onChange={e => setDaCoc(Number(e.target.value))}
+                                        />
                                     </div>
                                 </div>
 
                                 {/* Ghi chú */}
                                 <div>
-                                    <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: 'block' }}>Ghi chú</label>
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">Ghi chú đơn hàng</label>
                                     <textarea
-                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                                        style={{ minHeight: 60, padding: 10, width: '100%' }}
-                                        placeholder="Ghi chú đơn hàng (tùy chọn)..."
+                                        className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium resize-none min-h-[60px]"
+                                        placeholder="Nhập ghi chú khác (tùy chọn)..."
                                         value={ghiChu}
                                         onChange={e => setGhiChu(e.target.value)}
                                     />
                                 </div>
 
                                 {/* Tổng kết & Xác nhận */}
-                                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 20, marginTop: 'auto' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                        <span style={{ color: '#475569' }}>Trạng thái:</span>
-                                        <span className="badge" style={{ background: 'rgba(255,193,7,0.15)', color: '#d97706', borderColor: 'rgba(255,193,7,0.3)' }}>Chờ xác nhận</span>
+                                <div className="border-t border-slate-100 pt-6 mt-auto space-y-4">
+                                    <div className="flex justify-between items-center text-sm font-medium">
+                                        <span className="text-slate-400">Trạng thái:</span>
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-amber-50 text-amber-600">Chờ xác nhận</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                        <span style={{ color: '#475569' }}>Thanh toán:</span>
-                                        <span style={{ fontWeight: 600 }}>{PAYMENT_METHODS.find(p => p.key === phuongThucTT)?.label}</span>
+                                    <div className="flex justify-between items-center text-sm font-medium">
+                                        <span className="text-slate-400">Thanh toán:</span>
+                                        <span className="text-slate-800 font-bold">{PAYMENT_METHODS.find(p => p.key === phuongThucTT)?.label}</span>
                                     </div>
                                     {calculatedDiscount > 0 && (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                            <span style={{ color: '#059669', fontWeight: 600 }}>Chiết khấu:</span>
-                                            <span style={{ fontWeight: 700, color: '#059669' }}>-{calculatedDiscount.toLocaleString()} ₫</span>
+                                        <div className="flex justify-between items-center text-sm font-medium text-emerald-600">
+                                            <span>Chiết khấu ưu đãi:</span>
+                                            <span className="font-black">-{calculatedDiscount.toLocaleString()} ₫</span>
                                         </div>
                                     )}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-                                        <span style={{ fontWeight: 700, fontSize: 16 }}>TỔNG TIỀN:</span>
-                                        <span style={{ fontWeight: 700, fontSize: 22, color: '#059669' }}>{(orderSubtotal + phuPhi - calculatedDiscount).toLocaleString()} ₫</span>
+                                    <div className="flex justify-between items-end border-t border-slate-50 pt-4">
+                                        <span className="text-xs font-black text-slate-900 uppercase tracking-widest">TỔNG THANH TOÁN:</span>
+                                        <span className="text-2xl font-black text-emerald-600">{(orderSubtotal + phuPhi - calculatedDiscount).toLocaleString()} ₫</span>
                                     </div>
                                     <button
                                         onClick={handleCreateOrder}
                                         disabled={isSubmittingOrder}
-                                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                                        style={{ width: '100%', padding: '14px', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+                                        className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
                                     >
-                                        {isSubmittingOrder ? 'ĐANG TẠO ĐƠN...' : <><CheckCircle size={20} /> TẠO ĐƠN HÀNG</>}
+                                        {isSubmittingOrder ? (
+                                            'ĐANG TẠO ĐƠN HÀNG...'
+                                        ) : (
+                                            <><CheckCircle size={18} /> TẠO ĐƠN HÀNG</>
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -1147,178 +1750,199 @@ export default function OrderManagementPage() {
                 </div>
             )}
 
-            {/* ═══ DETAILS MODAL (REDESIGNED) ═══ */}
+            {/* ═══ DETAILS MODAL ═══ */}
             {isDetailsModalOpen && selectedOrder && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', overflowY: 'auto', padding: '2rem 0' }}>
-                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '95%', maxWidth: '1000px', border: '1px solid #e2e8f0', borderRadius: '16px', padding: 0, background: '#ffffff', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
                         {/* Custom Header with Back Button */}
-                        <div style={{ padding: '20px 32px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 16 }}>
-                            <button onClick={() => setIsDetailsModalOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid #e2e8f0', padding: '8px 16px', borderRadius: 8, color: '#0f172a', cursor: 'pointer', transition: 'all 0.2s' }}>
-                                <ArrowLeft size={18} /> Quay lại
-                            </button>
-                            <h3 style={{ fontSize: 20, fontWeight: 700, margin: 0, textTransform: 'uppercase', letterSpacing: 1 }}>CHI TIẾT ĐƠN HÀNG #{selectedOrder.MaDonHang}</h3>
+                        <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setIsDetailsModalOpen(false)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer border-none"
+                                >
+                                    <ArrowLeft size={14} /> Quay lại
+                                </button>
+                                <h3 className="text-lg font-black text-slate-900 uppercase tracking-wider">Chi tiết đơn hàng #{selectedOrder.MaDonHang}</h3>
+                            </div>
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase bg-blue-50 text-blue-600">
+                                {STATUS_MAP[selectedOrder.TrangThai].label}
+                            </span>
                         </div>
 
                         {/* Modal Body */}
-                        <div style={{ padding: '32px' }}>
-                            {/* Section I & II Container */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
+                        <div className="p-8 overflow-y-auto space-y-6 custom-scrollbar">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* I. THÔNG TIN KHÁCH HÀNG & SẢN PHẨM */}
-                                <div style={{ border: '1px dashed #e2e8f0', padding: 24, borderRadius: 12, background: 'rgba(255,255,255,0.01)' }}>
-                                    <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 12 }}>
-                                        <User size={18} /> I. THÔNG TIN KHÁCH HÀNG & SẢN PHẨM
+                                <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl hover:shadow-sm transition-all space-y-4">
+                                    <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest flex items-center gap-2 pb-2 border-b border-slate-100">
+                                        <User size={14} /> I. Thông tin khách hàng
                                     </h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
-                                        <div style={{ display: 'flex', gap: 10 }}>
-                                            <span style={{ color: '#475569', minWidth: 100 }}>* Khách hàng:</span>
-                                            <span style={{ fontWeight: 600 }}>{selectedOrder.KhachHang?.TenKhachHang}</span>
+                                    <div className="space-y-2.5 text-[13px] font-medium text-slate-600">
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Khách hàng:</span>
+                                            <span className="font-bold text-slate-800">{selectedOrder.KhachHang?.TenKhachHang || 'Khách vãng lai'}</span>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 10 }}>
-                                            <span style={{ color: '#475569', minWidth: 100 }}>* Số ĐT:</span>
-                                            <span>{selectedOrder.KhachHang?.SDT}</span>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Số điện thoại:</span>
+                                            <span className="text-slate-800">{selectedOrder.KhachHang?.SDT || '-'}</span>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 10 }}>
-                                            <span style={{ color: '#475569', minWidth: 100 }}>* Sản phẩm:</span>
-                                            <span style={{ fontWeight: 600 }}>{selectedOrder.Items?.[0]?.TenSanPham} ({selectedOrder.Items?.reduce((s, i) => s + i.SoLuong, 0)} {selectedOrder.Items?.[0]?.SanPham?.DonViTinh || 'thùng'})</span>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Sản phẩm:</span>
+                                            <span className="font-bold text-slate-800">{selectedOrder.Items?.[0]?.TenSanPham} ({selectedOrder.Items?.reduce((s, i) => s + i.SoLuong, 0)} thùng)</span>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 10 }}>
-                                            <span style={{ color: '#475569', minWidth: 100 }}>* Diện tích:</span>
-                                            <span style={{ color: '#d97706', fontWeight: 700 }}>{selectedOrder.TongDienTichSon || 0} m2</span>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Diện tích sơn:</span>
+                                            <span className="font-bold text-amber-600">{selectedOrder.TongDienTichSon || 0} m2</span>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 10 }}>
-                                            <span style={{ color: '#475569', minWidth: 100 }}>* Ngày tạo:</span>
-                                            <span>{new Date(selectedOrder.createdAt).toLocaleDateString()}</span>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Ngày tạo:</span>
+                                            <span className="text-slate-800">{new Date(selectedOrder.createdAt).toLocaleDateString()}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* II. THÔNG SỐ KỸ THUẬT SƠN (MERN) */}
-                                <div style={{ border: '1px dashed #e2e8f0', padding: 24, borderRadius: 12, background: 'rgba(255,255,255,0.01)' }}>
-                                    <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: '#059669', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 12 }}>
-                                        <Layers size={18} /> II. THÔNG SỐ KỸ THUẬT SƠN (MERN)
+                                <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl hover:shadow-sm transition-all space-y-4">
+                                    <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 pb-2 border-b border-slate-100">
+                                        <Layers size={14} /> II. Thông số kỹ thuật sơn
                                     </h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
-                                        <div style={{ display: 'flex', gap: 10 }}>
-                                            <span style={{ color: '#475569', minWidth: 110 }}>* Mã màu:</span>
-                                            <span style={{ fontWeight: 700, color: '#2563eb' }}>{selectedOrder.Items?.[0]?.MaMau || 'N/A'}</span>
+                                    <div className="space-y-2.5 text-[13px] font-medium text-slate-600">
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Mã màu chọn:</span>
+                                            <span className="font-black text-blue-600">{selectedOrder.Items?.[0]?.MaMau || 'N/A'}</span>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 10 }}>
-                                            <span style={{ color: '#475569', minWidth: 110 }}>* Loại bột:</span>
-                                            <span>{selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon'}</span>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Loại bột:</span>
+                                            <span className="text-slate-800">{selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon'}</span>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 10 }}>
-                                            <span style={{ color: '#475569', minWidth: 110 }}>* Nhiệt độ sấy:</span>
-                                            <span>{selectedOrder.TechnicalSpecs?.NhietDoSay || '195°C / 15 phút'}</span>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Nhiệt độ sấy:</span>
+                                            <span className="text-slate-800">{selectedOrder.TechnicalSpecs?.NhietDoSay || '195°C / 15 phút'}</span>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 10 }}>
-                                            <span style={{ color: '#475569', minWidth: 110 }}>* Độ dày lớp phủ:</span>
-                                            <span>{selectedOrder.TechnicalSpecs?.DoDayLopPhu || '75 µm'}</span>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Độ dày lớp phủ:</span>
+                                            <span className="text-slate-800">{selectedOrder.TechnicalSpecs?.DoDayLopPhu || '75 µm'}</span>
                                         </div>
-                                        <div style={{ marginTop: 8 }}>
-                                            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ fontSize: 11, padding: '4px 10px', color: '#2563eb', border: '1px solid #2563eb' }}>📈 Xem biểu đồ hiệu suất thực</button>
+                                        <div className="pt-2">
+                                            <button className="px-3 py-1.5 bg-white border border-blue-150 hover:bg-blue-50 text-blue-600 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm transition-colors cursor-pointer">
+                                                📈 Xem biểu đồ hiệu suất
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* III. THÔNG TIN THANH TOÁN (PAYMENT) */}
-                            <div style={{ border: '1px dashed #e2e8f0', padding: 24, borderRadius: 12, background: 'rgba(255,255,255,0.02)', marginBottom: 24 }}>
-                                <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: '#d97706', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 12 }}>
-                                    <CreditCard size={18} /> III. THÔNG TIN THANH TOÁN (PAYMENT)
+                            <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl">
+                                <h4 className="text-xs font-black text-amber-600 uppercase tracking-widest flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
+                                    <CreditCard size={14} /> III. Thông tin thanh toán (Payment)
                                 </h4>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40 }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: '#475569' }}>* Đơn giá trung bình (m2):</span>
-                                            <span>{(selectedOrder.TongTien / (selectedOrder.TongDienTichSon || 1)).toLocaleString()}đ / m2</span>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-150">
+                                    <div className="space-y-3 text-[13px] font-medium text-slate-650">
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Đơn giá / m2:</span>
+                                            <span className="text-slate-800">{(selectedOrder.TongTien / (selectedOrder.TongDienTichSon || 1)).toLocaleString()}đ / m2</span>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: '#475569' }}>* Thành tiền (SP):</span>
-                                            <span>{(selectedOrder.TongTien - (selectedOrder.PhuPhi || 0)).toLocaleString()}đ</span>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Thành tiền sản phẩm:</span>
+                                            <span className="text-slate-800">{(selectedOrder.TongTien - (selectedOrder.PhuPhi || 0)).toLocaleString()}đ</span>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: '#475569' }}>* Phụ phí (Đóng gói/VC):</span>
-                                            <span>{(selectedOrder.PhuPhi || 0).toLocaleString()}đ</span>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Phụ phí (đóng gói/VC):</span>
+                                            <span className="text-slate-800">{(selectedOrder.PhuPhi || 0).toLocaleString()}đ</span>
                                         </div>
                                         {selectedOrder.GiamGia !== undefined && selectedOrder.GiamGia > 0 && (
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669' }}>
-                                                <span style={{ fontWeight: 600 }}>* Ưu đãi ({selectedOrder.KhuyenMai?.MaVoucher || 'Voucher'}):</span>
-                                                <span style={{ fontWeight: 700 }}>-{(selectedOrder.GiamGia || 0).toLocaleString()}đ</span>
+                                            <div className="flex justify-between text-emerald-600 font-bold">
+                                                <span>Chiết khấu ({selectedOrder.KhuyenMai?.MaVoucher || 'Voucher'}):</span>
+                                                <span>-{(selectedOrder.GiamGia || 0).toLocaleString()}đ</span>
                                             </div>
                                         )}
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 12 }}>
-                                            <span style={{ fontWeight: 700, fontSize: 16 }}>* TỔNG CỘNG:</span>
-                                            <span style={{ fontWeight: 800, fontSize: 20, color: '#059669' }}>{selectedOrder.TongTien.toLocaleString()}đ</span>
+                                        <div className="flex justify-between border-t border-slate-100 pt-3 text-[14px]">
+                                            <span className="font-bold text-slate-900">TỔNG CỘNG:</span>
+                                            <span className="font-black text-emerald-600">{selectedOrder.TongTien.toLocaleString()}đ</span>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14, borderLeft: '1px solid rgba(255,255,255,0.05)', paddingLeft: 40 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ color: '#475569' }}>* Đã cọc:</span>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                <span style={{ fontWeight: 700 }}>{(selectedOrder.DaCoc || 0).toLocaleString()}đ ({Math.round(((selectedOrder.DaCoc || 0) / selectedOrder.TongTien) * 100)}%)</span>
+                                    <div className="space-y-3 text-[13px] font-medium text-slate-650 pt-4 md:pt-0 md:pl-8">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-slate-400">Khách đã đặt cọc:</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-black text-slate-900">{(selectedOrder.DaCoc || 0).toLocaleString()}đ ({Math.round(((selectedOrder.DaCoc || 0) / selectedOrder.TongTien) * 100)}%)</span>
                                                 {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             setDepositAmount(selectedOrder.DaCoc || 0);
                                                             setIsPaymentModalOpen(true);
-                                                        }} 
-                                                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                                                        style={{ padding: '2px 8px', fontSize: '10px', color: '#2563eb', border: '1px solid #2563eb' }}
+                                                        }}
+                                                        className="px-2.5 py-1 bg-white border border-slate-200 text-blue-600 hover:bg-slate-50 rounded-lg text-[10px] font-bold tracking-wider cursor-pointer transition-colors shadow-sm"
                                                     >
-                                                        Cập nhật cọc
+                                                        Cập nhật
                                                     </button>
                                                 )}
                                             </div>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 12 }}>
-                                            <span style={{ fontWeight: 700, fontSize: 18 }}>* CÒN LẠI:</span>
-                                            <span style={{ fontWeight: 800, fontSize: 22, color: '#e11d48' }}>{(selectedOrder.TongTien - (selectedOrder.DaCoc || 0)).toLocaleString()}đ</span>
+                                        <div className="flex justify-between border-t border-slate-100 pt-4 text-[16px]">
+                                            <span className="font-bold text-slate-900">SỐ TIỀN CÒN LẠI:</span>
+                                            <span className="font-black text-rose-500">{Math.max(0, selectedOrder.TongTien - (selectedOrder.DaCoc || 0)).toLocaleString()}đ</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Timeline / Action Section */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-                                    <Calendar size={18} color="#2563eb" />
-                                    <div style={{ flex: 1, fontSize: 14 }}>
-                                        <span style={{ color: '#475569' }}>[{new Date(selectedOrder.createdAt).toLocaleDateString()}]</span> Đã cọc (Chuyển khoản) <span style={{ fontWeight: 700, color: '#059669' }}>[{(selectedOrder.DaCoc || 0).toLocaleString()}đ]</span>
+                            <div className="space-y-3.5">
+                                <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                                    <Calendar size={18} className="text-blue-500" />
+                                    <div className="flex-1 text-sm font-medium text-slate-700">
+                                        <span className="text-slate-400">[{new Date(selectedOrder.createdAt).toLocaleDateString()}]</span> Đã đặt cọc đơn hàng <span className="font-bold text-emerald-600">[{(selectedOrder.DaCoc || 0).toLocaleString()}đ]</span>
                                     </div>
-                                    <button onClick={() => exportToPDF('COC')} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#2563eb' }} disabled={isPrinting}>
+                                    <button
+                                        onClick={handleDownloadPhieuCoc}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-blue-600 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                                        disabled={isPrinting}
+                                    >
                                         <FileCheck size={14} /> In Phiếu Cọc
                                     </button>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-                                    <FileText size={18} color="#7c3aed" />
-                                    <div style={{ flex: 1, fontSize: 14 }}>
-                                        <span style={{ color: '#475569' }}>[{new Date().toLocaleDateString()}]</span> Đơn hàng đang được xử lý <span style={{ fontWeight: 700 }}>[Thanh toán nốt]</span>
+
+                                <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                                    <FileText size={18} className="text-purple-500" />
+                                    <div className="flex-1 text-sm font-medium text-slate-700">
+                                        <span className="text-slate-400">[{new Date().toLocaleDateString()}]</span> Tiến độ sản xuất & Vận chuyển hàng hóa
                                     </div>
                                     {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
-                                        <button 
+                                        <button
                                             onClick={() => {
                                                 if ((selectedOrder.DaCoc || 0) <= 0) {
                                                     alert('Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.');
                                                     return;
                                                 }
                                                 handleUpdateStatus(selectedOrder._id, 'DANG_XU_LY');
-                                            }} 
-                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                                            style={{ background: (selectedOrder.DaCoc || 0) <= 0 ? '#94a3b8' : 'var(--accent-primary)', opacity: (selectedOrder.DaCoc || 0) <= 0 ? 0.7 : 1 }}
+                                            }}
+                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer border-none"
                                         >
                                             Bắt đầu sản xuất
                                         </button>
                                     )}
-                                    <button onClick={() => exportToPDF('HOA_DON')} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#059669' }} disabled={isPrinting}>
+                                    <button
+                                        onClick={handleDownloadHoaDonGTGT}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-emerald-650 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                                        disabled={isPrinting}
+                                    >
                                         <Printer size={14} /> In Hóa Đơn GTGT
                                     </button>
                                 </div>
                             </div>
 
                             {/* Status Control Buttons */}
-                            <div style={{ marginTop: 32, display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                            <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
                                 {selectedOrder.TrangThai !== 'DA_GIAO' && selectedOrder.TrangThai !== 'DA_HUY' && (
-                                    <button onClick={() => handleUpdateStatus(selectedOrder._id, 'DA_HUY')} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ color: '#e11d48', border: '1px solid #e11d48' }}>Hủy đơn hàng</button>
+                                    <button
+                                        onClick={() => handleUpdateStatus(selectedOrder._id, 'DA_HUY')}
+                                        className="px-5 py-2.5 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-2xl text-xs font-bold transition-colors cursor-pointer"
+                                    >
+                                        Hủy đơn hàng
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -1339,47 +1963,51 @@ export default function OrderManagementPage() {
                             </div>
 
                             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10mm' }}>
-                                <tr>
-                                    <td style={{ width: '50%', verticalAlign: 'top', padding: '5mm', border: '1px solid #ddd' }}>
-                                        <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '2mm' }}>I. KHÁCH HÀNG & PHỤ TRÁCH</h3>
-                                        <p><strong>Khách hàng:</strong> {selectedOrder.KhachHang?.TenKhachHang}</p>
-                                        <p><strong>Số ĐT:</strong> {selectedOrder.KhachHang?.SDT}</p>
-                                        <p><strong>NV Sales:</strong> {selectedOrder.NhanVienPhuTrach ? `${selectedOrder.NhanVienPhuTrach.MaNV} - ${selectedOrder.NhanVienPhuTrach.HoTen}` : 'Chưa gán'}</p>
-                                        <p><strong>Diện tích sơn:</strong> {selectedOrder.TongDienTichSon} m2</p>
-                                    </td>
-                                    <td style={{ width: '50%', verticalAlign: 'top', padding: '5mm', border: '1px solid #ddd' }}>
-                                        <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '2mm' }}>II. THÔNG SỐ KỸ THUẬT (MERN)</h3>
-                                        <p><strong>Mã màu:</strong> {selectedOrder.Items?.[0]?.MaMau}</p>
-                                        <p><strong>Loại bột:</strong> {selectedOrder.TechnicalSpecs?.LoaiBot}</p>
-                                        <p><strong>Nhiệt độ sấy:</strong> {selectedOrder.TechnicalSpecs?.NhietDoSay}</p>
-                                        <p><strong>Độ dày lớp phủ:</strong> {selectedOrder.TechnicalSpecs?.DoDayLopPhu}</p>
-                                    </td>
-                                </tr>
+                                <tbody>
+                                    <tr>
+                                        <td style={{ width: '50%', verticalAlign: 'top', padding: '5mm', border: '1px solid #ddd' }}>
+                                            <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '2mm' }}>I. KHÁCH HÀNG & PHỤ TRÁCH</h3>
+                                            <p><strong>Khách hàng:</strong> {selectedOrder.KhachHang?.TenKhachHang}</p>
+                                            <p><strong>Số ĐT:</strong> {selectedOrder.KhachHang?.SDT}</p>
+                                            <p><strong>NV Sales:</strong> {selectedOrder.NhanVienPhuTrach ? `${selectedOrder.NhanVienPhuTrach.MaNV} - ${selectedOrder.NhanVienPhuTrach.HoTen}` : 'Chưa gán'}</p>
+                                            <p><strong>Diện tích sơn:</strong> {selectedOrder.TongDienTichSon} m2</p>
+                                        </td>
+                                        <td style={{ width: '50%', verticalAlign: 'top', padding: '5mm', border: '1px solid #ddd' }}>
+                                            <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '2mm' }}>II. THÔNG SỐ KỸ THUẬT (MERN)</h3>
+                                            <p><strong>Mã màu:</strong> {selectedOrder.Items?.[0]?.MaMau}</p>
+                                            <p><strong>Loại bột:</strong> {selectedOrder.TechnicalSpecs?.LoaiBot}</p>
+                                            <p><strong>Nhiệt độ sấy:</strong> {selectedOrder.TechnicalSpecs?.NhietDoSay}</p>
+                                            <p><strong>Độ dày lớp phủ:</strong> {selectedOrder.TechnicalSpecs?.DoDayLopPhu}</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
                             </table>
 
                             <div style={{ border: '1px solid #ddd', padding: '5mm', marginBottom: '10mm' }}>
                                 <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '2mm' }}>III. CHI TIẾT THANH TOÁN</h3>
                                 <table style={{ width: '100%' }}>
-                                    <tr>
-                                        <td>Thành tiền hàng:</td>
-                                        <td style={{ textAlign: 'right' }}>{(selectedOrder.TongTien - (selectedOrder.PhuPhi || 0)).toLocaleString()}đ</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Phụ phí (VC/Đóng gói):</td>
-                                        <td style={{ textAlign: 'right' }}>{(selectedOrder.PhuPhi || 0).toLocaleString()}đ</td>
-                                    </tr>
-                                    <tr style={{ fontWeight: 'bold', fontSize: '18px' }}>
-                                        <td style={{ paddingTop: '5mm' }}>TỔNG CỘNG:</td>
-                                        <td style={{ textAlign: 'right', paddingTop: '5mm' }}>{selectedOrder.TongTien.toLocaleString()}đ</td>
-                                    </tr>
-                                    <tr style={{ color: '#28a745' }}>
-                                        <td>Đã đặt cọc:</td>
-                                        <td style={{ textAlign: 'right' }}>{(selectedOrder.DaCoc || 0).toLocaleString()}đ</td>
-                                    </tr>
-                                    <tr style={{ fontWeight: 'bold', color: '#dc3545', fontSize: '20px' }}>
-                                        <td style={{ paddingTop: '3mm', borderTop: '2px double #ddd' }}>CÒN LẠI:</td>
-                                        <td style={{ textAlign: 'right', paddingTop: '3mm', borderTop: '2px double #ddd' }}>{(selectedOrder.TongTien - (selectedOrder.DaCoc || 0)).toLocaleString()}đ</td>
-                                    </tr>
+                                    <tbody>
+                                        <tr>
+                                            <td>Thành tiền hàng:</td>
+                                            <td style={{ textAlign: 'right' }}>{(selectedOrder.TongTien - (selectedOrder.PhuPhi || 0)).toLocaleString()}đ</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Phụ phí (VC/Đóng gói):</td>
+                                            <td style={{ textAlign: 'right' }}>{(selectedOrder.PhuPhi || 0).toLocaleString()}đ</td>
+                                        </tr>
+                                        <tr style={{ fontWeight: 'bold', fontSize: '18px' }}>
+                                            <td style={{ paddingTop: '5mm' }}>TỔNG CỘNG:</td>
+                                            <td style={{ textAlign: 'right', paddingTop: '5mm' }}>{selectedOrder.TongTien.toLocaleString()}đ</td>
+                                        </tr>
+                                        <tr style={{ color: '#28a745' }}>
+                                            <td>Đã đặt cọc:</td>
+                                            <td style={{ textAlign: 'right' }}>{(selectedOrder.DaCoc || 0).toLocaleString()}đ</td>
+                                        </tr>
+                                        <tr style={{ fontWeight: 'bold', color: '#dc3545', fontSize: '20px' }}>
+                                            <td style={{ paddingTop: '3mm', borderTop: '2px double #ddd' }}>CÒN LẠI:</td>
+                                            <td style={{ textAlign: 'right', paddingTop: '3mm', borderTop: '2px double #ddd' }}>{(selectedOrder.TongTien - (selectedOrder.DaCoc || 0)).toLocaleString()}đ</td>
+                                        </tr>
+                                    </tbody>
                                 </table>
                             </div>
 
@@ -1399,64 +2027,62 @@ export default function OrderManagementPage() {
                     </div>
                 </div>
             )}
+
             {/* ═══ DRIVER SELECTION MODAL ═══ */}
             {isDriverModalOpen && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
-                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '90%', maxWidth: '500px', border: '1px solid #e2e8f0', borderRadius: '12px', padding: 0 }}>
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <Truck size={20} color="#7c3aed" /> Điều phối Tài xế giao hàng
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+                            <h3 className="text-base font-black text-slate-900 flex items-center gap-2.5">
+                                <Truck size={20} className="text-purple-600" /> Điều phối tài xế giao hàng
                             </h3>
-                            <button onClick={() => setIsDriverModalOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ fontSize: '20px' }}>&times;</button>
+                            <button
+                                onClick={() => setIsDriverModalOpen(false)}
+                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
+                            >
+                                ×
+                            </button>
                         </div>
-                        <div style={{ padding: '24px' }}>
-                            <p style={{ fontSize: 13, color: '#475569', marginBottom: 20 }}>
+                        <div className="p-6 overflow-y-auto space-y-4 custom-scrollbar">
+                            <p className="text-xs text-slate-500 leading-relaxed">
                                 Vui lòng chọn tài xế từ bộ phận <strong>Nhân viên Kỹ thuật (Kho / Logistics)</strong> để bắt đầu quá trình vận chuyển.
                             </p>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '300px', overflowY: 'auto' }}>
+                            <div className="space-y-2 max-h-[260px] overflow-y-auto custom-scrollbar">
                                 {drivers.map(driver => (
                                     <div
                                         key={driver._id}
                                         onClick={() => setSelectedDriverId(driver._id)}
-                                        style={{
-                                            padding: '12px 16px',
-                                            borderRadius: 8,
-                                            border: `1px solid ${selectedDriverId === driver._id ? '#2563eb' : '#e2e8f0'}`,
-                                            background: selectedDriverId === driver._id ? 'rgba(0,212,255,0.05)' : 'rgba(255,255,255,0.02)',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 12,
-                                            transition: 'all 0.2s'
-                                        }}
+                                        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3.5 ${selectedDriverId === driver._id
+                                            ? 'border-blue-600 bg-blue-50/40 shadow-sm'
+                                            : 'border-slate-100 hover:bg-slate-50'
+                                            }`}
                                     >
-                                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <User size={18} color="#475569" />
+                                        <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
+                                            <User size={18} />
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 600, fontSize: 14 }}>{driver.HoTen}</div>
-                                            <div style={{ fontSize: 11, color: '#94a3b8' }}>{driver.BoPhan} • SĐT: {driver.SDT}</div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-bold text-[13px] text-slate-805">{driver.HoTen}</div>
+                                            <div className="text-[11px] text-slate-400 truncate">{driver.BoPhan} • SĐT: {driver.SDT}</div>
                                         </div>
-                                        {selectedDriverId === driver._id && <CheckCircle size={18} color="#2563eb" />}
+                                        {selectedDriverId === driver._id && <CheckCircle size={18} className="text-blue-600 flex-shrink-0" />}
                                     </div>
                                 ))}
                                 {drivers.length === 0 && (
-                                    <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
+                                    <div className="text-center py-8 text-slate-400 font-medium italic text-xs">
                                         Không tìm thấy nhân viên Kỹ thuật phù hợp ở bộ phận Kho/Logistics.
                                     </div>
                                 )}
                             </div>
 
-                            <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
-                                <button onClick={() => setIsDriverModalOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ flex: 1 }}>Hủy</button>
+                            <div className="flex gap-3 pt-4 border-t border-slate-50">
+                                <button onClick={() => setIsDriverModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
                                 <button
                                     onClick={() => pendingStatusUpdate && handleUpdateStatus(pendingStatusUpdate.id, pendingStatusUpdate.status, selectedDriverId)}
                                     disabled={!selectedDriverId}
-                                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                                    style={{ flex: 2 }}
+                                    className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 disabled:opacity-50 transition-all cursor-pointer border-none"
                                 >
-                                    XÁC NHẬN GIAO HÀNG
+                                    Xác nhận giao hàng
                                 </button>
                             </div>
                         </div>
@@ -1466,138 +2092,148 @@ export default function OrderManagementPage() {
 
             {/* ═══ PAINT CALCULATOR MODAL ═══ */}
             {isCalculatorOpen && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)' }}>
-                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '90%', maxWidth: '600px', padding: 0, border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden', minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
                         {/* Header */}
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
-                            <h3 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>Tính Toán Diện Tích Sơn</h3>
-                            <button onClick={() => setIsCalculatorOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ fontSize: '24px', padding: '0 8px' }}>&times;</button>
+                        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+                            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                                <Calculator size={20} className="text-blue-600" /> Tính diện tích bề mặt sơn
+                            </h3>
+                            <button
+                                onClick={() => setIsCalculatorOpen(false)}
+                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
+                            >
+                                ×
+                            </button>
                         </div>
 
                         {/* Body */}
-                        <div style={{ padding: '24px', overflowY: 'auto', flex: 1, maxHeight: '65vh' }}>
+                        <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
                             {/* Unit Toggle */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                                <span style={{ fontSize: 13, color: '#475569' }}>Tính toán diện tích theo bề mặt</span>
-                                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: 4 }}>
-                                    <button onClick={() => setCalcUnit('m')} style={{ padding: '6px 12px', border: 'none', borderRadius: 6, background: calcUnit === 'm' ? '#2563eb' : 'transparent', color: calcUnit === 'm' ? '#000' : '#0f172a', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>m</button>
-                                    <button onClick={() => setCalcUnit('ft')} style={{ padding: '6px 12px', border: 'none', borderRadius: 6, background: calcUnit === 'ft' ? '#2563eb' : 'transparent', color: calcUnit === 'ft' ? '#000' : '#0f172a', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>ft</button>
+                            <div className="flex justify-between items-center bg-slate-50 p-2 rounded-2xl">
+                                <span className="text-xs font-semibold text-slate-500 pl-2">Đơn vị đo lường</span>
+                                <div className="flex gap-1 p-0.5 bg-slate-200/50 rounded-xl">
+                                    <button onClick={() => setCalcUnit('m')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-none ${calcUnit === 'm' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 bg-transparent'}`}>Mét (m)</button>
+                                    <button onClick={() => setCalcUnit('ft')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-none ${calcUnit === 'ft' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 bg-transparent'}`}>Feet (ft)</button>
                                 </div>
                             </div>
 
                             {/* Walls Section */}
-                            <div style={{ marginBottom: 24 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                                    <span style={{ fontSize: 14, fontWeight: 700, color: '#2563eb' }}>Bề mặt tường ({calcWalls.length})</span>
+                            <div className="space-y-3">
+                                <div className="text-xs font-black text-blue-600 uppercase tracking-wider">
+                                    Bề mặt tường ({calcWalls.length})
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                <div className="space-y-3">
                                     {calcWalls.map((wall, index) => (
-                                        <div key={wall.id} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                            <div style={{ position: 'relative', flex: 1 }}>
-                                                <input type="number" placeholder="Chiều dài" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={wall.length} onChange={(e) => updateCalcItem(wall.id, 'length', e.target.value, 'wall')} style={{ width: '100%', fontSize: 13 }} />
-                                                <span style={{ position: 'absolute', right: 10, top: 10, fontSize: 11, color: '#94a3b8' }}>{calcUnit}</span>
+                                        <div key={wall.id} className="flex gap-2 items-center">
+                                            <div className="relative flex-1">
+                                                <input type="number" placeholder="Chiều dài" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={wall.length} onChange={(e) => updateCalcItem(wall.id, 'length', e.target.value, 'wall')} />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
                                             </div>
-                                            <div style={{ position: 'relative', flex: 1 }}>
-                                                <input type="number" placeholder="Chiều cao" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={wall.height} onChange={(e) => updateCalcItem(wall.id, 'height', e.target.value, 'wall')} style={{ width: '100%', fontSize: 13 }} />
-                                                <span style={{ position: 'absolute', right: 10, top: 10, fontSize: 11, color: '#94a3b8' }}>{calcUnit}</span>
+                                            <div className="relative flex-1">
+                                                <input type="number" placeholder="Chiều cao" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={wall.height} onChange={(e) => updateCalcItem(wall.id, 'height', e.target.value, 'wall')} />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
                                             </div>
                                             {calcWalls.length > 1 && (
-                                                <button onClick={() => handleRemoveCalcItem(wall.id, 'wall')} style={{ background: 'transparent', border: 'none', color: '#e11d48', cursor: 'pointer', padding: 5 }}><Trash2 size={16} /></button>
+                                                <button onClick={() => handleRemoveCalcItem(wall.id, 'wall')} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"><Trash2 size={14} /></button>
                                             )}
                                         </div>
                                     ))}
-                                    <button onClick={handleAddCalcWall} style={{ background: 'transparent', border: '1px dashed #2563eb', color: '#2563eb', padding: '8px', borderRadius: 8, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 4 }}>
-                                        <Plus size={14} /> Thêm tường
+                                    <button onClick={handleAddCalcWall} className="w-full py-2.5 bg-white border border-dashed border-blue-200 hover:bg-blue-50/50 text-blue-650 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                                        <Plus size={14} /> Thêm diện tích tường
                                     </button>
                                 </div>
                             </div>
 
                             {/* Deductions Section */}
-                            <div style={{ marginBottom: 24 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                                    <span style={{ fontSize: 14, fontWeight: 700, color: '#e11d48' }}>Khấu trừ (Cửa/Sổ) ({calcDeductions.length})</span>
+                            <div className="space-y-3">
+                                <div className="text-xs font-black text-rose-500 uppercase tracking-wider">
+                                    Diện tích khấu trừ (Cửa đi / Cửa sổ) ({calcDeductions.length})
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                <div className="space-y-3">
                                     {calcDeductions.map((ded, index) => (
-                                        <div key={ded.id} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                            <div style={{ position: 'relative', flex: 1 }}>
-                                                <input type="number" placeholder="Chiều dài" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={ded.length} onChange={(e) => updateCalcItem(ded.id, 'length', e.target.value, 'deduction')} style={{ width: '100%', fontSize: 13 }} />
-                                                <span style={{ position: 'absolute', right: 10, top: 10, fontSize: 11, color: '#94a3b8' }}>{calcUnit}</span>
+                                        <div key={ded.id} className="flex gap-2 items-center">
+                                            <div className="relative flex-1">
+                                                <input type="number" placeholder="Chiều dài" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={ded.length} onChange={(e) => updateCalcItem(ded.id, 'length', e.target.value, 'deduction')} />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
                                             </div>
-                                            <div style={{ position: 'relative', flex: 1 }}>
-                                                <input type="number" placeholder="Chiều cao" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={ded.height} onChange={(e) => updateCalcItem(ded.id, 'height', e.target.value, 'deduction')} style={{ width: '100%', fontSize: 13 }} />
-                                                <span style={{ position: 'absolute', right: 10, top: 10, fontSize: 11, color: '#94a3b8' }}>{calcUnit}</span>
+                                            <div className="relative flex-1">
+                                                <input type="number" placeholder="Chiều cao" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={ded.height} onChange={(e) => updateCalcItem(ded.id, 'height', e.target.value, 'deduction')} />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
                                             </div>
-                                            <button onClick={() => handleRemoveCalcItem(ded.id, 'deduction')} style={{ background: 'transparent', border: 'none', color: '#e11d48', cursor: 'pointer', padding: 5 }}><Trash2 size={16} /></button>
+                                            <button onClick={() => handleRemoveCalcItem(ded.id, 'deduction')} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"><Trash2 size={14} /></button>
                                         </div>
                                     ))}
-                                    <button onClick={handleAddCalcDeduction} style={{ background: 'transparent', border: '1px dashed #e11d48', color: '#e11d48', padding: '8px', borderRadius: 8, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 4 }}>
-                                        <Plus size={14} /> Thêm cửa/sổ
+                                    <button onClick={handleAddCalcDeduction} className="w-full py-2.5 bg-white border border-dashed border-rose-200 hover:bg-rose-50/50 text-rose-500 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                                        <Plus size={14} /> Thêm cửa sổ / cửa đi
                                     </button>
                                 </div>
                             </div>
                         </div>
 
                         {/* Footer / Results */}
-                        <div style={{ padding: '20px 24px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid #e2e8f0' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#475569', marginBottom: 4 }}>
-                                <span>Ước lượng:</span>
-                                <span>{calculatedResult.area} mét vuông</span>
+                        <div className="p-6 bg-slate-50 border-t border-slate-100 flex-shrink-0 space-y-4">
+                            <div className="space-y-2 text-xs font-semibold text-slate-500">
+                                <div className="flex justify-between">
+                                    <span>Diện tích tường khả dụng:</span>
+                                    <span className="text-slate-800 font-bold">{calculatedResult.area} m²</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Định mức che phủ kỹ thuật:</span>
+                                    <span className="text-slate-800 font-bold">12.3 m² / Lít (2 lớp phủ)</span>
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#475569', marginBottom: 12 }}>
-                                <span>Độ che phủ (định mức):</span>
-                                <span>12.3 mét vuông / Lít</span>
+                            <div className="flex justify-between items-end border-t border-slate-200/60 pt-3">
+                                <span className="text-xs font-black text-slate-900 uppercase">Khối lượng sơn ước tính:</span>
+                                <span className="text-2xl font-black text-blue-600">{calculatedResult.liters} Lít</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
-                                <span style={{ fontSize: 18, fontWeight: 700 }}>Bạn sẽ cần:</span>
-                                <span style={{ fontSize: 24, fontWeight: 800, color: '#2563eb' }}>{calculatedResult.liters} Lít</span>
-                            </div>
-                            <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setIsCalculatorOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ flex: 1 }}>Hủy</button>
+                            <div className="flex gap-3">
+                                <button onClick={() => setIsCalculatorOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
                                 <button
                                     onClick={() => {
                                         setTongDienTichSon(calculatedResult.area);
                                         setIsCalculatorOpen(false);
                                     }}
-                                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                                    style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                                    className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none"
                                 >
-                                    <FileCheck size={18} /> ÁP DỤNG KẾT QUẢ
+                                    <FileCheck size={16} /> Áp dụng kết quả
                                 </button>
                             </div>
-                            <p style={{ marginTop: 12, fontSize: 10, color: '#94a3b8', textAlign: 'center', fontStyle: 'italic' }}>
-                                * Kết quả thực tế có thể khác nhau. Tính toán dựa trên 2 lớp phủ.
-                            </p>
                         </div>
                     </div>
                 </div>
             )}
+
             {/* ═══ PAYMENT MODAL ═══ */}
             {isPaymentModalOpen && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}>
-                    <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '90%', maxWidth: '400px', border: '1px solid #e2e8f0', borderRadius: '12px', padding: 0 }}>
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <CreditCard size={20} color="#d97706" /> Cập nhật tiền cọc
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+                            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                                <CreditCard size={20} className="text-amber-500" /> Cập nhật tiền cọc
                             </h3>
-                            <button onClick={() => setIsPaymentModalOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ fontSize: '20px' }}>&times;</button>
+                            <button
+                                onClick={() => setIsPaymentModalOpen(false)}
+                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
+                            >
+                                ×
+                            </button>
                         </div>
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ marginBottom: 20 }}>
-                                <label style={{ fontSize: 13, color: '#475569', marginBottom: 8, display: 'block' }}>Số tiền khách đã trả (VNĐ)</label>
-                                <input 
-                                    type="number" 
-                                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
-                                    style={{ width: '100%', fontSize: 20, fontWeight: 700, textAlign: 'right', color: '#059669' }}
+                        <div className="p-6 space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">Số tiền cọc thực nhận (VNĐ)</label>
+                                <input
+                                    type="number"
+                                    className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-xl font-black text-right text-emerald-600 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
                                     value={depositAmount}
                                     onChange={(e) => setDepositAmount(Number(e.target.value))}
                                 />
-                                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                                <div className="flex gap-2">
                                     {[0.3, 0.5, 1].map(p => (
-                                        <button 
-                                            key={p} 
+                                        <button
+                                            key={p}
                                             onClick={() => setDepositAmount(Math.round(selectedOrder!.TongTien * p))}
-                                            style={{ flex: 1, padding: '6px', fontSize: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid #e2e8f0', borderRadius: 4, cursor: 'pointer' }}
+                                            className="flex-1 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
                                         >
                                             {p * 100}%
                                         </button>
@@ -1605,13 +2241,13 @@ export default function OrderManagementPage() {
                                 </div>
                             </div>
 
-                            <p style={{ fontSize: 12, color: '#94a3b8', marginBottom: 24 }}>
-                                * Việc cập nhật số tiền cọc giúp hệ thống xác nhận quy trình thanh toán và cho phép lệnh <strong>Bắt đầu sản xuất</strong> được thực thi.
+                            <p className="text-[10px] text-slate-400 leading-relaxed italic">
+                                * Cập nhật số tiền đặt cọc là điều kiện bắt buộc để hệ thống xác nhận hóa đơn và hiển thị nút lệnh <strong>Bắt đầu sản xuất</strong>.
                             </p>
 
-                            <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setIsPaymentModalOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ flex: 1 }}>Hủy</button>
-                                <button onClick={handleUpdateDeposit} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ flex: 2 }}>XÁC NHẬN THANH TOÁN</button>
+                            <div className="flex gap-3 pt-4 border-t border-slate-50">
+                                <button onClick={() => setIsPaymentModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
+                                <button onClick={handleUpdateDeposit} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer border-none">Xác nhận thanh toán</button>
                             </div>
                         </div>
                     </div>

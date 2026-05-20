@@ -491,7 +491,6 @@ export default function RDTrackingPage() {
             </table>
           </div>
         </div>
-      </div>
     </div>
     </div>
   );

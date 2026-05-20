@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/utils/axiosAuth';
+import { useAuthStore } from '@/lib/store/authStore';
 import {
   Truck, Map, PackageCheck, AlertTriangle, Search, Eye, MapPin,
   ArrowLeft, Calendar, FileText, Phone, PhoneCall, Share2, Upload,
@@ -54,12 +55,23 @@ interface VanChuyen {
 
 
 export default function VanChuyenPage() {
+  const { user } = useAuthStore();
+  const isCustomer = user?.role === 'KhachHangB2B' || user?.role === 'KhachHangB2C';
+
   const [data, setData] = useState<VanChuyen[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [selectedTracking, setSelectedTracking] = useState<VanChuyen | null>(null);
   const [viewMode, setViewMode] = useState<'LIST' | 'DETAIL'>('LIST');
+  const [mapOrigin, setMapOrigin] = useState('Số 215 Lạch Tray, Gia Viên, Hải Phòng');
+  const [mapDestination, setMapDestination] = useState('');
+
+  useEffect(() => {
+    if (selectedTracking) {
+      setMapDestination(selectedTracking.DonHang?.DiaChiGiaoHang || '');
+    }
+  }, [selectedTracking]);
 
   useEffect(() => {
     fetchTrackingData();
@@ -101,6 +113,7 @@ export default function VanChuyenPage() {
     formData.append('image', file);
 
     try {
+      // 1. Upload ảnh/file lên backend
       const uploadRes = await api.post('/files/upload-image', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -127,46 +140,65 @@ export default function VanChuyenPage() {
         const updatedLogs = [...selectedTracking.LoTrinh, newLog];
         updatePayload.LoTrinh = updatedLogs;
 
+        // 2. Cập nhật thông tin đơn vận chuyển với URL file mới
         const res = await api.patch(`/van-chuyen/${selectedTracking._id}`, updatePayload);
         if (res.data.success) {
           alert('Cập nhật thành công!');
-          setSelectedTracking(res.data.data);
-          fetchTrackingData();
+
+          // 3. Làm mới dữ liệu trên UI sau khi server đã lưu
+          const updatedTracking = {
+            ...selectedTracking,
+            ...updatePayload,
+            LoHang: { ...selectedTracking.LoHang, BienBanFile: updatePayload.BienBanFile || selectedTracking.LoHang.BienBanFile }
+          };
+          setSelectedTracking(updatedTracking);
+          setData(prev => prev.map(t => t._id === updatedTracking._id ? updatedTracking : t));
+        } else {
+          throw new Error('Server trả về lỗi khi cập nhật tracking');
         }
+      } else {
+        throw new Error('Upload file thất bại từ server');
       }
     } catch (error) {
       console.error('Lỗi khi upload:', error);
-      alert('Có lỗi xảy ra khi tải file');
+      alert('Có lỗi xảy ra khi tải file lên server. Vui lòng thử lại sau.');
     }
   };
 
   const handleConfirmSuccess = async () => {
     if (!selectedTracking) return;
-    if (!confirm('Xác nhận đơn hàng đã được giao hàng thành công? Hệ thống sẽ tự động cập nhật trạng thái đơn hàng và ghi nhận công trạng cho tài xế.')) return;
+    if (!window.confirm('Xác nhận đơn hàng đã được giao hàng thành công? Hệ thống sẽ tự động cập nhật trạng thái đơn hàng và ghi nhận công trạng cho tài xế.')) return;
+
+    const updatePayload = {
+      TrangThaiTongQuat: 'Giao hàng thành công',
+      LoTrinh: [
+        ...selectedTracking.LoTrinh,
+        {
+          ThoiGian: new Date().toISOString(),
+          NoiDung: 'Đơn hàng đã được bàn giao thành công cho khách hàng.',
+          Status: 'COMPLETE',
+          Icon: 'CheckCircle'
+        }
+      ]
+    };
 
     try {
-      const updatePayload = {
-        TrangThaiTongQuat: 'Giao hàng thành công',
-        LoTrinh: [
-          ...selectedTracking.LoTrinh,
-          {
-            ThoiGian: new Date().toISOString(),
-            NoiDung: 'Đơn hàng đã được bàn giao thành công cho khách hàng.',
-            Status: 'COMPLETE',
-            Icon: 'CheckCircle'
-          }
-        ]
-      };
-
+      // Gọi API cập nhật trạng thái trên backend
       const res = await api.patch(`/van-chuyen/${selectedTracking._id}`, updatePayload);
+
       if (res.data.success) {
         alert('Đã xác nhận giao hàng thành công!');
-        setSelectedTracking(res.data.data);
-        fetchTrackingData();
+
+        // Chỉ cập nhật UI khi server đã xác nhận thành công
+        const updated = { ...selectedTracking, ...updatePayload } as VanChuyen;
+        setSelectedTracking(updated);
+        setData(prev => prev.map(t => t._id === updated._id ? updated : t));
+      } else {
+        throw new Error('Cập nhật thất bại từ server');
       }
     } catch (error) {
       console.error('Lỗi khi xác nhận giao hàng:', error);
-      alert('Có lỗi xảy ra khi cập nhật trạng thái');
+      alert('Đã xảy ra lỗi khi kết nối với server. Vui lòng thử lại sau.');
     }
   };
 
@@ -199,128 +231,180 @@ export default function VanChuyenPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: 20 }}>
-        <div className="spinner"></div>
-        <div style={{ color: '#2563eb', fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700 }}>Đang tải dữ liệu vận chuyển...</div>
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-full border-4 border-blue-100 border-t-blue-600 animate-spin"></div>
+          <p className="text-[13px] font-black text-blue-600 uppercase tracking-widest">Đang tải dữ liệu vận chuyển...</p>
+        </div>
       </div>
     );
   }
 
   if (viewMode === 'DETAIL' && selectedTracking) {
+    const isDelivered = selectedTracking.TrangThaiTongQuat === 'Giao hàng thành công';
     return (
-      <div className="fade-in">
-        {/* HEADER: Quay lại + Mã đơn */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+      <div className="space-y-6 animate-in fade-in duration-500">
+        {/* Header */}
+        <div className="flex items-center gap-4">
           <button
             onClick={() => setViewMode('LIST')}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-            style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', padding: '10px 18px', borderRadius: 8 }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all cursor-pointer shadow-sm"
           >
-            <ArrowLeft size={20} /> Quay lại
+            <ArrowLeft size={18} /> Quay lại
           </button>
-          <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, textTransform: 'uppercase', letterSpacing: 1 }}>
-            THEO DÕI VẬN CHUYỂN ĐƠN HÀNG #{selectedTracking.DonHang?.MaDonHang || 'N/A'}
-          </h2>
+          <div>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight uppercase">
+              Theo dõi vận chuyển #{selectedTracking.DonHang?.MaDonHang || 'N/A'}
+            </h1>
+            <p className="text-sm text-slate-400 font-medium">{selectedTracking.MaVanChuyen}</p>
+          </div>
         </div>
 
-        {/* Dynamic Status Flags */}
+        {/* Status Banner */}
         {(() => {
-          const isDelivered = selectedTracking.TrangThaiTongQuat === 'Giao hàng thành công';
           return (
             <>
-              {/* TRẠNG THÁI TỔNG QUÁT */}
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, marginBottom: 24, borderLeft: `4px solid ${isDelivered ? '#059669' : '#2563eb'}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: 13, color: '#475569', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>Trạng thái tổng quát:</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span className={`badge ${isDelivered ? 'approved' : 'testing'}`} style={{ fontSize: 16, padding: '6px 16px' }}>
-                        {isDelivered ? '✅' : '🚚'} {selectedTracking.TrangThaiTongQuat}
-                      </span>
-                      <span style={{ color: '#94a3b8', fontSize: 14 }}>
-                        {isDelivered ? `Hoàn tất lúc: ${new Date().toLocaleTimeString()} - ${new Date().toLocaleDateString()}` : `Dự kiến bàn giao: ${selectedTracking.DuKienBanGiao ? new Date(selectedTracking.DuKienBanGiao).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' - ' + new Date(selectedTracking.DuKienBanGiao).toLocaleDateString() : 'N/A'}`}
-                      </span>
-                    </div>
+              <div className={`bg-white rounded-2xl border-l-4 border border-slate-100 shadow-sm p-6 flex items-center justify-between ${isDelivered ? 'border-l-emerald-500' : 'border-l-blue-500'}`}>
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDelivered ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                    {isDelivered ? <CheckCircle2 size={24} /> : <Truck size={24} />}
                   </div>
+                  <div>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Trạng thái tổng quát</p>
+                    <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-sm font-black uppercase tracking-wider ${isDelivered ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                      {isDelivered ? '✅' : '🚚'} {selectedTracking.TrangThaiTongQuat}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right text-sm text-slate-400 font-medium">
+                  {isDelivered
+                    ? `Hoàn tất: ${new Date().toLocaleDateString()}`
+                    : `Dự kiến: ${selectedTracking.DuKienBanGiao ? new Date(selectedTracking.DuKienBanGiao).toLocaleDateString() : 'N/A'}`}
                 </div>
               </div>
 
-              {/* BẢN ĐỒ LỘ TRÌNH (Visual Dynamic) */}
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 32, marginBottom: 24 }}>
-                <div style={{ fontSize: 13, color: '#475569', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
-                  <MapPin size={18} color="#e11d48" /> BẢN ĐỒ LỘ TRÌNH
+              {/* Route Map Card - with real embedded map */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                {/* Card Header */}
+                <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={16} className="text-rose-500" />
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Bản đồ lộ trình giao hàng</span>
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(mapOrigin)}&destination=${encodeURIComponent(mapDestination)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:underline"
+                  >
+                    <Navigation size={12} /> Mở Google Maps
+                  </a>
                 </div>
 
-                <div style={{ position: 'relative', padding: '40px 0' }}>
-                  {/* Linear Track Line */}
-                  <div style={{ position: 'absolute', top: '50%', left: '10%', right: '10%', height: 2, background: '#e2e8f0', transform: 'translateY(-50%)' }}></div>
-
-                  {/* Active Track Line */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '10%',
-                    width: isDelivered ? '80%' : '50%',
-                    height: 2,
-                    background: isDelivered ? '#059669' : '#2563eb',
-                    transform: 'translateY(-50%)',
-                    boxShadow: `0 0 10px ${isDelivered ? '#059669' : '#2563eb'}`,
-                    transition: 'all 1s ease-in-out'
-                  }}></div>
-
-                  {/* Waypoints */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 1, padding: '0 10%' }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#ffffff', border: '2px solid #2563eb', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Building size={20} color="#2563eb" />
+                {/* Map Controls */}
+                <div className="p-4 border-b border-slate-50 flex flex-col sm:flex-row gap-4 bg-slate-50/30">
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm xuất phát (Xưởng)</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Building size={14} className="text-blue-500" />
                       </div>
-                      <div style={{ fontSize: 12, fontWeight: 700 }}>Xưởng Sơn</div>
+                      <input
+                        type="text"
+                        value={mapOrigin}
+                        onChange={(e) => setMapOrigin(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                        placeholder="Nhập địa chỉ kho/xưởng..."
+                      />
                     </div>
-
-                    <div style={{ textAlign: 'center', visibility: isDelivered ? 'hidden' : 'visible' }}>
-                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#2563eb', border: '4px solid rgba(0,212,255,0.2)', margin: '12px auto 26px' }}></div>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm đến (Khách hàng)</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <MapPin size={14} className="text-rose-500" />
+                      </div>
+                      <input
+                        type="text"
+                        value={mapDestination}
+                        onChange={(e) => setMapDestination(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                        placeholder="Nhập địa chỉ nhận hàng..."
+                      />
                     </div>
+                  </div>
+                </div>
 
-                    <div style={{ textAlign: 'center' }}>
-                      {/* Current Vehicle Position */}
-                      <div style={{
-                        position: 'absolute',
-                        left: isDelivered ? '90%' : '50%',
-                        top: '50%',
-                        transform: 'translate(-50%, -100%)',
-                        marginBottom: 20,
-                        transition: 'all 1s ease-in-out'
-                      }}>
-                        <div style={{
-                          background: isDelivered ? '#059669' : '#2563eb',
-                          color: 'black', padding: '4px 12px', borderRadius: 4, fontSize: 11, fontWeight: 700, marginBottom: 8, whiteSpace: 'nowrap'
-                        }}>
-                          {isDelivered ? 'Đã bàn giao' : 'Đang di chuyển'}
+                {/* Embedded Map */}
+                <div className="relative w-full" style={{ height: 280 }}>
+                  <iframe
+                    title="Delivery Map"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0, display: 'block' }}
+                    loading="lazy"
+                    allowFullScreen
+                    src={`https://maps.google.com/maps?saddr=${encodeURIComponent(mapOrigin)}&daddr=${encodeURIComponent(mapDestination)}&output=embed`}
+                  />
+                  {/* Overlay badge */}
+                  <div className={`absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black shadow-lg ${isDelivered ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
+                    {isDelivered ? <CheckCircle2 size={13} /> : <Truck size={13} />}
+                    {isDelivered ? 'Đã giao thành công' : 'Đang trên đường giao'}
+                  </div>
+                </div>
+
+                {/* Progress Tracker */}
+                <div className="px-8 py-6 bg-slate-50/50">
+                  <div className="relative">
+                    {/* Track background */}
+                    <div className="absolute top-5 left-6 right-6 h-1 bg-slate-200 rounded-full"></div>
+                    {/* Active track */}
+                    <div
+                      className="absolute top-5 left-6 h-1 rounded-full transition-all duration-1000"
+                      style={{
+                        width: isDelivered ? 'calc(100% - 3rem)' : 'calc(50% - 1.5rem)',
+                        background: isDelivered ? '#059669' : '#2563eb',
+                        boxShadow: `0 0 8px ${isDelivered ? '#05966980' : '#2563eb80'}`
+                      }}
+                    ></div>
+
+                    {/* Waypoints */}
+                    <div className="relative flex justify-between">
+                      {/* Origin */}
+                      <div className="flex flex-col items-center gap-2 w-20">
+                        <div className="w-10 h-10 rounded-2xl bg-white border-2 border-blue-500 flex items-center justify-center shadow-sm z-10">
+                          <Building size={18} className="text-blue-600" />
                         </div>
-                        <Truck size={32} color={isDelivered ? '#059669' : '#2563eb'} style={{ filter: `drop-shadow(0 0 12px ${isDelivered ? '#059669' : '#2563eb'})` }} />
+                        <span className="text-[11px] font-black text-slate-600 text-center leading-tight">Xưởng Sơn</span>
                       </div>
-                    </div>
 
-                    <div style={{ textAlign: 'center', visibility: isDelivered ? 'hidden' : 'visible' }}>
-                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#ffffff', border: '2px solid #e2e8f0', margin: '12px auto 26px' }}></div>
-                    </div>
-
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{
-                        width: 40, height: 40, borderRadius: '50%',
-                        background: isDelivered ? 'rgba(16, 185, 129, 0.1)' : '#ffffff',
-                        border: `2px solid ${isDelivered ? '#059669' : '#e2e8f0'}`,
-                        margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.5s ease'
-                      }}>
-                        {isDelivered ? <CheckCircle2 size={24} color="#059669" /> : <User size={20} color="#94a3b8" />}
+                      {/* Truck position */}
+                      <div
+                        className="absolute -top-7 flex flex-col items-center transition-all duration-1000"
+                        style={{ left: isDelivered ? 'calc(100% - 5rem)' : 'calc(50% - 2rem)' }}
+                      >
+                        <span className={`text-[10px] font-black text-white px-2 py-0.5 rounded-lg mb-1.5 whitespace-nowrap ${isDelivered ? 'bg-emerald-600' : 'bg-blue-600'}`}>
+                          {isDelivered ? 'Đã bàn giao' : 'Đang di chuyển'}
+                        </span>
+                        <Truck size={26} style={{ color: isDelivered ? '#059669' : '#2563eb', filter: `drop-shadow(0 0 6px ${isDelivered ? '#059669' : '#2563eb'})` }} />
                       </div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: isDelivered ? '#059669' : '#94a3b8' }}>{selectedTracking.DonHang?.KhachHang?.TenKhachHang || 'N/A'}</div>
+
+                      {/* Destination */}
+                      <div className="flex flex-col items-center gap-2 w-20">
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 shadow-sm z-10 transition-all duration-500 ${isDelivered ? 'bg-emerald-50 border-emerald-500' : 'bg-white border-slate-200'}`}>
+                          {isDelivered ? <CheckCircle2 size={20} className="text-emerald-600" /> : <User size={18} className="text-slate-400" />}
+                        </div>
+                        <span className={`text-[11px] font-black text-center leading-tight ${isDelivered ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          {selectedTracking.DonHang?.KhachHang?.TenKhachHang || 'Khách hàng'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div style={{ textAlign: 'center', marginTop: 40, color: '#94a3b8', fontSize: 13, fontStyle: 'italic' }}>
-                    {isDelivered ? 'Đơn hàng đã được giao nhận thành công. Cảm ơn quý khách!' : '(Giao diện bản đồ tích hợp Google Maps API hiển thị vị trí xe tải thực tế)'}
+                  {/* Address row */}
+                  <div className="mt-8 flex items-start gap-2 text-xs text-slate-500">
+                    <MapPin size={13} className="text-rose-400 mt-0.5 shrink-0" />
+                    <span className="font-medium">{selectedTracking.DonHang?.DiaChiGiaoHang || 'Chưa cập nhật địa chỉ giao hàng'}</span>
                   </div>
                 </div>
               </div>
@@ -328,151 +412,131 @@ export default function VanChuyenPage() {
           );
         })()}
 
-        {/* INFO GRIDS: Section III & IV */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
-          {/* III. CHI TIẾT LÔ HÀNG */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24 }}>
-            <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
-              III. CHI TIẾT LÔ HÀNG
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 14 }}>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: '#94a3b8' }}>* Số kiện:</span>
-                <span style={{ fontWeight: 600 }}>{selectedTracking.LoHang.SoKien} kiện (Đã đóng gói)</span>
+        {/* Info Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Cargo Details */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-5 pb-3 border-b border-slate-50">Chi tiết lô hàng</h4>
+            <div className="space-y-4 text-sm">
+              {[
+                { label: 'Số kiện', value: `${selectedTracking.LoHang.SoKien} kiện (Đã đóng gói)` },
+                { label: 'Khối lượng', value: `${selectedTracking.LoHang.KhoiLuong} kg` },
+              ].map(r => (
+                <div key={r.label} className="flex justify-between items-center">
+                  <span className="text-slate-400 font-medium">{r.label}</span>
+                  <span className="font-bold text-slate-900">{r.value}</span>
+                </div>
+              ))}
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 font-medium">Màu sơn</span>
+                <span className="font-bold text-blue-600">{selectedTracking.LoHang.MauSon} (Kiểm tra OK)</span>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: '#94a3b8' }}>* Khối lượng:</span>
-                <span style={{ fontWeight: 600 }}>{selectedTracking.LoHang.KhoiLuong} kg</span>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: '#94a3b8' }}>* Màu sơn:</span>
-                <span style={{ fontWeight: 600, color: '#2563eb' }}>{selectedTracking.LoHang.MauSon} (Kiểm tra OK)</span>
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ color: '#94a3b8' }}>* Biên bản bàn giao:</span>
-                {selectedTracking.LoHang.BienBanFile ? (
-                  <a
-                    href={selectedTracking.LoHang.BienBanFile}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#059669' }}
-                  >
-                    <FileText size={16} /> Xem File
-                  </a>
-                ) : (
-                  <span style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>Chưa cập nhật</span>
-                )}
-                <button
-                  onClick={() => receiptInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                  style={{ fontSize: 11, padding: '4px 8px', marginLeft: 8 }}
-                >
-                  <Upload size={12} /> Tải lên
-                </button>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 font-medium">Biên bản bàn giao</span>
+                <div className="flex items-center gap-2">
+                  {selectedTracking.LoHang.BienBanFile ? (
+                    <a href={selectedTracking.LoHang.BienBanFile} target="_blank" rel="noreferrer"
+                      className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:underline">
+                      <FileText size={14} /> Xem File
+                    </a>
+                  ) : (
+                    <span className="text-xs text-slate-400 italic">Chưa cập nhật</span>
+                  )}
+                  {!isCustomer && (
+                    <button onClick={() => receiptInputRef.current?.click()}
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-slate-50 text-slate-500 hover:bg-slate-100 transition-all cursor-pointer border border-slate-100">
+                      <Upload size={12} /> Tải lên
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* IV. THÔNG TIN VẬN CHUYỂN */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24 }}>
-            <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
-              IV. THÔNG TIN VẬN CHUYỂN
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 14 }}>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: '#94a3b8' }}>* Đơn vị:</span>
-                <span style={{ fontWeight: 600 }}>{selectedTracking.VanChuyenInfo.DonVi}</span>
+          {/* Transport Info */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-5 pb-3 border-b border-slate-50">Thông tin vận chuyển</h4>
+            <div className="space-y-4 text-sm">
+              {[
+                { label: 'Đơn vị', value: selectedTracking.VanChuyenInfo.DonVi },
+                { label: 'Tài xế', value: selectedTracking.VanChuyenInfo.NhanVien?.HoTen || 'Chưa phân công' },
+              ].map(r => (
+                <div key={r.label} className="flex justify-between items-center">
+                  <span className="text-slate-400 font-medium">{r.label}</span>
+                  <span className="font-bold text-slate-900">{r.value}</span>
+                </div>
+              ))}
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 font-medium">SĐT tài xế</span>
+                <span className="font-bold text-amber-600">{selectedTracking.VanChuyenInfo.NhanVien?.SDT || selectedTracking.VanChuyenInfo.SDT || 'N/A'}</span>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: '#475569' }}>* Tài xế:</span>
-                <span style={{ fontWeight: 600 }}>{selectedTracking.VanChuyenInfo.NhanVien?.HoTen || 'Chưa phân công'}</span>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: '#475569' }}>* SĐT:</span>
-                <span style={{ fontWeight: 600, color: '#d97706' }}>{selectedTracking.VanChuyenInfo.NhanVien?.SDT || selectedTracking.VanChuyenInfo.SDT || 'N/A'}</span>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ color: '#94a3b8' }}>* Phí VC:</span>
-                <span style={{ fontWeight: 700, color: '#059669' }}>{selectedTracking.VanChuyenInfo.PhiVC.toLocaleString()}đ (Đã bao gồm)</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 font-medium">Phí vận chuyển</span>
+                <span className="font-black text-emerald-600">{selectedTracking.VanChuyenInfo.PhiVC.toLocaleString()}đ</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* VI. THÔNG TIN NGƯỜI NHẬN (NEW) */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, marginBottom: 24, background: 'linear-gradient(to right, rgba(20, 25, 35, 0.8), rgba(30, 40, 55, 0.5))' }}>
-          <h4 style={{ margin: '0 0 20px 0', fontSize: 15, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
-            VI. CHI TIẾT PHIẾU GIAO (THÔNG TIN NGƯỜI NHẬN)
-          </h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+        {/* Receiver Info */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-5 pb-3 border-b border-slate-50">Chi tiết phiếu giao — Thông tin người nhận</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase' }}>Người nhận hàng:</div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>{selectedTracking.DonHang?.KhachHang?.TenKhachHang || 'N/A'}</div>
+              <p className="text-[11px] text-slate-400 font-black uppercase tracking-wider mb-1">Người nhận hàng</p>
+              <p className="font-black text-slate-900 text-base">{selectedTracking.DonHang?.KhachHang?.TenKhachHang || 'N/A'}</p>
             </div>
             <div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase' }}>Số điện thoại:</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#d97706' }}>{getReceiverPhone(selectedTracking.DonHang?.GhiChu || '')}</div>
+              <p className="text-[11px] text-slate-400 font-black uppercase tracking-wider mb-1">Số điện thoại</p>
+              <p className="font-black text-amber-600 text-base">{getReceiverPhone(selectedTracking.DonHang?.GhiChu || '')}</p>
             </div>
             <div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase' }}>Địa chỉ bàn giao:</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#475569' }}>{selectedTracking.DonHang?.DiaChiGiaoHang || 'N/A'}</div>
+              <p className="text-[11px] text-slate-400 font-black uppercase tracking-wider mb-1">Địa chỉ bàn giao</p>
+              <p className="font-bold text-slate-700">{selectedTracking.DonHang?.DiaChiGiaoHang || 'N/A'}</p>
             </div>
           </div>
         </div>
 
-        {/* V. LỊCH SỬ LỘ TRÌNH (TIMELINE) */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 32, marginBottom: 32 }}>
-          <h4 style={{ margin: '0 0 24px 0', fontSize: 15, color: '#0f172a', textTransform: 'uppercase', letterSpacing: 1 }}>
-            V. LỊCH SỬ LỘ TRÌNH (TIMELINE)
-          </h4>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, position: 'relative' }}>
-            {/* Timeline Vertical Line */}
-            <div style={{ position: 'absolute', left: 88, top: 12, bottom: 12, width: 2, background: '#e2e8f0' }}></div>
-
+        {/* Timeline */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
+          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-8">Lịch sử lộ trình</h4>
+          <div className="relative space-y-8">
+            <div className="absolute left-[88px] top-1 bottom-1 w-px bg-slate-100"></div>
             {selectedTracking.LoTrinh.map((log, idx) => {
               const isComplete = log.Status === 'COMPLETE';
               const isProcessing = log.Status === 'PROCESSING';
               return (
-                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 32, marginBottom: 32, position: 'relative' }}>
-                  {/* Time */}
-                  <div style={{ width: 70, textAlign: 'right', fontSize: 14, fontWeight: 700, color: isComplete ? '#0f172a' : '#94a3b8', paddingTop: 2 }}>
-                    {log.ThoiGian ? new Date(log.ThoiGian).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                  </div>
-
-                  {/* Dot Icon */}
-                  <div style={{ zIndex: 2, background: '#ffffff', padding: '2px 0' }}>
-                    {isComplete ? (
-                      <CheckCircle2 size={18} color="#059669" />
-                    ) : isProcessing ? (
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#2563eb', border: '4px solid rgba(0,212,255,0.2)' }}></div>
-                    ) : (
-                      <Circle size={18} color="#94a3b8" />
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div style={{ flex: 1, paddingTop: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: (isComplete || isProcessing) ? 600 : 400, color: (isComplete || isProcessing) ? '#0f172a' : '#94a3b8' }}>
-                      {log.NoiDung}
+                <div key={idx} className="flex items-start gap-8 relative">
+                  <div className={`w-[72px] text-right shrink-0 pt-0.5 ${isComplete ? 'text-slate-900' : 'text-slate-300'}`}>
+                    <div className="text-sm font-bold">
+                      {log.ThoiGian ? new Date(log.ThoiGian).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                    </div>
+                    <div className="text-[11px] font-medium text-slate-400 mt-0.5">
+                      {log.ThoiGian ? new Date(log.ThoiGian).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}
                     </div>
                   </div>
+                  <div className="relative z-10 bg-white pt-0.5">
+                    {isComplete
+                      ? <CheckCircle2 size={18} className="text-emerald-500" />
+                      : isProcessing
+                        ? <div className="w-[18px] h-[18px] rounded-full bg-blue-600 border-4 border-blue-100"></div>
+                        : <Circle size={18} className="text-slate-200" />}
+                  </div>
+                  <p className={`text-sm pt-0.5 ${(isComplete || isProcessing) ? 'font-semibold text-slate-900' : 'text-slate-300'}`}>
+                    {log.NoiDung}
+                  </p>
                 </div>
               );
             })}
           </div>
 
-          {/* HÌNH ẢNH GIAO HÀNG (GALLERY) */}
           {selectedTracking.HinhAnhGiaoHang && selectedTracking.HinhAnhGiaoHang.length > 0 && (
-            <div style={{ marginTop: 32 }}>
-              <div style={{ fontSize: 13, color: '#475569', marginBottom: 16, fontWeight: 700, textTransform: 'uppercase' }}>
-                📸 HÌNH ẢNH MINH CHỨNG GIAO HÀNG
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 16 }}>
+            <div className="mt-8 pt-8 border-t border-slate-50">
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">📸 Hình ảnh minh chứng giao hàng</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {selectedTracking.HinhAnhGiaoHang.map((url, i) => (
-                  <div key={i} className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 4, borderRadius: 8, overflow: 'hidden', height: 150 }}>
-                    <img src={url} alt={`Evidence ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} />
+                  <div key={i} className="rounded-xl overflow-hidden h-36 bg-slate-50 hover:scale-105 transition-transform cursor-pointer">
+                    <img src={url} alt={`Evidence ${i}`} className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>
@@ -480,148 +544,188 @@ export default function VanChuyenPage() {
           )}
         </div>
 
-        {/* FOOTER ACTIONS */}
-        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', borderTop: '1px solid #e2e8f0', paddingTop: 32 }}>
-          <button
-            onClick={handleCallDriver}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#e11d48', border: '1px solid #e11d48', padding: '12px 24px' }}
-          >
-            <PhoneCall size={20} /> Gọi Tài Xế
+        {/* Footer Actions */}
+        <div className="flex flex-wrap gap-3 justify-center pt-2 border-t border-slate-100">
+          <button onClick={handleCallDriver}
+            className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm border-2 border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 transition-all cursor-pointer">
+            <PhoneCall size={18} /> Gọi Tài Xế
           </button>
-          <button
-            onClick={handleShareLocation}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#2563eb', border: '1px solid #2563eb', padding: '12px 24px' }}
-          >
-            <Share2 size={20} /> Chia Sẻ Vị Trí
+          <button onClick={handleShareLocation}
+            className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm border-2 border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all cursor-pointer">
+            <Share2 size={18} /> Chia Sẻ Vị Trí
           </button>
-          <button
-            onClick={() => photoInputRef.current?.click()}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 32px' }}
-          >
-            <Upload size={20} /> Cập Nhật Ảnh Giao Hàng
-          </button>
-          {selectedTracking.TrangThaiTongQuat !== 'Giao hàng thành công' && (
-            <button
-              onClick={handleConfirmSuccess}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 32px', background: '#059669', border: 'none' }}
-            >
-              <CheckCircle2 size={20} /> Xác nhận giao hàng thành công
+          {!isCustomer && (
+            <button onClick={() => photoInputRef.current?.click()}
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer">
+              <Upload size={18} /> Cập Nhật Ảnh Giao Hàng
+            </button>
+          )}
+          {!isCustomer && selectedTracking.TrangThaiTongQuat !== 'Giao hàng thành công' && (
+            <button onClick={handleConfirmSuccess}
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all cursor-pointer">
+              <CheckCircle2 size={18} /> Xác nhận giao hàng thành công
             </button>
           )}
         </div>
 
-        {/* Hidden File Inputs */}
-        <input
-          type="file"
-          ref={photoInputRef}
-          style={{ display: 'none' }}
-          accept="image/*"
-          onChange={(e) => handleUploadFile(e, 'PHOTO')}
-        />
-        <input
-          type="file"
-          ref={receiptInputRef}
-          style={{ display: 'none' }}
-          onChange={(e) => handleUploadFile(e, 'RECEIPT')}
-        />
+        <input type="file" ref={photoInputRef} style={{ display: 'none' }} accept="image/*" onChange={(e) => handleUploadFile(e, 'PHOTO')} />
+        <input type="file" ref={receiptInputRef} style={{ display: 'none' }} onChange={(e) => handleUploadFile(e, 'RECEIPT')} />
       </div>
     );
   }
 
   return (
-    <div className="fade-in">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><Map size={22} /></div>
-          <div className="kpi-label">Tổng Chuyến Hàng</div>
-          <div className="kpi-value">{STATS.total}</div>
-        </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><Truck size={22} /></div>
-          <div className="kpi-label">Đang Vận Chuyển</div>
-          <div className="kpi-value">{STATS.delivering}</div>
-        </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><PackageCheck size={22} /></div>
-          <div className="kpi-label">Giao Thành Công</div>
-          <div className="kpi-value">{STATS.delivered}</div>
-        </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><AlertTriangle size={22} /></div>
-          <div className="kpi-label">Cảnh Báo Sự Cố Phát Sinh</div>
-          <div className="kpi-value">{STATS.issues}</div>
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Quản lý Vận Chuyển</h1>
+          <p className="text-sm text-slate-400 font-medium mt-1">Theo dõi trạng thái vận chuyển, lộ trình và tình trạng giao hàng theo thời gian thực.</p>
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <input
-                type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                placeholder="Tra cứu MVĐ, Đơn hàng, Tên khách..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-blue-500/10 group-hover:scale-150 transition-transform"></div>
+          <div className="relative z-10 flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tổng Chuyến Hàng</p>
+              <h3 className="text-3xl font-black text-slate-900">{STATS.total} <span className="text-xs font-bold text-slate-400">chuyến</span></h3>
+            </div>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform shadow-sm">
+              <Map size={22} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-violet-500/10 group-hover:scale-150 transition-transform"></div>
+          <div className="relative z-10 flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Đang Vận Chuyển</p>
+              <h3 className="text-3xl font-black text-violet-600">{STATS.delivering} <span className="text-xs font-bold text-violet-400">chuyến</span></h3>
+            </div>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-violet-50 text-violet-600 group-hover:scale-110 transition-transform shadow-sm">
+              <Truck size={22} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-emerald-500/10 group-hover:scale-150 transition-transform"></div>
+          <div className="relative z-10 flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Giao Thành Công</p>
+              <h3 className="text-3xl font-black text-emerald-600">{STATS.delivered} <span className="text-xs font-bold text-emerald-400">chuyến</span></h3>
+            </div>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform shadow-sm">
+              <PackageCheck size={22} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-amber-500/10 group-hover:scale-150 transition-transform"></div>
+          <div className="relative z-10 flex items-start justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cảnh Báo Sự Cố</p>
+              <h3 className="text-3xl font-black text-amber-600">{STATS.issues} <span className="text-xs font-bold text-amber-400">sự cố</span></h3>
+            </div>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-amber-50 text-amber-600 group-hover:scale-110 transition-transform shadow-sm">
+              <AlertTriangle size={22} />
             </div>
           </div>
         </div>
       </div>
 
+      {/* Toolbar */}
+      <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm">
+        <div className="relative w-full md:w-96 group">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+          <input
+            type="text"
+            className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+            placeholder="Tra cứu mã vận chuyển, đơn hàng, khách hàng..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
       {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr>
-              <th>Mã Vận Chuyển</th>
-              <th>Bill Đơn Hàng</th>
-              <th>Khách Hàng</th>
-              <th>Hàng Hóa</th>
-              <th>Tài Xế</th>
-              <th>Trạng Thái Hiện Tại</th>
-              <th>Ngày Tạo</th>
-              <th style={{ textAlign: 'right' }}>Chi tiết</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map(item => (
-              <tr key={item._id}>
-                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaVanChuyen}</td>
-                <td style={{ fontWeight: 600 }}>{item.DonHang?.MaDonHang || 'N/A'}</td>
-                <td>{item.DonHang?.KhachHang?.TenKhachHang || 'N/A'}</td>
-                <td>{item.LoHang.SoKien} kiện - {item.LoHang.KhoiLuong}kg</td>
-                <td style={{ fontWeight: 600, color: '#d97706' }}>{item.VanChuyenInfo.NhanVien?.HoTen || 'Chưa phân công'}</td>
-                <td>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700">
-                    {item.TrangThaiTongQuat}
-                  </span>
-                </td>
-                <td style={{ fontSize: 12, color: '#94a3b8' }}>
-                  {new Date(item.createdAt).toLocaleDateString()}
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  <button
-                    onClick={() => {
-                      setSelectedTracking(item);
-                      setViewMode('DETAIL');
-                    }}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                  >
-                    <Eye size={16} />
-                  </button>
-                </td>
+      <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse min-w-[900px]">
+            <thead>
+              <tr className="border-b border-slate-50">
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Mã Vận Chuyển</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Bill Đơn Hàng</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Khách Hàng</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Hàng Hóa</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Tài Xế</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Trạng Thái</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Ngày Tạo</th>
+                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Chi tiết</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-20 text-slate-400 font-medium italic">
+                    Không tìm thấy dữ liệu vận chuyển.
+                  </td>
+                </tr>
+              ) : filteredData.map(item => {
+                const isDelivered = item.TrangThaiTongQuat === 'Giao hàng thành công';
+                const isDelivering = item.TrangThaiTongQuat === 'Đang giao hàng';
+                return (
+                  <tr key={item._id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-blue-50 text-blue-600">
+                        {item.MaVanChuyen}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 font-bold text-slate-900 text-[14px]">{item.DonHang?.MaDonHang || 'N/A'}</td>
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-900 text-[14px]">{item.DonHang?.KhachHang?.TenKhachHang || 'N/A'}</div>
+                      <div className="text-[12px] text-slate-400 mt-0.5">{item.DonHang?.KhachHang?.MaKH || ''}</div>
+                    </td>
+                    <td className="px-6 py-4 text-slate-600 text-[14px] font-medium">
+                      {item.LoHang.SoKien} kiện — {item.LoHang.KhoiLuong}kg
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`font-bold text-[14px] ${item.VanChuyenInfo.NhanVien ? 'text-amber-600' : 'text-slate-400 italic'}`}>
+                        {item.VanChuyenInfo.NhanVien?.HoTen || 'Chưa phân công'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${isDelivered
+                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                        : isDelivering
+                          ? 'bg-amber-50 text-amber-600 border border-amber-100'
+                          : 'bg-blue-50 text-blue-600 border border-blue-100'
+                        }`}>
+                        {item.TrangThaiTongQuat}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-[13px] text-slate-400 font-medium">
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => { setSelectedTracking(item); setViewMode('DETAIL'); }}
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 border border-slate-100 hover:border-blue-100 transition-all cursor-pointer"
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
