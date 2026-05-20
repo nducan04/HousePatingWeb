@@ -1,7 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Percent, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import {
+  CircleDollarSign,
+  Layers,
+  TrendingDown,
+  Briefcase,
+  ShoppingCart,
+  Search,
+  Plus,
+  Edit,
+  X
+} from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 
 const API_PATH = '/san-pham-son';
@@ -75,131 +85,215 @@ export default function GiaThanhPage() {
     }
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(value);
+  };
+
   return (
-    <div>
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><DollarSign size={22} /></div>
-          <div className="kpi-label">Số Lượng Bảng Giá Cốt Lõi</div>
-          <div className="kpi-value">{STATS.total}</div>
-        </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><TrendingUp size={22} /></div>
-          <div className="kpi-label">Trung Bình Giá Vốn (Gốc)</div>
-          <div className="kpi-value">{(STATS.avgBase / 1000).toFixed(0)}k/kg</div>
-        </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><TrendingUp size={22} /></div>
-          <div className="kpi-label">Trung Bình Giá B2B Dự Kiến (+20%)</div>
-          <div className="kpi-value">{(STATS.avgB2B / 1000).toFixed(0)}k/kg</div>
-        </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><Percent size={22} /></div>
-          <div className="kpi-label">Trung Bình Giá B2C Dự Kiến (+30%)</div>
-          <div className="kpi-value">{(STATS.avgB2C / 1000).toFixed(0)}k/kg</div>
-        </div>
-      </div>
+    <div className="min-h-screen p-6 md:p-8 bg-slate-50 font-sans text-slate-900">
 
-      {/* Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <input
-                type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                placeholder="Tìm mã SP, tên sơn..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
+      {/* 1. Page Header */}
+      <header className="flex items-center gap-3 mb-8">
+        <CircleDollarSign strokeWidth={1.5} className="w-8 h-8 text-blue-600" />
+        <h1 className="text-xl font-bold text-slate-900">Quản lý Giá thành & Lợi nhuận</h1>
+      </header>
+
+      {/* 2. Stats Overview - Grid 4 cột */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex justify-between items-start">
+          <div>
+            <p className="text-slate-500 text-sm font-medium mb-1">Bảng Giá Cốt Lõi</p>
+            <p className="text-2xl font-bold text-slate-900">{STATS.total}</p>
           </div>
-          <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" title="Chuyển sang trang Quản lý Sản Phẩm để tạo mới dòng sơn và thiết lập giá" onClick={() => window.location.href = '/san-pham'}>
-            <Plus size={16} /> Thiết Lập Dòng Sơn Mới
-          </button>
+          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+            <Layers strokeWidth={1.5} className="w-5 h-5 text-slate-600" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex justify-between items-start">
+          <div>
+            <p className="text-slate-500 text-sm font-medium mb-1">TB Giá Vốn (Gốc)</p>
+            <p className="text-2xl font-bold text-slate-900">{(STATS.avgBase / 1000).toFixed(0)}k/kg</p>
+          </div>
+          <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+            <TrendingDown strokeWidth={1.5} className="w-5 h-5 text-amber-600" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex justify-between items-start">
+          <div>
+            <p className="text-slate-500 text-sm font-medium mb-1">TB Giá B2B (+20%)</p>
+            <p className="text-2xl font-bold text-slate-900">{(STATS.avgB2B / 1000).toFixed(0)}k/kg</p>
+          </div>
+          <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+            <Briefcase strokeWidth={1.5} className="w-5 h-5 text-blue-600" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex justify-between items-start">
+          <div>
+            <p className="text-slate-500 text-sm font-medium mb-1">TB Giá B2C (+30%)</p>
+            <p className="text-2xl font-bold text-slate-900">{(STATS.avgB2C / 1000).toFixed(0)}k/kg</p>
+          </div>
+          <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <ShoppingCart strokeWidth={1.5} className="w-5 h-5 text-emerald-600" />
+          </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr>
-              <th>Tham chiếu (Mã SP)</th>
-              <th>Tên Dòng Sơn</th>
-              <th>Giá Vốn Cơ Sở (VNĐ)</th>
-              <th>Giá Đại Lý B2B (+20%)</th>
-              <th>Giá Phân Phối B2C (+30%)</th>
-              <th style={{ textAlign: 'center' }}>% Lợi Nhuận B2C</th>
-              <th style={{ textAlign: 'right' }}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map(item => {
-              const giaGoc = item.DonGiaCoSo || 0;
-              const b2b = giaGoc * 1.2;
-              const b2c = giaGoc * 1.3;
-              return (
-                <tr key={item._id}>
-                  <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaSanPham}</td>
-                  <td>
-                    <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.TenDongSon}</div>
-                  </td>
-                  <td style={{ color: '#94a3b8', fontWeight: 'bold' }}>{giaGoc.toLocaleString()} ₫</td>
-                  <td style={{ fontWeight: 600, color: '#059669' }}>{b2b.toLocaleString()} ₫</td>
-                  <td style={{ fontWeight: 600, color: '#7c3aed' }}>{b2c.toLocaleString()} ₫</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700">~30%</span>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <button onClick={() => openEditModal(item)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" title="Cập nhật Giá Vốn">
-                      <Edit size={16} /> Update Giá
-                    </button>
+      {/* 3. Toolbar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="relative w-full sm:w-[320px]">
+          <Search
+            strokeWidth={1.5}
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
+          />
+          <input
+            type="text"
+            placeholder="Tìm mã SP, tên sơn..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-lg outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm"
+          />
+        </div>
+        <button
+          onClick={() => window.location.href = '/san-pham'}
+          title="Chuyển sang trang Quản lý Sản Phẩm để tạo mới dòng sơn và thiết lập giá"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors w-full sm:w-auto"
+        >
+          <Plus strokeWidth={1.5} className="w-4 h-4" />
+          Thiết lập Dòng Sơn Mới
+        </button>
+      </div>
+
+      {/* 4. Data Table */}
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm border-collapse whitespace-nowrap">
+            <thead className="bg-slate-50/80">
+              <tr>
+                <th className="px-6 py-4 text-xs uppercase text-slate-500 font-semibold tracking-wider">Tham chiếu (Mã SP)</th>
+                <th className="px-6 py-4 text-xs uppercase text-slate-500 font-semibold tracking-wider">Tên Dòng Sơn</th>
+                <th className="px-6 py-4 text-xs uppercase text-slate-500 font-semibold tracking-wider text-right">Giá Vốn Cơ Sở</th>
+                <th className="px-6 py-4 text-xs uppercase text-slate-500 font-semibold tracking-wider text-right">Giá Đại Lý B2B (+20%)</th>
+                <th className="px-6 py-4 text-xs uppercase text-slate-500 font-semibold tracking-wider text-right">Giá Phân Phối B2C (+30%)</th>
+                <th className="px-6 py-4 text-xs uppercase text-slate-500 font-semibold tracking-wider text-center">% Lợi Nhuận B2C</th>
+                <th className="px-6 py-4 text-xs uppercase text-slate-500 font-semibold tracking-wider text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredData.length > 0 ? (
+                filteredData.map(item => {
+                  const giaGoc = item.DonGiaCoSo || 0;
+                  const b2b = giaGoc * 1.2;
+                  const b2c = giaGoc * 1.3;
+                  return (
+                    <tr key={item._id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 py-4 font-bold text-blue-600">{item.MaSanPham}</td>
+                      <td className="px-6 py-4 font-semibold text-slate-900">{item.TenDongSon}</td>
+                      <td className="px-6 py-4 font-bold text-slate-400 text-right">
+                        {formatCurrency(giaGoc)}
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-emerald-600 text-right">
+                        {formatCurrency(b2b)}
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-purple-600 text-right">
+                        {formatCurrency(b2c)}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700">
+                          ~30%
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => openEditModal(item)}
+                          title="Cập nhật Giá Vốn"
+                          className="p-1.5 text-slate-400 opacity-60 hover:opacity-100 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all inline-flex items-center justify-center"
+                        >
+                          <Edit strokeWidth={1.5} className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
+                    Không tìm thấy dữ liệu phù hợp.
                   </td>
                 </tr>
-              )
-            })}
-            {filteredData.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20 }}>Không có dữ liệu</td></tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Modal Đổi Giá */}
+      {/* 5. Modal Đổi Giá */}
       {isModalOpen && selectedProduct && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: '400px', background: '#fff', borderRadius: '12px', padding: '30px', margin: '2rem auto', color: '#000', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>Hiệu Chỉnh Giá Vốn</h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>×</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 relative">
+
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-slate-900">Hiệu Chỉnh Giá Vốn</h3>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg"
+              >
+                <X strokeWidth={2} className="w-5 h-5" />
+              </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="flex flex-col gap-4">
               <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px', color: '#555' }}>Sản phẩm</label>
-                <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', background: '#e9ecef' }} value={`${selectedProduct.MaSanPham} - ${selectedProduct.TenDongSon}`} readOnly disabled />
+                <label className="block text-sm font-bold text-slate-600 mb-1.5">Sản phẩm</label>
+                <input
+                  type="text"
+                  value={`${selectedProduct.MaSanPham} - ${selectedProduct.TenDongSon}`}
+                  readOnly
+                  disabled
+                  className="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-lg text-sm font-medium outline-none cursor-not-allowed"
+                />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Giá Vốn Đề Xuất Mới (VNĐ)</label>
+                <label className="block text-sm font-bold text-slate-900 mb-1.5">Giá Vốn Đề Xuất Mới (VNĐ)</label>
                 <input
                   type="number"
                   min="0"
-                  style={{ width: '100%', padding: '12px', border: '2px solid #2563eb', borderRadius: '4px', fontSize: '16px', fontWeight: 'bold' }}
                   value={newPrice}
                   onChange={e => setNewPrice(Number(e.target.value))}
+                  className="w-full px-3 py-2.5 bg-white border-2 border-blue-500 rounded-lg text-base font-bold text-blue-700 outline-none focus:ring-4 focus:ring-blue-500/20 transition-all"
                 />
-                <small style={{ display: 'block', marginTop: 8, color: '#666' }}>Giá B2B (+20%): {(newPrice * 1.2).toLocaleString()} ₫<br />Giá B2C (+30%): {(newPrice * 1.3).toLocaleString()} ₫</small>
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs font-medium text-slate-500">
+                    Giá B2B (+20%): <span className="text-emerald-600">{formatCurrency(newPrice * 1.2)}</span>
+                  </p>
+                  <p className="text-xs font-medium text-slate-500">
+                    Giá B2C (+30%): <span className="text-purple-600">{formatCurrency(newPrice * 1.3)}</span>
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div style={{ marginTop: '24px', display: 'flex', gap: 10 }}>
-              <button onClick={() => setIsModalOpen(false)} style={{ flex: 1, background: '#eee', color: '#333', border: 'none', padding: '12px', borderRadius: '4px', fontSize: '14px', cursor: 'pointer' }}>Hủy Bỏ</button>
-              <button onClick={submitPriceUpdate} style={{ flex: 1, background: '#5010ffff', color: '#fff', border: 'none', padding: '12px', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>Áp Dụng Giá</button>
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition-colors"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                onClick={submitPriceUpdate}
+                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors"
+              >
+                Áp Dụng Giá
+              </button>
             </div>
+
           </div>
         </div>
       )}

@@ -123,7 +123,12 @@ export default function StatisticsDashboard() {
             ))}
           </select>
           <button
-            onClick={() => exportDashboardToExcel(data, selectedPeriod)}
+            onClick={() => exportDashboardToExcel(
+              data.sales,
+              data.detailed?.staffRanking || [],
+              data.detailed?.topCustomers || [],
+              selectedPeriod
+            )}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-md transition-all active:scale-95"
           >
             <Download size={18} /> Xuất Báo Cáo
