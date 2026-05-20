@@ -220,10 +220,10 @@ export default function OrderManagementPage() {
         try {
             const res = await api.get('/nhan-vien');
             if (res.data.success) {
-                // Filter for Logistics/Warehouse/Shipping departments & Technical Staff
+                // Filter for Logistics/Warehouse/Shipping departments & Delivery/Technical Staff
                 const eligibleDrivers = res.data.data.filter((nv: any) =>
                     (nv.BoPhan === 'Kho / Logistics' || nv.BoPhan === 'Kho' || nv.BoPhan === 'Logistic' || nv.BoPhan === 'Vận tải' || nv.BoPhan === 'Giao nhận') &&
-                    (nv.ChucVu === 'Nhân viên kỹ thuật' || nv.ChucVu === 'Trưởng bộ phận kho / logistic' || nv.BoPhan === 'Vận tải' || nv.BoPhan === 'Giao nhận')
+                    (nv.ChucVu === 'Nhân viên giao hàng' || nv.ChucVu === 'Tài xế' || nv.ChucVu === 'Nhân viên kỹ thuật' || nv.ChucVu === 'Trưởng bộ phận kho / logistic' || nv.BoPhan === 'Vận tải' || nv.BoPhan === 'Giao nhận')
                 );
                 setDrivers(eligibleDrivers);
             }

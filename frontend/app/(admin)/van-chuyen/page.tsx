@@ -1,18 +1,37 @@
-'use client';
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
 import {
-  Truck, Map, PackageCheck, AlertTriangle, Search, Eye, MapPin,
-  ArrowLeft, Calendar, FileText, Phone, PhoneCall, Share2, Upload,
-  CheckCircle2, Circle, Clock, Package, MoreHorizontal, User, Navigation, Building
-} from 'lucide-react';
+  Truck,
+  Map,
+  PackageCheck,
+  AlertTriangle,
+  Search,
+  Eye,
+  MapPin,
+  ArrowLeft,
+  Calendar,
+  FileText,
+  Phone,
+  PhoneCall,
+  Share2,
+  Upload,
+  CheckCircle2,
+  Circle,
+  Clock,
+  Package,
+  MoreHorizontal,
+  User,
+  Navigation,
+  Building,
+} from "lucide-react";
 
 interface TrackingLog {
   ThoiGian: string;
   NoiDung: string;
-  Status: 'COMPLETE' | 'PROCESSING' | 'PENDING';
+  Status: "COMPLETE" | "PROCESSING" | "PENDING";
   Icon?: string;
 }
 
@@ -28,7 +47,7 @@ interface VanChuyen {
       MaKH: string;
       TenKhachHang: string;
     };
-  };
+  } | null;
   LoHang: {
     SoKien: number;
     KhoiLuong: number;
@@ -51,8 +70,6 @@ interface VanChuyen {
   HinhAnhGiaoHang?: string[];
   createdAt: string;
 }
-
-
 
 export default function VanChuyenPage() {
   const { user } = useAuthStore();
@@ -80,12 +97,12 @@ export default function VanChuyenPage() {
   const fetchTrackingData = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/van-chuyen');
+      const res = await api.get("/van-chuyen");
       if (res.data.success) {
         setData(res.data.data);
       }
     } catch (error) {
-      console.error('Error fetching tracking data:', error);
+      console.error("Error fetching tracking data:", error);
     } finally {
       setLoading(false);
     }
@@ -93,24 +110,29 @@ export default function VanChuyenPage() {
   const handleShareLocation = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url);
-    alert('Đã sao chép liên kết theo dõi vào bộ nhớ tạm!');
+    alert("Đã sao chép liên kết theo dõi vào bộ nhớ tạm!");
   };
 
   const handleCallDriver = () => {
-    const sdt = selectedTracking?.VanChuyenInfo?.NhanVien?.SDT || selectedTracking?.VanChuyenInfo?.SDT;
+    const sdt =
+      selectedTracking?.VanChuyenInfo?.NhanVien?.SDT ||
+      selectedTracking?.VanChuyenInfo?.SDT;
     if (sdt) {
       window.location.href = `tel:${sdt}`;
     } else {
-      alert('Không tìm thấy số điện thoại tài xế');
+      alert("Không tìm thấy số điện thoại tài xế");
     }
   };
 
-  const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>, type: 'PHOTO' | 'RECEIPT') => {
+  const handleUploadFile = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "PHOTO" | "RECEIPT",
+  ) => {
     const file = e.target.files?.[0];
     if (!file || !selectedTracking) return;
 
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append("image", file);
 
     try {
       // 1. Upload ảnh/file lên backend
@@ -123,18 +145,21 @@ export default function VanChuyenPage() {
         let updatePayload: any = {};
         let newLog: TrackingLog = {
           ThoiGian: new Date().toISOString(),
-          NoiDung: '',
-          Status: 'COMPLETE',
-          Icon: 'Camera'
+          NoiDung: "",
+          Status: "COMPLETE",
+          Icon: "Camera",
         };
 
-        if (type === 'PHOTO') {
-          const updatedPhotos = [...(selectedTracking.HinhAnhGiaoHang || []), fileUrl];
+        if (type === "PHOTO") {
+          const updatedPhotos = [
+            ...(selectedTracking.HinhAnhGiaoHang || []),
+            fileUrl,
+          ];
           updatePayload.HinhAnhGiaoHang = updatedPhotos;
-          newLog.NoiDung = 'Đã cập nhật ảnh bằng chứng giao hàng.';
+          newLog.NoiDung = "Đã cập nhật ảnh bằng chứng giao hàng.";
         } else {
           updatePayload.BienBanFile = fileUrl;
-          newLog.NoiDung = 'Đã tải lên biên bản bàn giao có chữ ký.';
+          newLog.NoiDung = "Đã tải lên biên bản bàn giao có chữ ký.";
         }
 
         const updatedLogs = [...selectedTracking.LoTrinh, newLog];
@@ -206,24 +231,28 @@ export default function VanChuyenPage() {
   const receiptInputRef = React.useRef<HTMLInputElement>(null);
 
   const getReceiverPhone = (ghiChu: string) => {
-    if (!ghiChu) return 'N/A';
+    if (!ghiChu) return "N/A";
     const match = ghiChu.match(/SĐT nhận:\s*([\d.\s]+)/);
-    return match ? match[1].trim() : 'N/A';
+    return match ? match[1].trim() : "N/A";
   };
 
   const STATS = {
     total: data.length,
-    delivering: data.filter(d => d.TrangThaiTongQuat === 'Đang giao hàng').length,
-    delivered: data.filter(d => d.TrangThaiTongQuat === 'Giao hàng thành công').length,
+    delivering: data.filter((d) => d.TrangThaiTongQuat === "Đang giao hàng")
+      .length,
+    delivered: data.filter(
+      (d) => d.TrangThaiTongQuat === "Giao hàng thành công",
+    ).length,
     issues: 0,
   };
 
-  const filteredData = data.filter(item => {
-    const tenKH = item?.DonHang?.KhachHang?.TenKhachHang || '';
-    const maVC = item?.MaVanChuyen || '';
-    const maDH = item?.DonHang?.MaDonHang || '';
+  const filteredData = data.filter((item) => {
+    const tenKH = item?.DonHang?.KhachHang?.TenKhachHang || "";
+    const maVC = item?.MaVanChuyen || "";
+    const maDH = item?.DonHang?.MaDonHang || "";
 
-    const matchSearch = tenKH.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchSearch =
+      tenKH.toLowerCase().includes(searchTerm.toLowerCase()) ||
       maVC.toLowerCase().includes(searchTerm.toLowerCase()) ||
       maDH.toLowerCase().includes(searchTerm.toLowerCase());
     return matchSearch;
@@ -503,8 +532,8 @@ export default function VanChuyenPage() {
           <div className="relative space-y-8">
             <div className="absolute left-[88px] top-1 bottom-1 w-px bg-slate-100"></div>
             {selectedTracking.LoTrinh.map((log, idx) => {
-              const isComplete = log.Status === 'COMPLETE';
-              const isProcessing = log.Status === 'PROCESSING';
+              const isComplete = log.Status === "COMPLETE";
+              const isProcessing = log.Status === "PROCESSING";
               return (
                 <div key={idx} className="flex items-start gap-8 relative">
                   <div className={`w-[72px] text-right shrink-0 pt-0.5 ${isComplete ? 'text-slate-900' : 'text-slate-300'}`}>
@@ -730,4 +759,3 @@ export default function VanChuyenPage() {
     </div>
   );
 }
-

@@ -4,7 +4,7 @@ const NhanVien = require('../models/NhanVien');
 // @route   GET /api/nhan-vien
 exports.getAll = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search, chucVu, sort = '-createdAt' } = req.query;
+    const { page = 1, limit = 300, search, chucVu, sort = '-createdAt' } = req.query;
     const filter = {};
 
     if (search) {
