@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Search, FlaskConical, ArrowLeft, Plus, Beaker, Clipboard, Settings, X, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { paintColors } from '@/lib/data/colors-data';
+import { useAuthStore } from '@/lib/store/authStore';
 
 export default function FormulasPage() {
+  const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [formulas, setFormulas] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
@@ -14,6 +16,7 @@ export default function FormulasPage() {
   const [newFormula, setNewFormula] = useState({
     colorCode: '',
     baseType: '',
+    nhietDo: '195',
     components: [{ materialId: '', percentage: 0 }]
   });
 
@@ -30,6 +33,7 @@ export default function FormulasPage() {
             colorCode: 'RAL-9005',
             colorName: 'Jet Black',
             baseType: 'Polyester TGIC',
+            nhietDo: 200,
             components: [
               { materialId: 'MAT-001', name: 'Resin P-2400', percentage: 60 },
               { materialId: 'MAT-003', name: 'Carbon Black N330', percentage: 5 },
@@ -44,6 +48,7 @@ export default function FormulasPage() {
             colorCode: 'INT-D2525',
             colorName: 'Silver Metallic',
             baseType: 'Super Durable Polyester',
+            nhietDo: 195,
             components: [
               { materialId: 'MAT-002', name: 'Resin SD-5000', percentage: 55 },
               { materialId: 'MAT-008', name: 'Flow Agent (PV88)', percentage: 8 },
@@ -125,14 +130,21 @@ export default function FormulasPage() {
       };
     });
 
+    const displayName =
+      user?.profile?.HoTen ||
+      user?.profile?.TenKhachHang ||
+      user?.username ||
+      'Admin';
+
     const formulaToSave = {
       id: nextId,
       colorCode: newFormula.colorCode,
       colorName: colorInfo?.name || 'Unknown',
       baseType: newFormula.baseType,
+      nhietDo: parseInt(newFormula.nhietDo) || 195,
       components: resolvedComponents,
       updatedAt: new Date().toLocaleDateString('vi-VN'),
-      author: 'Admin'
+      author: displayName
     };
 
     const updatedFormulas = [...formulas, formulaToSave];
@@ -143,6 +155,7 @@ export default function FormulasPage() {
     setNewFormula({
       colorCode: '',
       baseType: '',
+      nhietDo: '195',
       components: [{ materialId: '', percentage: 0 }]
     });
     alert('✅ Đã tạo công thức mới thành công!');
@@ -218,9 +231,14 @@ export default function FormulasPage() {
                     <div className="text-xs font-medium text-slate-400">{formula.colorName}</div>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold uppercase">
-                  {formula.baseType}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[10px] font-bold border border-amber-200">
+                    🔥 {formula.nhietDo || 195}°C
+                  </span>
+                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold uppercase">
+                    {formula.baseType}
+                  </span>
+                </div>
               </div>
 
               {/* Body - Components */}
@@ -284,7 +302,7 @@ export default function FormulasPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-bold text-slate-500">Mã Màu Mục tiêu *</label>
                   <select
@@ -309,6 +327,18 @@ export default function FormulasPage() {
                     required
                     value={newFormula.baseType}
                     onChange={e => setNewFormula(p => ({ ...p, baseType: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-slate-500">Nhiệt độ sấy (°C) *</label>
+                  <input
+                    type="number"
+                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
+                    placeholder="VD: 195"
+                    required
+                    value={newFormula.nhietDo}
+                    onChange={e => setNewFormula(p => ({ ...p, nhietDo: e.target.value }))}
                   />
                 </div>
               </div>

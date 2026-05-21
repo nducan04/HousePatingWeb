@@ -17,8 +17,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  AreaChart,
-  Area,
 } from "recharts";
 import {
   BarChart3,
@@ -68,35 +66,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-// ───────────────────────────────────────────────
-// Custom Tooltip for Recharts
-// ───────────────────────────────────────────────
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload || !payload.length) return null;
-  return (
-    <div className="bg-white border border-slate-100 rounded-xl shadow-lg p-3 min-w-[140px]">
-      <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">
-        {label}
-      </p>
-      {payload.map((entry: any, i: number) => (
-        <div key={i} className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
-            <span
-              className="w-2 h-2 rounded-full inline-block"
-              style={{ background: entry.color }}
-            />
-            {entry.name}
-          </span>
-          <span className="text-xs font-black text-slate-900">
-            {typeof entry.value === "number"
-              ? entry.value.toLocaleString("vi-VN")
-              : entry.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
+
 
 // ───────────────────────────────────────────────
 // Gauge (Semi-circle) chart component
