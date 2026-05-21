@@ -17,8 +17,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  AreaChart,
-  Area,
 } from "recharts";
 import {
   BarChart3,
@@ -40,33 +38,6 @@ import api from "@/lib/utils/axiosAuth";
 import RevenuePlanChart from "./RevenuePlanChart";
 import ProductionPlanChart from "./ProductionPlanChart";
 import { exportDashboardToExcel } from "@/lib/utils/excelExport";
-
-// Tooltip cho biểu đồ
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-xl z-[100] min-w-[200px]">
-        <p className="text-slate-900 font-extrabold text-sm mb-3 border-b border-slate-100 pb-2">
-          Thống kê: {label}
-        </p>
-        <div className="space-y-2">
-          {payload.map((p: any, i: number) => (
-            <div key={i} className="flex justify-between gap-6">
-              <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.stroke || p.fill }} />
-                {p.name}
-              </span>
-              <span className="text-xs font-black text-slate-900">
-                {typeof p.value === "number" ? p.value.toLocaleString("vi-VN") : p.value}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-  return null;
-};
 
 // ───────────────────────────────────────────────
 // Custom Tooltip for Recharts

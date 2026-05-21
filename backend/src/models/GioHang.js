@@ -6,6 +6,10 @@ const gioHangItemSchema = new mongoose.Schema({
     ref: 'SanPhamSon',
     required: true
   },
+  MaMau: {
+    type: String,
+    required: [true, 'Vui lòng chọn mã màu']
+  },
   SoLuong: {
     type: Number,
     required: true,

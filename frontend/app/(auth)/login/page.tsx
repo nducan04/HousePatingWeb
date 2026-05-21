@@ -42,14 +42,7 @@ function LoginContent() {
           return;
         }
 
-        const role = response.data.user.role;
-        const systemRoles = ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C", "NhaCungCap"];
-
-        if (systemRoles.includes(role)) {
-          router.push("/dashboard");
-        } else {
-          router.push("/");
-        }
+        router.push("/");
       }
     } catch (err: any) {
       setError(err.response?.data?.error || "Đăng nhập thất bại");

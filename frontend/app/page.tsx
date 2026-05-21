@@ -72,6 +72,7 @@ export default function HomePage() {
   // Product Detail Modal state
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<any | null>(null);
   const [cartLoading, setCartLoading] = useState("");
   const [cartMessage, setCartMessage] = useState({ id: "", text: "" });
 
@@ -372,14 +373,7 @@ export default function HomePage() {
         loginState(res.data.user, res.data.accessToken);
         setIsLoginOpen(false);
 
-        const role = res.data.user.role;
-        if (role === "Admin" || role === "Director") {
-          router.push("/dashboard");
-        } else if (role === "NhanVien") {
-          router.push("/san-pham");
-        } else {
-          router.push("/");
-        }
+        router.push("/");
       }
     } catch (err: any) {
       setLoginError(err.response?.data?.error || "Đăng nhập thất bại");
@@ -471,8 +465,12 @@ export default function HomePage() {
     }
   };
 
+  const [mtoRequested, setMtoRequested] = useState(false); // Add state for Production Request/MTO
+
   const handleViewProduct = (product: any) => {
     setSelectedProduct(product);
+    setSelectedColor(null);
+    setMtoRequested(false);
     setIsViewOpen(true);
   };
 

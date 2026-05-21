@@ -24,6 +24,7 @@ import {
 import api from "@/lib/utils/axiosAuth";
 import * as XLSX from "xlsx";
 import { paintColors } from "@/lib/data/colors-data";
+import { useAuthStore } from "@/lib/store/authStore";
 
 const API_KHO = "/kho";
 
@@ -105,6 +106,7 @@ interface PhieuNhapXuat {
 }
 
 export default function QuanLyKhoPage() {
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<
     "kho" | "nvl" | "kiemke" | "nhapxuat"
   >("kho");
@@ -541,6 +543,7 @@ export default function QuanLyKhoPage() {
       if (editingNXId) {
         await api.put(`${API_KHO}/nhap-xuat/${editingNXId}`, {
           ...nxForm,
+          NhaCungCapID: nxForm.NhaCungCapID === "" ? null : nxForm.NhaCungCapID,
           TongTien: tongTien,
           ChiTiet: validItems,
         });
@@ -548,6 +551,7 @@ export default function QuanLyKhoPage() {
       } else {
         await api.post(`${API_KHO}/nhap-xuat`, {
           ...nxForm,
+          NhaCungCapID: nxForm.NhaCungCapID === "" ? null : nxForm.NhaCungCapID,
           ChiTiet: validItems,
         });
         alert(
@@ -1054,7 +1058,8 @@ export default function QuanLyKhoPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+          {/* Desktop Table View */}
+          <div className="hidden md:block bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full border-collapse min-w-[1000px]">
                 <thead>
@@ -1181,20 +1186,24 @@ export default function QuanLyKhoPage() {
                           {/* Nút DUYỆT + TỪ CHỐI — Chỉ hiện khi CHO_DUYET */}
                           {item.TrangThai === "CHO_DUYET" && (
                             <>
-                              <button
-                                onClick={() => handleDuyetPhieu(item._id)}
-                                className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors"
-                                title="Duyệt phiếu"
-                              >
-                                ✓ Duyệt
-                              </button>
-                              <button
-                                onClick={() => handleTuChoiPhieu(item._id)}
-                                className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-red-50 text-red-500 hover:bg-red-600 hover:text-white transition-colors"
-                                title="Từ chối phiếu"
-                              >
-                                ✕ Từ chối
-                              </button>
+                              {user?.role === "Admin" && (
+                                <>
+                                  <button
+                                    onClick={() => handleDuyetPhieu(item._id)}
+                                    className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors"
+                                    title="Duyệt phiếu"
+                                  >
+                                    ✓ Duyệt
+                                  </button>
+                                  <button
+                                    onClick={() => handleTuChoiPhieu(item._id)}
+                                    className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-red-50 text-red-500 hover:bg-red-600 hover:text-white transition-colors"
+                                    title="Từ chối phiếu"
+                                  >
+                                    ✕ Từ chối
+                                  </button>
+                                </>
+                              )}
                               <button
                                 onClick={() => openEditNXModal(item)}
                                 className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
@@ -1202,13 +1211,15 @@ export default function QuanLyKhoPage() {
                               >
                                 <Edit size={14} />
                               </button>
-                              <button
-                                onClick={() => handleDeleteNX(item._id)}
-                                className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-colors"
-                                title="Xóa"
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                              {user?.role === "Admin" && (
+                                <button
+                                  onClick={() => handleDeleteNX(item._id)}
+                                  className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-colors"
+                                  title="Xóa"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
                             </>
                           )}
                           {item.TrangThai !== "CHO_DUYET" && (
@@ -1222,7 +1233,7 @@ export default function QuanLyKhoPage() {
                   ))}
                   {phieuNXData.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="px-6 py-12 text-center">
+                      <td colSpan={9} className="px-6 py-12 text-center">
                         <div className="text-slate-400 font-medium">
                           Chưa có lịch sử nhập xuất kho nào.
                         </div>
@@ -1232,6 +1243,143 @@ export default function QuanLyKhoPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-4">
+            {phieuNXData.map((item) => (
+              <div
+                key={item._id}
+                className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm space-y-4"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-slate-100 text-slate-600">
+                        {item.MaPhieu}
+                      </span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-xl text-[10px] font-black uppercase tracking-tight border ${
+                          item.LoaiPhieu === "NHAP"
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                            : "bg-rose-50 text-rose-600 border-rose-100"
+                        }`}
+                      >
+                        {item.LoaiPhieu === "NHAP" ? "NHẬP" : "XUẤT"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium">
+                      {new Date(item.createdAt).toLocaleString("vi-VN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
+                    </div>
+                  </div>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${
+                      item.TrangThai === "DA_DUYET"
+                        ? "bg-green-50 text-green-600"
+                        : item.TrangThai === "TU_CHOI"
+                          ? "bg-red-50 text-red-600"
+                          : "bg-amber-50 text-amber-600"
+                    }`}
+                  >
+                    {item.TrangThai === "DA_DUYET"
+                      ? "✓ Đã duyệt"
+                      : item.TrangThai === "TU_CHOI"
+                        ? "✕ Từ chối"
+                        : "⏳ Chờ duyệt"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-y-3 text-xs border-t border-b border-slate-50 py-3">
+                  <div>
+                    <div className="text-slate-400 font-semibold text-[10px] uppercase">Loại Kho</div>
+                    <div className="font-bold text-slate-700 mt-0.5">
+                      {item.LoaiHang === "SAN_PHAM"
+                        ? "Thành Phẩm"
+                        : "Nguyên Vật Liệu"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 font-semibold text-[10px] uppercase">Người Lập</div>
+                    <div className="font-bold text-slate-700 mt-0.5">
+                      {item.TenNguoiLap || "—"}
+                    </div>
+                    {item.TenNguoiDuyet && (
+                      <div className="text-[10px] text-slate-400 mt-0.5">
+                        Duyệt: {item.TenNguoiDuyet}
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-span-2">
+                    <div className="text-slate-400 font-semibold text-[10px] uppercase">Mô Tả</div>
+                    <div className="text-slate-600 mt-0.5">
+                      {item.MoTa || "Không có mô tả"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-end pt-1">
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase">Tổng giá trị</div>
+                    <div className="text-base font-black text-slate-900 mt-0.5">
+                      {item.TongTien.toLocaleString("vi-VN")}{" "}
+                      <span className="text-[10px] text-slate-400 font-bold">đ</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5 flex-wrap justify-end">
+                    {item.TrangThai === "CHO_DUYET" && (
+                      <>
+                        {user?.role === "Admin" && (
+                          <>
+                            <button
+                              onClick={() => handleDuyetPhieu(item._id)}
+                              className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors"
+                            >
+                              ✓ Duyệt
+                            </button>
+                            <button
+                              onClick={() => handleTuChoiPhieu(item._id)}
+                              className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-red-50 text-red-500 hover:bg-red-600 hover:text-white transition-colors"
+                            >
+                              ✕ Từ chối
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => openEditNXModal(item)}
+                          className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        {user?.role === "Admin" && (
+                          <button
+                            onClick={() => handleDeleteNX(item._id)}
+                            className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {item.TrangThai !== "CHO_DUYET" && (
+                      <span className="text-[11px] text-slate-300 italic">
+                        Đã xử lý
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {phieuNXData.length === 0 && (
+              <div className="bg-white rounded-3xl border border-slate-100 p-8 text-center text-slate-400 font-medium">
+                Chưa có lịch sử nhập xuất kho nào.
+              </div>
+            )}
           </div>
         </>
       )}
