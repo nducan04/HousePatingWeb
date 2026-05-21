@@ -1,21 +1,264 @@
 "use client";
 
-import { useState, useEffect } from "react";
+// ═══════════════════════════════════════════════════════════
+//  Luồng dữ liệu IPFS:
+//  1. Người dùng chọn / kéo thả ảnh → file được lưu vào state
+//  2. Gọi POST /api/upload-ipfs với multipart/form-data
+//  3. API trả về { IpfsHash: "Qm..." }  →  lưu vào state `imageCid`
+//  4. Ghép URL công khai: https://gateway.pinata.cloud/ipfs/${imageCid}
+//  5. Render <img> preview + nút X để reset
+// ═══════════════════════════════════════════════════════════
+
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Upload, Plus, Droplets, X, User as UserIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Droplets,
+  X,
+  User as UserIcon,
+  ImagePlus,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  CloudUpload,
+} from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/authStore";
 
+// ─── IPFS Gateway công khai ──────────────────────────────
+const IPFS_GATEWAY = "https://gateway.pinata.cloud/ipfs";
+
+// ─── Sub-component: IPFS Image Dropzone ─────────────────
+function IpfsDropzone({
+  onCidChange,
+}: {
+  onCidChange: (cid: string) => void;
+}) {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageCid, setImageCid] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Gọi API upload ──────────────────────────────────────
+  const uploadToIPFS = async (file: File) => {
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setError("Chỉ hỗ trợ định dạng ảnh (PNG, JPG, WEBP...)");
+      return;
+    }
+    // Validate file size (10 MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Ảnh vượt quá giới hạn 10MB");
+      return;
+    }
+
+    setError("");
+    setIsUploading(true); // ── Bắt đầu trạng thái loading
+
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+
+      // POST multipart/form-data → Next.js API route
+      const res = await fetch("/api/upload-ipfs", {
+        method: "POST",
+        body: fd,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Upload thất bại");
+      }
+
+      // ── Lưu CID, thông báo lên parent form ──────────────
+      setImageCid(data.IpfsHash);
+      onCidChange(data.IpfsHash);
+    } catch (err: any) {
+      setError(err.message || "Có lỗi xảy ra khi upload lên IPFS");
+    } finally {
+      setIsUploading(false); // ── Kết thúc loading
+    }
+  };
+
+  // ── Xử lý chọn file từ input ────────────────────────────
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadToIPFS(file);
+    // Reset input để cho phép chọn lại cùng file
+    e.target.value = "";
+  };
+
+  // ── Xử lý kéo thả ──────────────────────────────────────
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) uploadToIPFS(file);
+  };
+
+  // ── Xóa ảnh, reset toàn bộ state ───────────────────────
+  const handleRemove = () => {
+    setImageCid("");
+    setError("");
+    onCidChange("");
+  };
+
+  // ── URL công khai từ CID ─────────────────────────────────
+  const publicUrl = imageCid ? `${IPFS_GATEWAY}/${imageCid}` : "";
+
+  // ═══════════ RENDER ════════════════════════════════════
+  return (
+    <div className="space-y-3">
+      {/* ── State 3: Đã upload thành công → Hiển thị preview ── */}
+      {imageCid ? (
+        <div className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+          {/* Ảnh preview dạng object-cover */}
+          <img
+            src={publicUrl}
+            alt="IPFS preview"
+            className="w-full h-56 object-cover rounded-xl"
+          />
+
+          {/* Overlay thông tin CID */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-4 py-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <p className="text-[10px] text-white/70 font-mono leading-tight truncate">
+              CID: {imageCid}
+            </p>
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-blue-300 hover:text-blue-200 font-semibold underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Xem trên IPFS Gateway ↗
+            </a>
+          </div>
+
+          {/* Nút X xóa ảnh — góc trên bên phải */}
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center transition-all shadow-md backdrop-blur-sm z-10"
+            title="Xóa ảnh"
+          >
+            <X size={13} strokeWidth={2.5} />
+          </button>
+
+          {/* Badge trạng thái */}
+          <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md">
+            <CheckCircle2 size={10} />
+            Đã lưu IPFS
+          </div>
+        </div>
+      ) : (
+        // ── State 1 & 2: Chưa có ảnh hoặc đang upload ──────
+        <div
+          className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
+            isDragOver
+              ? "border-purple-400 bg-purple-50/60 scale-[1.01]"
+              : isUploading
+              ? "border-blue-300 bg-blue-50/50 cursor-wait"
+              : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100"
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!isUploading) setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={!isUploading ? handleDrop : undefined}
+          onClick={() => !isUploading && fileInputRef.current?.click()}
+        >
+          {isUploading ? (
+            // ── State 2: Đang upload ─────────────────────────
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <Loader2
+                  size={24}
+                  className="text-blue-600 animate-spin"
+                />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-700">
+                  Đang tải lên IPFS...
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Vui lòng chờ, quá trình này có thể mất vài giây
+                </p>
+              </div>
+              {/* Animated progress bar */}
+              <div className="w-48 h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 rounded-full animate-pulse w-3/4" />
+              </div>
+            </div>
+          ) : (
+            // ── State 1: Chờ chọn file ───────────────────────
+            <div className="flex flex-col items-center gap-3">
+              <div
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                  isDragOver
+                    ? "bg-purple-100 text-purple-600 scale-110"
+                    : "bg-slate-100 text-slate-400"
+                }`}
+              >
+                {isDragOver ? (
+                  <CloudUpload size={24} />
+                ) : (
+                  <ImagePlus size={24} />
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-600">
+                  {isDragOver
+                    ? "Thả ảnh vào đây!"
+                    : "Kéo thả ảnh hoặc click để chọn"}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  PNG, JPG, WEBP — Tối đa 10MB · Lưu trên IPFS phi tập trung
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Input file ẩn */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+        </div>
+      )}
+
+      {/* ── Thông báo lỗi ─────────────────────────────────── */}
+      {error && (
+        <div className="flex items-center gap-2 text-rose-600 bg-rose-50 border border-rose-100 rounded-xl px-4 py-3">
+          <AlertCircle size={15} className="shrink-0" />
+          <p className="text-xs font-semibold">{error}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Main Page: Form Tạo Yêu cầu R&D
+// ═══════════════════════════════════════════════════════════
 export default function NewRDRequestPage() {
   const { user } = useAuthStore();
-  const isCustomer = user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C";
+  const isCustomer =
+    user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C";
   const backPath = isCustomer ? "/" : "/rd-tracking";
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryColorCode = searchParams ? searchParams.get("colorCode") || "" : "";
   const queryColorName = searchParams ? searchParams.get("colorName") || "" : "";
-  
+
   const displayName =
     user?.profile?.HoTen ||
     user?.profile?.TenKhachHang ||
@@ -32,18 +275,19 @@ export default function NewRDRequestPage() {
     deadline: "",
   });
 
+  // CID trả về từ IPFS sau khi upload thành công
+  const [imageCid, setImageCid] = useState<string>("");
+
   useEffect(() => {
     if (isCustomer && displayName) {
-      setFormData(prev => ({ ...prev, customer: displayName }));
+      setFormData((prev) => ({ ...prev, customer: displayName }));
     }
   }, [isCustomer, displayName]);
-  const [dragOver, setDragOver] = useState(false);
-  const [files, setFiles] = useState<string[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Save to localStorage
+    // Lưu vào localStorage kèm CID ảnh
     if (typeof window !== "undefined") {
       const storedRequests = localStorage.getItem("sampleRequests");
       let requests = [];
@@ -71,7 +315,9 @@ export default function NewRDRequestPage() {
       }
 
       const now = new Date();
-      const dateStr = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+      const dateStr = `${String(now.getDate()).padStart(2, "0")}/${String(
+        now.getMonth() + 1
+      ).padStart(2, "0")}/${now.getFullYear()}`;
 
       const nextId = `REQ-${String(requests.length + 1).padStart(3, "0")}`;
       const newRequest = {
@@ -82,6 +328,9 @@ export default function NewRDRequestPage() {
         status: "pending",
         date: dateStr,
         deadline: formData.deadline,
+        // ── Lưu CID ảnh IPFS vào request ─────────────────
+        imageCid: imageCid || null,
+        imageUrl: imageCid ? `${IPFS_GATEWAY}/${imageCid}` : null,
       };
 
       requests.push(newRequest);
@@ -90,13 +339,6 @@ export default function NewRDRequestPage() {
 
     alert("✅ Yêu cầu R&D đã được tạo thành công! (Version 1.0)");
     router.push(backPath);
-  };
-
-  const handleFileDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const names = Array.from(e.dataTransfer.files).map((f) => f.name);
-    setFiles((prev) => [...prev, ...names]);
   };
 
   return (
@@ -130,6 +372,7 @@ export default function NewRDRequestPage() {
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Khách hàng */}
             <div className="space-y-2">
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                 Khách hàng *
@@ -158,6 +401,7 @@ export default function NewRDRequestPage() {
               )}
             </div>
 
+            {/* Mã màu */}
             <div className="space-y-2">
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                 Mã Màu Mục tiêu *
@@ -174,6 +418,7 @@ export default function NewRDRequestPage() {
               />
             </div>
 
+            {/* Tên màu */}
             <div className="space-y-2">
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                 Tên Màu
@@ -189,6 +434,7 @@ export default function NewRDRequestPage() {
               />
             </div>
 
+            {/* Loại bề mặt */}
             <div className="space-y-2">
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                 Loại Bề mặt *
@@ -211,6 +457,7 @@ export default function NewRDRequestPage() {
               </select>
             </div>
 
+            {/* Substrate */}
             <div className="space-y-2">
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                 Lớp nền (Substrate)
@@ -226,6 +473,7 @@ export default function NewRDRequestPage() {
               />
             </div>
 
+            {/* Deadline */}
             <div className="space-y-2">
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                 Hạn pha chế *
@@ -242,6 +490,7 @@ export default function NewRDRequestPage() {
             </div>
           </div>
 
+          {/* Yêu cầu chi tiết */}
           <div className="space-y-2">
             <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
               Yêu cầu Chi tiết
@@ -257,87 +506,33 @@ export default function NewRDRequestPage() {
             />
           </div>
 
-          {/* File Upload */}
-          <div style={{ marginTop: "1.75rem" }}>
-            <label
-              className="form-label"
-              style={{ marginBottom: "0.625rem", display: "block" }}
-            >
-              Ảnh/Tài liệu Đính kèm
+          {/* ══════════════════════════════════════════════════
+               IPFS IMAGE UPLOAD — Tích hợp Dropzone + Preview
+               Luồng: Chọn ảnh → POST /api/upload-ipfs → nhận CID
+                       → ghép URL Gateway → hiển thị <img> preview
+          ═══════════════════════════════════════════════════ */}
+          <div className="space-y-2">
+            <label className="text-[13px] font-bold text-slate-400 uppercase ml-1 flex items-center gap-2">
+              Ảnh Màu Tham chiếu
+              <span className="text-[10px] font-black text-purple-500 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                IPFS · Phi tập trung
+              </span>
             </label>
-            <div
-              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragOver
-                  ? "border-purple-500 bg-purple-50/50"
-                  : "border-slate-200 bg-slate-50 hover:bg-slate-100"
-                }`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOver(true);
-              }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleFileDrop}
-              onClick={() => document.getElementById("file-input")?.click()}
-            >
-              <Upload
-                size={32}
-                className="upload-icon"
-                style={{ margin: "0 auto 0.625rem" }}
-              />
-              <p className="upload-text">
-                Kéo thả file vào đây hoặc <strong>click để chọn</strong>
+
+            {/* Dropzone component — nhận callback khi có CID mới */}
+            <IpfsDropzone onCidChange={setImageCid} />
+
+            {/* Hiển thị CID text nếu đã upload */}
+            {imageCid && (
+              <p className="text-[11px] text-slate-400 font-mono px-1">
+                <span className="text-slate-500 font-bold">CID:</span>{" "}
+                {imageCid}
               </p>
-              <p
-                style={{ fontSize: "0.875rem", color: "#94a3b8", marginTop: 4 }}
-              >
-                PNG, JPG, PDF — Tối đa 10MB
-              </p>
-              <input
-                id="file-input"
-                type="file"
-                multiple
-                accept="image/*,.pdf"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const names = Array.from(e.target.files || []).map(
-                    (f) => f.name,
-                  );
-                  setFiles((prev) => [...prev, ...names]);
-                }}
-              />
-            </div>
-            {files.length > 0 && (
-              <div
-                style={{
-                  marginTop: "0.625rem",
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 8,
-                }}
-              >
-                {files.map((f, i) => (
-                  <span
-                    key={i}
-                    className="badge signed"
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      setFiles((fls) => fls.filter((_, j) => j !== i))
-                    }
-                  >
-                    📎 {f} ✕
-                  </span>
-                ))}
-              </div>
             )}
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: "1.125rem",
-              justifyContent: "flex-end",
-              marginTop: "2.25rem",
-            }}
-          >
+          {/* Actions */}
+          <div className="flex gap-4 justify-end pt-2">
             <Link
               href={backPath}
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -346,7 +541,7 @@ export default function NewRDRequestPage() {
             </Link>
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-6 py-3 text-base"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-base transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-600/20"
             >
               <Plus size={18} /> Tạo Yêu cầu (v1.0)
             </button>

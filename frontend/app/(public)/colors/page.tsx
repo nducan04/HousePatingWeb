@@ -49,12 +49,134 @@ import api from "@/lib/utils/axiosAuth";
 
 export default function ColorsPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, loginState } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedColor, setSelectedColor] = useState<
     (typeof paintColors)[0] | null
   >(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
+
+  // Inline Login & Forgot Password States
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [redirectPath, setRedirectPath] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const [isForgotMode, setIsForgotMode] = useState(false);
+  const [forgotUsername, setForgotUsername] = useState("");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotNewPassword, setForgotNewPassword] = useState("");
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
+
+  // Register States
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [registerError, setRegisterError] = useState("");
+  const [registerSuccess, setRegisterSuccess] = useState(false);
+  const [registerUsername, setRegisterUsername] = useState("");
+  const [registerFullName, setRegisterFullName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [registerRole, setRegisterRole] = useState("KhachHangB2C");
+  const [registerLoading, setRegisterLoading] = useState(false);
+
+  const handlePageLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginEmail || !loginPassword) {
+      setLoginError("Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+    try {
+      setIsLoggingIn(true);
+      setLoginError(null);
+      const res = await api.post("/auth/login", {
+        TenDangNhap: loginEmail,
+        MatKhau: loginPassword,
+      });
+      if (res.data.success) {
+        loginState(res.data.user, res.data.accessToken);
+        setIsLoginOpen(false);
+        // Clear inputs
+        setLoginEmail("");
+        setLoginPassword("");
+        if (redirectPath) {
+          router.push(redirectPath);
+        }
+      }
+    } catch (err: any) {
+      setLoginError(err.response?.data?.error || "Đăng nhập thất bại");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setForgotError("Mật khẩu xác nhận không khớp!");
+      return;
+    }
+    try {
+      setIsResetting(true);
+      setForgotError(null);
+      const res = await api.post("/auth/reset-password", {
+        TenDangNhap: forgotUsername,
+        Email: forgotEmail,
+        MatKhauMoi: forgotNewPassword,
+      });
+      if (res.data.success) {
+        setForgotSuccess(true);
+        setTimeout(() => {
+          setIsForgotMode(false);
+          setForgotSuccess(false);
+          // Clear forgot fields
+          setForgotUsername("");
+          setForgotEmail("");
+          setForgotNewPassword("");
+          setForgotConfirmPassword("");
+        }, 1500);
+      }
+    } catch (err: any) {
+      setForgotError(err.response?.data?.error || err.response?.data?.message || "Lỗi đặt lại mật khẩu");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handlePageRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setRegisterLoading(true);
+      setRegisterError("");
+      const res = await api.post("/auth/register", {
+        TenDangNhap: registerUsername,
+        MatKhau: registerPassword,
+        HoTen: registerFullName,
+        Email: registerEmail,
+        VaiTro: registerRole,
+      });
+      if (res.data.success) {
+        setRegisterSuccess(true);
+        setTimeout(() => {
+          setIsRegisterMode(false);
+          setRegisterSuccess(false);
+          // Clear registration fields
+          setRegisterUsername("");
+          setRegisterPassword("");
+          setRegisterFullName("");
+          setRegisterEmail("");
+        }, 1500);
+      }
+    } catch (err: any) {
+      setRegisterError(err.response?.data?.error || err.response?.data?.message || "Lỗi đăng ký");
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
 
   const sortedColorsList = useMemo(() => {
     return [...paintColors].sort((a, b) => {

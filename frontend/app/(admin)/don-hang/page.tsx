@@ -345,6 +345,20 @@ export default function OrderManagementPage() {
         if (kh) {
             setDiaChiGiaoHang(kh.DiaChi || '');
             setSdtNguoiNhan(kh.SDT || '');
+
+            // Recalculate existing items' unit price based on the selected customer's classification
+            let factor = 1.0;
+            if (kh.PhanLoai === 'B2B') factor = 1.2;
+            else if (kh.PhanLoai === 'B2C') factor = 1.3;
+
+            setOrderItems(prevItems => prevItems.map(item => {
+                const sp = allProducts.find(p => p._id === item.sanPhamId);
+                const basePrice = sp ? sp.DonGiaCoSo : item.donGia;
+                return {
+                    ...item,
+                    donGia: basePrice * factor
+                };
+            }));
         }
     };
 
@@ -367,11 +381,16 @@ export default function OrderManagementPage() {
             return;
         }
 
+        const kh = customers.find(c => c._id === selectedCustomerId);
+        let factor = 1.0;
+        if (kh?.PhanLoai === 'B2B') factor = 1.2;
+        else if (kh?.PhanLoai === 'B2C') factor = 1.3;
+
         setOrderItems([...orderItems, {
             sanPhamId: sp._id,
             tenSanPham: sp.TenDongSon,
             soLuong: 1,
-            donGia: sp.DonGiaCoSo,
+            donGia: sp.DonGiaCoSo * factor,
             tonKho: sp.TonKho,
             maMau: chosenMaMau,
             tenMau: chosenTenMau,
@@ -834,11 +853,24 @@ export default function OrderManagementPage() {
                                             style={{ flex: 2, minWidth: 200, background: 'black' }}
                                         >
                                             <option value="">-- Chọn sản phẩm --</option>
-                                            {allProducts.filter(p => p.TonKho > 0).map(p => (
-                                                <option key={p._id} value={p._id}>
-                                                    {p.TenDongSon} — {p.DonGiaCoSo.toLocaleString()}₫ (Kho: {p.TonKho})
-                                                </option>
-                                            ))}
+                                            {allProducts.filter(p => p.TonKho > 0).map(p => {
+                                                const kh = customers.find(c => c._id === selectedCustomerId);
+                                                let factor = 1.0;
+                                                let labelSuffix = "";
+                                                if (kh?.PhanLoai === 'B2B') {
+                                                    factor = 1.2;
+                                                    labelSuffix = " (B2B +20%)";
+                                                } else if (kh?.PhanLoai === 'B2C') {
+                                                    factor = 1.3;
+                                                    labelSuffix = " (B2C +30%)";
+                                                }
+                                                const displayPrice = p.DonGiaCoSo * factor;
+                                                return (
+                                                    <option key={p._id} value={p._id}>
+                                                        {p.TenDongSon} — {displayPrice.toLocaleString()}₫{labelSuffix} (Kho: {p.TonKho})
+                                                    </option>
+                                                );
+                                            })}
                                         </select>
                                         <button onClick={handleAddProduct} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg text-xs" disabled={!selectedProductId || !selectedColorCode} style={{ display: 'flex', alignItems: 'center', gap: 4, height: 38 }}>
                                             <Plus size={16} /> Thêm

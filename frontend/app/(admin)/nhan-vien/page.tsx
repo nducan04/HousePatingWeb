@@ -34,10 +34,14 @@ export default function NhanVienPage() {
   const [filter, setFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
 
-  const getAvatarUrl = (path: string) => {
-    if (!path || path === 'undefined' || path === 'null') return '';
-    if (path.startsWith('http')) return path;
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const getAvatarUrl = (path: any) => {
+    let resolvedPath = path;
+    if (Array.isArray(path)) {
+      resolvedPath = path[0];
+    }
+    if (!resolvedPath || typeof resolvedPath !== 'string' || resolvedPath === 'undefined' || resolvedPath === 'null') return '';
+    if (resolvedPath.startsWith('http')) return resolvedPath;
+    const cleanPath = resolvedPath.startsWith('/') ? resolvedPath : `/${resolvedPath}`;
     const origin = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:5000` : 'http://localhost:5000';
     return `${origin}${cleanPath}`;
   };

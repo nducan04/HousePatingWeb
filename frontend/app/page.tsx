@@ -489,11 +489,15 @@ export default function HomePage() {
     setIsViewOpen(true);
   };
 
-  const getImageUrl = (path: string) => {
-    if (!path || path === "undefined")
+  const getImageUrl = (path: any) => {
+    let resolvedPath = path;
+    if (Array.isArray(path)) {
+      resolvedPath = path[0];
+    }
+    if (!resolvedPath || typeof resolvedPath !== "string" || resolvedPath === "undefined" || resolvedPath === "null")
       return "https://ui-avatars.com/api/?name=VTSC+Product&background=random";
-    if (path.startsWith("http")) return path;
-    return `${BACKEND_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+    if (resolvedPath.startsWith("http")) return resolvedPath;
+    return `${BACKEND_URL}${resolvedPath.startsWith("/") ? "" : "/"}${resolvedPath}`;
   };
 
   return (

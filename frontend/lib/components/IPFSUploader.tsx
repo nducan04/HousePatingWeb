@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, DragEvent, ChangeEvent } from "react";
-import { UploadCloud, CheckCircle, Loader2 } from "lucide-react";
+import { UploadCloud, CheckCircle, Loader2, AreaChart } from "lucide-react";
 
 interface IPFSUploaderProps {
   onUploadSuccess?: (cid: string) => void;
@@ -94,11 +94,10 @@ export default function IPFSUploader({ onUploadSuccess }: IPFSUploaderProps) {
         onDragLeave={handleDrag}
         onDrop={handleDrop}
         onClick={onButtonClick}
-        className={`relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300 ${
-          dragActive
+        className={`relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300 ${dragActive
             ? "border-blue-500 bg-blue-50/50 shadow-sm"
             : "border-slate-200 bg-slate-50 hover:bg-slate-100/70 hover:border-slate-300"
-        }`}
+          }`}
       >
         <input
           ref={fileInputRef}

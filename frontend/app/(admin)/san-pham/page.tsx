@@ -17,7 +17,11 @@ import {
   Eye,
   Star,
   Image as ImageIcon,
+  X,
+  Upload,
+  QrCode,
 } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
 import * as XLSX from "xlsx";
@@ -55,8 +59,14 @@ interface SanPham {
   TongTonKho?: number;
   SoLuongDaBan?: number;
   DanhGia?: DanhGia[];
-  HinhAnh?: string;
+  HinhAnh?: string[];
   MoTaSanPham?: string;
+  TruyXuatNguonGoc?: {
+    HoaDonMuaSon?: string;
+    QuyTrinhSanXuat?: string;
+    NgaySanXuat?: string;
+    HanSuDung?: string;
+  };
 }
 
 // Mock Data để render giao diện đẹp mắt
@@ -71,7 +81,7 @@ const MOCK_DATA: SanPham[] = [
     MoTa: "Sơn bột tĩnh điện Epoxy có độ bóng cao, chịu va đập tốt, chuyên dùng cho nội thất gia đình và văn phòng.",
     DonViTinh: "Kg",
     TongTonKho: 1250,
-    HinhAnh: "https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?auto=format&fit=crop&q=80&w=100&h=100",
+    HinhAnh: ["https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?auto=format&fit=crop&q=80&w=400&h=400", "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400&h=400"],
     DanhSachMaMau: [{ MaMau: "WHT01", TenMau: "Trắng", HexCode: "#FFFFFF", TonKhoKhaDung: 500, TonKhoTamGiu: 0, NguongCanhBao: 100, TrangThai: true }]
   },
   {
@@ -84,7 +94,7 @@ const MOCK_DATA: SanPham[] = [
     MoTa: "Sơn phủ Polyurethane chống hà, chống ăn mòn nước biển, độ bền màu cao dùng cho mạn tàu.",
     DonViTinh: "Lít",
     TongTonKho: 0, // Test case hết hàng
-    HinhAnh: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=100&h=100",
+    HinhAnh: ["https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400&h=400"],
     DanhSachMaMau: []
   },
   {
@@ -97,7 +107,7 @@ const MOCK_DATA: SanPham[] = [
     MoTa: "Hệ sơn Alkyd khô nhanh, phù hợp sơn kết cấu thép mạ kẽm trong nhà xưởng.",
     DonViTinh: "Thùng",
     TongTonKho: 45,
-    HinhAnh: "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&q=80&w=100&h=100",
+    HinhAnh: ["https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&q=80&w=400&h=400"],
     DanhSachMaMau: []
   },
   {
@@ -110,16 +120,43 @@ const MOCK_DATA: SanPham[] = [
     MoTa: "Kháng UV cực tốt, chống phai màu, chịu thời tiết khắc nghiệt. Phù hợp cho khung nhôm cửa kính.",
     DonViTinh: "Kg",
     TongTonKho: 320,
-    HinhAnh: "https://images.unsplash.com/photo-1502325966718-85a90488dc29?auto=format&fit=crop&q=80&w=100&h=100",
+    HinhAnh: ["https://images.unsplash.com/photo-1502325966718-85a90488dc29?auto=format&fit=crop&q=80&w=400&h=400"],
     DanhSachMaMau: []
   }
 ];
+
+// Helper: Tự động format đoạn text dài có chứa gạch đầu dòng, dấu sao hoặc chữ in hoa thành HTML dễ nhìn
+const formatTextToHTML = (text: string) => {
+  if (!text) return "";
+  let formatted = text
+    // Thêm xuống dòng trước các dấu gạch ngang, dấu sao, dấu cộng (nếu trước đó có dấu chấm hoặc khoảng trắng)
+    .replace(/(?:\.\s+|\s|^)([-–+*])\s/g, '\n$1 ')
+    .replace(/(?:\.\s+|\s|^)(\(\*\))\s/g, '\n$1 ')
+    // Thêm xuống dòng trước cụm từ IN HOA dài (vd: CÁCH THỨC THI CÔNG) nếu phía trước là dấu chấm
+    .replace(/\.\s+([A-ZÀ-Ỹ][A-ZÀ-Ỹ\s]{5,})/g, '\n$1');
+
+  return formatted.split('\n').map((line, index) => {
+    if (!line.trim()) return <br key={index} />;
+    const isHeading = line.trim() === line.trim().toUpperCase() && line.trim().length > 8 && !line.includes('–') && !line.includes('-');
+    const isListItem = line.trim().startsWith('-') || line.trim().startsWith('–') || line.trim().startsWith('(*)') || line.trim().startsWith('+');
+
+    return (
+      <span
+        key={index}
+        className={`block ${isHeading ? 'font-bold text-slate-800 mt-3 mb-1 text-[13px]' : 'mb-1'} ${isListItem ? 'pl-3 relative before:content-[""] before:absolute before:left-0 before:top-2 before:w-1 before:h-1 before:bg-slate-400 before:rounded-full' : ''}`}
+      >
+        {line}
+      </span>
+    );
+  });
+};
 
 export default function SanPhamPage() {
   const { user } = useAuthStore();
   const isAdminOrEmployee = user?.role === "Admin" || user?.role === "NhanVien";
 
   const [sanPhams, setSanPhams] = useState<SanPham[]>(MOCK_DATA);
+  const [allSanPhams, setAllSanPhams] = useState<SanPham[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -141,12 +178,30 @@ export default function SanPhamPage() {
     DonGiaCoSo: 0,
     MoTa: "",
     DonViTinh: "Kg",
-    HinhAnh: "",
+    HinhAnh: [] as string[],
     MoTaSanPham: "",
     DanhSachMaMau: [] as MaMau[],
+    TruyXuatNguonGoc: {
+      HoaDonMuaSon: "",
+      QuyTrinhSanXuat: "",
+      NgaySanXuat: "",
+      HanSuDung: "",
+    },
   });
 
   const [isUploading, setIsUploading] = useState(false);
+  const [currentImgIndex, setCurrentImgIndex] = useState(0);
+
+  const fetchStatsData = async () => {
+    try {
+      const res = await api.get("/san-pham-son?limit=100000000");
+      if (res.data.success) {
+        setAllSanPhams(res.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching all products for stats:", error);
+    }
+  };
 
   const fetchSanPhams = async () => {
     try {
@@ -169,6 +224,10 @@ export default function SanPhamPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchStatsData();
+  }, []);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -209,6 +268,7 @@ export default function SanPhamPage() {
       }
       setIsModalOpen(false);
       fetchSanPhams();
+      fetchStatsData();
     } catch (error: any) {
       console.error(error);
       alert(error.response?.data?.error || "Có lỗi xảy ra khi lưu!");
@@ -220,6 +280,7 @@ export default function SanPhamPage() {
     try {
       await api.delete(`/san-pham-son/${id}`);
       fetchSanPhams();
+      fetchStatsData();
     } catch (error) {
       alert("Không thể xóa sản phẩm!");
     }
@@ -266,9 +327,15 @@ export default function SanPhamPage() {
         DonGiaCoSo: item.DonGiaCoSo,
         MoTa: item.MoTa || "",
         DonViTinh: item.DonViTinh || "Kg",
-        HinhAnh: item.HinhAnh || "",
+        HinhAnh: Array.isArray(item.HinhAnh) ? item.HinhAnh : (item.HinhAnh ? [item.HinhAnh] : []),
         MoTaSanPham: item.MoTaSanPham || "",
         DanhSachMaMau: item.DanhSachMaMau || [],
+        TruyXuatNguonGoc: {
+          HoaDonMuaSon: item.TruyXuatNguonGoc?.HoaDonMuaSon || "",
+          QuyTrinhSanXuat: item.TruyXuatNguonGoc?.QuyTrinhSanXuat || "",
+          NgaySanXuat: item.TruyXuatNguonGoc?.NgaySanXuat ? new Date(item.TruyXuatNguonGoc.NgaySanXuat).toISOString().split('T')[0] : "",
+          HanSuDung: item.TruyXuatNguonGoc?.HanSuDung || "",
+        },
       });
     } else {
       setFormData({
@@ -280,40 +347,69 @@ export default function SanPhamPage() {
         DonGiaCoSo: 0,
         MoTa: "",
         DonViTinh: "Kg",
-        HinhAnh: "",
+        HinhAnh: [],
         MoTaSanPham: "",
         DanhSachMaMau: [],
+        TruyXuatNguonGoc: {
+          HoaDonMuaSon: "",
+          QuyTrinhSanXuat: "",
+          NgaySanXuat: "",
+          HanSuDung: "",
+        },
       });
     }
     setIsModalOpen(true);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const fileFormData = new FormData();
-    fileFormData.append("image", file);
-
+    setIsUploading(true);
     try {
-      setIsUploading(true);
-      const res = await api.post("/files/upload-image", fileFormData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      if (res.data.success) {
-        setFormData({ ...formData, HinhAnh: res.data.url });
+      // Upload từng file một, append vào mảng HinhAnh
+      for (let i = 0; i < files.length; i++) {
+        const fileFormData = new FormData();
+        fileFormData.append("image", files[i]);
+        const res = await api.post("/files/upload-image", fileFormData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        if (res.data.success) {
+          setFormData((prev) => ({
+            ...prev,
+            HinhAnh: [...prev.HinhAnh, res.data.url],
+          }));
+        }
       }
     } catch (error) {
       console.error("Lỗi upload ảnh:", error);
       alert("Không thể upload ảnh, vui lòng thử lại.");
     } finally {
       setIsUploading(false);
+      // Reset input để cho phép chọn lại cùng file
+      e.target.value = "";
     }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      HinhAnh: prev.HinhAnh.filter((_: string, i: number) => i !== index),
+    }));
   };
 
   const handleViewProduct = (product: SanPham) => {
     setSelectedProduct(product);
+    setCurrentImgIndex(0);
     setIsViewOpen(true);
+  };
+
+  // Helper: normalize HinhAnh (có thể là string cũ hoặc array mới)
+  const getImageArray = (img: any): string[] => {
+    if (!img) return [];
+    if (Array.isArray(img)) return img.filter(Boolean);
+    if (typeof img === "string" && img) return [img];
+    return [];
   };
 
   const exportToExcel = () => {
@@ -338,16 +434,20 @@ export default function SanPhamPage() {
   };
 
   const STATS = {
-    total: sanPhams.length,
-    tinhDien: sanPhams.filter((t) => t.PhanLoai === "Sơn tĩnh điện").length,
-    tauBien: sanPhams.filter((t) => t.PhanLoai === "Sơn tàu biển").length,
-    congNghiep: sanPhams.filter((t) => t.PhanLoai === "Sơn công nghiệp").length,
+    total: allSanPhams.length || sanPhams.length,
+    tinhDien: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn tĩnh điện").length,
+    tauBien: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn tàu biển").length,
+    congNghiep: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn công nghiệp").length,
   };
 
-  const getAvatarUrl = (path: string) => {
-    if (!path || path === "undefined" || path === "null") return "";
-    if (path.startsWith("http")) return path;
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const getAvatarUrl = (path: any) => {
+    let resolvedPath = path;
+    if (Array.isArray(path)) {
+      resolvedPath = path[0];
+    }
+    if (!resolvedPath || typeof resolvedPath !== "string" || resolvedPath === "undefined" || resolvedPath === "null") return "";
+    if (resolvedPath.startsWith("http")) return resolvedPath;
+    const cleanPath = resolvedPath.startsWith("/") ? resolvedPath : `/${resolvedPath}`;
     const origin =
       typeof window !== "undefined"
         ? `${window.location.protocol}//${window.location.hostname}:5000`
@@ -403,8 +503,8 @@ export default function SanPhamPage() {
               key={f.id}
               onClick={() => setFilterType(f.id)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${filterType === f.id
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
                 }`}
             >
               {f.label}
@@ -462,18 +562,29 @@ export default function SanPhamPage() {
               ) : (
                 sanPhams.map((item) => (
                   <tr key={item._id} className="hover:bg-slate-50/50 transition-colors">
-                    {/* Ảnh */}
+                    {/* Ảnh (hiển thị ảnh đầu tiên) — Click để xem */}
                     <td className="px-6 py-3 text-center">
-                      <div className="w-10 h-10 rounded-lg border border-slate-100 overflow-hidden bg-slate-50 flex items-center justify-center mx-auto">
-                        {item.HinhAnh ? (
-                          <img
-                            src={getAvatarUrl(item.HinhAnh)}
-                            alt={item.TenDongSon}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.TenDongSon)}&background=f8fafc&color=94a3b8`;
-                            }}
-                          />
+                      <div
+                        className="w-10 h-10 rounded-lg border border-slate-100 overflow-hidden bg-slate-50 flex items-center justify-center mx-auto relative cursor-pointer hover:ring-2 hover:ring-blue-400 hover:scale-110 transition-all"
+                        onClick={() => handleViewProduct(item)}
+                        title="Nhấn để xem ảnh sản phẩm"
+                      >
+                        {getImageArray(item.HinhAnh).length > 0 ? (
+                          <>
+                            <img
+                              src={getAvatarUrl(getImageArray(item.HinhAnh)[0])}
+                              alt={item.TenDongSon}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.TenDongSon)}&background=f8fafc&color=94a3b8`;
+                              }}
+                            />
+                            {getImageArray(item.HinhAnh).length > 1 && (
+                              <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-600 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                                {getImageArray(item.HinhAnh).length}
+                              </span>
+                            )}
+                          </>
                         ) : (
                           <ImageIcon strokeWidth={1.5} size={20} className="text-slate-400" />
                         )}
@@ -611,30 +722,60 @@ export default function SanPhamPage() {
 
             <div className="p-6 overflow-y-auto space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Image Upload Area */}
+                {/* Image Upload Area — Hỗ trợ nhiều ảnh */}
                 <div className="col-span-1 md:col-span-2 relative">
-                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-2">Ảnh sản phẩm</label>
-                  <div className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 hover:bg-slate-100 hover:border-slate-400 transition-colors cursor-pointer relative overflow-hidden group">
-                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={handleImageUpload} />
-                    {formData.HinhAnh ? (
-                      <div className="relative group/img">
-                        <img src={getAvatarUrl(formData.HinhAnh)} alt="Product" className="w-32 h-32 rounded-lg object-cover shadow-sm border border-slate-200" />
-                        <div className="absolute inset-0 bg-slate-900/40 rounded-lg flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
-                          <Edit className="text-white" size={20} />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <ImageIcon size={28} className="text-slate-400" strokeWidth={1.5} />
-                        <p className="text-sm font-medium text-slate-500">Nhấn để tải ảnh lên</p>
-                      </div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-2">
+                    Ảnh sản phẩm
+                    {formData.HinhAnh.length > 0 && (
+                      <span className="ml-2 text-blue-600">({formData.HinhAnh.length} ảnh)</span>
                     )}
-                    {isUploading && (
-                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-20">
-                        <div className="w-6 h-6 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+                  </label>
+
+                  {/* Grid hiển thị các ảnh đã upload */}
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {formData.HinhAnh.map((url: string, idx: number) => (
+                      <div key={idx} className="relative group/img w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
+                        <img
+                          src={getAvatarUrl(url)}
+                          alt={`Ảnh ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {/* Nút X xóa ảnh */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-all z-10"
+                        >
+                          <X size={10} strokeWidth={3} />
+                        </button>
+                        {/* Số thứ tự */}
+                        <span className="absolute bottom-1 left-1 text-[9px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded-md">
+                          {idx + 1}
+                        </span>
                       </div>
-                    )}
+                    ))}
+
+                    {/* Nút thêm ảnh mới */}
+                    <label className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-blue-400 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleImageUpload}
+                      />
+                      {isUploading ? (
+                        <div className="w-5 h-5 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Upload size={18} className="text-slate-400" strokeWidth={1.5} />
+                          <span className="text-[10px] font-semibold text-slate-400">Thêm ảnh</span>
+                        </>
+                      )}
+                    </label>
                   </div>
+
+                  <p className="text-[11px] text-slate-400">Nhấn vào ô "+" để thêm ảnh. Di chuột vào ảnh để xóa.</p>
                 </div>
 
                 {/* Form Fields */}
@@ -708,6 +849,54 @@ export default function SanPhamPage() {
                     onChange={(e) => setFormData({ ...formData, MoTa: e.target.value })}
                   ></textarea>
                 </div>
+
+                {/* Phần thông tin Truy Xuất Nguồn Gốc (QR Code) */}
+                <div className="col-span-1 md:col-span-2 mt-2 pt-4 border-t border-slate-100">
+                  <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <QrCode size={18} className="text-blue-500" /> Thông tin Truy xuất Nguồn gốc (QR)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase">Ngày sản xuất</label>
+                      <input
+                        type="date"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                        value={formData.TruyXuatNguonGoc.NgaySanXuat}
+                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, NgaySanXuat: e.target.value } })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase">Hạn sử dụng</label>
+                      <input
+                        type="text"
+                        placeholder="Vd: 24 tháng"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                        value={formData.TruyXuatNguonGoc.HanSuDung}
+                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, HanSuDung: e.target.value } })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase">Hóa đơn mua hàng (URL)</label>
+                      <input
+                        type="text"
+                        placeholder="Link ảnh/PDF hóa đơn"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                        value={formData.TruyXuatNguonGoc.HoaDonMuaSon}
+                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, HoaDonMuaSon: e.target.value } })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase">Quy trình sản xuất</label>
+                      <input
+                        type="text"
+                        placeholder="Mô tả quy trình..."
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                        value={formData.TruyXuatNguonGoc.QuyTrinhSanXuat}
+                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, QuyTrinhSanXuat: e.target.value } })}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -745,14 +934,70 @@ export default function SanPhamPage() {
 
             <div className="p-6 overflow-y-auto space-y-6">
               <div className="flex flex-col md:flex-row gap-6">
-                <div className="w-full md:w-1/3 flex-shrink-0">
-                  <div className="aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
-                    {selectedProduct.HinhAnh ? (
-                      <img src={getAvatarUrl(selectedProduct.HinhAnh)} alt={selectedProduct.TenDongSon} className="w-full h-full object-cover" />
+                <div className="w-full md:w-1/3 flex-shrink-0 space-y-3">
+                  {/* Ảnh chính (carousel) */}
+                  <div className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center group">
+                    {getImageArray(selectedProduct.HinhAnh).length > 0 ? (
+                      <>
+                        <img
+                          src={getAvatarUrl(getImageArray(selectedProduct.HinhAnh)[currentImgIndex] || "")}
+                          alt={selectedProduct.TenDongSon}
+                          className="w-full h-full object-cover transition-all duration-300"
+                        />
+                        {/* Nút prev/next */}
+                        {getImageArray(selectedProduct.HinhAnh).length > 1 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setCurrentImgIndex((prev) => (prev <= 0 ? getImageArray(selectedProduct.HinhAnh).length - 1 : prev - 1))}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ChevronLeft size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCurrentImgIndex((prev) => (prev >= getImageArray(selectedProduct.HinhAnh).length - 1 ? 0 : prev + 1))}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ChevronRight size={16} />
+                            </button>
+                            {/* Indicator dots */}
+                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                              {getImageArray(selectedProduct.HinhAnh).map((_: string, i: number) => (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => setCurrentImgIndex(i)}
+                                  className={`w-2 h-2 rounded-full transition-all ${i === currentImgIndex ? "bg-white scale-125 shadow" : "bg-white/50 hover:bg-white/80"}`}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </>
                     ) : (
                       <ImageIcon className="text-slate-300" size={48} />
                     )}
                   </div>
+
+                  {/* Thumbnail strip */}
+                  {getImageArray(selectedProduct.HinhAnh).length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {getImageArray(selectedProduct.HinhAnh).map((url: string, i: number) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setCurrentImgIndex(i)}
+                          className={`w-14 h-14 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${i === currentImgIndex
+                            ? "border-blue-500 ring-2 ring-blue-200 shadow-sm"
+                            : "border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100"
+                            }`}
+                        >
+                          <img src={getAvatarUrl(url)} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="w-full md:w-2/3 space-y-4">
@@ -780,8 +1025,40 @@ export default function SanPhamPage() {
                   </div>
 
                   <div>
-                    <p className="text-sm font-semibold text-slate-900 mb-1">Mô tả chi tiết</p>
-                    <p className="text-sm text-slate-600 leading-relaxed">{selectedProduct.MoTa || "Chưa có mô tả."}</p>
+                    <p className="text-sm font-semibold text-slate-900 mb-2">Mô tả chi tiết</p>
+                    <div className="text-sm text-slate-600 leading-relaxed max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                      {selectedProduct.MoTa ? formatTextToHTML(selectedProduct.MoTa) : "Chưa có mô tả."}
+                    </div>
+                  </div>
+
+                  {/* QR Code Truy xuất nguồn gốc */}
+                  <div className="mt-4 pt-4 border-t border-slate-100 flex items-start gap-4">
+                    <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm shrink-0">
+                      <QRCodeCanvas
+                        value={`${typeof window !== 'undefined' ? window.location.origin : ''}/truy-xuat/${selectedProduct._id}`}
+                        size={80}
+                        bgColor={"#ffffff"}
+                        fgColor={"#0f172a"}
+                        level={"Q"}
+                      />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mb-1">
+                        <QrCode size={16} className="text-blue-500" />
+                        Truy xuất nguồn gốc
+                      </h4>
+                      <p className="text-xs text-slate-500 leading-relaxed max-w-sm mb-2">
+                        Khách hàng có thể quét mã QR này để xem thông tin hóa đơn, ngày sản xuất, hạn sử dụng và quy trình.
+                      </p>
+                      <a
+                        href={`/truy-xuat/${selectedProduct._id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline"
+                      >
+                        Xem trước trang truy xuất ↗
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
