@@ -1371,7 +1371,6 @@ export default function QuanLyKhoPage() {
                 {editingNVLId ? "CẬP NHẬT NVL" : "KHAI BÁO NVL MỚI"}
               </h2>
               <button
-              <button
                 onClick={() => setIsNVLModal(false)}
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
               >
@@ -1817,7 +1816,6 @@ export default function QuanLyKhoPage() {
                 </div>
                 KIỂM KÊ KHO THỰC TẾ
               </h2>
-              <button
               <button
                 onClick={() => setIsKiemKhoModal(false)}
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"

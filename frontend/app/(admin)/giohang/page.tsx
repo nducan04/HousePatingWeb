@@ -33,6 +33,21 @@ export default function GioHangPage() {
   const sessionId = useMemo(() => user?.id || 'GUEST_SESSION', [user]);
   const isAdminOrEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
 
+  const getImageUrl = (path: any) => {
+    let resolvedPath = path;
+    if (Array.isArray(path)) {
+      resolvedPath = path[0];
+    }
+    if (!resolvedPath || typeof resolvedPath !== "string" || resolvedPath === "undefined" || resolvedPath === "null") return "";
+    if (resolvedPath.startsWith("http")) return resolvedPath;
+    const cleanPath = resolvedPath.startsWith("/") ? resolvedPath : `/${resolvedPath}`;
+    const origin =
+      typeof window !== "undefined"
+        ? `${window.location.protocol}//${window.location.hostname}:5000`
+        : "http://localhost:5000";
+    return `${origin}${cleanPath}`;
+  };
+
   useEffect(() => {
     if (user) {
       fetchCartItems();
@@ -179,7 +194,7 @@ export default function GioHangPage() {
           {filteredProducts.map(sp => (
             <div key={sp._id} className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden transition-hover" style={{ padding: '15px', display: 'flex', gap: 15, alignItems: 'center' }}>
               <div style={{ width: 70, height: 70, background: '#f8fafc', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
-                {sp.HinhAnh ? <img src={`http://localhost:5000${sp.HinhAnh}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <Box size={24} color="#555" />}
+                {getImageUrl(sp.HinhAnh) ? <img src={getImageUrl(sp.HinhAnh)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <Box size={24} color="#555" />}
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, fontSize: 14, color: '#1e293b' }}>{sp.TenDongSon}</div>
@@ -265,8 +280,8 @@ export default function GioHangPage() {
           {cartItems.map(item => (
             <div key={item._id} style={{ display: 'flex', gap: 12, alignItems: 'center', background: '#f8fafc', padding: '12px', borderRadius: 12, border: '1px solid #f1f5f9' }}>
               <div style={{ width: 60, height: 60, background: '#e2e8f0', borderRadius: 10, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {item.SanPham?.HinhAnh ? (
-                  <img src={`http://localhost:5000${item.SanPham.HinhAnh}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                {getImageUrl(item.SanPham?.HinhAnh) ? (
+                  <img src={getImageUrl(item.SanPham.HinhAnh)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                 ) : (
                   <Box size={24} color="#333" />
                 )}

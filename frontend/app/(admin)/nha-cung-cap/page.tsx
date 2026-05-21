@@ -1100,7 +1100,7 @@ export default function NhaCungCapPage() {
             {/* Modal Body */}
             <div className="p-6 space-y-4">
               <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-xs font-bold text-amber-700">
-                Cấp tài khoản đăng nhập portal cho đối tác <strong className="text-slate-900">{accountNCC.TenNCC}</strong>.
+                Cấp tài khoản đăng nhập cho đối tác <strong className="text-slate-900">{accountNCC.TenNCC}</strong>.
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tên đăng nhập</label>
