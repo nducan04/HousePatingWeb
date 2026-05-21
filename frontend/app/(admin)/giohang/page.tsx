@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ShoppingCart, Search, Eye, Trash2, Box, AlertCircle, CheckCircle2, Tag, Trash, User, MapPin } from 'lucide-react';
+import { ShoppingCart, Search, Eye, Trash2, Box, AlertCircle, CheckCircle2, Tag, Trash, User, MapPin, Plus, Truck, ArrowRight, QrCode, Beaker, Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useCartStore, CartItem } from '@/lib/store/cartStore';
+import Link from 'next/link';
 
 
 interface KhachHang {
@@ -100,6 +101,15 @@ export default function GioHangPage() {
     }
   };
 
+  const handleRemoveItem = async (sanPhamId: string) => {
+    if (!confirm('Xóa sản phẩm này khỏi giỏ hàng?')) return;
+    try {
+      await updateQuantityStore(sessionId, sanPhamId, 0);
+    } catch (err) {
+      console.error('Lỗi khi xóa sản phẩm', err);
+    }
+  };
+
   const clearCart = async () => {
     if (!confirm('Bạn có muốn xóa toàn bộ giỏ hàng?')) return;
     try {
@@ -129,7 +139,7 @@ export default function GioHangPage() {
 
       if (res.data.success) {
         alert(`Đặt hàng thành công! Mã đơn hàng: ${res.data.data.MaDonHang}. Kho đã được cập nhật.`);
-        router.push('/don-hang');
+        router.push(isAdminOrEmployee ? '/don-hang' : '/my-orders');
       }
     } catch (error: any) {
       alert(error.response?.data?.message || 'Lỗi khi đặt hàng');
@@ -261,53 +271,123 @@ export default function GioHangPage() {
           </div>
         </div>
 
+        {/* Premium Horizontal Navigation Slider */}
+        <div className="flex gap-2.5 overflow-x-auto py-3 px-4 bg-slate-50/60 border border-slate-100 rounded-2xl mb-4 scrollbar-none whitespace-nowrap">
+          <Link
+            href={isAdminOrEmployee ? "/don-hang" : "/my-orders"}
+            className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-blue-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+          >
+            <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Package size={14} />
+            </div>
+            <span className="text-[11px] font-black text-slate-800 tracking-tight">Đơn hàng của tôi</span>
+          </Link>
+
+          <Link
+            href="/tracking"
+            className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-emerald-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+          >
+            <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Truck size={14} />
+            </div>
+            <span className="text-[11px] font-black text-slate-800 tracking-tight">Theo dõi vận chuyển</span>
+          </Link>
+
+          <Link
+            href="/thanh-toan"
+            className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+          >
+            <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <QrCode size={14} />
+            </div>
+            <span className="text-[11px] font-black text-slate-800 tracking-tight">Thanh toán</span>
+          </Link>
+
+          <Link
+            href={isAdminOrEmployee ? "/rd-tracking" : "/tracking?tab=rd"}
+            className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-purple-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+          >
+            <div className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Beaker size={14} />
+            </div>
+            <span className="text-[11px] font-black text-slate-800 tracking-tight">Theo dõi R&D</span>
+          </Link>
+        </div>
+
         <div style={{ flex: 1, maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 25, paddingRight: 5 }}>
           {cartItems.map(item => (
-            <div key={item._id} style={{ display: 'flex', gap: 12, alignItems: 'center', background: '#f8fafc', padding: '12px', borderRadius: 12, border: '1px solid #f1f5f9' }}>
-              <div style={{ width: 60, height: 60, background: '#e2e8f0', borderRadius: 10, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div 
+              key={item._id} 
+              className="bg-white border border-slate-100 rounded-3xl p-4 flex gap-4 items-center shadow-sm relative group hover:border-blue-200 hover:shadow-md transition-all duration-300"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-slate-50 overflow-hidden flex-shrink-0 flex items-center justify-center border border-slate-100">
                 {item.SanPham?.HinhAnh ? (
-                  <img src={`http://localhost:5000${item.SanPham.HinhAnh}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                  <img src={`http://localhost:5000${item.SanPham.HinhAnh}`} className="w-full h-full object-cover" alt="" />
                 ) : (
-                  <Box size={24} color="#333" />
+                  <Box size={24} className="text-slate-400" />
                 )}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, fontSize: 14, color: '#1e293b', marginBottom: 2 }}>{item.SanPham?.TenDongSon}</div>
-                <div style={{ fontWeight: 700, color: '#2563eb', fontSize: 14 }}>{(item.SanPham?.DonGiaCoSo || 0).toLocaleString()} ₫</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-extrabold text-slate-800 text-sm truncate">{item.SanPham?.TenDongSon}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] font-bold text-slate-400 tracking-wider">
+                    {item.SanPham?.MaSanPham || 'SP0000'}
+                  </span>
+                  <span className="text-[9px] font-black text-blue-600/70 uppercase tracking-tighter bg-blue-50 px-2 py-0.5 rounded-lg">
+                    {item.SanPham?.PhanLoai || 'SƠN NƯỚC'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-3">
+                  <div className="flex items-center bg-slate-100/80 px-2 py-1 rounded-xl border border-slate-200/40">
+                    <button 
+                      onClick={() => updateQuantity(item.SanPham._id, item.SoLuong - 1)} 
+                      className="border-none bg-transparent text-slate-500 font-extrabold text-sm px-2 cursor-pointer hover:text-slate-800 transition-colors"
+                    >-</button>
+                    <span className="text-xs font-black text-slate-800 min-w-[20px] text-center">{item.SoLuong}</span>
+                    <button 
+                      onClick={() => updateQuantity(item.SanPham._id, item.SoLuong + 1)} 
+                      className="border-none bg-transparent text-slate-500 font-extrabold text-sm px-2 cursor-pointer hover:text-slate-800 transition-colors"
+                    >+</button>
+                  </div>
+                  <div className="font-extrabold text-blue-600 text-[13px]">
+                    {((item.SanPham?.DonGiaCoSo || 0) * item.SoLuong).toLocaleString()} ₫
+                  </div>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f1f5f9', padding: '4px 8px', borderRadius: 8 }}>
-                <button onClick={() => updateQuantity(item.SanPham._id, item.SoLuong - 1)} style={{ border: 'none', background: 'transparent', color: '#64748b', fontSize: '16px', fontWeight: 'bold', padding: '2px 8px', cursor: 'pointer' }}>-</button>
-                <span style={{ fontSize: 15, fontWeight: 900, minWidth: 20, textAlign: 'center', color: '#1e293b' }}>{item.SoLuong}</span>
-                <button onClick={() => updateQuantity(item.SanPham._id, item.SoLuong + 1)} style={{ border: 'none', background: 'transparent', color: '#64748b', fontSize: '16px', fontWeight: 'bold', padding: '2px 8px', cursor: 'pointer' }}>+</button>
-              </div>
+              <button
+                onClick={() => handleRemoveItem(item.SanPham?._id)}
+                className="text-slate-400 hover:text-rose-500 transition-colors bg-transparent border-none p-1 cursor-pointer absolute top-3 right-3 opacity-0 group-hover:opacity-100"
+                title="Xóa sản phẩm"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
           ))}
           {cartItems.length === 0 && (
-            <div style={{ textAlign: 'center', color: '#444', padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-              <ShoppingCart size={40} opacity={0.2} />
-              <div style={{ fontStyle: 'italic', fontSize: 14 }}>Giỏ hàng của bạn đang trống</div>
+            <div style={{ textAlign: 'center', color: '#64748b', padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+              <ShoppingCart size={40} className="opacity-20 animate-pulse" />
+              <div style={{ fontStyle: 'italic', fontSize: 13, fontWeight: 'medium' }}>Giỏ hàng của bạn đang trống</div>
             </div>
           )}
         </div>
 
         {/* Voucher */}
-        <div style={{ padding: '20px 0', borderTop: '1px solid #e2e8f0' }}>
+        <div style={{ padding: '20px 0', borderTop: '1px solid #f1f5f9' }}>
           <div style={{ display: 'flex', gap: 10 }}>
             <div className="relative flex-1">
               <input
                 type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
-                style={{ textTransform: 'uppercase', fontSize: 12 }}
+                className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
+                style={{ textTransform: 'uppercase', fontSize: 12, height: 45 }}
                 placeholder="NHẬP MÃ GIẢM GIÁ..."
                 value={discountCode}
                 onChange={e => setDiscountCode(e.target.value.toUpperCase())}
               />
-              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
+              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
             </div>
             <button
               onClick={handleApplyVoucher}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-              style={{ border: '1px solid #e2e8f0' }}
+              className="inline-flex items-center justify-center px-5 py-2.5 rounded-2xl font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200 cursor-pointer"
               disabled={applyingDiscount || !discountCode}
             >
               Áp dụng
@@ -324,20 +404,20 @@ export default function GioHangPage() {
           )}
         </div>
 
-        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 14, color: '#475569' }}>Tạm tính:</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{cartTotal.toLocaleString()} ₫</span>
+        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 20 }}>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tạm tính:</span>
+            <span className="text-sm font-extrabold text-slate-700">{cartTotal.toLocaleString()} ₫</span>
           </div>
           {discountInfo && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 14, color: '#e11d48' }}>Giảm giá:</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#e11d48' }}>-{discountInfo.DiscountAmount.toLocaleString()} ₫</span>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-bold text-rose-500 uppercase tracking-wider">Giảm giá:</span>
+              <span className="text-sm font-extrabold text-rose-500">-{discountInfo.DiscountAmount.toLocaleString()} ₫</span>
             </div>
           )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, marginBottom: 25 }}>
-            <span style={{ fontSize: 18, fontWeight: 900, color: '#1e293b' }}>TỔNG CỘNG:</span>
-            <span style={{ fontSize: 24, fontWeight: 900, color: '#2563eb' }}>
+          <div className="flex justify-between items-center mt-4 mb-6">
+            <span className="text-sm font-black text-slate-500 uppercase tracking-widest">TỔNG CỘNG:</span>
+            <span className="text-2xl font-black text-blue-600">
               {(cartTotal - (discountInfo?.DiscountAmount || 0)).toLocaleString()} ₫
             </span>
           </div>
@@ -345,9 +425,9 @@ export default function GioHangPage() {
           <button
             onClick={handleCheckout}
             disabled={cartItems.length === 0 || isSubmitting}
-            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline w-full h-14 text-black font-bold text-lg flex items-center justify-center gap-3 shadow-xl transition-all ${cartItems.length > 0 && !isSubmitting ? 'btn-primary shadow-blue-500/20' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+            className={`w-full h-14 rounded-3xl font-black text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition-all border border-transparent shadow-xl transition-all cursor-pointer ${cartItems.length > 0 && !isSubmitting ? 'bg-blue-600 text-white shadow-blue-600/20' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
           >
-            {isSubmitting ? <><Loader2 className="animate-spin" /> XỬ LÝ...</> : <><CheckCircle2 size={22} /> ĐẶT HÀNG NGAY</>}
+            {isSubmitting ? 'ĐANG ĐẶT HÀNG...' : 'Đặt hàng ngay'} <ArrowRight size={18} />
           </button>
         </div>
       </div>

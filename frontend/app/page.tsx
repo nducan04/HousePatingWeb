@@ -51,7 +51,7 @@ const BACKEND_URL = "http://localhost:5000";
 
 export default function HomePage() {
   const { user, isAuthenticated, logoutState } = useAuthStore();
-  
+
 
 
   const handleServiceClick = (href: string) => {
@@ -598,6 +598,77 @@ export default function HomePage() {
                     </span>
                   </div>
 
+                  {/* Premium Horizontal Navigation Slider */}
+                  <div className="flex gap-2.5 overflow-x-auto py-3 px-4 bg-slate-50/60 border-b border-slate-100 scrollbar-none whitespace-nowrap">
+                    <Link
+                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/don-hang"}
+                      className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-blue-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+                      onClick={(e) => {
+                        setIsCartOpen(false);
+                        if (!isAuthenticated) {
+                          e.preventDefault();
+                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/don-hang");
+                        }
+                      }}
+                    >
+                      <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Package size={14} />
+                      </div>
+                      <span className="text-[11px] font-black text-slate-800 tracking-tight">Đơn hàng của tôi</span>
+                    </Link>
+
+                    <Link
+                      href="/tracking"
+                      className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-emerald-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+                      onClick={(e) => {
+                        setIsCartOpen(false);
+                        if (!isAuthenticated) {
+                          e.preventDefault();
+                          handleServiceClick("/tracking");
+                        }
+                      }}
+                    >
+                      <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Truck size={14} />
+                      </div>
+                      <span className="text-[11px] font-black text-slate-800 tracking-tight">Theo dõi vận chuyển</span>
+                    </Link>
+
+                    <Link
+                      href="/thanh-toan"
+                      className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+                      onClick={(e) => {
+                        setIsCartOpen(false);
+                        if (!isAuthenticated) {
+                          e.preventDefault();
+                          handleServiceClick("/thanh-toan");
+                        }
+                      }}
+                    >
+                      <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <QrCode size={14} />
+                      </div>
+                      <span className="text-[11px] font-black text-slate-800 tracking-tight">Thanh toán</span>
+                    </Link>
+
+                    <Link
+                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/tracking?tab=rd" : "/rd-tracking"}
+                      className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-purple-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+                      onClick={(e) => {
+                        setIsCartOpen(false);
+                        if (!isAuthenticated) {
+                          e.preventDefault();
+                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/tracking?tab=rd" : "/rd-tracking");
+                        }
+                      }}
+                    >
+                      <div className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Beaker size={14} />
+                      </div>
+                      <span className="text-[11px] font-black text-slate-800 tracking-tight">Theo dõi R&D</span>
+                    </Link>
+                  </div>
+
                   <div className="max-h-[350px] overflow-y-auto p-4 space-y-4">
                     {cartItems.length === 0 ? (
                       <div className="py-12 text-center">
@@ -659,71 +730,6 @@ export default function HomePage() {
                         </div>
                       ))
                     )}
-                  </div>
-
-                  {/* Shopping Shortcuts */}
-                  <div className="px-6 py-4 bg-slate-50/40 border-t border-slate-100">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                      Quản lý mua sắm
-                    </div>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <Link
-                        href="/giohang"
-                        className="flex items-center gap-2.5 px-3 py-2.5 bg-white hover:bg-blue-50 border border-slate-150 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 transition-all no-underline shadow-sm cursor-pointer"
-                        onClick={(e) => {
-                          setIsCartOpen(false);
-                          if (!isAuthenticated) {
-                            e.preventDefault();
-                            handleServiceClick("/giohang");
-                          }
-                        }}
-                      >
-                        <ShoppingCart size={14} className="text-blue-500" />
-                        Quản lý giỏ hàng
-                      </Link>
-                      <Link
-                        href="/don-hang"
-                        className="flex items-center gap-2.5 px-3 py-2.5 bg-white hover:bg-blue-50 border border-slate-150 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 transition-all no-underline shadow-sm cursor-pointer"
-                        onClick={(e) => {
-                          setIsCartOpen(false);
-                          if (!isAuthenticated) {
-                            e.preventDefault();
-                            handleServiceClick("/don-hang");
-                          }
-                        }}
-                      >
-                        <ListOrdered size={14} className="text-blue-500" />
-                        Quản lý đơn hàng
-                      </Link>
-                      <Link
-                        href="/thanh-toan"
-                        className="flex items-center gap-2.5 px-3 py-2.5 bg-white hover:bg-blue-50 border border-slate-150 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 transition-all no-underline shadow-sm cursor-pointer"
-                        onClick={(e) => {
-                          setIsCartOpen(false);
-                          if (!isAuthenticated) {
-                            e.preventDefault();
-                            handleServiceClick("/thanh-toan");
-                          }
-                        }}
-                      >
-                        <QrCode size={14} className="text-blue-500" />
-                        Quản lý thanh toán
-                      </Link>
-                      <Link
-                        href="/van-chuyen"
-                        className="flex items-center gap-2.5 px-3 py-2.5 bg-white hover:bg-blue-50 border border-slate-150 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 transition-all no-underline shadow-sm cursor-pointer"
-                        onClick={(e) => {
-                          setIsCartOpen(false);
-                          if (!isAuthenticated) {
-                            e.preventDefault();
-                            handleServiceClick("/van-chuyen");
-                          }
-                        }}
-                      >
-                        <Truck size={14} className="text-blue-500" />
-                        Theo dõi vận chuyển
-                      </Link>
-                    </div>
                   </div>
 
                   {cartItems.length > 0 && (
@@ -1047,14 +1053,14 @@ export default function HomePage() {
                 ></div>
               ))
             ) : products.filter((sp) => {
-                const search = searchTerm.toLowerCase();
-                return (
-                  sp.TenDongSon?.toLowerCase().includes(search) ||
-                  sp.MaSanPham?.toLowerCase().includes(search) ||
-                  sp.PhanLoai?.toLowerCase().includes(search) ||
-                  sp.ThuongHieu?.toLowerCase().includes(search)
-                );
-              }).length === 0 ? (
+              const search = searchTerm.toLowerCase();
+              return (
+                sp.TenDongSon?.toLowerCase().includes(search) ||
+                sp.MaSanPham?.toLowerCase().includes(search) ||
+                sp.PhanLoai?.toLowerCase().includes(search) ||
+                sp.ThuongHieu?.toLowerCase().includes(search)
+              );
+            }).length === 0 ? (
               <div className="col-span-full p-12 text-center bg-white rounded-[40px] border border-slate-100">
                 <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
                   <Search size={40} />

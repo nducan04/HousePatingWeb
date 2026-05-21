@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Upload, Plus, Droplets, X, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Droplets, X, User as UserIcon, Search, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/authStore";
+import { paintColors } from "@/lib/data/colors-data";
 
 export default function NewRDRequestPage() {
   const { user } = useAuthStore();
@@ -39,6 +40,28 @@ export default function NewRDRequestPage() {
   }, [isCustomer, displayName]);
   const [dragOver, setDragOver] = useState(false);
   const [files, setFiles] = useState<string[]>([]);
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const filteredColors = paintColors.filter(
+    (color) =>
+      color.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      color.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,20 +181,93 @@ export default function NewRDRequestPage() {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 relative" ref={dropdownRef}>
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                 Mã Màu Mục tiêu *
               </label>
-              <input
-                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
-                type="text"
-                placeholder="VD: INT-D2525"
-                required
-                value={formData.colorCode}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, colorCode: e.target.value }))
-                }
-              />
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(!isOpen)}
+                  className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all flex items-center justify-between text-left"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {formData.colorCode ? (
+                      <>
+                        <span
+                          className="w-4 h-4 rounded-full border border-slate-200 shadow-sm shrink-0"
+                          style={{ backgroundColor: paintColors.find(c => c.code === formData.colorCode)?.hex || '#ccc' }}
+                        />
+                        <span>{formData.colorCode}</span>
+                      </>
+                    ) : (
+                      <span className="text-slate-400 font-medium">Chọn mã màu mục tiêu</span>
+                    )}
+                  </div>
+                  <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isOpen && (
+                  <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 p-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="relative">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Tìm theo mã hoặc tên màu..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="max-h-52 overflow-y-auto custom-scrollbar space-y-0.5">
+                      {filteredColors.length === 0 ? (
+                        <div className="text-[11px] font-bold text-slate-400 text-center py-4">
+                          Không tìm thấy màu nào
+                        </div>
+                      ) : (
+                        filteredColors.map((color) => {
+                          const isSelected = formData.colorCode === color.code;
+                          return (
+                            <button
+                              key={color.code}
+                              type="button"
+                              onClick={() => {
+                                setFormData((p) => ({
+                                  ...p,
+                                  colorCode: color.code,
+                                  colorName: color.name,
+                                }));
+                                setIsOpen(false);
+                                setSearchQuery("");
+                              }}
+                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all text-left ${
+                                isSelected
+                                  ? "bg-blue-50 text-blue-600"
+                                  : "hover:bg-slate-50 text-slate-700"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <span
+                                  className="w-5 h-5 rounded-full border border-slate-200 shadow-sm shrink-0"
+                                  style={{ backgroundColor: color.hex }}
+                                />
+                                <div>
+                                  <div className="text-xs font-black">{color.code}</div>
+                                  <div className="text-[10px] text-slate-400 font-medium">{color.name}</div>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">
+                                {color.category}
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">

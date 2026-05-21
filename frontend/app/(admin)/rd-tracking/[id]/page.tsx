@@ -17,6 +17,12 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
   const { user } = useAuthStore();
   const router = useRouter();
 
+  useEffect(() => {
+    if (user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C')) {
+      router.push(`/tracking?code=${id}&tab=rd`);
+    }
+  }, [user, router, id]);
+
   const [request, setRequest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAddVersion, setShowAddVersion] = useState(false);

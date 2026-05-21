@@ -15,7 +15,28 @@ import {
   PieChart,
   Pie,
   Cell,
+  AreaChart,
+  Area,
 } from "recharts";
+
+function CustomTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-xl text-white text-xs">
+        <p className="font-black text-slate-400 uppercase tracking-widest mb-1.5">{label}</p>
+        <div className="space-y-1">
+          {payload.map((item: any, i: number) => (
+            <div key={i} className="flex justify-between gap-4">
+              <span style={{ color: item.color || '#fff' }} className="font-semibold">{item.name}:</span>
+              <span className="font-black">{item.value?.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
 import {
   BarChart3,
   Users,
@@ -354,11 +375,10 @@ export default function DashboardPage() {
                 <button
                   key={y}
                   onClick={() => setActiveYears([y])}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activeYears.includes(y)
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeYears.includes(y)
                       ? "bg-blue-600 text-white shadow-sm"
                       : "text-slate-500 hover:bg-slate-100"
-                  }`}
+                    }`}
                 >
                   {y}
                 </button>
@@ -376,11 +396,10 @@ export default function DashboardPage() {
                 <button
                   key={m}
                   onClick={() => toggle(activeMonths, m, setActiveMonths)}
-                  className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
-                    activeMonths.includes(m)
+                  className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${activeMonths.includes(m)
                       ? "bg-indigo-500 text-white shadow-sm"
                       : "text-slate-500 hover:bg-slate-100"
-                  }`}
+                    }`}
                 >
                   {m}
                 </button>
@@ -778,15 +797,14 @@ export default function DashboardPage() {
                   >
                     <td className="px-6 py-3.5">
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shadow-sm ${
-                          i === 0
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shadow-sm ${i === 0
                             ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
                             : i === 1
                               ? "bg-gradient-to-br from-slate-300 to-slate-400 text-white"
                               : i === 2
                                 ? "bg-gradient-to-br from-orange-300 to-orange-400 text-white"
                                 : "bg-slate-50 text-slate-400 border border-slate-100"
-                        }`}
+                          }`}
                       >
                         {i + 1}
                       </div>
@@ -817,13 +835,12 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-3">
                         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                           <div
-                            className={`h-full rounded-full transition-all duration-1000 shadow-sm ${
-                              pct >= 90
+                            className={`h-full rounded-full transition-all duration-1000 shadow-sm ${pct >= 90
                                 ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
                                 : pct >= 70
                                   ? "bg-gradient-to-r from-amber-400 to-amber-500"
                                   : "bg-gradient-to-r from-rose-400 to-rose-500"
-                            }`}
+                              }`}
                             style={{ width: `${Math.min(pct, 100)}%` }}
                           />
                         </div>
@@ -834,22 +851,20 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-6 py-3.5 text-center">
                       <div
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight shadow-sm border ${
-                          pct >= 90
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight shadow-sm border ${pct >= 90
                             ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                             : pct >= 70
                               ? "bg-amber-50 text-amber-600 border-amber-100"
                               : "bg-rose-50 text-rose-600 border-rose-100"
-                        }`}
+                          }`}
                       >
                         <div
-                          className={`w-1 h-1 rounded-full animate-pulse ${
-                            pct >= 90
+                          className={`w-1 h-1 rounded-full animate-pulse ${pct >= 90
                               ? "bg-emerald-500"
                               : pct >= 70
                                 ? "bg-amber-500"
                                 : "bg-rose-500"
-                          }`}
+                            }`}
                         />
                         {pct >= 90
                           ? "Vượt chỉ tiêu"

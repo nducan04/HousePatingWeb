@@ -14,7 +14,7 @@ export default function RDTrackingPage() {
 
   useEffect(() => {
     if (user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C')) {
-      router.push('/');
+      router.push('/tracking?tab=rd');
     }
   }, [user, router]);
 

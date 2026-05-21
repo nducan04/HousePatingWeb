@@ -8,11 +8,14 @@ import {
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import api from '@/lib/utils/axiosAuth';
-import { paintColors } from '@/lib/data/colors-data';
+import { paintColors, trackingData } from '@/lib/data/colors-data';
+import { QRCodeSVG } from 'qrcode.react';
 import * as XLSX from 'xlsx';
 import { useAuthStore } from '@/lib/store/authStore';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, BorderStyle, WidthType } from 'docx';
 import { saveAs } from 'file-saver';
+
+import { useRouter } from 'next/navigation';
 
 const API_DON_HANG = '/don-hang';
 
@@ -125,7 +128,14 @@ interface NewOrderItem {
 
 export default function OrderManagementPage() {
     const { user } = useAuthStore();
+    const router = useRouter();
     const isAdminOrEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
+
+    useEffect(() => {
+        if (user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C')) {
+            router.push('/my-orders');
+        }
+    }, [user, router]);
 
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
@@ -1156,6 +1166,62 @@ export default function OrderManagementPage() {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Kiện Hàng Gần Đây / Tracking Section */}
+            <div className="bg-gradient-to-br from-blue-50/40 via-indigo-50/20 to-white p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+                        <Truck size={22} className="animate-bounce" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Theo Dõi Kiện Hàng Mới Nhất</h2>
+                        <p className="text-xs text-slate-400 font-semibold mt-0.5">Click vào kiện hàng để xem chi tiết lộ trình vận chuyển trên toàn cầu</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {trackingData.map(t => {
+                        const currentStep = t.steps.find(s => s.status === 'current');
+                        const completedSteps = t.steps.filter(s => s.status === 'completed').length;
+                        const totalSteps = t.steps.length;
+                        return (
+                            <div
+                                key={t.code}
+                                className="bg-white border border-slate-100 rounded-3xl p-6 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between group relative overflow-hidden"
+                                onClick={() => {
+                                    window.location.href = `/tracking?code=${t.code}`;
+                                }}
+                            >
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/20 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                                
+                                <div className="relative z-10 flex-1">
+                                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                                        {t.code}
+                                    </span>
+                                    <div className="font-extrabold text-slate-800 mt-3 text-[14px]">{t.customer}</div>
+                                    <div className="text-[12px] text-slate-400 font-semibold mt-0.5">{t.product}</div>
+                                    
+                                    <div className="flex items-center gap-2 mt-4">
+                                        <div className="w-28 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                            <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(completedSteps / totalSteps) * 100}%` }} />
+                                        </div>
+                                        <span className="text-[11px] font-bold text-slate-400">{completedSteps}/{totalSteps} chặng</span>
+                                    </div>
+                                    {currentStep && (
+                                        <span className="inline-block mt-3 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold shadow-sm">
+                                            • {currentStep.label.toUpperCase()}
+                                        </span>
+                                    )}
+                                </div>
+                                
+                                <div className="relative z-10 bg-white p-3 rounded-2xl border border-slate-100 group-hover:border-blue-200 transition-colors shadow-sm ml-4">
+                                    <QRCodeSVG value={`https://vtsc.vn/tracking/${t.code}`} size={75} bgColor="#ffffff" fgColor="#0c102a" level="M" />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Filters & Search */}
