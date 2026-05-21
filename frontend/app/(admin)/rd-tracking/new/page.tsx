@@ -75,10 +75,14 @@ export default function NewRDRequestPage() {
         id: nextId,
         customer: formData.customer,
         colorCode: formData.colorCode,
+        colorName: formData.colorName,
         surface: formData.surface,
+        substrate: formData.substrate,
         status: "pending",
         date: dateStr,
         deadline: formData.deadline,
+        requirements: formData.requirements,
+        LichSuPhienBan: [],
       };
 
       requests.push(newRequest);
@@ -86,7 +90,7 @@ export default function NewRDRequestPage() {
     }
 
     alert("✅ Yêu cầu R&D đã được tạo thành công! (Version 1.0)");
-    router.push(backPath);
+    router.push(isCustomer ? "/tracking?tab=samples" : "/rd-tracking");
   };
 
   const handleFileDrop = (e: React.DragEvent) => {
@@ -106,7 +110,7 @@ export default function NewRDRequestPage() {
           size={16}
           className="group-hover:-translate-x-1 transition-transform"
         />
-        Quay lại
+        {isCustomer ? "Quay lại trang chủ" : "Quay lại"}
       </Link>
 
       <div className="bg-white border border-slate-100 rounded-[24px] shadow-xl shadow-slate-100/50 overflow-hidden">

@@ -11,7 +11,32 @@ import api from '@/lib/utils/axiosAuth';
 import { paintColors } from '@/lib/data/colors-data';
 import * as XLSX from 'xlsx';
 import { useAuthStore } from '@/lib/store/authStore';
+import Link from 'next/link';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import {
+    Document, Packer, Paragraph, TextRun, AlignmentType,
+    Table, TableRow, TableCell, BorderStyle, WidthType
+} from 'docx';
+import { saveAs } from 'file-saver';
 
+// ==================== HÀM HỖ TRỢ ====================
+const numberToVietnameseWords = (num: number): string => {
+    if (num === 0) return "không đồng chẵn";
+
+    const units = ["", "nghìn", "triệu", "tỷ"];
+    let words = "";
+    let i = 0;
+
+    while (num > 0) {
+        const chunk = num % 1000;
+        if (chunk > 0) {
+            words = `${chunk.toLocaleString('vi-VN')} ${units[i]} ` + words;
+        }
+        num = Math.floor(num / 1000);
+        i++;
+    }
+    return words.trim() + " đồng chẵn";
+};
 const API_DON_HANG = '/don-hang';
 
 interface OrderItem {
@@ -125,6 +150,8 @@ export default function OrderManagementPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isChartModalOpen, setIsChartModalOpen] = useState(false);
+    const [rdTrackingLogs, setRdTrackingLogs] = useState<any[]>([]);
 
     // Create Order Modal state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -224,31 +251,531 @@ export default function OrderManagementPage() {
         }
     };
 
-    const exportToPDF = async (type: 'COC' | 'HOA_DON') => {
-        if (!selectedOrder || !printRef.current) return;
-        setIsPrinting(true);
-        try {
-            const canvas = await html2canvas(printRef.current, {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff'
-            });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const imgWidth = pdfWidth - 20;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    // ==================== HÀM XUẤT PHIẾU CỌC WORD ====================
+    // ==================== HÀM XUẤT PHIẾU CỌC WORD (ĐÃ SỬA) ====================
+    const handleDownloadPhieuCoc = async () => {
+        if (!selectedOrder) return;
 
-            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-            pdf.save(`${type}_${selectedOrder.MaDonHang}.pdf`);
+        const orderId = selectedOrder.MaDonHang || '#N/A';
+        const createdDate = new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN');
+        const customerName = selectedOrder.KhachHang?.TenKhachHang || 'Khách lẻ';
+        const phoneNumber = selectedOrder.KhachHang?.SDT || 'Chưa cập nhật';
+        const productName = selectedOrder.Items?.[0]?.TenSanPham || 'Sản phẩm sơn';
+        const colorCode = selectedOrder.Items?.[0]?.MaMau || 'N/A';
+        const powderType = selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon';
+        const totalAmount = selectedOrder.TongTien || 0;
+        const depositAmount = selectedOrder.DaCoc || 0;
+        const remainingAmount = totalAmount - depositAmount;
+
+        const fileName = `Phieu_Coc_${orderId.replace('#', '')}.docx`;
+
+        const noBorder = {
+            top: { style: BorderStyle.NONE },
+            bottom: { style: BorderStyle.NONE },
+            left: { style: BorderStyle.NONE },
+            right: { style: BorderStyle.NONE },
+            insideHorizontal: { style: BorderStyle.NONE },
+            insideVertical: { style: BorderStyle.NONE },
+        };
+
+        const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + ' đ';
+
+        const doc = new Document({
+            styles: {
+                default: {
+                    document: {
+                        run: {
+                            font: "Times New Roman",
+                            size: 24,
+                        },
+                    },
+                },
+            },
+            sections: [{
+                properties: {
+                    page: {
+                        margin: { top: 720, right: 720, bottom: 720, left: 720 },
+                    },
+                },
+                children: [
+                    // === HEADER ===
+                    new Table({
+                        width: { type: WidthType.PERCENTAGE, size: 100 },
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        width: { type: WidthType.PERCENTAGE, size: 50 },
+                                        borders: noBorder,
+                                        children: [
+                                            new Paragraph({
+                                                children: [new TextRun({ text: "CÔNG TY CP TMDV VOSCO (VTSC)", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                children: [new TextRun({ text: "Hệ thống PaintPro", font: "Times New Roman", size: 22 })],
+                                            }),
+                                        ],
+                                    }),
+                                    new TableCell({
+                                        width: { type: WidthType.PERCENTAGE, size: 50 },
+                                        borders: noBorder,
+                                        children: [
+                                            new Paragraph({
+                                                alignment: AlignmentType.RIGHT,
+                                                children: [new TextRun({ text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                alignment: AlignmentType.RIGHT,
+                                                children: [new TextRun({ text: "Độc lập - Tự do - Hạnh phúc", bold: true, underline: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        ],
+                    }),
+
+                    new Paragraph({
+                        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000", space: 1 } },
+                        spacing: { before: 100, after: 200 },
+                        children: [new TextRun("")]
+                    }),
+
+                    // === TIÊU ĐỀ ===
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 100, after: 80 },
+                        children: [new TextRun({ text: "PHIẾU BIÊN NHẬN ĐẶT CỌC", bold: true, font: "Times New Roman", size: 32 })],
+                    }),
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 200 },
+                        children: [new TextRun({ text: `Mã đơn hàng: #${orderId} - Ngày tạo: ${createdDate}`, italics: true, font: "Times New Roman", size: 24 })],
+                    }),
+
+                    // === NỘI DUNG CHÍNH ===
+                    new Paragraph({
+                        spacing: { after: 100 },
+                        children: [
+                            new TextRun({ text: "Họ tên khách hàng: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: customerName, font: "Times New Roman", size: 24 }),
+                        ],
+                    }),
+                    new Paragraph({
+                        spacing: { after: 100 },
+                        children: [
+                            new TextRun({ text: "Số điện thoại: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: phoneNumber, font: "Times New Roman", size: 24 }),
+                        ],
+                    }),
+                    new Paragraph({
+                        spacing: { after: 120 },
+                        children: [
+                            new TextRun({ text: "Nội dung đặt cọc: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({
+                                text: `Đặt cọc thi công/mua sơn tĩnh điện sản phẩm "${productName}", Mã màu: ${colorCode}, Loại bột: ${powderType}.`,
+                                font: "Times New Roman", size: 24
+                            }),
+                        ],
+                    }),
+
+                    new Paragraph({
+                        spacing: { before: 120, after: 80 },
+                        children: [
+                            new TextRun({ text: "Tổng giá trị đơn hàng: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: formatCurrency(totalAmount), font: "Times New Roman", size: 24 }),
+                        ],
+                    }),
+                    new Paragraph({
+                        spacing: { after: 80 },
+                        children: [
+                            new TextRun({ text: "Số tiền đã đặt cọc (50%): ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: formatCurrency(depositAmount), font: "Times New Roman", size: 24 }),
+                        ],
+                    }),
+                    new Paragraph({
+                        spacing: { after: 80 },
+                        children: [
+                            new TextRun({ text: "Viết bằng chữ: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({
+                                text: `(${numberToVietnameseWords(depositAmount)})`,
+                                italics: true, font: "Times New Roman", size: 24
+                            }),
+                        ],
+                    }),
+                    new Paragraph({
+                        spacing: { after: 200 },
+                        children: [
+                            new TextRun({ text: "Số tiền còn lại cần thanh toán: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: formatCurrency(remainingAmount), bold: true, color: "C00000", font: "Times New Roman", size: 24 }),
+                        ],
+                    }),
+
+                    // === CHỮ KÝ ===
+                    new Paragraph({ spacing: { before: 300 }, children: [new TextRun("")] }),
+                    new Table({
+                        width: { type: WidthType.PERCENTAGE, size: 100 },
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        width: { type: WidthType.PERCENTAGE, size: 50 },
+                                        borders: noBorder,
+                                        children: [
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "NGƯỜI NỘP TIỀN", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                spacing: { after: 60 },
+                                                children: [new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true, font: "Times New Roman", size: 22 })],
+                                            }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                        ],
+                                    }),
+                                    new TableCell({
+                                        width: { type: WidthType.PERCENTAGE, size: 50 },
+                                        borders: noBorder,
+                                        children: [
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "ĐẠI DIỆN CÔNG TY", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                spacing: { after: 60 },
+                                                children: [new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true, font: "Times New Roman", size: 22 })],
+                                            }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        ],
+                    }),
+                ],
+            }],
+        });
+
+        try {
+            const blob = await Packer.toBlob(doc);
+            saveAs(blob, fileName);
         } catch (error) {
-            console.error('Lỗi in ấn:', error);
-            alert('Có lỗi xảy ra khi tạo file PDF');
-        } finally {
-            setIsPrinting(false);
+            console.error("Lỗi tạo file Word:", error);
+            alert("Có lỗi xảy ra khi tạo phiếu cọc!");
         }
     };
+
+    // ==================== HÀM XUẤT HÓA ĐƠN GTGT WORD ====================
+    const handleDownloadHoaDonGTGT = async () => {
+        if (!selectedOrder) return;
+
+        try {
+            const orderId = selectedOrder.MaDonHang || '#N/A';
+            const customerName = selectedOrder.KhachHang?.TenKhachHang || 'Vãng lai';
+            const customerPhone = selectedOrder.KhachHang?.SDT || '';
+            const customerAddress = selectedOrder.KhachHang?.DiaChi || 'Chưa cập nhật';
+            const paymentMethod = selectedOrder.PhuongThucThanhToan === 'TIEN_MAT' ? 'Tiền mặt (TM)' : 'Chuyển khoản (CK)';
+            const orderDateStr = new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN', {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            });
+            const [day, month, year] = orderDateStr.split('/');
+
+            // Mock data for VAT calculation
+            const taxRate = 8;
+            const totalGross = selectedOrder.TongTien || 0;
+            const subTotalCalc = Math.round(totalGross / (1 + taxRate / 100));
+            const vatAmount = totalGross - subTotalCalc;
+
+            const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + ' đ';
+
+            const noBorder = {
+                top: { style: BorderStyle.NONE },
+                bottom: { style: BorderStyle.NONE },
+                left: { style: BorderStyle.NONE },
+                right: { style: BorderStyle.NONE },
+                insideHorizontal: { style: BorderStyle.NONE },
+                insideVertical: { style: BorderStyle.NONE },
+            };
+
+            const doc = new Document({
+                styles: {
+                    default: {
+                        document: {
+                            run: {
+                                font: "Times New Roman",
+                                size: 24, // 12pt
+                            },
+                        },
+                    },
+                },
+                sections: [{
+                    properties: {
+                        page: {
+                            margin: { top: 1134, right: 1134, bottom: 1134, left: 1417 },
+                        },
+                    },
+                    children: [
+                        // 1. Khối thông tin Hóa đơn & Đơn vị bán hàng (Header)
+                        new Table({
+                            width: { type: WidthType.PERCENTAGE, size: 100 },
+                            rows: [
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            width: { type: WidthType.PERCENTAGE, size: 55 },
+                                            borders: noBorder,
+                                            children: [
+                                                new Paragraph({
+                                                    children: [new TextRun({ text: "CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)", bold: true, size: 24 })],
+                                                }),
+                                                new Paragraph({
+                                                    children: [new TextRun({ text: "Mã số thuế: 0100100456", bold: true, size: 24 })],
+                                                }),
+                                                new Paragraph({
+                                                    children: [new TextRun({ text: "Địa chỉ: Số 215 Lạch Tray, Phường Gia Viên, Thành phố Hải Phòng", size: 24 })],
+                                                }),
+                                                new Paragraph({
+                                                    children: [new TextRun({ text: "Điện thoại: 02226.676767 - Số tài khoản: 110000123456 tại VietinBank", size: 24 })],
+                                                }),
+                                            ],
+                                        }),
+                                        new TableCell({
+                                            width: { type: WidthType.PERCENTAGE, size: 45 },
+                                            borders: noBorder,
+                                            children: [
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "HÓA ĐƠN GIÁ TRỊ GIA TĂNG", bold: true, size: 28, color: "FF0000" })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "Mẫu số (Form): 1C26TAA", size: 24 })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "Ký hiệu (Serial): K26TBB", size: 24 })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: `Số (No.): ${orderId}`, bold: true, size: 24, color: "FF0000" })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: `Ngày (Date): ${day} Tháng ${month} Năm ${year}`, italics: true, size: 24 })],
+                                                }),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+
+                        new Paragraph({ spacing: { before: 240, after: 120 }, children: [new TextRun("")] }),
+
+                        // 2. Khối thông tin Người mua hàng (Buyer Information)
+                        new Paragraph({
+                            spacing: { line: 280 },
+                            children: [
+                                new TextRun({ text: "Họ tên người mua hàng: " }),
+                                new TextRun({ text: customerName, bold: true }),
+                            ],
+                        }),
+                        new Paragraph({
+                            spacing: { line: 280 },
+                            children: [new TextRun({ text: `Tên đơn vị (nếu có): ${selectedOrder.KhachHang?.PhanLoai === 'DOANH_NGHIEP' ? selectedOrder.KhachHang?.TenKhachHang : '....................................................................'}` })],
+                        }),
+                        new Paragraph({
+                            spacing: { line: 280 },
+                            children: [new TextRun({ text: "Mã số thuế (nếu có): ...................................................................." })],
+                        }),
+                        new Paragraph({
+                            spacing: { line: 280 },
+                            children: [new TextRun({ text: `Địa chỉ: ${customerAddress}` })],
+                        }),
+                        new Paragraph({
+                            spacing: { line: 280, after: 240 },
+                            children: [new TextRun({ text: `Hình thức thanh toán: ${paymentMethod}` })],
+                        }),
+
+                        // 3. Bảng chi tiết hàng hóa, dịch vụ (Goods Table)
+                        new Table({
+                            width: { type: WidthType.PERCENTAGE, size: 100 },
+                            borders: {
+                                top: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                                bottom: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                                left: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                                right: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                                insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                                insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                            },
+                            rows: [
+                                // Header Row
+                                new TableRow({
+                                    children: [
+                                        "STT", "Tên hàng hóa / dịch vụ", "Đơn vị tính", "Số lượng", "Đơn giá", "Thành tiền"
+                                    ].map(text => new TableCell({
+                                        margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text, bold: true })] })]
+                                    }))
+                                }),
+                                // Data Rows
+                                ...(selectedOrder.Items || []).map((item, index) => {
+                                    const itemPrice = Math.round(item.DonGia / (1 + taxRate / 100)); // Mock trước thuế
+                                    const itemTotal = itemPrice * item.SoLuong;
+                                    return new TableRow({
+                                        children: [
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (index + 1).toString() })] })] }),
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ children: [new TextRun({ text: `${item.TenSanPham} (Mã màu: ${item.MaMau})` })] })] }),
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: item.SanPham?.DonViTinh || "Thùng" })] })] }),
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: item.SoLuong.toString() })] })] }),
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(itemPrice) })] })] }),
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(itemTotal) })] })] }),
+                                        ]
+                                    });
+                                }),
+                                // 4. Khối tính toán tài chính (Financial Summary Rows)
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            columnSpan: 5,
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "Cộng tiền hàng (Total Net Amount):", bold: true })] })]
+                                        }),
+                                        new TableCell({
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(subTotalCalc) })] })]
+                                        }),
+                                    ]
+                                }),
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            columnSpan: 5,
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: `Thuế suất GTGT (VAT Rate): ${taxRate}%    Tiền thuế GTGT (VAT Amount):`, bold: true })] })]
+                                        }),
+                                        new TableCell({
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(vatAmount) })] })]
+                                        }),
+                                    ]
+                                }),
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            columnSpan: 5,
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "Tổng cộng tiền thanh toán (Total Gross Amount):", bold: true })] })]
+                                        }),
+                                        new TableCell({
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(totalGross), bold: true })] })]
+                                        }),
+                                    ]
+                                }),
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            columnSpan: 6,
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ children: [new TextRun({ text: `Số tiền viết bằng chữ (Amount in words): ${numberToVietnameseWords(totalGross)}`, italics: true })] })]
+                                        }),
+                                    ]
+                                })
+                            ]
+                        }),
+
+                        new Paragraph({ spacing: { before: 240, after: 120 }, children: [new TextRun("")] }),
+
+                        // 5. Khối Ký tên (Signatures)
+                        new Table({
+                            width: { type: WidthType.PERCENTAGE, size: 100 },
+                            rows: [
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            width: { type: WidthType.PERCENTAGE, size: 50 },
+                                            borders: noBorder,
+                                            children: [
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "NGƯỜI MUA HÀNG", bold: true })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true })],
+                                                }),
+                                            ],
+                                        }),
+                                        new TableCell({
+                                            width: { type: WidthType.PERCENTAGE, size: 50 },
+                                            borders: noBorder,
+                                            children: [
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "NGƯỜI BÁN HÀNG", bold: true })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    spacing: { after: 120 },
+                                                    children: [new TextRun({ text: "(Ký điện tử bởi: CÔNG TY CP TMDV VOSCO - VTSC)", italics: true, size: 20 })],
+                                                }),
+                                                new Table({
+                                                    width: { type: WidthType.PERCENTAGE, size: 80 },
+                                                    alignment: AlignmentType.CENTER,
+                                                    borders: {
+                                                        top: { style: BorderStyle.SINGLE, size: 2, color: "059669" },
+                                                        bottom: { style: BorderStyle.SINGLE, size: 2, color: "059669" },
+                                                        left: { style: BorderStyle.SINGLE, size: 2, color: "059669" },
+                                                        right: { style: BorderStyle.SINGLE, size: 2, color: "059669" },
+                                                    },
+                                                    rows: [
+                                                        new TableRow({
+                                                            children: [
+                                                                new TableCell({
+                                                                    margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            children: [new TextRun({ text: "✓ Ký bởi: CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO", bold: true, color: "059669", size: 20 })]
+                                                                        }),
+                                                                        new Paragraph({
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            children: [new TextRun({ text: `Ngày ký: ${orderDateStr}`, color: "059669", size: 20 })]
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
+                                                        })
+                                                    ]
+                                                })
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }],
+            });
+
+            const blob = await Packer.toBlob(doc);
+            const fileName = `Hoa_Don_GTGT_VTSC_${orderId.replace('#', '')}.docx`;
+            saveAs(blob, fileName);
+        } catch (error) {
+            console.error("Lỗi tạo hóa đơn GTGT:", error);
+            alert("Có lỗi xảy ra khi tạo hóa đơn GTGT!");
+        }
+    };
+
 
     useEffect(() => {
         fetchOrders();
@@ -726,6 +1253,15 @@ export default function OrderManagementPage() {
                                         >
                                             <Eye size={16} />
                                         </button>
+                                        {!isAdminOrEmployee && (order.TrangThai === 'DANG_GIAO' || order.TrangThai === 'DA_GIAO') && (
+                                            <Link
+                                                href={`/tracking`}
+                                                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1.5 rounded-lg text-xs"
+                                                title="Theo dõi vận chuyển"
+                                            >
+                                                <Truck size={16} /> Theo dõi
+                                            </Link>
+                                        )}
                                         {isAdminOrEmployee && (
                                             <>
                                                 {order.TrangThai === 'CHO_XAC_NHAN' && (
@@ -1214,9 +1750,11 @@ export default function OrderManagementPage() {
                                             <span style={{ color: '#475569', minWidth: 110 }}>* Độ dày lớp phủ:</span>
                                             <span>{selectedOrder.TechnicalSpecs?.DoDayLopPhu || '75 µm'}</span>
                                         </div>
-                                        <div style={{ marginTop: 8 }}>
-                                            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ fontSize: 11, padding: '4px 10px', color: '#2563eb', border: '1px solid #2563eb' }}>📈 Xem biểu đồ hiệu suất thực</button>
-                                        </div>
+                                        {(selectedOrder.KhachHang?.PhanLoai === 'DOANH_NGHIEP' || (selectedOrder.GhiChu?.toLowerCase().includes('pha chế')) || (selectedOrder.GhiChu?.toLowerCase().includes('mẫu')) || (selectedOrder.GhiChu?.toLowerCase().includes('hợp đồng'))) && (
+                                            <div style={{ marginTop: 8 }}>
+                                                <button onClick={() => setIsChartModalOpen(true)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ fontSize: 11, padding: '4px 10px', color: '#2563eb', border: '1px solid #2563eb' }}>📈 Xem biểu đồ hiệu suất thực</button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1257,11 +1795,11 @@ export default function OrderManagementPage() {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                 <span style={{ fontWeight: 700 }}>{(selectedOrder.DaCoc || 0).toLocaleString()}đ ({Math.round(((selectedOrder.DaCoc || 0) / selectedOrder.TongTien) * 100)}%)</span>
                                                 {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             setDepositAmount(selectedOrder.DaCoc || 0);
                                                             setIsPaymentModalOpen(true);
-                                                        }} 
+                                                        }}
                                                         className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                                                         style={{ padding: '2px 8px', fontSize: '10px', color: '#2563eb', border: '1px solid #2563eb' }}
                                                     >
@@ -1285,8 +1823,12 @@ export default function OrderManagementPage() {
                                     <div style={{ flex: 1, fontSize: 14 }}>
                                         <span style={{ color: '#475569' }}>[{new Date(selectedOrder.createdAt).toLocaleDateString()}]</span> Đã cọc (Chuyển khoản) <span style={{ fontWeight: 700, color: '#059669' }}>[{(selectedOrder.DaCoc || 0).toLocaleString()}đ]</span>
                                     </div>
-                                    <button onClick={() => exportToPDF('COC')} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#2563eb' }} disabled={isPrinting}>
-                                        <FileCheck size={14} /> In Phiếu Cọc
+                                    <button
+                                        onClick={handleDownloadPhieuCoc}
+                                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
+                                        style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#2563eb' }}
+                                    >
+                                        <FileCheck size={14} /> In Phiếu Cọc (Word)
                                     </button>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid #e2e8f0' }}>
@@ -1295,21 +1837,21 @@ export default function OrderManagementPage() {
                                         <span style={{ color: '#475569' }}>[{new Date().toLocaleDateString()}]</span> Đơn hàng đang được xử lý <span style={{ fontWeight: 700 }}>[Thanh toán nốt]</span>
                                     </div>
                                     {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
-                                        <button 
+                                        <button
                                             onClick={() => {
                                                 if ((selectedOrder.DaCoc || 0) <= 0) {
                                                     alert('Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.');
                                                     return;
                                                 }
                                                 handleUpdateStatus(selectedOrder._id, 'DANG_XU_LY');
-                                            }} 
+                                            }}
                                             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                                             style={{ background: (selectedOrder.DaCoc || 0) <= 0 ? '#94a3b8' : 'var(--accent-primary)', opacity: (selectedOrder.DaCoc || 0) <= 0 ? 0.7 : 1 }}
                                         >
                                             Bắt đầu sản xuất
                                         </button>
                                     )}
-                                    <button onClick={() => exportToPDF('HOA_DON')} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#059669' }} disabled={isPrinting}>
+                                    <button onClick={handleDownloadHoaDonGTGT} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#059669' }} disabled={isPrinting}>
                                         <Printer size={14} /> In Hóa Đơn GTGT
                                     </button>
                                 </div>
@@ -1323,6 +1865,77 @@ export default function OrderManagementPage() {
                             </div>
                         </div>
                     </div>
+
+                    {/* CHART MODAL */}
+                    {isChartModalOpen && selectedOrder && (
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)' }}>
+                            <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '95%', maxWidth: '800px', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '32px', background: '#0f172a', color: '#fff' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 16 }}>
+                                    <h3 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: '#00d4ff', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <Thermometer size={24} /> Hiệu Suất Sấy Thực Tế - Đơn #{selectedOrder.MaDonHang}
+                                    </h3>
+                                    <button onClick={() => setIsChartModalOpen(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 24 }}>&times;</button>
+                                </div>
+
+                                <div style={{ height: 400, width: '100%' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={(() => {
+                                            const matchLog = rdTrackingLogs.find(log =>
+                                                (log.MaMauYeuCau && selectedOrder.Items?.[0]?.MaMau && log.MaMauYeuCau.toLowerCase() === selectedOrder.Items?.[0]?.MaMau.toLowerCase()) ||
+                                                (log.colorCode && selectedOrder.Items?.[0]?.MaMau && log.colorCode.toLowerCase() === selectedOrder.Items?.[0]?.MaMau.toLowerCase())
+                                            );
+                                            const versions = matchLog?.LichSuPhienBan || [];
+
+                                            if (versions.length > 0) {
+                                                return versions.map((v: any) => ({
+                                                    time: `V${v.version || '1.0'}`,
+                                                    nhietDo: parseFloat(v.nhietDo) || 195,
+                                                    hieuSuat: parseFloat(v.hieuSuat) || 98
+                                                }));
+                                            }
+
+                                            const targetTempStr = selectedOrder.TechnicalSpecs?.NhietDoSay || '195';
+                                            const targetTemp = parseInt(targetTempStr.replace(/\D/g, '')) || 195;
+                                            return [
+                                                { time: 'Phút 0', nhietDo: 25, hieuSuat: 0 },
+                                                { time: 'Phút 5', nhietDo: Math.round(targetTemp * 0.6), hieuSuat: 30 },
+                                                { time: 'Phút 10', nhietDo: Math.round(targetTemp * 0.9), hieuSuat: 60 },
+                                                { time: 'Phút 15', nhietDo: targetTemp, hieuSuat: 95 },
+                                                { time: 'Phút 20', nhietDo: targetTemp, hieuSuat: 98 },
+                                                { time: 'Phút 25', nhietDo: Math.round(targetTemp * 0.5), hieuSuat: 100 },
+                                            ];
+                                        })()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                            <XAxis dataKey="time" stroke="#94a3b8" />
+                                            <YAxis yAxisId="left" stroke="#00d4ff" label={{ value: 'Nhiệt độ (°C)', angle: -90, position: 'insideLeft', fill: '#00d4ff' }} />
+                                            <YAxis yAxisId="right" orientation="right" stroke="#059669" label={{ value: 'Hiệu suất (%)', angle: 90, position: 'insideRight', fill: '#059669' }} />
+                                            <RechartsTooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, color: '#fff' }} />
+                                            <Legend />
+                                            <Line yAxisId="left" type="monotone" dataKey="nhietDo" name="Nhiệt độ lò sấy (°C)" stroke="#00d4ff" strokeWidth={3} activeDot={{ r: 8 }} />
+                                            <Line yAxisId="right" type="monotone" dataKey="hieuSuat" name="Độ bám dính (%)" stroke="#059669" strokeWidth={3} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                <div style={{ marginTop: 24, padding: 16, background: 'rgba(0,212,255,0.05)', borderRadius: 12, border: '1px solid rgba(0,212,255,0.2)' }}>
+                                    <div style={{ display: 'flex', gap: 20 }}>
+                                        <div>
+                                            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>Loại bột sơn</div>
+                                            <div style={{ fontWeight: 600, color: '#fff' }}>{selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon'}</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>Nhiệt độ chuẩn</div>
+                                            <div style={{ fontWeight: 600, color: '#fff' }}>{selectedOrder.TechnicalSpecs?.NhietDoSay || '195°C'}</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>Đánh giá</div>
+                                            <div style={{ fontWeight: 600, color: '#059669' }}>Đạt tiêu chuẩn xuất xưởng</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* HIDDEN PRINT TEMPLATE (Pure white for PDF) */}
                     <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
@@ -1585,17 +2198,17 @@ export default function OrderManagementPage() {
                         <div style={{ padding: '24px' }}>
                             <div style={{ marginBottom: 20 }}>
                                 <label style={{ fontSize: 13, color: '#475569', marginBottom: 8, display: 'block' }}>Số tiền khách đã trả (VNĐ)</label>
-                                <input 
-                                    type="number" 
-                                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
+                                <input
+                                    type="number"
+                                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                     style={{ width: '100%', fontSize: 20, fontWeight: 700, textAlign: 'right', color: '#059669' }}
                                     value={depositAmount}
                                     onChange={(e) => setDepositAmount(Number(e.target.value))}
                                 />
                                 <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
                                     {[0.3, 0.5, 1].map(p => (
-                                        <button 
-                                            key={p} 
+                                        <button
+                                            key={p}
                                             onClick={() => setDepositAmount(Math.round(selectedOrder!.TongTien * p))}
                                             style={{ flex: 1, padding: '6px', fontSize: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid #e2e8f0', borderRadius: 4, cursor: 'pointer' }}
                                         >

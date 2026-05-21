@@ -26,6 +26,8 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
     feedback: '',
     inputWeight: '',
     outputWeight: '',
+    nhietDo: '',
+    hieuSuat: '',
     result: 'pending' as 'pass' | 'fail' | 'pending',
     components: [{ materialId: '', quantity: 0 }]
   });
@@ -191,6 +193,8 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 feedback: newVersion.feedback,
                 inputWeight: parseFloat(newVersion.inputWeight) || 0,
                 outputWeight: parseFloat(newVersion.outputWeight) || 0,
+                nhietDo: parseFloat(newVersion.nhietDo) || 0,
+                hieuSuat: parseFloat(newVersion.hieuSuat) || 0,
                 tester: (user as any)?.name || 'Admin',
                 testerCode: (user as any)?.MaNhanVien || 'N/A',
                 components: newVersion.components
@@ -206,7 +210,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
               });
 
               setShowAddVersion(false);
-              setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', result: 'pending', components: [{ materialId: '', quantity: 0 }] });
+              setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }] });
               alert('✅ Đã cập nhật phiên bản test mới và trừ tồn kho!');
               return;
             }
@@ -236,7 +240,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
           setRequest(res.data.data);
           setShowAddVersion(false);
-          setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', result: 'pending', components: [{ materialId: '', quantity: 0 }] });
+          setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }] });
           alert('✅ Đã cập nhật phiên bản test mới!');
         }
       }
@@ -410,9 +414,22 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           </div>
           <div className="stat-item">
             <div className="text-sm text-slate-500 mb-1">HAO HỤT B/Q</div>
-            <div className="stat-value" style={{ color: '#d97706' }}>
-              {(request.LichSuPhienBan.reduce((acc: number, cur: any) => acc + (cur.inputWeight > 0 ? (cur.inputWeight - cur.outputWeight) / cur.inputWeight * 100 : 0), 0) / (request.LichSuPhienBan.length || 1)).toFixed(1)}<span className="stat-unit">%</span>
-            </div>
+            {(() => {
+              const avgWastage = parseFloat((request.LichSuPhienBan.reduce((acc: number, cur: any) => acc + (cur.inputWeight > 0 ? (cur.inputWeight - cur.outputWeight) / cur.inputWeight * 100 : 0), 0) / (request.LichSuPhienBan.length || 1)).toFixed(1));
+              const isHighWastage = avgWastage > 5;
+              return (
+                <>
+                  <div className="stat-value" style={{ color: isHighWastage ? '#e11d48' : '#d97706' }}>
+                    {avgWastage}<span className="stat-unit">%</span>
+                  </div>
+                  {isHighWastage && (
+                    <div className="text-[11px] font-black text-rose-600 mt-1 uppercase flex items-center gap-0.5 animate-pulse">
+                      <AlertTriangle size={11} className="inline" /> Hiệu suất kém
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
           <div className="stat-item">
             <div className="text-sm text-slate-500 mb-1">CẬP NHẬT</div>
@@ -528,6 +545,44 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-gray-500 flex items-center gap-2">
+                    🔥 Nhiệt độ sấy
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all pr-12"
+                      placeholder="VD: 195"
+                      value={newVersion.nhietDo}
+                      onChange={e => setNewVersion(p => ({ ...p, nhietDo: e.target.value }))}
+                    />
+                    <div className="absolute inset-y-0 right-4 flex items-center text-sm text-gray-400 font-medium pointer-events-none">
+                      °C
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-gray-500 flex items-center gap-2">
+                    📈 Hiệu suất bám dính
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all pr-12"
+                      placeholder="VD: 98"
+                      value={newVersion.hieuSuat}
+                      onChange={e => setNewVersion(p => ({ ...p, hieuSuat: e.target.value }))}
+                    />
+                    <div className="absolute inset-y-0 right-4 flex items-center text-sm text-gray-400 font-medium pointer-events-none">
+                      %
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Materials Selection */}
               <div className="space-y-3 mt-4">
                 <div className="flex items-center justify-between">
@@ -624,11 +679,18 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           {/* Card Footer */}
           <div className="px-6 py-4 bg-slate-50 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
             {/* Thống kê bên trái */}
-            <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
-              Hao hụt tự động:
-              <span className="px-2.5 py-1 bg-orange-100 text-orange-600 rounded-md text-xs font-black">
-                {calculatedWastage(newVersion.inputWeight, newVersion.outputWeight) || '0.00'}%
-              </span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
+                Hao hụt tự động:
+                <span className="px-2.5 py-1 bg-orange-100 text-orange-600 rounded-md text-xs font-black">
+                  {calculatedWastage(newVersion.inputWeight, newVersion.outputWeight) || '0.00'}%
+                </span>
+              </div>
+              {parseFloat(calculatedWastage(newVersion.inputWeight, newVersion.outputWeight) || '0') > 5 && (
+                <div className="text-xs text-rose-600 font-black flex items-center gap-1">
+                  <AlertTriangle size={12} /> Cảnh báo: Hao hụt vượt quá 5% - Hiệu suất kém
+                </div>
+              )}
             </div>
 
             {/* Nút bấm bên phải */}
@@ -723,6 +785,15 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                       <div className={`px-3 py-1.5 rounded-xl text-[12px] font-bold ${parseFloat(wastage) > 5 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
                         }`}>
                         Hao hụt: <span className="font-black">{wastage}%</span>
+                        {parseFloat(wastage) > 5 && (
+                          <span className="ml-2 text-[10px] font-black text-rose-700 bg-rose-100/60 px-2 py-0.5 rounded border border-rose-200">HIỆU SUẤT KÉM</span>
+                        )}
+                      </div>
+                      <div className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
+                        Nhiệt độ: <span className="font-black">{v.nhietDo || 195}°C</span>
+                      </div>
+                      <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
+                        Hiệu suất: <span className="font-black">{v.hieuSuat || 98}%</span>
                       </div>
                     </div>
                   </div>

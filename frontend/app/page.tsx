@@ -82,6 +82,7 @@ export default function HomePage() {
     fetchCart,
     addToCart: addToCartStore,
     removeFromCart: removeFromCartStore,
+    updateQuantity: updateQuantityStore,
   } = useCartStore();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartLoading, setIsCartLoading] = useState(false);
@@ -354,6 +355,16 @@ export default function HomePage() {
     }
   };
 
+  const handleUpdateCartItemQuantity = async (sanPhamId: string, soLuong: number) => {
+    if (soLuong < 1) return;
+    try {
+      const sessionId = user?.id || "GUEST_SESSION";
+      await updateQuantityStore(sessionId, sanPhamId, soLuong);
+    } catch (err) {
+      console.error("Error updating quantity:", err);
+    }
+  };
+
   const handlePageLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
@@ -372,7 +383,6 @@ export default function HomePage() {
         loginState(res.data.user, res.data.accessToken);
         setIsLoginOpen(false);
 
-<<<<<<< HEAD
         // Handle redirect if exists
         if (redirectPath) {
           router.push(redirectPath);
@@ -380,8 +390,6 @@ export default function HomePage() {
           return;
         }
 
-=======
->>>>>>> develop
         const role = res.data.user.role;
         if (role === "Admin" || role === "Director") {
           router.push("/dashboard");
@@ -516,6 +524,12 @@ export default function HomePage() {
               Bảng màu
             </Link>
             <Link
+              href="/tracking"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+            >
+              Theo dõi & Tra cứu
+            </Link>
+            <Link
               href="#quy-trinh"
               className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
@@ -620,9 +634,23 @@ export default function HomePage() {
                               </span>
                             </div>
                             <div className="flex justify-between items-center mt-1">
-                              <span className="text-[12px] font-bold text-blue-600">
-                                x{item.SoLuong}
-                              </span>
+                              <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
+                                <button 
+                                  onClick={() => handleUpdateCartItemQuantity(item.SanPham?._id, item.SoLuong - 1)}
+                                  className="w-5 h-5 rounded-md bg-white text-slate-600 hover:text-blue-600 flex items-center justify-center font-bold shadow-sm text-xs"
+                                >
+                                  -
+                                </button>
+                                <span className="text-[11px] font-bold text-blue-600 w-4 text-center">
+                                  {item.SoLuong}
+                                </span>
+                                <button 
+                                  onClick={() => handleUpdateCartItemQuantity(item.SanPham?._id, item.SoLuong + 1)}
+                                  className="w-5 h-5 rounded-md bg-white text-slate-600 hover:text-blue-600 flex items-center justify-center font-bold shadow-sm text-xs"
+                                >
+                                  +
+                                </button>
+                              </div>
                               <div className="flex items-center gap-3">
                                 <span className="text-[12px] font-bold text-slate-900">
                                   {(
@@ -671,6 +699,25 @@ export default function HomePage() {
                       >
                         Thanh toán ngay <ArrowRight size={16} />
                       </Link>
+
+                      <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-200">
+                        <Link href="/don-hang" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
+                          <Package size={16} className="text-blue-600" />
+                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Đơn hàng<br/>của tôi</span>
+                        </Link>
+                        <Link href="/tracking" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
+                          <Truck size={16} className="text-emerald-600" />
+                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Theo dõi<br/>vận chuyển</span>
+                        </Link>
+                        <Link href="/thanh-toan" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
+                          <QrCode size={16} className="text-indigo-600" />
+                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Thanh toán<br/>đơn hàng</span>
+                        </Link>
+                        <Link href="/tracking?tab=samples" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
+                          <FlaskConical size={16} className="text-purple-600" />
+                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Theo dõi<br/>quy trình R&D</span>
+                        </Link>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -749,7 +796,14 @@ export default function HomePage() {
               desc="Nhận yêu cầu R&D mẫu màu sơn theo yêu cầu của dự án, đảm bảo chính xác tuyệt đối."
               ctaText="Gửi mẫu"
               ctaColor="text-blue-600"
-              href="#"
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setRedirectPath("/rd-tracking/new");
+                  setIsLoginOpen(true);
+                } else {
+                  router.push("/rd-tracking/new");
+                }
+              }}
             />
             <ServiceCard
               icon={<Truck size={28} />}
@@ -959,14 +1013,14 @@ export default function HomePage() {
                 ></div>
               ))
             ) : products.filter((sp) => {
-                const search = searchTerm.toLowerCase();
-                return (
-                  sp.TenDongSon?.toLowerCase().includes(search) ||
-                  sp.MaSanPham?.toLowerCase().includes(search) ||
-                  sp.PhanLoai?.toLowerCase().includes(search) ||
-                  sp.ThuongHieu?.toLowerCase().includes(search)
-                );
-              }).length === 0 ? (
+              const search = searchTerm.toLowerCase();
+              return (
+                sp.TenDongSon?.toLowerCase().includes(search) ||
+                sp.MaSanPham?.toLowerCase().includes(search) ||
+                sp.PhanLoai?.toLowerCase().includes(search) ||
+                sp.ThuongHieu?.toLowerCase().includes(search)
+              );
+            }).length === 0 ? (
               <div className="col-span-full p-12 text-center bg-white rounded-[40px] border border-slate-100">
                 <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
                   <Search size={40} />
@@ -1592,11 +1646,7 @@ export default function HomePage() {
             </button>
 
             <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">
-<<<<<<< HEAD
               {isForgotMode ? "Đặt Lại Mật Khẩu" : isRegisterMode ? "Đăng Ký Tài Khoản" : "Chào Mừng Trở Lại"}
-=======
-              Chào Mừng Trở Lại
->>>>>>> develop
             </h2>
 
             {isForgotMode ? (
@@ -1675,7 +1725,6 @@ export default function HomePage() {
                   </div>
                 )}
 
-<<<<<<< HEAD
                 <div className="space-y-4">
                   <input
                     type="text"
@@ -1830,56 +1879,6 @@ export default function HomePage() {
                 </div>
               </form>
             )}
-=======
-              <div className="text-right">
-                <Link
-                  href="#"
-                  className="text-[11px] font-bold text-blue-600 hover:underline no-underline"
-                >
-                  Quên Mật Khẩu?
-                </Link>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={isLoggingIn}
-                  className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
-                >
-                  {isLoggingIn ? (
-                    <Loader2 className="animate-spin" size={18} />
-                  ) : (
-                    "Đăng Nhập"
-                  )}
-                </button>
-              </div>
-
-              <div className="space-y-3 pt-4">
-                <button
-                  type="button"
-                  className="w-full h-12 bg-[#0f172a] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer"
-                >
-                  <img
-                    src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png"
-                    className="w-4 h-4"
-                    alt="Apple"
-                  />
-                  Đăng nhập bằng Apple
-                </button>
-                <button
-                  type="button"
-                  className="w-full h-12 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer"
-                >
-                  <img
-                    src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png"
-                    className="w-4 h-4"
-                    alt="Google"
-                  />
-                  Đăng nhập bằng Google
-                </button>
-              </div>
-            </form>
->>>>>>> develop
           </div>
         </div>
       )}
@@ -2011,12 +2010,10 @@ function ServiceCard({
   ctaText,
   ctaColor,
   href,
+  onClick,
 }: any) {
-  return (
-    <Link
-      href={href}
-      className="flex flex-col bg-white p-10 rounded-3xl border border-slate-100 no-underline text-inherit transition-all duration-300 hover:shadow-xl hover:border-blue-100"
-    >
+  const CardContent = (
+    <div className="flex flex-col bg-white p-10 rounded-3xl border border-slate-100 no-underline text-inherit transition-all duration-300 hover:shadow-xl hover:border-blue-100 h-full">
       <div
         className={`w-14 h-14 ${iconBg} ${iconColor} rounded-xl flex items-center justify-center mb-8 flex-shrink-0 transition-all duration-300`}
       >
@@ -2032,6 +2029,23 @@ function ServiceCard({
         {ctaText}
         <ChevronRight size={18} />
       </span>
+    </div>
+  );
+
+  if (onClick) {
+    return (
+      <div onClick={onClick} className="cursor-pointer h-full">
+        {CardContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={href || "#"}
+      className="no-underline text-inherit h-full block"
+    >
+      {CardContent}
     </Link>
   );
 }

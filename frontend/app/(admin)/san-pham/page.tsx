@@ -289,6 +289,15 @@ export default function SanPhamPage() {
 
   const getAvatarUrl = (path: string) => {
     if (!path || path === "undefined" || path === "null") return "";
+    
+    // IPFS support
+    if (path.startsWith("ipfs://")) {
+      return path.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
+    }
+    if (path.startsWith("Qm") || path.startsWith("bafy")) {
+      return `https://gateway.pinata.cloud/ipfs/${path}`;
+    }
+
     if (path.startsWith("http")) return path;
     const cleanPath = path.startsWith("/") ? path : `/${path}`;
     const origin =
