@@ -78,7 +78,18 @@ export default function AuthNav({ onOpenLogin }: AuthNavProps) {
                 </div>
               </div>
 
-              <div className="p-2">
+              <div className="p-2 space-y-1">
+                <Link
+                  href="/thongtin"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-700 hover:bg-slate-50 transition-all font-bold text-[13px] no-underline cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <User size={16} />
+                  </div>
+                  Thông tin cá nhân
+                </Link>
+
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-rose-600 hover:bg-rose-50 transition-all font-bold text-[13px] border-none cursor-pointer"

@@ -4,7 +4,7 @@ const SanPhamSon = require('../models/SanPhamSon');
  * Helper: Xây query phân trang + lọc + tìm kiếm
  */
 const buildQuery = (queryParams) => {
-  const { page = 1, limit = 20, search, thuongHieu, phanLoai, sort = '-createdAt' } = queryParams;
+  const { page = 1, limit = 100000000, search, thuongHieu, phanLoai, sort = '-createdAt' } = queryParams;
   const filter = {};
 
   if (search) {

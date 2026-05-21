@@ -36,6 +36,7 @@ import {
   Users,
   Shield,
   Droplets,
+  Home,
 } from "lucide-react";
 
 /**
@@ -208,12 +209,6 @@ const allNavItems = [
         label: "Yêu cầu mẫu thử",
         icon: Droplets,
         roles: ["KhachHangB2B", "KhachHangB2C"],
-      },
-      {
-        href: "/quy-trinh",
-        label: "Quản lý quy trình gói đơn hàng",
-        icon: QrCode,
-        roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
         href: "/thanh-toan-hd",
@@ -464,6 +459,15 @@ export default function AdminLayout({
           {/* Top Bar */}
           <header className="h-[88px] flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-10">
             <div className="flex items-center gap-4">
+              {isCustomer && (
+                <Link
+                  href="/"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-150 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl text-[13px] font-bold transition-all no-underline shadow-sm border border-slate-200 cursor-pointer mr-2"
+                >
+                  <Home size={16} />
+                  Về Trang Chủ
+                </Link>
+              )}
               <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
                 {(() => {
                   const currentItem = allNavItems

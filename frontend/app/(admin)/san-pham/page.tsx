@@ -14,10 +14,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  Filter,
   Eye,
   Star,
+  Image as ImageIcon,
+  X,
+  Upload,
+  QrCode,
 } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
 import * as XLSX from "xlsx";
@@ -55,16 +59,105 @@ interface SanPham {
   TongTonKho?: number;
   SoLuongDaBan?: number;
   DanhGia?: DanhGia[];
-  HinhAnh?: string;
+  HinhAnh?: string[];
   MoTaSanPham?: string;
+  TruyXuatNguonGoc?: {
+    HoaDonMuaSon?: string;
+    QuyTrinhSanXuat?: string;
+    NgaySanXuat?: string;
+    HanSuDung?: string;
+  };
 }
+
+// Mock Data để render giao diện đẹp mắt
+const MOCK_DATA: SanPham[] = [
+  {
+    _id: "1",
+    MaSanPham: "STD-EP01",
+    TenDongSon: "Sơn Tĩnh Điện Epoxy Bóng Trong Nhà",
+    ThuongHieu: "AkzoNobel",
+    PhanLoai: "Sơn tĩnh điện",
+    DonGiaCoSo: 65000,
+    MoTa: "Sơn bột tĩnh điện Epoxy có độ bóng cao, chịu va đập tốt, chuyên dùng cho nội thất gia đình và văn phòng.",
+    DonViTinh: "Kg",
+    TongTonKho: 1250,
+    HinhAnh: ["https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?auto=format&fit=crop&q=80&w=400&h=400", "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400&h=400"],
+    DanhSachMaMau: [{ MaMau: "WHT01", TenMau: "Trắng", HexCode: "#FFFFFF", TonKhoKhaDung: 500, TonKhoTamGiu: 0, NguongCanhBao: 100, TrangThai: true }]
+  },
+  {
+    _id: "2",
+    MaSanPham: "STB-PU05",
+    TenDongSon: "Sơn Tàu Biển Chống Hà PU",
+    ThuongHieu: "Jotun",
+    PhanLoai: "Sơn tàu biển",
+    DonGiaCoSo: 145000,
+    MoTa: "Sơn phủ Polyurethane chống hà, chống ăn mòn nước biển, độ bền màu cao dùng cho mạn tàu.",
+    DonViTinh: "Lít",
+    TongTonKho: 0, // Test case hết hàng
+    HinhAnh: ["https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400&h=400"],
+    DanhSachMaMau: []
+  },
+  {
+    _id: "3",
+    MaSanPham: "SCN-AK03",
+    TenDongSon: "Sơn Công Nghiệp Alkyd Nhanh Khô",
+    ThuongHieu: "Nippon",
+    PhanLoai: "Sơn công nghiệp",
+    DonGiaCoSo: 85000,
+    MoTa: "Hệ sơn Alkyd khô nhanh, phù hợp sơn kết cấu thép mạ kẽm trong nhà xưởng.",
+    DonViTinh: "Thùng",
+    TongTonKho: 45,
+    HinhAnh: ["https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&q=80&w=400&h=400"],
+    DanhSachMaMau: []
+  },
+  {
+    _id: "4",
+    MaSanPham: "STD-PE02",
+    TenDongSon: "Sơn Tĩnh Điện Polyester Ngoài Trời",
+    ThuongHieu: "KCC",
+    PhanLoai: "Sơn tĩnh điện",
+    DonGiaCoSo: 72000,
+    MoTa: "Kháng UV cực tốt, chống phai màu, chịu thời tiết khắc nghiệt. Phù hợp cho khung nhôm cửa kính.",
+    DonViTinh: "Kg",
+    TongTonKho: 320,
+    HinhAnh: ["https://images.unsplash.com/photo-1502325966718-85a90488dc29?auto=format&fit=crop&q=80&w=400&h=400"],
+    DanhSachMaMau: []
+  }
+];
+
+// Helper: Tự động format đoạn text dài có chứa gạch đầu dòng, dấu sao hoặc chữ in hoa thành HTML dễ nhìn
+const formatTextToHTML = (text: string) => {
+  if (!text) return "";
+  let formatted = text
+    // Thêm xuống dòng trước các dấu gạch ngang, dấu sao, dấu cộng (nếu trước đó có dấu chấm hoặc khoảng trắng)
+    .replace(/(?:\.\s+|\s|^)([-–+*])\s/g, '\n$1 ')
+    .replace(/(?:\.\s+|\s|^)(\(\*\))\s/g, '\n$1 ')
+    // Thêm xuống dòng trước cụm từ IN HOA dài (vd: CÁCH THỨC THI CÔNG) nếu phía trước là dấu chấm
+    .replace(/\.\s+([A-ZÀ-Ỹ][A-ZÀ-Ỹ\s]{5,})/g, '\n$1');
+
+  return formatted.split('\n').map((line, index) => {
+    if (!line.trim()) return <br key={index} />;
+    const isHeading = line.trim() === line.trim().toUpperCase() && line.trim().length > 8 && !line.includes('–') && !line.includes('-');
+    const isListItem = line.trim().startsWith('-') || line.trim().startsWith('–') || line.trim().startsWith('(*)') || line.trim().startsWith('+');
+
+    return (
+      <span
+        key={index}
+        className={`block ${isHeading ? 'font-bold text-slate-800 mt-3 mb-1 text-[13px]' : 'mb-1'} ${isListItem ? 'pl-3 relative before:content-[""] before:absolute before:left-0 before:top-2 before:w-1 before:h-1 before:bg-slate-400 before:rounded-full' : ''}`}
+      >
+        {line}
+      </span>
+    );
+  });
+};
 
 export default function SanPhamPage() {
   const { user } = useAuthStore();
   const isAdminOrEmployee = user?.role === "Admin" || user?.role === "NhanVien";
 
-  const [sanPhams, setSanPhams] = useState<SanPham[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [sanPhams, setSanPhams] = useState<SanPham[]>(MOCK_DATA);
+  const [allSanPhams, setAllSanPhams] = useState<SanPham[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,12 +178,30 @@ export default function SanPhamPage() {
     DonGiaCoSo: 0,
     MoTa: "",
     DonViTinh: "Kg",
-    HinhAnh: "",
+    HinhAnh: [] as string[],
     MoTaSanPham: "",
     DanhSachMaMau: [] as MaMau[],
+    TruyXuatNguonGoc: {
+      HoaDonMuaSon: "",
+      QuyTrinhSanXuat: "",
+      NgaySanXuat: "",
+      HanSuDung: "",
+    },
   });
 
   const [isUploading, setIsUploading] = useState(false);
+  const [currentImgIndex, setCurrentImgIndex] = useState(0);
+
+  const fetchStatsData = async () => {
+    try {
+      const res = await api.get("/san-pham-son?limit=100000000");
+      if (res.data.success) {
+        setAllSanPhams(res.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching all products for stats:", error);
+    }
+  };
 
   const fetchSanPhams = async () => {
     try {
@@ -102,16 +213,21 @@ export default function SanPhamPage() {
       params.append("limit", "10");
 
       const res = await api.get(`/san-pham-son?${params.toString()}`);
-      if (res.data.success) {
+      if (res.data.success && res.data.data.length > 0) {
         setSanPhams(res.data.data);
         setTotalPages(res.data.totalPages || 1);
       }
     } catch (error) {
       console.error("Error fetching san pham:", error);
+      // Fallback giữ nguyên mock data nếu API lỗi
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchStatsData();
+  }, []);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -152,6 +268,7 @@ export default function SanPhamPage() {
       }
       setIsModalOpen(false);
       fetchSanPhams();
+      fetchStatsData();
     } catch (error: any) {
       console.error(error);
       alert(error.response?.data?.error || "Có lỗi xảy ra khi lưu!");
@@ -163,6 +280,7 @@ export default function SanPhamPage() {
     try {
       await api.delete(`/san-pham-son/${id}`);
       fetchSanPhams();
+      fetchStatsData();
     } catch (error) {
       alert("Không thể xóa sản phẩm!");
     }
@@ -209,9 +327,15 @@ export default function SanPhamPage() {
         DonGiaCoSo: item.DonGiaCoSo,
         MoTa: item.MoTa || "",
         DonViTinh: item.DonViTinh || "Kg",
-        HinhAnh: item.HinhAnh || "",
+        HinhAnh: Array.isArray(item.HinhAnh) ? item.HinhAnh : (item.HinhAnh ? [item.HinhAnh] : []),
         MoTaSanPham: item.MoTaSanPham || "",
         DanhSachMaMau: item.DanhSachMaMau || [],
+        TruyXuatNguonGoc: {
+          HoaDonMuaSon: item.TruyXuatNguonGoc?.HoaDonMuaSon || "",
+          QuyTrinhSanXuat: item.TruyXuatNguonGoc?.QuyTrinhSanXuat || "",
+          NgaySanXuat: item.TruyXuatNguonGoc?.NgaySanXuat ? new Date(item.TruyXuatNguonGoc.NgaySanXuat).toISOString().split('T')[0] : "",
+          HanSuDung: item.TruyXuatNguonGoc?.HanSuDung || "",
+        },
       });
     } else {
       setFormData({
@@ -223,40 +347,69 @@ export default function SanPhamPage() {
         DonGiaCoSo: 0,
         MoTa: "",
         DonViTinh: "Kg",
-        HinhAnh: "",
+        HinhAnh: [],
         MoTaSanPham: "",
         DanhSachMaMau: [],
+        TruyXuatNguonGoc: {
+          HoaDonMuaSon: "",
+          QuyTrinhSanXuat: "",
+          NgaySanXuat: "",
+          HanSuDung: "",
+        },
       });
     }
     setIsModalOpen(true);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const fileFormData = new FormData();
-    fileFormData.append("image", file);
-
+    setIsUploading(true);
     try {
-      setIsUploading(true);
-      const res = await api.post("/files/upload-image", fileFormData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      if (res.data.success) {
-        setFormData({ ...formData, HinhAnh: res.data.url });
+      // Upload từng file một, append vào mảng HinhAnh
+      for (let i = 0; i < files.length; i++) {
+        const fileFormData = new FormData();
+        fileFormData.append("image", files[i]);
+        const res = await api.post("/files/upload-image", fileFormData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        if (res.data.success) {
+          setFormData((prev) => ({
+            ...prev,
+            HinhAnh: [...prev.HinhAnh, res.data.url],
+          }));
+        }
       }
     } catch (error) {
       console.error("Lỗi upload ảnh:", error);
       alert("Không thể upload ảnh, vui lòng thử lại.");
     } finally {
       setIsUploading(false);
+      // Reset input để cho phép chọn lại cùng file
+      e.target.value = "";
     }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      HinhAnh: prev.HinhAnh.filter((_: string, i: number) => i !== index),
+    }));
   };
 
   const handleViewProduct = (product: SanPham) => {
     setSelectedProduct(product);
+    setCurrentImgIndex(0);
     setIsViewOpen(true);
+  };
+
+  // Helper: normalize HinhAnh (có thể là string cũ hoặc array mới)
+  const getImageArray = (img: any): string[] => {
+    if (!img) return [];
+    if (Array.isArray(img)) return img.filter(Boolean);
+    if (typeof img === "string" && img) return [img];
+    return [];
   };
 
   const exportToExcel = () => {
@@ -276,15 +429,15 @@ export default function SanPhamPage() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "San-Pham");
     XLSX.writeFile(
       workbook,
-      `VTSC_Danh_Sach_San_Pham_${new Date().toLocaleDateString().replace(/\//g, "_")}.xlsx`,
+      `VTSC_Danh_Sach_San_Pham_${new Date().toLocaleDateString().replace(/\//g, "_")}.xlsx`
     );
   };
 
   const STATS = {
-    total: sanPhams.length,
-    tinhDien: sanPhams.filter((t) => t.PhanLoai === "Sơn tĩnh điện").length,
-    tauBien: sanPhams.filter((t) => t.PhanLoai === "Sơn tàu biển").length,
-    congNghiep: sanPhams.filter((t) => t.PhanLoai === "Sơn công nghiệp").length,
+    total: allSanPhams.length || sanPhams.length,
+    tinhDien: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn tĩnh điện").length,
+    tauBien: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn tàu biển").length,
+    congNghiep: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn công nghiệp").length,
   };
 
   const getAvatarUrl = (path: string) => {
@@ -308,281 +461,218 @@ export default function SanPhamPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-sans text-slate-900 space-y-6">
+      {/* 1. KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          {
-            label: "Tổng sản phẩm",
-            value: STATS.total,
-            unit: "Dòng sơn",
-            icon: Package,
-            color: "blue",
-          },
-          {
-            label: "Sơn tĩnh điện",
-            value: STATS.tinhDien,
-            unit: "Dòng",
-            icon: Layers,
-            color: "emerald",
-          },
-          {
-            label: "Sơn tàu biển",
-            value: STATS.tauBien,
-            unit: "Dòng",
-            icon: Droplet,
-            color: "purple",
-          },
-          {
-            label: "Sơn công nghiệp",
-            value: STATS.congNghiep,
-            unit: "Dòng",
-            icon: Box,
-            color: "amber",
-          },
+          { label: "Tổng sản phẩm", value: STATS.total, icon: Package, color: "blue" },
+          { label: "Sơn tĩnh điện", value: STATS.tinhDien, icon: Layers, color: "emerald" },
+          { label: "Sơn tàu biển", value: STATS.tauBien, icon: Droplet, color: "violet" },
+          { label: "Sơn công nghiệp", value: STATS.congNghiep, icon: Box, color: "amber" },
         ].map((item, i) => (
-          <div
-            key={i}
-            className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group"
-          >
-            <div
-              className={`absolute top-0 right-0 w-32 h-32 bg-${item.color}-50 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150`}
-            ></div>
-            <div className="relative z-10 flex items-start justify-between">
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                  {item.label}
-                </p>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                  {item.value}{" "}
-                  <span className="text-sm font-bold text-slate-400 ml-1">
-                    {item.unit}
-                  </span>
-                </h3>
-              </div>
-              <div
-                className={`w-12 h-12 bg-${item.color}-50 text-${item.color}-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm`}
-              >
-                <item.icon size={22} />
-              </div>
+          <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500 mb-1">{item.label}</p>
+              <h3 className="text-2xl font-bold text-slate-900">{item.value}</h3>
+            </div>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-${item.color}-50 text-${item.color}-600`}>
+              <item.icon strokeWidth={1.5} size={20} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* Toolbar & Filter */}
-      <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-6">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
-            <div className="relative w-full md:w-80 group">
-              <Search
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors"
-              />
-              <input
-                type="text"
-                className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
-                placeholder="Tìm mã SP, tên dòng sơn..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+      {/* 2. Toolbar */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        {/* Left: Search */}
+        <div className="relative w-full lg:w-72">
+          <Search strokeWidth={1.5} size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow shadow-sm"
+            placeholder="Tìm mã SP, tên dòng sơn..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl">
-              {[
-                { id: "all", label: "Tất cả" },
-                { id: "Sơn tĩnh điện", label: "Tĩnh điện" },
-                { id: "Sơn tàu biển", label: "Tàu biển" },
-                { id: "Sơn công nghiệp", label: "Công nghiệp" },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
-                    filterType === f.id
-                      ? "bg-white text-blue-600 shadow-sm"
-                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
-                  }`}
-                  onClick={() => setFilterType(f.id)}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
+        {/* Middle: Pill Tabs */}
+        <div className="flex bg-slate-100 p-1 rounded-xl overflow-x-auto w-full lg:w-auto">
+          {[
+            { id: "all", label: "Tất cả" },
+            { id: "Sơn tĩnh điện", label: "Tĩnh điện" },
+            { id: "Sơn tàu biển", label: "Tàu biển" },
+            { id: "Sơn công nghiệp", label: "Công nghiệp" },
+          ].map((f) => (
             <button
-              onClick={exportToExcel}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-[14px] bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all border border-emerald-100 cursor-pointer"
+              key={f.id}
+              onClick={() => setFilterType(f.id)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${filterType === f.id
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                }`}
             >
-              <Download size={18} /> Xuất Excel
+              {f.label}
             </button>
-            {isAdminOrEmployee && (
-              <button
-                className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
-                onClick={() => openForm()}
-              >
-                <Plus size={18} /> Thêm Sản phẩm
-              </button>
-            )}
-          </div>
+          ))}
+        </div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-3 w-full lg:w-auto">
+          <button
+            onClick={exportToExcel}
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
+            <Download strokeWidth={1.5} size={16} /> Xuất Excel
+          </button>
+          {isAdminOrEmployee && (
+            <button
+              onClick={() => openForm()}
+              className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            >
+              <Plus strokeWidth={2} size={16} /> Thêm Sản phẩm
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Data Table */}
-      <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full border-collapse min-w-[1000px]">
+      {/* 3. Data Table */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
             <thead>
-              <tr className="border-b border-slate-50">
-                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest w-20">
-                  Ảnh
-                </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-32">
-                  Mã SP
-                </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                  Dòng sản phẩm
-                </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                  Thương hiệu / Loại
-                </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                  Đơn giá
-                </th>
-                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                  Tồn kho
-                </th>
-                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                  Phiên bản
-                </th>
-                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                  Thao tác
-                </th>
+              <tr className="bg-slate-50/50 border-b border-slate-200">
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider w-16 text-center">Ảnh</th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Mã SP</th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider w-1/3">Dòng sản phẩm</th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Thương hiệu / Loại</th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Đơn giá</th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Tồn kho</th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="text-center py-20 text-blue-600 font-bold"
-                  >
+                  <td colSpan={7} className="text-center py-12 text-sm text-slate-500">
                     Đang tải dữ liệu...
                   </td>
                 </tr>
               ) : sanPhams.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="text-center py-20 text-slate-400 font-medium italic"
-                  >
+                  <td colSpan={7} className="text-center py-12 text-sm text-slate-500">
                     Không tìm thấy sản phẩm.
                   </td>
                 </tr>
               ) : (
                 sanPhams.map((item) => (
-                  <tr
-                    key={item._id}
-                    className="hover:bg-slate-50/50 transition-colors group"
-                  >
-                    <td className="px-6 py-4 text-center">
-                      <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm mx-auto group-hover:scale-105 transition-transform">
-                        {item.HinhAnh ? (
-                          <img
-                            src={getAvatarUrl(item.HinhAnh)}
-                            alt="Img"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src =
-                                "https://ui-avatars.com/api/?name=" +
-                                encodeURIComponent(item.TenDongSon) +
-                                "&background=random";
-                            }}
-                          />
+                  <tr key={item._id} className="hover:bg-slate-50/50 transition-colors">
+                    {/* Ảnh (hiển thị ảnh đầu tiên) — Click để xem */}
+                    <td className="px-6 py-3 text-center">
+                      <div
+                        className="w-10 h-10 rounded-lg border border-slate-100 overflow-hidden bg-slate-50 flex items-center justify-center mx-auto relative cursor-pointer hover:ring-2 hover:ring-blue-400 hover:scale-110 transition-all"
+                        onClick={() => handleViewProduct(item)}
+                        title="Nhấn để xem ảnh sản phẩm"
+                      >
+                        {getImageArray(item.HinhAnh).length > 0 ? (
+                          <>
+                            <img
+                              src={getAvatarUrl(getImageArray(item.HinhAnh)[0])}
+                              alt={item.TenDongSon}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.TenDongSon)}&background=f8fafc&color=94a3b8`;
+                              }}
+                            />
+                            {getImageArray(item.HinhAnh).length > 1 && (
+                              <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-600 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                                {getImageArray(item.HinhAnh).length}
+                              </span>
+                            )}
+                          </>
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-600 font-bold">
-                            <Package size={20} />
-                          </div>
+                          <ImageIcon strokeWidth={1.5} size={20} className="text-slate-400" />
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-blue-50 text-blue-600">
+
+                    {/* Mã SP */}
+                    <td className="px-6 py-3">
+                      <span className="px-2 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md">
                         {item.MaSanPham}
                       </span>
                     </td>
-                    <td className="px-6 py-4 min-w-[200px]">
-                      <div
-                        className="font-bold text-slate-900 text-[15px] cursor-pointer hover:text-blue-600 transition-colors"
-                        onClick={() => handleViewProduct(item)}
-                      >
-                        {item.TenDongSon}
-                      </div>
-                      <div className="text-[12px] text-slate-400 font-medium mt-0.5 uppercase tracking-wider line-clamp-1">
-                        {item.MoTa || "Chưa có mô tả ngắn"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-800 text-[14px]">
-                        {item.ThuongHieu}
-                      </div>
-                      <div className="text-[12px] text-blue-500 font-bold bg-blue-50 px-2 py-0.5 rounded-md inline-block mt-1">
-                        {item.PhanLoai}
+
+                    {/* Dòng sản phẩm (2 dòng) */}
+                    <td className="px-6 py-3">
+                      <div className="flex flex-col justify-center">
+                        <p
+                          className="font-semibold text-slate-900 text-sm cursor-pointer hover:text-blue-600 transition-colors"
+                          onClick={() => handleViewProduct(item)}
+                        >
+                          {item.TenDongSon}
+                        </p>
+                        <p className="truncate max-w-[280px] text-xs text-slate-500 mt-0.5" title={item.MoTa}>
+                          {item.MoTa || "Không có mô tả"}
+                        </p>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="font-black text-emerald-600 text-[15px]">
+
+                    {/* Thương hiệu / Loại */}
+                    <td className="px-6 py-3">
+                      <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                        {item.ThuongHieu} - {item.PhanLoai}
+                      </span>
+                    </td>
+
+                    {/* Đơn giá */}
+                    <td className="px-6 py-3 text-right">
+                      <p className="font-semibold text-slate-900 text-sm">
                         {item.DonGiaCoSo.toLocaleString()} ₫
-                      </div>
-                      <div className="text-[11px] text-slate-400 font-bold">
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5 uppercase">
                         per {item.DonViTinh}
-                      </div>
+                      </p>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div
-                        className={`font-black text-[16px] ${(item.TongTonKho || 0) < 10 ? "text-rose-500" : "text-slate-900"}`}
-                      >
-                        {item.TongTonKho || 0}
-                      </div>
-                      <div className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-                        {item.DonViTinh}
-                      </div>
+
+                    {/* Tồn kho */}
+                    <td className="px-6 py-3 text-right">
+                      {item.TongTonKho === 0 ? (
+                        <span className="px-2 py-1 bg-rose-50 text-rose-600 text-xs font-medium rounded-md">
+                          Hết hàng
+                        </span>
+                      ) : (
+                        <span className="text-sm font-medium text-slate-900">
+                          {item.TongTonKho?.toLocaleString() || 0}
+                        </span>
+                      )}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm border bg-emerald-50 text-emerald-600 border-emerald-100">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                        {item.DanhSachMaMau?.length || 0} SKU
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+
+                    {/* Thao tác */}
+                    <td className="px-6 py-3 text-right">
+                      <div className="flex justify-end gap-1">
                         <button
                           onClick={() => handleViewProduct(item)}
-                          className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer shadow-sm"
-                          title="Chọn màu trước khi thêm vào giỏ"
+                          className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
+                          title="Xem chi tiết"
                         >
-                          <ShoppingCart size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleViewProduct(item)}
-                          className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer"
-                        >
-                          <Eye size={14} />
+                          <Eye strokeWidth={1.5} size={18} />
                         </button>
                         {isAdminOrEmployee && (
                           <>
                             <button
                               onClick={() => openForm(item)}
-                              className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                              title="Chỉnh sửa"
                             >
-                              <Edit size={14} />
+                              <Edit strokeWidth={1.5} size={18} />
                             </button>
                             <button
                               onClick={() => handleDelete(item._id)}
-                              className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                              title="Xóa sản phẩm"
                             >
-                              <Trash2 size={14} />
+                              <Trash2 strokeWidth={1.5} size={18} />
                             </button>
                           </>
                         )}
@@ -595,286 +685,129 @@ export default function SanPhamPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="px-8 py-4 border-t border-slate-50 flex items-center justify-between bg-slate-50/30">
-          <p className="text-[13px] font-bold text-slate-400">
-            Trang {currentPage} / {totalPages}
+        {/* Phân trang (Pagination) */}
+        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex items-center justify-between">
+          <p className="text-sm text-slate-500 font-medium">
+            Trang <span className="text-slate-900 font-semibold">{currentPage}</span> / {totalPages}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
+              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft strokeWidth={1.5} size={18} />
             </button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  className={`w-10 h-10 rounded-xl text-[13px] font-black transition-all ${
-                    currentPage === p
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                      : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
-                  }`}
-                  onClick={() => setCurrentPage(p)}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
             <button
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
+              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <ChevronRight size={18} />
+              <ChevronRight strokeWidth={1.5} size={18} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* View Modal */}
-      {isViewOpen && selectedProduct && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
-            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
-              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                Hồ sơ sản phẩm: {selectedProduct.MaSanPham}
-              </h2>
-              <button
-                onClick={() => setIsViewOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="p-8 overflow-y-auto space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="col-span-1">
-                  <div className="aspect-square rounded-[32px] overflow-hidden border-4 border-white shadow-xl bg-slate-100">
-                    <img
-                      src={getAvatarUrl(selectedProduct.HinhAnh || "")}
-                      alt={selectedProduct.TenDongSon}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-
-                <div className="col-span-1 md:col-span-2 space-y-6">
-                  <div>
-                    <span className="text-[11px] font-black bg-blue-600 text-white px-3 py-1 rounded-full uppercase tracking-widest">
-                      {selectedProduct.PhanLoai}
-                    </span>
-                    <h1 className="text-3xl font-black text-slate-900 mt-2">
-                      {selectedProduct.TenDongSon}
-                    </h1>
-                    <p className="text-slate-400 font-bold mt-1 uppercase tracking-wider">
-                      {selectedProduct.ThuongHieu}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-[24px]">
-                    <div>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase">
-                        Đơn giá cơ sở
-                      </p>
-                      <p className="text-2xl font-black text-emerald-600">
-                        {selectedProduct.DonGiaCoSo?.toLocaleString()} ₫
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase">
-                        Tồn kho hiện tại
-                      </p>
-                      <p className="text-2xl font-black text-slate-900">
-                        {selectedProduct.TongTonKho || 0}{" "}
-                        <span className="text-sm text-slate-400">
-                          {selectedProduct.DonViTinh}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-[13px] font-black text-slate-900 uppercase tracking-tight">
-                      Thông tin kỹ thuật & Mô tả
-                    </p>
-                    <p className="text-slate-600 leading-relaxed font-medium">
-                      {selectedProduct.MoTa || "Chưa có thông tin chi tiết."}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-[16px] font-black text-slate-900 uppercase tracking-tight">
-                  Danh sách mã màu SKU (
-                  {selectedProduct.DanhSachMaMau?.length || 0})
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                  {selectedProduct.DanhSachMaMau?.map((m, i) => (
-                    <div
-                      key={i}
-                      className="p-3 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col items-center gap-2"
-                    >
-                      <div
-                        className="w-full aspect-square rounded-xl shadow-inner border border-slate-50"
-                        style={{ background: m.HexCode }}
-                      ></div>
-                      <span className="text-[11px] font-black text-slate-700">
-                        {m.MaMau}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-[16px] font-black text-slate-900 uppercase tracking-tight">
-                  Phản hồi khách hàng
-                </h3>
-                <div className="space-y-4">
-                  {selectedProduct.DanhGia?.length ? (
-                    selectedProduct.DanhGia.map((dg, idx) => (
-                      <div
-                        key={idx}
-                        className="p-6 bg-slate-50 rounded-[24px] space-y-2"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-black text-slate-900">
-                            {dg.KhachHang}
-                          </span>
-                          <span className="text-[12px] font-bold text-slate-400">
-                            {new Date(dg.NgayDanhGia).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <div className="flex text-amber-400 gap-0.5">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star
-                              key={i}
-                              size={14}
-                              fill={i < dg.SoSao ? "currentColor" : "none"}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-[14px] text-slate-600 font-medium">
-                          {dg.BinhLuan}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-center py-10 text-slate-400 italic font-medium">
-                      Chưa có đánh giá nào.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 bg-slate-50/50 border-t border-slate-50 flex justify-center">
-              <button
-                onClick={() => setIsViewOpen(false)}
-                className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20"
-              >
-                Đóng hồ sơ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal - Cập nhật thông tin */}
+      {/* Modal - Cập nhật thông tin (Refactored to match minimal style) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
-            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-              <h2 className="text-xl font-black text-slate-900">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">
                 {formData._id ? "Chỉnh sửa Sản phẩm" : "Thêm Sản phẩm mới"}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors"
+                className="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors"
               >
                 ×
               </button>
             </div>
 
-            <div className="p-8 overflow-y-auto space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Image Upload */}
-                <div className="col-span-1 md:col-span-2 flex flex-col items-center justify-center p-8 bg-slate-50 rounded-[24px] border-2 border-dashed border-slate-200 group hover:border-blue-400 transition-colors cursor-pointer relative overflow-hidden">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                    onChange={handleImageUpload}
-                  />
-                  {formData.HinhAnh ? (
-                    <div className="relative group/img">
-                      <img
-                        src={getAvatarUrl(formData.HinhAnh)}
-                        alt="Product"
-                        className="w-40 h-40 rounded-3xl object-cover shadow-xl border-4 border-white"
+            <div className="p-6 overflow-y-auto space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Image Upload Area — Hỗ trợ nhiều ảnh */}
+                <div className="col-span-1 md:col-span-2 relative">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-2">
+                    Ảnh sản phẩm
+                    {formData.HinhAnh.length > 0 && (
+                      <span className="ml-2 text-blue-600">({formData.HinhAnh.length} ảnh)</span>
+                    )}
+                  </label>
+
+                  {/* Grid hiển thị các ảnh đã upload */}
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {formData.HinhAnh.map((url: string, idx: number) => (
+                      <div key={idx} className="relative group/img w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
+                        <img
+                          src={getAvatarUrl(url)}
+                          alt={`Ảnh ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {/* Nút X xóa ảnh */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-all z-10"
+                        >
+                          <X size={10} strokeWidth={3} />
+                        </button>
+                        {/* Số thứ tự */}
+                        <span className="absolute bottom-1 left-1 text-[9px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded-md">
+                          {idx + 1}
+                        </span>
+                      </div>
+                    ))}
+
+                    {/* Nút thêm ảnh mới */}
+                    <label className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-blue-400 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleImageUpload}
                       />
-                      <div className="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
-                        <Plus className="text-white" size={24} />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-blue-600 shadow-sm transition-colors mb-3">
-                        <Plus size={28} />
-                      </div>
-                      <p className="text-sm font-bold text-slate-500">
-                        Tải ảnh sản phẩm
-                      </p>
-                    </div>
-                  )}
-                  {isUploading && (
-                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20">
-                      <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
-                    </div>
-                  )}
+                      {isUploading ? (
+                        <div className="w-5 h-5 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Upload size={18} className="text-slate-400" strokeWidth={1.5} />
+                          <span className="text-[10px] font-semibold text-slate-400">Thêm ảnh</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400">Nhấn vào ô "+" để thêm ảnh. Di chuột vào ảnh để xóa.</p>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                    Mã sản phẩm
-                  </label>
+                {/* Form Fields */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Mã sản phẩm</label>
                   <input
                     type="text"
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10"
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.MaSanPham}
-                    onChange={(e) =>
-                      setFormData({ ...formData, MaSanPham: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, MaSanPham: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                    Dòng sản phẩm
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Tên dòng sơn</label>
                   <input
                     type="text"
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10"
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.TenDongSon}
-                    onChange={(e) =>
-                      setFormData({ ...formData, TenDongSon: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, TenDongSon: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                    Phân loại
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Phân loại</label>
                   <select
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10"
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.PhanLoai}
-                    onChange={(e) =>
-                      setFormData({ ...formData, PhanLoai: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, PhanLoai: e.target.value })}
                   >
                     <option value="Sơn tĩnh điện">Sơn tĩnh điện</option>
                     <option value="Sơn tàu biển">Sơn tàu biển</option>
@@ -882,177 +815,266 @@ export default function SanPhamPage() {
                     <option value="Sơn nội thất">Sơn nội thất</option>
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                    Thương hiệu
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Thương hiệu</label>
                   <input
                     type="text"
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10"
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.ThuongHieu}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ThuongHieu: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, ThuongHieu: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                    Đơn giá cơ sở
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Đơn giá cơ sở</label>
                   <input
                     type="number"
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10"
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.DonGiaCoSo}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        DonGiaCoSo: Number(e.target.value),
-                      })
-                    }
+                    onChange={(e) => setFormData({ ...formData, DonGiaCoSo: Number(e.target.value) })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                    Đơn vị tính
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Đơn vị tính</label>
                   <select
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10"
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.DonViTinh}
-                    onChange={(e) =>
-                      setFormData({ ...formData, DonViTinh: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, DonViTinh: e.target.value })}
                   >
                     <option value="Thùng">Thùng</option>
                     <option value="Kg">Kg</option>
                     <option value="Lít">Lít</option>
                   </select>
                 </div>
-                <div className="col-span-1 md:col-span-2 space-y-2">
-                  <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                    Mô tả chi tiết
-                  </label>
+                <div className="col-span-1 md:col-span-2 space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Mô tả chi tiết</label>
                   <textarea
-                    rows={4}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 resize-none"
+                    rows={3}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
                     value={formData.MoTa}
-                    onChange={(e) =>
-                      setFormData({ ...formData, MoTa: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, MoTa: e.target.value })}
                   ></textarea>
                 </div>
-                
-                {/* Variant Management (SKU) */}
-                <div className="col-span-1 md:col-span-2 space-y-4 mt-6 pt-6 border-t border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">
-                      Danh sách Mã màu (SKU)
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={handleAddColor}
-                      className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-[12px] hover:bg-emerald-100 transition-colors"
-                    >
-                      <Plus size={14} /> Thêm SKU
-                    </button>
+
+                {/* Phần thông tin Truy Xuất Nguồn Gốc (QR Code) */}
+                <div className="col-span-1 md:col-span-2 mt-2 pt-4 border-t border-slate-100">
+                  <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <QrCode size={18} className="text-blue-500" /> Thông tin Truy xuất Nguồn gốc (QR)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase">Ngày sản xuất</label>
+                      <input
+                        type="date"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                        value={formData.TruyXuatNguonGoc.NgaySanXuat}
+                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, NgaySanXuat: e.target.value } })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase">Hạn sử dụng</label>
+                      <input
+                        type="text"
+                        placeholder="Vd: 24 tháng"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                        value={formData.TruyXuatNguonGoc.HanSuDung}
+                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, HanSuDung: e.target.value } })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase">Hóa đơn mua hàng (URL)</label>
+                      <input
+                        type="text"
+                        placeholder="Link ảnh/PDF hóa đơn"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                        value={formData.TruyXuatNguonGoc.HoaDonMuaSon}
+                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, HoaDonMuaSon: e.target.value } })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase">Quy trình sản xuất</label>
+                      <input
+                        type="text"
+                        placeholder="Mô tả quy trình..."
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                        value={formData.TruyXuatNguonGoc.QuyTrinhSanXuat}
+                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, QuyTrinhSanXuat: e.target.value } })}
+                      />
+                    </div>
                   </div>
-                  
-                  {formData.DanhSachMaMau.length === 0 ? (
-                    <div className="p-8 text-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl">
-                      <p className="text-slate-400 font-medium text-[13px]">Chưa có mã màu nào được thêm. Sản phẩm phải có ít nhất 1 SKU.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {formData.DanhSachMaMau.map((mau, index) => (
-                        <div key={index} className="grid grid-cols-12 gap-3 p-4 bg-white border border-slate-200 shadow-sm rounded-2xl relative group">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveColor(index)}
-                            className="absolute -top-2 -right-2 w-6 h-6 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-rose-500 hover:text-white"
-                          >
-                            ×
-                          </button>
-                          
-                          <div className="col-span-12 sm:col-span-3">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase">Mã màu</label>
-                            <input
-                              type="text"
-                              value={mau.MaMau}
-                              onChange={(e) => handleColorChange(index, "MaMau", e.target.value)}
-                              className="w-full mt-1 bg-slate-50 border-none rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-600/10"
-                              placeholder="VD: INT-SIL"
-                            />
-                          </div>
-                          
-                          <div className="col-span-12 sm:col-span-3">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase">Tên màu</label>
-                            <input
-                              type="text"
-                              value={mau.TenMau}
-                              onChange={(e) => handleColorChange(index, "TenMau", e.target.value)}
-                              className="w-full mt-1 bg-slate-50 border-none rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-600/10"
-                              placeholder="VD: Bạc kim loại"
-                            />
-                          </div>
-                          
-                          <div className="col-span-6 sm:col-span-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase">Hex Color</label>
-                            <div className="flex items-center gap-2 mt-1 bg-slate-50 rounded-lg p-1">
-                              <input
-                                type="color"
-                                value={mau.HexCode}
-                                onChange={(e) => handleColorChange(index, "HexCode", e.target.value)}
-                                className="w-8 h-8 rounded-md cursor-pointer border-none bg-transparent p-0"
-                              />
-                              <input
-                                type="text"
-                                value={mau.HexCode}
-                                onChange={(e) => handleColorChange(index, "HexCode", e.target.value)}
-                                className="w-full bg-transparent border-none text-xs font-bold uppercase focus:ring-0 px-1"
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="col-span-6 sm:col-span-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase">Khả dụng (Kg)</label>
-                            <input
-                              type="number"
-                              value={mau.TonKhoKhaDung}
-                              onChange={(e) => handleColorChange(index, "TonKhoKhaDung", Number(e.target.value))}
-                              className="w-full mt-1 bg-emerald-50 text-emerald-700 border-none rounded-lg px-3 py-2 text-sm font-black focus:ring-2 focus:ring-emerald-600/20"
-                              min="0"
-                            />
-                          </div>
-                          
-                          <div className="col-span-6 sm:col-span-2">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase">Tạm giữ</label>
-                            <input
-                              type="number"
-                              value={mau.TonKhoTamGiu}
-                              onChange={(e) => handleColorChange(index, "TonKhoTamGiu", Number(e.target.value))}
-                              className="w-full mt-1 bg-amber-50 text-amber-700 border-none rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-amber-600/20"
-                              min="0"
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
 
-            <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all"
+                className="px-4 py-2 border border-slate-200 bg-white text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
               >
                 Hủy
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
               >
                 Lưu sản phẩm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal - Xem chi tiết (Refactored to match minimal style) */}
+      {isViewOpen && selectedProduct && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">Chi tiết sản phẩm</h2>
+              <button
+                onClick={() => setIsViewOpen(false)}
+                className="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6">
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="w-full md:w-1/3 flex-shrink-0 space-y-3">
+                  {/* Ảnh chính (carousel) */}
+                  <div className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center group">
+                    {getImageArray(selectedProduct.HinhAnh).length > 0 ? (
+                      <>
+                        <img
+                          src={getAvatarUrl(getImageArray(selectedProduct.HinhAnh)[currentImgIndex] || "")}
+                          alt={selectedProduct.TenDongSon}
+                          className="w-full h-full object-cover transition-all duration-300"
+                        />
+                        {/* Nút prev/next */}
+                        {getImageArray(selectedProduct.HinhAnh).length > 1 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setCurrentImgIndex((prev) => (prev <= 0 ? getImageArray(selectedProduct.HinhAnh).length - 1 : prev - 1))}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ChevronLeft size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCurrentImgIndex((prev) => (prev >= getImageArray(selectedProduct.HinhAnh).length - 1 ? 0 : prev + 1))}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ChevronRight size={16} />
+                            </button>
+                            {/* Indicator dots */}
+                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                              {getImageArray(selectedProduct.HinhAnh).map((_: string, i: number) => (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => setCurrentImgIndex(i)}
+                                  className={`w-2 h-2 rounded-full transition-all ${i === currentImgIndex ? "bg-white scale-125 shadow" : "bg-white/50 hover:bg-white/80"}`}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <ImageIcon className="text-slate-300" size={48} />
+                    )}
+                  </div>
+
+                  {/* Thumbnail strip */}
+                  {getImageArray(selectedProduct.HinhAnh).length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {getImageArray(selectedProduct.HinhAnh).map((url: string, i: number) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setCurrentImgIndex(i)}
+                          className={`w-14 h-14 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${i === currentImgIndex
+                            ? "border-blue-500 ring-2 ring-blue-200 shadow-sm"
+                            : "border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100"
+                            }`}
+                        >
+                          <img src={getAvatarUrl(url)} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="w-full md:w-2/3 space-y-4">
+                  <div>
+                    <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md mb-2">
+                      {selectedProduct.MaSanPham}
+                    </span>
+                    <h1 className="text-2xl font-bold text-slate-900">{selectedProduct.TenDongSon}</h1>
+                    <p className="text-sm font-medium text-slate-500 mt-1">{selectedProduct.ThuongHieu} • {selectedProduct.PhanLoai}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase">Đơn giá cơ sở</p>
+                      <p className="text-xl font-semibold text-slate-900 mt-1">
+                        {selectedProduct.DonGiaCoSo?.toLocaleString()} ₫ <span className="text-sm font-normal text-slate-500">/ {selectedProduct.DonViTinh}</span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase">Tồn kho</p>
+                      <p className="text-xl font-semibold text-slate-900 mt-1">
+                        {selectedProduct.TongTonKho || 0} <span className="text-sm font-normal text-slate-500">{selectedProduct.DonViTinh}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 mb-2">Mô tả chi tiết</p>
+                    <div className="text-sm text-slate-600 leading-relaxed max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                      {selectedProduct.MoTa ? formatTextToHTML(selectedProduct.MoTa) : "Chưa có mô tả."}
+                    </div>
+                  </div>
+
+                  {/* QR Code Truy xuất nguồn gốc */}
+                  <div className="mt-4 pt-4 border-t border-slate-100 flex items-start gap-4">
+                    <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm shrink-0">
+                      <QRCodeCanvas
+                        value={`${typeof window !== 'undefined' ? window.location.origin : ''}/truy-xuat/${selectedProduct._id}`}
+                        size={80}
+                        bgColor={"#ffffff"}
+                        fgColor={"#0f172a"}
+                        level={"Q"}
+                      />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mb-1">
+                        <QrCode size={16} className="text-blue-500" />
+                        Truy xuất nguồn gốc
+                      </h4>
+                      <p className="text-xs text-slate-500 leading-relaxed max-w-sm mb-2">
+                        Khách hàng có thể quét mã QR này để xem thông tin hóa đơn, ngày sản xuất, hạn sử dụng và quy trình.
+                      </p>
+                      <a
+                        href={`/truy-xuat/${selectedProduct._id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline"
+                      >
+                        Xem trước trang truy xuất ↗
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button
+                onClick={() => setIsViewOpen(false)}
+                className="px-4 py-2 border border-slate-200 bg-white text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+              >
+                Đóng
               </button>
             </div>
           </div>
