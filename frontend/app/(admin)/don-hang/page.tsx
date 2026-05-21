@@ -63,6 +63,7 @@ interface Order {
         TenKhachHang: string;
         SDT: string;
         DiaChi: string;
+        PhanLoai?: string;
     };
     Items: OrderItem[];
     TongTien: number;
@@ -332,7 +333,7 @@ export default function OrderManagementPage() {
                                             }),
                                             new Paragraph({
                                                 alignment: AlignmentType.RIGHT,
-                                                children: [new TextRun({ text: "Độc lập - Tự do - Hạnh phúc", bold: true, underline: true, font: "Times New Roman", size: 24 })],
+                                                children: [new TextRun({ text: "Độc lập - Tự do - Hạnh phúc", bold: true, underline: { type: "single" }, font: "Times New Roman", size: 24 })],
                                             }),
                                         ],
                                     }),
@@ -1117,524 +1118,6 @@ export default function OrderManagementPage() {
         XLSX.writeFile(workbook, `VTSC_Danh_Sach_Don_Hang_${new Date().toLocaleDateString().replace(/\//g, '_')}.xlsx`);
     };
 
-    const handleDownloadPhieuCoc = async () => {
-        if (!selectedOrder) {
-            alert('Không tìm thấy thông tin đơn hàng để in phiếu cọc!');
-            return;
-        }
-
-        try {
-            // Mock data values requested as fallbacks
-            const customerName = selectedOrder.KhachHang?.TenKhachHang || 'An Phúc';
-            const customerPhone = selectedOrder.KhachHang?.SDT || 'Chưa cập nhật';
-            const productName = selectedOrder.Items?.[0]?.TenSanPham || 'Majestic Đẹp Nguyên Bản';
-            const quantity = selectedOrder.Items?.reduce((s, i) => s + i.SoLuong, 0) || 1;
-            const colorCode = selectedOrder.Items?.[0]?.MaMau || 'BASE';
-            const powderType = selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon';
-            const totalValue = selectedOrder.TongTien || 1250000;
-            const depositValue = selectedOrder.DaCoc || 625000;
-            const remainingValue = Math.max(0, totalValue - depositValue);
-            const depositPercent = totalValue > 0 ? Math.round((depositValue / totalValue) * 100) : 50;
-
-            const doc = new Document({
-                creator: "VTSC PaintPro",
-                title: `Phieu_Coc_DH${selectedOrder.MaDonHang}`,
-                description: "Phiếu biên nhận đặt cọc",
-                styles: {
-                    default: {
-                        document: {
-                            run: {
-                                font: "Times New Roman",
-                                size: 24, // 12pt (24 half-points)
-                            },
-                        },
-                    },
-                },
-                sections: [
-                    {
-                        properties: {},
-                        children: [
-                            // 1. Header
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.NONE },
-                                    bottom: { style: BorderStyle.NONE },
-                                    left: { style: BorderStyle.NONE },
-                                    right: { style: BorderStyle.NONE },
-                                    insideHorizontal: { style: BorderStyle.NONE },
-                                    insideVertical: { style: BorderStyle.NONE },
-                                },
-                                rows: [
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "CÔNG TY CP TMDV VOSCO (VTSC)", bold: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "Hệ thống PaintPro" })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    })
-                                                ]
-                                            }),
-                                            new TableCell({
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", bold: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "Độc lập - Tự do - Hạnh phúc", bold: true, underline: {} })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    })
-                                                ]
-                                            })
-                                        ]
-                                    })
-                                ]
-                            }),
-
-                            new Paragraph({ text: "", spacing: { after: 400 } }),
-
-                            // 2. Tiêu đề văn bản
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "PHIẾU BIÊN NHẬN ĐẶT CỌC", bold: true, size: 32 }) // 16pt
-                                ],
-                                alignment: AlignmentType.CENTER,
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: `Mã đơn hàng: #${selectedOrder.MaDonHang} - Ngày tạo: ${new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN')}`,
-                                        italics: true
-                                    })
-                                ],
-                                alignment: AlignmentType.CENTER,
-                                spacing: { after: 400 }
-                            }),
-
-                            // 3. Nội dung chính
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Họ tên khách hàng: ", bold: true }),
-                                    new TextRun({ text: customerName })
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Số điện thoại: ", bold: true }),
-                                    new TextRun({ text: customerPhone })
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Nội dung đặt cọc: ", bold: true }),
-                                    new TextRun({
-                                        text: `Đặt cọc thi công/mua sơn tĩnh điện sản phẩm "${productName} (${quantity} thùng)", Mã màu: ${colorCode}, Loại bột: ${powderType}.`
-                                    })
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Tổng giá trị đơn hàng: ", bold: true }),
-                                    new TextRun({ text: `${totalValue.toLocaleString('vi-VN')} đ` })
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: `Số tiền đã đặt cọc (${depositPercent}%): `, bold: true }),
-                                    new TextRun({ text: `${depositValue.toLocaleString('vi-VN')} đ` })
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Viết bằng chữ: ", bold: true }),
-                                    new TextRun({ text: "(Sáu trăm hai mươi lăm nghìn đồng chẵn)", italics: true }) // Mặc định mock theo yêu cầu
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Số tiền còn lại cần thanh toán: ", bold: true }),
-                                    new TextRun({ text: `${remainingValue.toLocaleString('vi-VN')} đ` })
-                                ],
-                                spacing: { after: 400 }
-                            }),
-
-                            // 4. Chữ ký (Footer)
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.NONE },
-                                    bottom: { style: BorderStyle.NONE },
-                                    left: { style: BorderStyle.NONE },
-                                    right: { style: BorderStyle.NONE },
-                                    insideHorizontal: { style: BorderStyle.NONE },
-                                    insideVertical: { style: BorderStyle.NONE },
-                                },
-                                rows: [
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "NGƯỜI NỘP TIỀN", bold: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({ text: "", spacing: { after: 1000 } })
-                                                ]
-                                            }),
-                                            new TableCell({
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "ĐẠI DIỆN CÔNG TY", bold: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({ text: "", spacing: { after: 1000 } })
-                                                ]
-                                            })
-                                        ]
-                                    })
-                                ]
-                            })
-                        ]
-                    }
-                ]
-            });
-
-            Packer.toBlob(doc).then(blob => saveAs(blob, `Phieu_Coc_DH${selectedOrder.MaDonHang}.docx`));
-        } catch (error) {
-            console.error('Error generating document:', error);
-            alert('Đã xảy ra lỗi khi tạo phiếu cọc!');
-        }
-    };
-
-    const handleDownloadHoaDonGTGT = async () => {
-        if (!selectedOrder) {
-            alert('Không tìm thấy thông tin đơn hàng để in hóa đơn!');
-            return;
-        }
-
-        try {
-            // Dùng dữ liệu thật từ đơn hàng thay vì mock data
-            const customerName = selectedOrder.KhachHang?.TenKhachHang || 'Khách vãng lai';
-            const companyName = (selectedOrder.KhachHang as any)?.TenCongTy || '';
-            const taxCode = (selectedOrder.KhachHang as any)?.MaSoThue || '(Khách lẻ)';
-            const address = selectedOrder.DiaChiGiaoHang || selectedOrder.KhachHang?.DiaChi || '(Chưa cập nhật địa chỉ)';
-            const paymentMethod = selectedOrder.PhuongThucThanhToan === 'TIEN_MAT' ? 'Tiền mặt (TM)' : 'Chuyển khoản (CK)';
-
-            const productName = `Sơn tĩnh điện cao cấp ${selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon'} - Dòng ${selectedOrder.Items?.[0]?.TenSanPham || 'Majestic Đẹp Nguyên Bản'} (Mã màu: ${selectedOrder.Items?.[0]?.MaMau || 'BASE'}, Nhiệt độ sấy: ${selectedOrder.TechnicalSpecs?.NhietDoSay || '195°C/15 phút'})`;
-            const quantity = selectedOrder.Items?.reduce((s, i) => s + i.SoLuong, 0) || 1;
-
-            // Financial calculations
-            const totalGross = selectedOrder.TongTien || 1250000;
-            const vatRate = 0.08; // 8% as example
-            const totalNet = Math.round(totalGross / (1 + vatRate));
-            const vatAmount = totalGross - totalNet;
-
-            const doc = new Document({
-                creator: "VTSC PaintPro",
-                title: `Hoa_Don_GTGT_VTSC_${selectedOrder.MaDonHang}`,
-                description: "Hóa đơn Giá trị Gia tăng",
-                styles: {
-                    default: {
-                        document: {
-                            run: {
-                                font: "Arial",
-                                size: 22, // 11pt (22 half-points)
-                            },
-                        },
-                    },
-                },
-                sections: [
-                    {
-                        properties: {
-                            page: {
-                                margin: {
-                                    top: 1134, // 2cm = ~1134 dxas
-                                    bottom: 1134,
-                                    left: 1417, // 2.5cm = ~1417 dxas
-                                    right: 1134,
-                                }
-                            }
-                        },
-                        children: [
-                            // 1. Khối thông tin Hóa đơn & Đơn vị bán hàng (Header)
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.NONE },
-                                    bottom: { style: BorderStyle.NONE },
-                                    left: { style: BorderStyle.NONE },
-                                    right: { style: BorderStyle.NONE },
-                                    insideHorizontal: { style: BorderStyle.NONE },
-                                    insideVertical: { style: BorderStyle.NONE },
-                                },
-                                rows: [
-                                    new TableRow({
-                                        children: [
-                                            // Cột trái: Thông tin Người bán
-                                            new TableCell({
-                                                width: { size: 50, type: WidthType.PERCENTAGE },
-                                                children: [
-                                                    new Paragraph({ children: [new TextRun({ text: "CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)", bold: true, size: 24 })], spacing: { after: 120 } }),
-                                                    new Paragraph({ children: [new TextRun({ text: "Mã số thuế: 0100100456", bold: true })], spacing: { after: 120 } }),
-                                                    new Paragraph({ children: [new TextRun({ text: "Địa chỉ: Số 215 Lạch Tray, Gia Viên, Hải Phòng" })], spacing: { after: 120 } }),
-                                                    new Paragraph({ children: [new TextRun({ text: "Điện thoại: 024.3388.xxxx - Số tài khoản: 110000123456 tại VietinBank" })], spacing: { after: 120 } })
-                                                ]
-                                            }),
-                                            // Cột phải: Thông tin Mẫu hóa đơn
-                                            new TableCell({
-                                                width: { size: 50, type: WidthType.PERCENTAGE },
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "HÓA ĐƠN GIÁ TRỊ GIA TĂNG", bold: true, size: 28, color: "FF0000" })],
-                                                        alignment: AlignmentType.CENTER,
-                                                        spacing: { after: 120 }
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "Mẫu số (Form): 1C26TAA" })],
-                                                        alignment: AlignmentType.CENTER,
-                                                        spacing: { after: 120 }
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "Ký hiệu (Serial): K26TBB" })],
-                                                        alignment: AlignmentType.CENTER,
-                                                        spacing: { after: 120 }
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "Số (No.): 0004512", bold: true, color: "FF0000" })],
-                                                        alignment: AlignmentType.CENTER,
-                                                        spacing: { after: 120 }
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: `Ngày (Date): 21 Tháng 05 Năm 2026`, italics: true })],
-                                                        alignment: AlignmentType.CENTER,
-                                                        spacing: { after: 120 }
-                                                    })
-                                                ]
-                                            })
-                                        ]
-                                    })
-                                ]
-                            }),
-
-                            new Paragraph({ text: "", spacing: { after: 300 } }),
-                            new Paragraph({
-                                border: { bottom: { style: BorderStyle.SINGLE, space: 1, color: "CCCCCC" } },
-                                spacing: { after: 300 }
-                            }),
-
-                            // 2. Khối thông tin Người mua hàng (Buyer Information)
-                            new Paragraph({ children: [new TextRun({ text: "Họ tên người mua hàng: ", italics: true }), new TextRun({ text: customerName, bold: true })], spacing: { after: 120 } }),
-                            new Paragraph({ children: [new TextRun({ text: "Tên đơn vị: " }), new TextRun({ text: companyName || "(Không có)" })], spacing: { after: 120 } }),
-                            new Paragraph({ children: [new TextRun({ text: "Mã số thuế: " }), new TextRun({ text: taxCode })], spacing: { after: 120 } }),
-                            new Paragraph({ children: [new TextRun({ text: "Địa chỉ: " }), new TextRun({ text: address })], spacing: { after: 120 } }),
-                            new Paragraph({ children: [new TextRun({ text: "Hình thức thanh toán: " }), new TextRun({ text: paymentMethod })], spacing: { after: 300 } }),
-
-                            // 3. Bảng chi tiết hàng hóa, dịch vụ (Goods Table)
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
-                                    bottom: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
-                                    left: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
-                                    right: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
-                                    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
-                                    insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
-                                },
-                                rows: [
-                                    // Header Row
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "STT", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Tên hàng hóa, dịch vụ", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Đơn vị tính", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Số lượng", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Đơn giá", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Thành tiền", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } })
-                                        ]
-                                    }),
-                                    // Data Row
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "1" })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: productName })] })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Thùng" })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: quantity.toString() })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${totalNet.toLocaleString('vi-VN')} đ` })], alignment: AlignmentType.RIGHT })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${totalNet.toLocaleString('vi-VN')} đ` })], alignment: AlignmentType.RIGHT })], margins: { top: 100, bottom: 100, left: 100, right: 100 } })
-                                        ]
-                                    })
-                                ]
-                            }),
-
-                            new Paragraph({ text: "", spacing: { after: 200 } }),
-
-                            // 4. Khối tính toán tài chính (Financial Summary Rows)
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.NONE },
-                                    bottom: { style: BorderStyle.NONE },
-                                    left: { style: BorderStyle.NONE },
-                                    right: { style: BorderStyle.NONE },
-                                    insideHorizontal: { style: BorderStyle.NONE },
-                                    insideVertical: { style: BorderStyle.NONE },
-                                },
-                                rows: [
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: "Cộng tiền hàng (Total Net Amount):", alignment: AlignmentType.RIGHT })] }),
-                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: `${totalNet.toLocaleString('vi-VN')} đ`, alignment: AlignmentType.RIGHT })] })
-                                        ]
-                                    }),
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: "Thuế suất GTGT (VAT Rate): 8%", alignment: AlignmentType.RIGHT })] }),
-                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: " ", alignment: AlignmentType.RIGHT })] }) // Optional spacing
-                                        ]
-                                    }),
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: "Tiền thuế GTGT (VAT Amount):", alignment: AlignmentType.RIGHT })] }),
-                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: `${vatAmount.toLocaleString('vi-VN')} đ`, alignment: AlignmentType.RIGHT })] })
-                                        ]
-                                    }),
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: "Tổng cộng tiền thanh toán (Total Gross Amount):", bold: true })], alignment: AlignmentType.RIGHT })] }),
-                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: `${totalGross.toLocaleString('vi-VN')} đ`, bold: true })], alignment: AlignmentType.RIGHT })] })
-                                        ]
-                                    })
-                                ]
-                            }),
-
-                            new Paragraph({ text: "", spacing: { after: 100 } }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Số tiền viết bằng chữ (Amount in words): ", italics: true }),
-                                    new TextRun({ text: "Một triệu hai trăm năm mươi nghìn đồng chẵn.", italics: true, bold: true }) // Dùng mock text
-                                ],
-                                spacing: { after: 400 }
-                            }),
-
-                            // 5. Khối Ký tên (Signatures)
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.NONE },
-                                    bottom: { style: BorderStyle.NONE },
-                                    left: { style: BorderStyle.NONE },
-                                    right: { style: BorderStyle.NONE },
-                                    insideHorizontal: { style: BorderStyle.NONE },
-                                    insideVertical: { style: BorderStyle.NONE },
-                                },
-                                rows: [
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({
-                                                width: { size: 50, type: WidthType.PERCENTAGE },
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "NGƯỜI MUA HÀNG", bold: true })],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true })],
-                                                        alignment: AlignmentType.CENTER
-                                                    })
-                                                ]
-                                            }),
-                                            new TableCell({
-                                                width: { size: 50, type: WidthType.PERCENTAGE },
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "NGƯỜI BÁN HÀNG", bold: true })],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    // Giả lập Digital Signature Box
-                                                    new Table({
-                                                        width: { size: 80, type: WidthType.PERCENTAGE },
-                                                        alignment: AlignmentType.CENTER,
-                                                        borders: {
-                                                            top: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
-                                                            bottom: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
-                                                            left: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
-                                                            right: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
-                                                        },
-                                                        rows: [
-                                                            new TableRow({
-                                                                children: [
-                                                                    new TableCell({
-                                                                        margins: { top: 150, bottom: 150, left: 150, right: 150 },
-                                                                        children: [
-                                                                            new Paragraph({
-                                                                                children: [new TextRun({ text: "✔ Ký bởi: CÔNG TY CP TMDV VOSCO - VTSC", bold: true, color: "008800", size: 18 })],
-                                                                                alignment: AlignmentType.CENTER,
-                                                                                spacing: { after: 100 }
-                                                                            }),
-                                                                            new Paragraph({
-                                                                                children: [new TextRun({ text: `Ký ngày: 21/05/2026`, italics: true, size: 16 })],
-                                                                                alignment: AlignmentType.CENTER
-                                                                            })
-                                                                        ]
-                                                                    })
-                                                                ]
-                                                            })
-                                                        ]
-                                                    })
-                                                ]
-                                            })
-                                        ]
-                                    })
-                                ]
-                            })
-                        ]
-                    }
-                ]
-            });
-
-            Packer.toBlob(doc).then(blob => saveAs(blob, `Hoa_Don_GTGT_VTSC_${selectedOrder.MaDonHang}.docx`));
-        } catch (error) {
-            console.error('Error generating document:', error);
-            alert('Đã xảy ra lỗi khi tạo Hóa đơn GTGT!');
-        }
-    };
 
     const STATUS_MAP = {
         'CHO_XAC_NHAN': { label: 'Chờ xác nhận', color: '#d97706', icon: Clock },
@@ -2380,21 +1863,21 @@ export default function OrderManagementPage() {
                                         <div className="space-y-2.5 text-[13px] font-medium text-slate-600">
                                             <div className="flex justify-between">
                                                 <span className="text-slate-400">Mã màu chọn:</span>
-                                                <span className="font-black text-blue-600">{selectedOrder.Items?.[0]?.MaMau || 'N/A'}</span>
+                                                <span className="font-black text-blue-600">{selectedOrder?.Items?.[0]?.MaMau || 'N/A'}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-slate-400">Loại bột:</span>
-                                                <span className="text-slate-800">{selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon'}</span>
+                                                <span className="text-slate-800">{selectedOrder?.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon'}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-slate-400">Nhiệt độ sấy:</span>
-                                                <span className="text-slate-800">{selectedOrder.TechnicalSpecs?.NhietDoSay || '195°C / 15 phút'}</span>
+                                                <span className="text-slate-800">{selectedOrder?.TechnicalSpecs?.NhietDoSay || '195°C / 15 phút'}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-slate-400">Độ dày lớp phủ:</span>
-                                                <span className="text-slate-800">{selectedOrder.TechnicalSpecs?.DoDayLopPhu || '75 µm'}</span>
+                                                <span className="text-slate-800">{selectedOrder?.TechnicalSpecs?.DoDayLopPhu || '75 µm'}</span>
                                             </div>
-                                            {(selectedOrder.KhachHang?.PhanLoai === 'DOANH_NGHIEP' || (selectedOrder.GhiChu?.toLowerCase().includes('pha chế')) || (selectedOrder.GhiChu?.toLowerCase().includes('mẫu')) || (selectedOrder.GhiChu?.toLowerCase().includes('hợp đồng'))) && (
+                                            {(selectedOrder?.KhachHang?.PhanLoai === 'DOANH_NGHIEP' || (selectedOrder?.GhiChu?.toLowerCase().includes('pha chế')) || (selectedOrder?.GhiChu?.toLowerCase().includes('mẫu')) || (selectedOrder?.GhiChu?.toLowerCase().includes('hợp đồng'))) && (
                                                 <div style={{ marginTop: 8 }}>
                                                     <button onClick={() => setIsChartModalOpen(true)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ fontSize: 11, padding: '4px 10px', color: '#2563eb', border: '1px solid #2563eb' }}>📈 Xem biểu đồ hiệu suất thực</button>
                                                 </div>
@@ -2440,7 +1923,6 @@ export default function OrderManagementPage() {
                                                     <span className="font-black text-slate-900">{(selectedOrder.DaCoc || 0).toLocaleString()}đ ({Math.round(((selectedOrder.DaCoc || 0) / selectedOrder.TongTien) * 100)}%)</span>
                                                     {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
                                                         <button
-                                                            <button
                                                         onClick={() => {
                                                                 setDepositAmount(selectedOrder.DaCoc || 0);
                                                                 setIsPaymentModalOpen(true);
@@ -2484,7 +1966,6 @@ export default function OrderManagementPage() {
                                         </div>
                                         {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
                                             <button
-                                                <button
                                             onClick={() => {
                                                     if ((selectedOrder.DaCoc || 0) <= 0) {
                                                         alert('Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.');
@@ -2874,8 +2355,6 @@ export default function OrderManagementPage() {
                                         {[0.3, 0.5, 1].map(p => (
                                         <button
                                             key={p}
-                                        <button
-                                            key={p}
                                             onClick={() => setDepositAmount(Math.round(selectedOrder!.TongTien * p))}
                                             className="flex-1 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
                                         >
@@ -2898,5 +2377,6 @@ export default function OrderManagementPage() {
                     </div>
                 )}
             </div>
-            );
+        </div>
+    );
 }
