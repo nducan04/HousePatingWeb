@@ -13,6 +13,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import * as XLSX from 'xlsx';
 import { useAuthStore } from '@/lib/store/authStore';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import {
     Document, Packer, Paragraph, TextRun, AlignmentType,
@@ -133,6 +134,7 @@ interface SanPham {
     TenDongSon: string;
     DonGiaCoSo: number;
     TongTonKho: number;
+    TonKho?: number;
     HinhAnh?: string;
     DanhSachMaMau?: MaMauSon[];
 }
@@ -936,7 +938,7 @@ export default function OrderManagementPage() {
             tenSanPham: sp.TenDongSon,
             soLuong: 1,
             donGia: sp.DonGiaCoSo * factor,
-            tonKho: sp.TonKho,
+            tonKho: sp.TonKho ?? sp.TongTonKho ?? 0,
             maMau: chosenMaMau,
             tenMau: chosenTenMau,
             hexCode: chosenHex
@@ -1505,7 +1507,7 @@ export default function OrderManagementPage() {
                                                 onChange={e => { setSelectedProductId(e.target.value); setSelectedColorCode(''); setColorSearchTerm(''); }}
                                             >
                                                 <option value="">-- Chọn sản phẩm --</option>
-                                                {allProducts.filter(p => p.TonKho > 0).map(p => {
+                                                {allProducts.filter(p => (p.TonKho ?? p.TongTonKho ?? 0) > 0).map(p => {
                                                     const kh = customers.find(c => c._id === selectedCustomerId);
                                                     let factor = 1.0;
                                                     let labelSuffix = "";
@@ -1519,7 +1521,7 @@ export default function OrderManagementPage() {
                                                     const displayPrice = p.DonGiaCoSo * factor;
                                                     return (
                                                         <option key={p._id} value={p._id}>
-                                                            {p.TenDongSon} — {displayPrice.toLocaleString()}₫{labelSuffix} (Kho: {p.TonKho})
+                                                            {p.TenDongSon} — {displayPrice.toLocaleString()}₫{labelSuffix} (Kho: {p.TonKho ?? p.TongTonKho ?? 0})
                                                         </option>
                                                     );
                                                 })}

@@ -17,28 +17,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  AreaChart,
-  Area,
 } from "recharts";
 
-function CustomTooltip({ active, payload, label }: any) {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-xl text-white text-xs">
-        <p className="font-black text-slate-400 uppercase tracking-widest mb-1.5">{label}</p>
-        <div className="space-y-1">
-          {payload.map((item: any, i: number) => (
-            <div key={i} className="flex justify-between gap-4">
-              <span style={{ color: item.color || '#fff' }} className="font-semibold">{item.name}:</span>
-              <span className="font-black">{item.value?.toLocaleString()}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-  return null;
-}
 import {
   BarChart3,
   Users,

@@ -9,7 +9,7 @@
 //  5. Render <img> preview + nút X để reset
 // ═══════════════════════════════════════════════════════════
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -250,7 +250,7 @@ function IpfsDropzone({
 // ═══════════════════════════════════════════════════════════
 //  Main Page: Form Tạo Yêu cầu R&D
 // ═══════════════════════════════════════════════════════════
-export default function NewRDRequestPage() {
+function NewRDRequestPage() {
   const { user } = useAuthStore();
   const isCustomer =
     user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C";
@@ -632,5 +632,13 @@ export default function NewRDRequestPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-purple-600" size={32} /></div>}>
+      <NewRDRequestPage />
+    </Suspense>
   );
 }

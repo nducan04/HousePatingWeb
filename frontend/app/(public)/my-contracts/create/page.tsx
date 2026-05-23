@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -42,7 +42,7 @@ const EMPTY_DETAIL: ContractDetail = {
   technicalReqs: ''
 };
 
-export default function CustomerCreateContractPage() {
+function CustomerCreateContractPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated } = useAuthStore();
@@ -622,5 +622,13 @@ export default function CustomerCreateContractPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-blue-600" size={32} /></div>}>
+      <CustomerCreateContractPage />
+    </Suspense>
   );
 }

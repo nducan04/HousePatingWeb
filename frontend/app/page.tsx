@@ -86,6 +86,7 @@ export default function HomePage() {
   } = useCartStore();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartLoading, setIsCartLoading] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -379,6 +380,55 @@ export default function HomePage() {
     }
   };
 
+  const handleServiceClick = (path: string) => {
+    if (!isAuthenticated) {
+      setRedirectPath(path);
+      setIsLoginOpen(true);
+    } else {
+      router.push(path);
+    }
+  };
+
+  const handleDirectCheckout = async () => {
+    if (!isAuthenticated) {
+      setIsLoginOpen(true);
+      return;
+    }
+    if (cartItems.length === 0) return;
+
+    try {
+      setIsCheckingOut(true);
+      const sessionId = user?.id;
+      const res = await api.post("/don-hang/checkout", {
+        sessionId: sessionId,
+        khachHangId: user?.id,
+        diaChiGiaoHang: "Địa chỉ mặc định",
+        ghiChu: "Khách hàng đặt nhanh từ trang chủ",
+      });
+
+      if (res.data.success) {
+        setIsCartOpen(false);
+        useCartStore.setState({
+          cartItems: [],
+          cartItemCount: 0,
+          cartTotal: 0,
+        });
+
+        alert("Đặt hàng thành công!");
+        if (user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C") {
+          router.push("/my-orders");
+        } else {
+          router.push("/don-hang");
+        }
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || "Đặt hàng thất bại");
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
+
   const handlePageLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
@@ -398,7 +448,10 @@ export default function HomePage() {
         setIsLoginOpen(false);
 
         const role = res.data.user.role;
-        if (role === "Admin" || role === "Director") {
+        if (redirectPath) {
+          router.push(redirectPath);
+          setRedirectPath(null);
+        } else if (role === "Admin" || role === "Director") {
           router.push("/dashboard");
         } else if (role === "NhanVien") {
           router.push("/san-pham");
@@ -796,7 +849,7 @@ export default function HomePage() {
                         className="w-full h-12 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 cursor-pointer border-none"
                       >
                         Thanh toán ngay <ArrowRight size={16} />
-                      </Link>
+                      </button>
 
                       <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-200">
                         <Link href="/don-hang" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
