@@ -25,10 +25,10 @@ exports.checkoutFromCart = async (req, res) => {
         for (let item of cart.Items) {
             const sp = await SanPhamSon.findById(item.SanPham._id).session(session);
             if (!sp) throw new Error(`Sản phẩm ${item.SanPham.TenDongSon} không còn tồn tại`);
-            if (sp.TonKho < item.SoLuong) throw new Error(`Sản phẩm ${item.SanPham.TenDongSon} không đủ tồn kho (Còn: ${sp.TonKho})`);
+            if (sp.TongTonKho < item.SoLuong) throw new Error(`Sản phẩm ${item.SanPham.TenDongSon} không đủ tồn kho (Còn: ${sp.TongTonKho})`);
 
             // Trừ kho ngay lập tức
-            sp.TonKho -= item.SoLuong;
+            sp.TongTonKho -= item.SoLuong;
             sp.SoLuongDaBan += item.SoLuong;
             await sp.save({ session });
 
@@ -64,11 +64,21 @@ exports.checkoutFromCart = async (req, res) => {
             }
         }
 
+        // 3.5 Lấy đúng ID KhachHang từ TaiKhoan ID
+        const KhachHangModel = require('../models/KhachHang');
+        let realKhachHangId = khachHangId;
+        if (khachHangId) {
+            const kh = await KhachHangModel.findOne({ $or: [{ AccountID: khachHangId }, { _id: khachHangId }] }).session(session);
+            if (kh) {
+                realKhachHangId = kh._id;
+            }
+        }
+
         // 4. Tạo đơn hàng
         const maDonHang = `DH${Date.now().toString().slice(-8)}`;
         const donHang = new DonHang({
             MaDonHang: maDonHang,
-            KhachHang: khachHangId,
+            KhachHang: realKhachHangId,
             Items: orderItems,
             TongTien: subtotal - discountAmount,
             TrangThai: 'CHO_XAC_NHAN',
@@ -195,11 +205,11 @@ exports.updateStatus = async (req, res) => {
             for (let item of order.Items) {
                 const sp = await SanPhamSon.findById(item.SanPham).session(session);
                 if (!sp) throw new Error(`Không tìm thấy sản phẩm ${item.TenSanPham}`);
-                if (sp.TonKho < item.SoLuong) {
-                    throw new Error(`Sản phẩm ${item.TenSanPham} không đủ tồn kho (Cần: ${item.SoLuong}, Kho có: ${sp.TonKho})`);
+                if (sp.TongTonKho < item.SoLuong) {
+                    throw new Error(`Sản phẩm ${item.TenSanPham} không đủ tồn kho (Cần: ${item.SoLuong}, Kho có: ${sp.TongTonKho})`);
                 }
                 
-                sp.TonKho -= item.SoLuong;
+                sp.TongTonKho -= item.SoLuong;
                 sp.SoLuongDaBan += item.SoLuong;
                 await sp.save({ session });
             }
@@ -210,7 +220,7 @@ exports.updateStatus = async (req, res) => {
              for (let item of order.Items) {
                 const sp = await SanPhamSon.findById(item.SanPham).session(session);
                 if (sp) {
-                    sp.TonKho += item.SoLuong;
+                    sp.TongTonKho += item.SoLuong;
                     sp.SoLuongDaBan -= item.SoLuong;
                     await sp.save({ session });
                 }

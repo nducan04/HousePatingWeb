@@ -110,7 +110,7 @@ interface SanPham {
     MaSanPham: string;
     TenDongSon: string;
     DonGiaCoSo: number;
-    TonKho: number;
+    TongTonKho: number;
     HinhAnh?: string;
     DanhSachMaMau?: MaMauSon[];
 }
@@ -164,8 +164,11 @@ export default function OrderManagementPage() {
     const [doDayLopPhu, setDoDayLopPhu] = useState('75 µm');
     const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState('');
+    const [productSearchTerm, setProductSearchTerm] = useState('');
+    const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
     const [selectedColorCode, setSelectedColorCode] = useState('');
     const [colorSearchTerm, setColorSearchTerm] = useState('');
+    const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
     const [selectedSalespersonId, setSelectedSalespersonId] = useState('');
     const [allStaff, setAllStaff] = useState<any[]>([]);
 
@@ -370,7 +373,7 @@ export default function OrderManagementPage() {
         if (!selectedProductId) return;
         const sp = allProducts.find(p => p._id === selectedProductId);
         if (!sp) return;
-        if (sp.TonKho <= 0) { alert('Sản phẩm hết hàng'); return; }
+        if ((sp.TongTonKho || 0) <= 0) { alert('Sản phẩm hết hàng'); return; }
 
         if (!selectedColorCode) return alert('Vui lòng chọn mã màu sơn');
 
@@ -390,7 +393,7 @@ export default function OrderManagementPage() {
             tenSanPham: sp.TenDongSon,
             soLuong: 1,
             donGia: sp.DonGiaCoSo,
-            tonKho: sp.TonKho,
+            tonKho: sp.TongTonKho || 0,
             maMau: chosenMaMau,
             tenMau: chosenTenMau,
             hexCode: chosenHex
@@ -1104,7 +1107,7 @@ export default function OrderManagementPage() {
 
     const STATUS_MAP = {
         'CHO_XAC_NHAN': { label: 'Chờ xác nhận', color: '#d97706', icon: Clock },
-        'DANG_XU_LY': { label: 'Đang xử lý', color: '#2563eb', icon: Package },
+        'DANG_XU_LY': { label: 'Đã xử lý xong', color: '#2563eb', icon: Package },
         'DANG_GIAO': { label: 'Đang vận chuyển', color: '#7c3aed', icon: Truck },
         'DA_GIAO': { label: 'Đã giao hàng', color: '#059669', icon: CheckCircle },
         'DA_HUY': { label: 'Đã hủy', color: '#e11d48', icon: XCircle },
@@ -1113,7 +1116,7 @@ export default function OrderManagementPage() {
     const TABS = [
         { key: 'ALL', label: 'Tất cả' },
         { key: 'CHO_XAC_NHAN', label: 'Chờ xác nhận' },
-        { key: 'DANG_XU_LY', label: 'Đang xử lý' },
+        { key: 'DANG_XU_LY', label: 'Đã xử lý xong' },
         { key: 'DANG_GIAO', label: 'Đang vận chuyển' },
         { key: 'DA_GIAO', label: 'Đã giao hàng' },
         { key: 'DA_HUY', label: 'Đã hủy' }
@@ -1282,14 +1285,14 @@ export default function OrderManagementPage() {
                     <table className="w-full border-collapse min-w-[1000px]">
                         <thead>
                             <tr className="border-b border-slate-50">
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-36">Mã đơn hàng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Khách hàng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Số lượng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Tổng tiền</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Thanh toán</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Hạn xác nhận</th>
-                                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest w-40">Thao tác</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-36 whitespace-nowrap">Mã đơn hàng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Khách hàng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Số lượng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Tổng tiền</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Thanh toán</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Trạng thái</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Hạn xác nhận</th>
+                                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest w-40 whitespace-nowrap">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -1364,10 +1367,6 @@ export default function OrderManagementPage() {
                                                     {order.TrangThai === 'CHO_XAC_NHAN' && (
                                                         <button
                                                             onClick={() => {
-                                                                if ((order.DaCoc || 0) <= 0) {
-                                                                    alert('Đơn hàng chưa có tiền cọc. Vui lòng cập nhật tiền cọc TRƯỚC khi xác nhận sản xuất.');
-                                                                    return;
-                                                                }
                                                                 handleUpdateStatus(order._id, 'DANG_XU_LY');
                                                             }}
                                                             className="h-8 px-3 flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
@@ -1461,85 +1460,128 @@ export default function OrderManagementPage() {
                                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
                                         Sản phẩm sơn <span className="text-rose-500">*</span>
                                     </label>
-                                    <div className="flex gap-3">
-                                        <select
-                                            className="flex-1 bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
-                                            value={selectedProductId}
-                                            onChange={e => { setSelectedProductId(e.target.value); setSelectedColorCode(''); setColorSearchTerm(''); }}
-                                        >
-                                            <option value="">-- Chọn sản phẩm --</option>
-                                            {allProducts.filter(p => p.TonKho > 0).map(p => (
-                                                <option key={p._id} value={p._id} className="text-slate-800 bg-white">
-                                                    {p.TenDongSon} — {p.DonGiaCoSo.toLocaleString()}₫ (Kho: {p.TonKho})
-                                                </option>
-                                            ))}
-                                        </select>
+                                    <div className="flex gap-3 relative">
+                                        <div className="relative flex-1">
+                                            <input
+                                                type="text"
+                                                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/20 transition-all font-medium cursor-text"
+                                                placeholder="-- Nhập chữ để tìm dòng sơn --"
+                                                value={selectedProductId && !productSearchTerm ? (allProducts.find(p => p._id === selectedProductId)?.TenDongSon || '') : productSearchTerm}
+                                                onChange={e => {
+                                                    setProductSearchTerm(e.target.value);
+                                                    if (selectedProductId) {
+                                                        setSelectedProductId('');
+                                                        setSelectedColorCode('');
+                                                        setColorSearchTerm('');
+                                                    }
+                                                    setIsProductDropdownOpen(true);
+                                                }}
+                                                onFocus={() => setIsProductDropdownOpen(true)}
+                                                onBlur={() => setTimeout(() => setIsProductDropdownOpen(false), 250)}
+                                            />
+                                            {isProductDropdownOpen && (
+                                                <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white border border-slate-100 rounded-2xl shadow-xl max-h-60 overflow-y-auto z-50 py-2">
+                                                    {allProducts
+                                                        .filter(p => (p.TongTonKho || 0) > 0 && (!productSearchTerm || p.TenDongSon.toLowerCase().includes(productSearchTerm.toLowerCase())))
+                                                        .map(p => (
+                                                            <div
+                                                                key={p._id}
+                                                                className="px-5 py-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50/50 last:border-none text-[13px] font-medium text-slate-700 transition-colors"
+                                                                onClick={() => {
+                                                                    setSelectedProductId(p._id);
+                                                                    setProductSearchTerm(p.TenDongSon);
+                                                                    setIsProductDropdownOpen(false);
+                                                                }}
+                                                            >
+                                                                {p.TenDongSon} — {p.DonGiaCoSo.toLocaleString()}₫ <span className="text-emerald-600 font-bold ml-1">(Kho: {p.TongTonKho || 0})</span>
+                                                            </div>
+                                                        ))}
+                                                    {allProducts.filter(p => (p.TongTonKho || 0) > 0 && (!productSearchTerm || p.TenDongSon.toLowerCase().includes(productSearchTerm.toLowerCase()))).length === 0 && (
+                                                        <div className="px-5 py-4 text-[13px] text-slate-400 italic">Không tìm thấy dòng sơn nào phù hợp</div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                         <button
                                             onClick={handleAddProduct}
                                             disabled={!selectedProductId || !selectedColorCode}
-                                            className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-[14px] hover:bg-blue-700 shadow-md disabled:opacity-55 disabled:cursor-not-allowed transition-all cursor-pointer border-none"
+                                            className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-[14px] hover:bg-blue-700 shadow-md shadow-blue-600/20 disabled:opacity-55 disabled:cursor-not-allowed transition-all cursor-pointer border-none shrink-0"
                                         >
                                             Thêm sản phẩm
                                         </button>
                                     </div>
 
-                                    {/* Bảng màu sơn - luôn hiển thị khi đã chọn sản phẩm */}
+                                    {/* Bảng màu sơn - dạng Combobox */}
                                     {selectedProductId && (
-                                        <div className="p-5 bg-slate-50/50 border border-slate-100 rounded-2xl space-y-3">
+                                        <div className="p-5 bg-slate-50/50 border border-slate-100 rounded-2xl space-y-3 relative">
                                             <label className="text-[11px] font-black text-slate-450 uppercase tracking-wider block">
-                                                Chọn mã màu sơn <span className="text-rose-500">*</span>
+                                                Mã màu sơn <span className="text-rose-500">*</span>
                                             </label>
-                                            <input
-                                                type="text"
-                                                className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
-                                                placeholder="Tìm mã màu hoặc tên màu (RAL-1015, Silver, Red...)"
-                                                value={colorSearchTerm}
-                                                onChange={e => setColorSearchTerm(e.target.value)}
-                                            />
-                                            {selectedColorCode && (() => {
-                                                const c = paintColors.find(pc => pc.code === selectedColorCode);
-                                                return c ? (
-                                                    <div className="flex items-center gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
-                                                        <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-200" style={{ background: c.hex }} />
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="font-bold text-sm text-blue-700">{c.code}</div>
-                                                            <div className="text-[11px] text-slate-400 truncate">{c.name} • {c.category} • {c.gloss}</div>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => { setSelectedColorCode(''); setColorSearchTerm(''); }}
-                                                            className="w-6 h-6 rounded-full hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center text-slate-455 transition-colors border-none bg-transparent cursor-pointer font-bold"
-                                                        >
-                                                            ×
-                                                        </button>
-                                                    </div>
-                                                ) : null;
-                                            })()}
-                                            <div className="bg-white border border-slate-150 rounded-xl overflow-hidden max-h-[160px] overflow-y-auto custom-scrollbar">
-                                                {paintColors
-                                                    .filter(c => {
-                                                        if (!colorSearchTerm) return true;
-                                                        const q = colorSearchTerm.toLowerCase();
-                                                        return c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q);
-                                                    })
-                                                    .map(c => (
-                                                        <div
-                                                            key={c.code}
-                                                            onClick={() => { setSelectedColorCode(c.code); setColorSearchTerm(''); }}
-                                                            className="flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b border-slate-50 last:border-none transition-colors"
-                                                            style={{
-                                                                backgroundColor: selectedColorCode === c.code ? '#eff6ff' : 'transparent'
-                                                            }}
-                                                            onMouseEnter={e => { if (selectedColorCode !== c.code) e.currentTarget.style.backgroundColor = '#f8fafc'; }}
-                                                            onMouseLeave={e => { if (selectedColorCode !== c.code) e.currentTarget.style.backgroundColor = 'transparent'; }}
-                                                        >
-                                                            <div className="w-6 h-6 rounded-md shadow-inner border border-slate-200 flex-shrink-0" style={{ background: c.hex }} />
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="text-xs font-bold text-slate-700">{c.code}</div>
-                                                                <div className="text-[10px] text-slate-400 truncate">{c.name} • {c.category}</div>
+                                            
+                                            <div className="relative">
+                                                <div 
+                                                    className="w-full bg-white border border-slate-200 hover:border-blue-400 rounded-xl px-4 py-3 text-sm font-medium flex items-center justify-between cursor-pointer transition-all shadow-sm"
+                                                    onClick={() => setIsColorDropdownOpen(!isColorDropdownOpen)}
+                                                >
+                                                    {selectedColorCode ? (() => {
+                                                        const c = paintColors.find(pc => pc.code === selectedColorCode);
+                                                        return c ? (
+                                                            <div className="flex items-center gap-3 w-full">
+                                                                <div className="w-7 h-7 rounded-md shadow-inner border border-slate-200" style={{ background: c.hex }} />
+                                                                <div className="font-bold text-slate-700 flex-1">{c.code} <span className="text-slate-400 font-normal ml-2">{c.name}</span></div>
+                                                                <span 
+                                                                    onClick={(e) => { e.stopPropagation(); setSelectedColorCode(''); setColorSearchTerm(''); }}
+                                                                    className="text-slate-400 hover:text-rose-500 p-1 font-bold text-lg"
+                                                                >
+                                                                    ×
+                                                                </span>
                                                             </div>
-                                                            <div className="text-[10px] font-semibold text-slate-400">{c.surface}</div>
+                                                        ) : <span className="text-slate-400">Chọn mã màu...</span>;
+                                                    })() : <span className="text-slate-400">Nhấp để chọn mã màu...</span>}
+                                                    {!selectedColorCode && <span className="text-slate-400 text-xs">▼</span>}
+                                                </div>
+
+                                                {isColorDropdownOpen && (
+                                                    <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white border border-slate-150 rounded-xl shadow-xl overflow-hidden z-50">
+                                                        <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                                                            <input
+                                                                type="text"
+                                                                className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-medium"
+                                                                placeholder="Tìm mã màu hoặc tên (VD: RAL, Silver)..."
+                                                                value={colorSearchTerm}
+                                                                onChange={e => setColorSearchTerm(e.target.value)}
+                                                                onClick={e => e.stopPropagation()}
+                                                                autoFocus
+                                                            />
                                                         </div>
-                                                    ))}
+                                                        <div className="max-h-[220px] overflow-y-auto custom-scrollbar">
+                                                            {paintColors
+                                                                .filter(c => {
+                                                                    if (!colorSearchTerm) return true;
+                                                                    const q = colorSearchTerm.toLowerCase();
+                                                                    return c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q);
+                                                                })
+                                                                .map(c => (
+                                                                    <div
+                                                                        key={c.code}
+                                                                        onClick={() => { 
+                                                                            setSelectedColorCode(c.code); 
+                                                                            setColorSearchTerm(''); 
+                                                                            setIsColorDropdownOpen(false); 
+                                                                        }}
+                                                                        className="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-blue-50 border-b border-slate-50 last:border-none transition-colors"
+                                                                    >
+                                                                        <div className="w-7 h-7 rounded-md shadow-inner border border-slate-200 flex-shrink-0" style={{ background: c.hex }} />
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="text-[13px] font-bold text-slate-700">{c.code}</div>
+                                                                            <div className="text-[11px] text-slate-400 truncate">{c.name} • {c.category}</div>
+                                                                        </div>
+                                                                        <div className="text-[11px] font-semibold text-slate-400">{c.surface}</div>
+                                                                    </div>
+                                                                ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     )}
@@ -1979,10 +2021,6 @@ export default function OrderManagementPage() {
                                     {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
                                         <button
                                             onClick={() => {
-                                                if ((selectedOrder.DaCoc || 0) <= 0) {
-                                                    alert('Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.');
-                                                    return;
-                                                }
                                                 handleUpdateStatus(selectedOrder._id, 'DANG_XU_LY');
                                             }}
                                             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer border-none"

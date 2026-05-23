@@ -65,13 +65,15 @@ exports.createRDLog = async (req, res) => {
     const count = await NhatKyTestMau.countDocuments();
     const MaNhatKy = `RD-${new Date().getFullYear() % 100}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(count + 1).padStart(2, '0')}`;
     
-    const log = await NhatKyTestMau.create({
+    const payload = {
       MaNhatKy,
-      ContractID,
       MaMauYeuCau,
       TrangThai: 'testing',
       LichSuPhienBan: []
-    });
+    };
+    if (ContractID) payload.ContractID = ContractID;
+    
+    const log = await NhatKyTestMau.create(payload);
     
     res.status(201).json({ success: true, data: log });
   } catch (error) {

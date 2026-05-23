@@ -314,18 +314,25 @@ export default function HomePage() {
     }
   };
 
-  const updateQuantity = (id: string, delta: number) => {
+  const updateQuantity = (id: string, delta: number, maxQuantity?: number) => {
     setProductQuantities((prev) => {
       const current = prev[id] || 1;
-      const next = Math.max(1, current + delta);
+      let next = Math.max(1, current + delta);
+      if (maxQuantity !== undefined && next > maxQuantity) {
+        next = maxQuantity;
+      }
       return { ...prev, [id]: next };
     });
   };
 
-  const handleQuantityChange = (id: string, value: string) => {
+  const handleQuantityChange = (id: string, value: string, maxQuantity?: number) => {
     const val = parseInt(value);
     if (!isNaN(val) && val > 0) {
-      setProductQuantities((prev) => ({ ...prev, [id]: val }));
+      let finalVal = val;
+      if (maxQuantity !== undefined && finalVal > maxQuantity) {
+        finalVal = maxQuantity;
+      }
+      setProductQuantities((prev) => ({ ...prev, [id]: finalVal }));
     } else if (value === "") {
       setProductQuantities((prev) => ({
         ...prev,
@@ -347,16 +354,23 @@ export default function HomePage() {
       setIsLoginOpen(true);
       return;
     }
-    setCartLoading(sp._id);
     const qty = productQuantities[sp._id] || 1;
+
+    if (qty > (sp.TongTonKho || 0)) {
+      setCartMessage({ id: sp._id, text: `Kho chỉ còn ${sp.TongTonKho || 0}!` });
+      setTimeout(() => setCartMessage({ id: "", text: "" }), 3000);
+      return;
+    }
+
+    setCartLoading(sp._id);
     try {
       const sessionId = user?.id || "GUEST_SESSION";
       await addToCartStore(sessionId, sp._id, qty);
       setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setCartMessage({ id: sp._id, text: "Lỗi!" });
+      setCartMessage({ id: sp._id, text: err.response?.data?.error || "Lỗi!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
     } finally {
       setCartLoading("");
@@ -369,6 +383,62 @@ export default function HomePage() {
       await removeFromCartStore(sessionId, sanPhamId);
     } catch (err) {
       console.error("Error removing from cart:", err);
+    }
+  };
+
+  const handleUpdateCartItem = async (spId: string, currentQty: number, delta: number, maxQty?: number) => {
+    let newQty = currentQty + delta;
+    if (newQty < 1) newQty = 1;
+    if (maxQty !== undefined && newQty > maxQty) {
+      alert(`Kho chỉ còn ${maxQty} sản phẩm!`);
+      newQty = maxQty;
+    }
+    if (newQty === currentQty) return;
+
+    try {
+      const sessionId = user?.id || "GUEST_SESSION";
+      const { updateQuantity } = useCartStore.getState();
+      await updateQuantity(sessionId, spId, newQty);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  const handleDirectCheckout = async () => {
+    if (!isAuthenticated) {
+      setIsLoginOpen(true);
+      return;
+    }
+    if (cartItems.length === 0) return;
+
+    try {
+      setIsCheckingOut(true);
+      const sessionId = user?.id;
+      const res = await api.post("/don-hang/checkout", {
+        sessionId: sessionId,
+        khachHangId: user?.id,
+        diaChiGiaoHang: "Địa chỉ mặc định", // Mock data, since we bypassed checkout page
+        ghiChu: "Khách hàng đặt nhanh từ trang chủ"
+      });
+
+      if (res.data.success) {
+        setIsCartOpen(false);
+        useCartStore.setState({ cartItems: [], cartItemCount: 0, cartTotal: 0 });
+
+        alert("Đặt hàng thành công!");
+        if (user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C") {
+          router.push("/my-orders");
+        } else {
+          router.push("/don-hang");
+        }
+      }
+    } catch (error: any) {
+      console.error(error);
+      alert(error.response?.data?.message || "Lỗi khi đặt hàng");
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
@@ -705,9 +775,23 @@ export default function HomePage() {
                               </span>
                             </div>
                             <div className="flex justify-between items-center mt-1">
-                              <span className="text-[12px] font-bold text-blue-600">
-                                x{item.SoLuong}
-                              </span>
+                              <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-lg p-0.5">
+                                <button
+                                  onClick={() => handleUpdateCartItem(item.SanPham._id, item.SoLuong, -1, item.SanPham.TongTonKho)}
+                                  className="w-5 h-5 flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-md transition-all font-bold cursor-pointer"
+                                >
+                                  -
+                                </button>
+                                <span className="text-[11px] font-bold text-blue-600 w-4 text-center">
+                                  {item.SoLuong}
+                                </span>
+                                <button
+                                  onClick={() => handleUpdateCartItem(item.SanPham._id, item.SoLuong, 1, item.SanPham.TongTonKho)}
+                                  className="w-5 h-5 flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-md transition-all font-bold cursor-pointer"
+                                >
+                                  +
+                                </button>
+                              </div>
                               <div className="flex items-center gap-3">
                                 <span className="text-[12px] font-bold text-slate-900">
                                   {(
@@ -749,13 +833,13 @@ export default function HomePage() {
                           ₫
                         </span>
                       </div>
-                      <Link
-                        href="/checkout"
-                        className="w-full h-12 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 no-underline"
-                        onClick={() => setIsCartOpen(false)}
+                      <button
+                        onClick={handleDirectCheckout}
+                        disabled={isCheckingOut}
+                        className="w-full h-12 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 cursor-pointer border-none"
                       >
-                        Thanh toán ngay <ArrowRight size={16} />
-                      </Link>
+                        {isCheckingOut ? <Loader2 className="animate-spin" size={16} /> : "Đặt mua ngay"} <ArrowRight size={16} />
+                      </button>
                     </div>
                   )}
                 </div>
@@ -826,7 +910,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <ServiceCard
               icon={<FlaskConical size={28} />}
               iconBg="bg-blue-50"
@@ -839,6 +923,20 @@ export default function HomePage() {
               onClick={(e: any) => {
                 e.preventDefault();
                 handleServiceClick("/rd-tracking/new");
+              }}
+            />
+            <ServiceCard
+              icon={<Newspaper size={28} />}
+              iconBg="bg-red-100"
+              iconColor="text-red-600"
+              title="Hợp đồng nguyên tắc mua bán sơn"
+              desc="Tạo và ký kết hợp đồng nguyên tắc mua bán sơn với VTSC."
+              ctaText="Quản lý hợp đồng"
+              ctaColor="text-red-600"
+              href="/my-contracts"
+              onClick={(e: any) => {
+                e.preventDefault();
+                handleServiceClick("/my-contracts");
               }}
             />
             <ServiceCard
@@ -1114,8 +1212,11 @@ export default function HomePage() {
                       >
                         {sp.TenDongSon}
                       </h3>
-                      <p className="text-[11px] text-slate-400 font-bold mb-6 uppercase tracking-widest">
+                      <p className="text-[11px] text-slate-400 font-bold mb-1 uppercase tracking-widest">
                         {sp.ThuongHieu}
+                      </p>
+                      <p className="text-[12px] text-slate-500 font-medium mb-4">
+                        Tồn kho: <span className="font-bold text-slate-700">{sp.TongTonKho}</span> {sp.DonViTinh || "Kg"}
                       </p>
                       <div className="flex justify-between items-end">
                         <div className="flex flex-col">
@@ -1130,7 +1231,7 @@ export default function HomePage() {
                       <div className="flex items-center gap-2 mt-3">
                         <div className="flex items-center bg-slate-100 rounded-xl p-1 h-10">
                           <button
-                            onClick={() => updateQuantity(sp._id, -1)}
+                            onClick={() => updateQuantity(sp._id, -1, sp.TongTonKho)}
                             className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer"
                           >
                             -
@@ -1140,13 +1241,13 @@ export default function HomePage() {
                             min="1"
                             value={productQuantities[sp._id] || 1}
                             onChange={(e) =>
-                              handleQuantityChange(sp._id, e.target.value)
+                              handleQuantityChange(sp._id, e.target.value, sp.TongTonKho)
                             }
                             onBlur={() => handleQuantityBlur(sp._id)}
                             className="w-8 text-center bg-transparent border-none text-sm font-bold text-slate-800 outline-none appearance-none"
                           />
                           <button
-                            onClick={() => updateQuantity(sp._id, 1)}
+                            onClick={() => updateQuantity(sp._id, 1, sp.TongTonKho)}
                             className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer"
                           >
                             +
@@ -1461,7 +1562,7 @@ export default function HomePage() {
                     </span>
                     <div className="flex items-center bg-slate-100 rounded-xl p-1 w-32">
                       <button
-                        onClick={() => updateQuantity(selectedProduct._id, -1)}
+                        onClick={() => updateQuantity(selectedProduct._id, -1, selectedProduct.TongTonKho)}
                         className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
                       >
                         -
@@ -1474,13 +1575,14 @@ export default function HomePage() {
                           handleQuantityChange(
                             selectedProduct._id,
                             e.target.value,
+                            selectedProduct.TongTonKho
                           )
                         }
                         onBlur={() => handleQuantityBlur(selectedProduct._id)}
                         className="w-12 text-center bg-transparent border-none text-base font-bold text-slate-900 outline-none appearance-none"
                       />
                       <button
-                        onClick={() => updateQuantity(selectedProduct._id, 1)}
+                        onClick={() => updateQuantity(selectedProduct._id, 1, selectedProduct.TongTonKho)}
                         className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
                       >
                         +

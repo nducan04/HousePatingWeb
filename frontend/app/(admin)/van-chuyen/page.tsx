@@ -26,6 +26,7 @@ import {
   User,
   Navigation,
   Building,
+  XCircle,
 } from "lucide-react";
 
 interface TrackingLog {
@@ -71,6 +72,89 @@ interface VanChuyen {
   createdAt: string;
 }
 
+const LocationInput = ({ value, onChange, placeholder, icon: Icon, iconColor, ringColor, onEnter }: any) => {
+  const [suggestions, setSuggestions] = React.useState<string[]>([]);
+  const [isOpen, setIsOpen] = React.useState(false);
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  React.useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (value.length >= 3 && isOpen) {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&countrycodes=vn&limit=5`, {
+            headers: { "Accept-Language": "vi", "User-Agent": "VTSC-PaintPro/1.0" }
+          });
+          const data = await res.json();
+          setSuggestions(data.map((item: any) => item.display_name));
+        } catch (e) {
+          console.error("Geocoding error:", e);
+        }
+      } else {
+        setSuggestions([]);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [value, isOpen]);
+
+  return (
+    <div className="relative flex-1" ref={wrapperRef}>
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+        <Icon size={14} className={iconColor || "text-slate-400"} />
+      </div>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onEnter) {
+            onEnter();
+            setIsOpen(false);
+          }
+        }}
+        className={`w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 ${ringColor || 'focus:ring-blue-500'} focus:border-transparent transition-all shadow-sm`}
+        placeholder={placeholder}
+      />
+      {isOpen && suggestions.length > 0 && (
+        <ul className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+          {suggestions.map((s, idx) => (
+            <li
+              key={idx}
+              className="px-4 py-2 hover:bg-slate-50 cursor-pointer text-sm text-slate-700 border-b last:border-0 border-slate-50 text-left"
+              onClick={() => {
+                onChange(s);
+                setIsOpen(false);
+              }}
+            >
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+const getMediaUrl = (url: string) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function VanChuyenPage() {
   const { user } = useAuthStore();
   const isCustomer = user?.role === 'KhachHangB2B' || user?.role === 'KhachHangB2C';
@@ -83,6 +167,8 @@ export default function VanChuyenPage() {
   const [viewMode, setViewMode] = useState<'LIST' | 'DETAIL'>('LIST');
   const [mapOrigin, setMapOrigin] = useState('Số 215 Lạch Tray, Gia Viên, Hải Phòng');
   const [mapDestination, setMapDestination] = useState('');
+  const [newWaypoint, setNewWaypoint] = useState('');
+  const [waypointAction, setWaypointAction] = useState('Đã đi đến trung tâm phân loại');
 
   useEffect(() => {
     if (selectedTracking) {
@@ -227,6 +313,43 @@ export default function VanChuyenPage() {
     }
   };
 
+  const handleAddWaypoint = async () => {
+    if (!newWaypoint || !selectedTracking) return;
+
+    if (!window.confirm(`Bạn có chắc chắn muốn thêm trạm trung chuyển/phân loại "${newWaypoint}" vào lộ trình?`)) return;
+
+    const waypointName = newWaypoint;
+    const newLog: TrackingLog = {
+      ThoiGian: new Date().toISOString(),
+      NoiDung: `${waypointAction}: ${waypointName}`,
+      Status: 'PROCESSING',
+      Icon: 'MapPin'
+    };
+
+    const updatePayload = {
+      LoTrinh: [...selectedTracking.LoTrinh, newLog]
+    };
+
+    try {
+      const res = await api.patch(`/van-chuyen/${selectedTracking._id}`, updatePayload);
+
+      if (res.data.success) {
+        setNewWaypoint('');
+
+        // Cập nhật UI Tracking
+        const updated = { ...selectedTracking, ...updatePayload } as VanChuyen;
+        setSelectedTracking(updated);
+        setData(prev => prev.map(t => t._id === updated._id ? updated : t));
+        alert('Đã thêm trạm và cập nhật lịch sử lộ trình thành công!');
+      } else {
+        throw new Error('Cập nhật thất bại từ server');
+      }
+    } catch (error) {
+      console.error('Lỗi khi thêm trạm trung chuyển:', error);
+      alert('Đã xảy ra lỗi khi kết nối với server. Vui lòng thử lại sau.');
+    }
+  };
+
   const photoInputRef = React.useRef<any>(null);
   const receiptInputRef = React.useRef<any>(null);
 
@@ -329,41 +452,37 @@ export default function VanChuyenPage() {
             </div>
 
             {/* Map Controls */}
-            <div className="p-4 border-b border-slate-50 flex flex-col sm:flex-row gap-4 bg-slate-50/30">
-              <div className="flex-1 space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm xuất phát (Xưởng)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Building size={14} className="text-blue-500" />
-                  </div>
-                  <input
-                    type="text"
+            <div className="p-4 border-b border-slate-50 flex flex-col gap-4 bg-slate-50/30">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm xuất phát (Xưởng)</label>
+                  <LocationInput
                     value={mapOrigin}
-                    onChange={(e) => setMapOrigin(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                    onChange={setMapOrigin}
                     placeholder="Nhập địa chỉ kho/xưởng..."
+                    icon={Building}
+                    iconColor="text-blue-500"
+                    ringColor="focus:ring-blue-500"
                   />
                 </div>
-              </div>
-              <div className="flex-1 space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm đến (Khách hàng)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin size={14} className="text-rose-500" />
-                  </div>
-                  <input
-                    type="text"
+                <div className="flex-1 space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm đến (Khách hàng)</label>
+                  <LocationInput
                     value={mapDestination}
-                    onChange={(e) => setMapDestination(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                    onChange={setMapDestination}
                     placeholder="Nhập địa chỉ nhận hàng..."
+                    icon={MapPin}
+                    iconColor="text-rose-500"
+                    ringColor="focus:ring-blue-500"
                   />
                 </div>
               </div>
+
+
             </div>
 
             {/* Embedded Map */}
-            <div className="relative w-full" style={{ height: 280 }}>
+            <div className="relative w-full" style={{ height: 500 }}>
               <iframe
                 title="Delivery Map"
                 width="100%"
@@ -459,8 +578,8 @@ export default function VanChuyenPage() {
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 font-medium">Biên bản bàn giao</span>
                 <div className="flex items-center gap-2">
-                  {selectedTracking.LoHang.BienBanFile ? (
-                    <a href={selectedTracking.LoHang.BienBanFile} target="_blank" rel="noreferrer"
+                  {selectedTracking.LoHang.BienBanFile || (selectedTracking as any).BienBanFile ? (
+                    <a href={getMediaUrl(selectedTracking.LoHang.BienBanFile || (selectedTracking as any).BienBanFile)} target="_blank" rel="noreferrer"
                       className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:underline">
                       <FileText size={14} /> Xem File
                     </a>
@@ -560,8 +679,8 @@ export default function VanChuyenPage() {
               <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">📸 Hình ảnh minh chứng giao hàng</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {selectedTracking.HinhAnhGiaoHang.map((url, i) => (
-                  <div key={i} className="rounded-xl overflow-hidden h-36 bg-slate-50 hover:scale-105 transition-transform cursor-pointer">
-                    <img src={url} alt={`Evidence ${i}`} className="w-full h-full object-cover" />
+                  <div key={i} onClick={() => window.open(getMediaUrl(url), '_blank')} className="rounded-xl overflow-hidden h-36 bg-slate-50 hover:scale-105 transition-transform cursor-pointer">
+                    <img src={getMediaUrl(url)} alt={`Evidence ${i}`} className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>

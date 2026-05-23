@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import { paintColors } from '@/lib/data/colors-data';
 
 interface ContractDetail {
   productName: string;
@@ -50,7 +51,7 @@ export default function CustomerCreateContractPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [walletConnected, setWalletConnected] = useState('');
+  const [allProducts, setAllProducts] = useState<any[]>([]);
 
   // Pre-populated params from R&D
   const colorCode = searchParams ? searchParams.get('colorCode') || '' : '';
@@ -66,9 +67,12 @@ export default function CustomerCreateContractPage() {
   const [partyBTaxCode, setPartyBTaxCode] = useState('');
   const [partyBRepresentative, setPartyBRepresentative] = useState('');
   const [partyBPosition, setPartyBPosition] = useState('Đại diện mua hàng');
+  const [partyBCompanyName, setPartyBCompanyName] = useState('');
+  const [partyBPhoneNumber, setPartyBPhoneNumber] = useState('');
   const [partyBAddress, setPartyBAddress] = useState('');
   const [partyBBankAccount, setPartyBBankAccount] = useState('');
   const [partyBBankName, setPartyBBankName] = useState('');
+  const [partyBBankAddress, setPartyBBankAddress] = useState('');
   const [slaDeadline, setSlaDeadline] = useState(deadline);
 
   // Chi tiết sản phẩm
@@ -99,25 +103,20 @@ export default function CustomerCreateContractPage() {
   // Pre-populate customer details from auth user
   useEffect(() => {
     if (user) {
+      setPartyBCompanyName(user.profile?.TenKhachHang || user.profile?.HoTen || '');
       setPartyBRepresentative(user.profile?.HoTen || user.profile?.TenKhachHang || '');
       setPartyBAddress(user.profile?.DiaChi || '');
+      setPartyBPhoneNumber(user.profile?.SoDienThoai || '');
       setPartyBTaxCode(user.profile?.MaSoThue || '');
     }
   }, [user]);
 
-  // Connect wallet
-  const connectWallet = async () => {
-    try {
-      if (typeof window !== 'undefined' && (window as any).ethereum) {
-        const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-        setWalletConnected(accounts[0]);
-      } else {
-        alert('MetaMask không khả dụng. Vui lòng cài đặt.');
-      }
-    } catch (err: any) {
-      alert('Kết nối ví lỗi: ' + err.message);
-    }
-  };
+  // Fetch products
+  useEffect(() => {
+    api.get('/san-pham-son')
+      .then(res => setAllProducts(res.data.data || []))
+      .catch(err => console.error(err));
+  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -133,6 +132,15 @@ export default function CustomerCreateContractPage() {
   const updateDetail = (index: number, field: keyof ContractDetail, value: any) => {
     const updated = [...details];
     (updated[index] as any)[field] = value;
+    
+    // Tự động lấy đơn giá chuẩn nếu khách hàng chọn Sản phẩm
+    if (field === 'productName') {
+      const selectedProduct = allProducts.find(p => p.TenDongSon === value);
+      if (selectedProduct) {
+        updated[index].unitPrice = selectedProduct.DonGiaCoSo || 0;
+      }
+    }
+    
     setDetails(updated);
   };
 
@@ -144,7 +152,6 @@ export default function CustomerCreateContractPage() {
         contractId,
         title,
         customer: user?.id || '', // Automatically resolved on backend if customer creates
-        clientAddress: walletConnected,
         slaDeadline: slaDeadline || undefined,
         terms: {
           sla: `Giao hàng trong hạn SLA ${slaDeadline ? new Date(slaDeadline).toLocaleDateString('vi-VN') : 'thỏa thuận'}.`,
@@ -159,7 +166,7 @@ export default function CustomerCreateContractPage() {
           technicalReqs: d.technicalReqs
         })),
         partyBAddress,
-        partyBTaxCode,
+        partyBPhoneNumber,
         partyBBankAccount,
         partyBBankName,
         partyBRepresentative,
@@ -172,7 +179,7 @@ export default function CustomerCreateContractPage() {
         setSubmitSuccess(true);
         alert('🎉 Hợp đồng nguyên tắc của bạn đã được gửi thành công đến Admin VTSC để đối soát và điền thông tin Bên bán A!');
         setTimeout(() => {
-          router.push(`/contracts/${res.data.data._id}`);
+          router.push('/my-contracts');
         }, 1500);
       }
     } catch (err: any) {
@@ -187,7 +194,7 @@ export default function CustomerCreateContractPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <Link href="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold text-sm transition-all mb-6 no-underline">
           <ArrowLeft size={16} /> Quay lại Trang chủ
         </Link>
@@ -229,6 +236,10 @@ export default function CustomerCreateContractPage() {
                 <label className="text-xs font-black text-slate-500 uppercase ml-1">Mã số thuế bên mua</label>
                 <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBTaxCode} onChange={e => setPartyBTaxCode(e.target.value)} placeholder="0201137068" />
               </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-black text-slate-500 uppercase ml-1">Tên công ty</label>
+                <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBCompanyName} onChange={e => setPartyBCompanyName(e.target.value)} placeholder="Tên công ty" />
+              </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-500 uppercase ml-1">Đại diện pháp lý bên mua *</label>
                 <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBRepresentative} onChange={e => setPartyBRepresentative(e.target.value)} placeholder="Tên người ký" required />
@@ -237,26 +248,17 @@ export default function CustomerCreateContractPage() {
                 <label className="text-xs font-black text-slate-500 uppercase ml-1">Chức vụ đại diện *</label>
                 <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBPosition} onChange={e => setPartyBPosition(e.target.value)} required />
               </div>
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-500 uppercase ml-1">Số điện thoại bên mua *</label>
+                <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBPhoneNumber} onChange={e => setPartyBPhoneNumber(e.target.value)} placeholder="0987654321" required />
+              </div>
+              <div className="space-y-2">
                 <label className="text-xs font-black text-slate-500 uppercase ml-1">Địa chỉ trụ sở *</label>
                 <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBAddress} onChange={e => setPartyBAddress(e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-500 uppercase ml-1">Hạn SLA giao nhận sơn mong muốn</label>
+                <label className="text-xs font-black text-slate-500 uppercase ml-1">Thời hạn hợp đồng</label>
                 <input type="date" className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={slaDeadline} onChange={e => setSlaDeadline(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-500 uppercase ml-1">Ví MetaMask chữ ký số</label>
-                {walletConnected ? (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 text-xs font-bold text-emerald-700 flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                    {walletConnected.substring(0, 10)}...{walletConnected.substring(walletConnected.length - 8)}
-                  </div>
-                ) : (
-                  <button onClick={connectWallet} className="w-full bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-black text-slate-600 flex items-center justify-center gap-2 cursor-pointer transition-all">
-                    <Wallet size={14} /> Kết nối MetaMask
-                  </button>
-                )}
               </div>
             </div>
 
@@ -271,8 +273,12 @@ export default function CustomerCreateContractPage() {
                   <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBBankAccount} onChange={e => setPartyBBankAccount(e.target.value)} placeholder="1903..." />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-500 uppercase ml-1">Tại ngân hàng (Tên NH)</label>
+                  <label className="text-xs font-black text-slate-500 uppercase ml-1">Tại ngân hàng</label>
                   <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBBankName} onChange={e => setPartyBBankName(e.target.value)} placeholder="Techcombank" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-500 uppercase ml-1">Địa chỉ ngân hàng</label>
+                  <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBBankAddress} onChange={e => setPartyBBankAddress(e.target.value)} placeholder="Techcombank" />
                 </div>
               </div>
             </div>
@@ -302,16 +308,21 @@ export default function CustomerCreateContractPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-center text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-400 uppercase font-black tracking-wider">
                     <th className="pb-3 w-8">#</th>
-                    <th className="pb-3 px-2">Tên sản phẩm / Dòng sơn *</th>
-                    <th className="pb-3 px-2 w-28">Mã màu</th>
-                    <th className="pb-3 px-2 w-28">Khối lượng (Kg) *</th>
+                    <th className="pb-3 px-2 w-64">Tên sản phẩm / Dòng sơn *</th>
+                    <th className="pb-3 px-2 w-28">Mã màu *</th>
+                    <th className="pb-3 px-2 w-28">
+                      <select className="w-full bg-transparent border-none text-xs font-bold text-slate-800 outline-none">
+                        <option>Khối lượng</option>
+                        <option>Thùng</option>
+                      </select>
+                    </th>
                     <th className="pb-3 px-2 w-32">Đơn giá (đ) *</th>
-                    <th className="pb-3 px-2 text-right">Thành tiền</th>
-                    <th className="pb-3 px-2">Yêu cầu KT</th>
+                    <th className="pb-3 px-2 w-32">Thành tiền</th>
+                    <th className="pb-3 px-2 w-32">Yêu cầu Kỹ thuật</th>
                     <th className="pb-3 text-center w-10"></th>
                   </tr>
                 </thead>
@@ -320,22 +331,32 @@ export default function CustomerCreateContractPage() {
                     <tr key={i} className="align-middle">
                       <td className="py-4 font-bold text-slate-400">{i + 1}</td>
                       <td className="py-4 px-2">
-                        <input className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={d.productName} onChange={e => updateDetail(i, 'productName', e.target.value)} placeholder="Sơn bột pha chế" required />
+                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all cursor-pointer" value={d.productName} onChange={e => updateDetail(i, 'productName', e.target.value)} required>
+                          <option value="">-- Chọn sản phẩm --</option>
+                          {allProducts.map(p => (
+                            <option key={p._id} value={p.TenDongSon}>{p.TenDongSon}</option>
+                          ))}
+                        </select>
                       </td>
                       <td className="py-4 px-2">
-                        <input className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={d.colorCode} onChange={e => updateDetail(i, 'colorCode', e.target.value)} placeholder="RAL 9010" />
+                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all cursor-pointer" value={d.colorCode} onChange={e => updateDetail(i, 'colorCode', e.target.value)}>
+                          <option value="">-- Mã màu --</option>
+                          {paintColors.map(c => (
+                            <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
+                          ))}
+                        </select>
                       </td>
                       <td className="py-4 px-2">
                         <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={d.quantity || ''} onChange={e => updateDetail(i, 'quantity', Number(e.target.value))} min={1} required />
                       </td>
                       <td className="py-4 px-2">
-                        <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={d.unitPrice || ''} onChange={e => updateDetail(i, 'unitPrice', Number(e.target.value))} min={0} required />
+                        <input type="number" className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-500 outline-none cursor-not-allowed" value={d.unitPrice || ''} readOnly title="Giá niêm yết không thể tự thay đổi" />
                       </td>
                       <td className="py-4 px-2 text-right font-black text-slate-900">
                         {(d.quantity * d.unitPrice).toLocaleString('vi-VN')}đ
                       </td>
                       <td className="py-4 px-2">
-                        <input className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={d.technicalReqs} onChange={e => updateDetail(i, 'technicalReqs', e.target.value)} placeholder="Độ bóng, độ bền" />
+                        <textarea className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={d.technicalReqs} onChange={e => updateDetail(i, 'technicalReqs', e.target.value)} placeholder="Độ bóng, độ bền"></textarea>
                       </td>
                       <td className="py-4 text-center">
                         <button disabled={details.length <= 1} onClick={() => removeDetailRow(i)} className="text-rose-500 hover:text-rose-700 disabled:opacity-30 cursor-pointer">
@@ -421,7 +442,7 @@ export default function CustomerCreateContractPage() {
 
             {/* Simulated Paper Draft */}
             <div className="bg-slate-100/50 p-6 rounded-2xl max-h-[450px] overflow-y-auto border border-slate-200/40">
-              <div id="printable-contract" className="bg-white p-8 border border-slate-200 text-black max-w-2xl mx-auto shadow-sm text-xs leading-relaxed" style={{ fontFamily: 'Georgia, serif' }}>
+              <div id="printable-contract" className="bg-white p-8 border border-slate-200 text-black max-w-2xl mx-auto shadow-sm text-xs leading-relaxed" style={{ fontFamily: 'Arial, Helvetica, sans-serif', textAlign: 'left', wordBreak: 'normal' }}>
 
                 {/* Header quốc hiệu */}
                 <div className="text-center mb-6">
@@ -454,11 +475,10 @@ export default function CustomerCreateContractPage() {
                   <div className="font-bold text-blue-900 border-b border-blue-900 pb-1 mb-2">BÊN MUA (BÊN B)</div>
                   <div className="pl-2 space-y-1">
                     <div><b>Tên khách hàng:</b> {partyBRepresentative}</div>
-                    <div><b>Mã số thuế:</b> {partyBTaxCode || '................................'}</div>
+                    <div><b>Điện thoại:</b> {partyBPhoneNumber || '................................'}</div>
                     <div><b>Địa chỉ:</b> {partyBAddress}</div>
                     <div><b>Đại diện:</b> {partyBRepresentative} — <b>Chức vụ:</b> {partyBPosition}</div>
                     {partyBBankAccount && <div><b>Tài khoản:</b> {partyBBankAccount} tại {partyBBankName}</div>}
-                    <div className="text-[9px] text-slate-500 italic"><b>Địa chỉ ví ký số MetaMask:</b> {walletConnected || 'Chưa liên kết'}</div>
                   </div>
                 </div>
 
@@ -518,7 +538,7 @@ export default function CustomerCreateContractPage() {
                   </div>
                   <div className="w-[45%]">
                     <div className="text-blue-900">ĐẠI DIỆN BÊN B</div>
-                    <div className="text-[8px] text-slate-400 font-normal mt-0.5">(Ký số qua MetaMask)</div>
+                    <div className="text-[8px] text-slate-400 font-normal mt-0.5">(Ký trực tiếp)</div>
                     <div className="h-16" />
                     <div className="text-blue-900">{partyBRepresentative || '................................'}</div>
                   </div>
@@ -527,10 +547,6 @@ export default function CustomerCreateContractPage() {
               </div>
             </div>
 
-            {/* Help box */}
-            <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-xs font-bold text-blue-700">
-              📋 <b>Quy trình lưu trữ Blockchain:</b> Hợp đồng nguyên tắc khi được gửi thành công sẽ được số hóa, sinh mã băm SHA-256 bất biến. Admin VTSC sau khi phê duyệt sẽ deploy smart contract lên mạng Sepolia Testnet để Bên mua ký duyệt on-chain thông qua ví MetaMask. Mọi thông tin sau khi được xác nhận sẽ không bao giờ có thể bị sửa đổi hay chối bỏ.
-            </div>
 
             {submitError && (
               <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100 text-xs font-bold text-rose-600">

@@ -18,8 +18,7 @@ const nhatKyTestMauSchema = new mongoose.Schema({
   MaNhatKy: { type: String, required: true, unique: true },
   ContractID: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'HopDong', 
-    required: [true, 'R&D phải gắn với một Hợp đồng'] 
+    ref: 'HopDong'
   },
   MaMauYeuCau: { type: String, required: true },
   TrangThai: { 

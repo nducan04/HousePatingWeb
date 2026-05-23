@@ -155,6 +155,7 @@ export default function ContractsPage() {
 
   const viewContract = (item: any) => {
     setFormData({
+      _id: item._id, // Save Mongo ID for updating
       contractId: item.contractId || item.MaHopDong,
       title: item.title,
       customer: item.customer?._id || item.CustomerID?._id || item.CustomerID,
@@ -165,7 +166,8 @@ export default function ContractsPage() {
       partyBRepresentative: item.partyBRepresentative || '',
       partyBPosition: item.partyBPosition || '',
       chiTietHopDong: item.ChiTietHopDong || item.chiTietHopDong || [],
-      articles: { ...DEFAULT_ARTICLES, ...(item.articles || {}) }
+      articles: { ...DEFAULT_ARTICLES, ...(item.articles || {}) },
+      status: item.status // Keep track of status to conditionally render approve button
     });
     setCurrentStep(4);
     setIsModalOpen(true);
@@ -222,14 +224,25 @@ export default function ContractsPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const res = await api.post('/contracts', formData);
-      if (res.data.success) {
-        alert('Tạo hợp đồng thành công!');
-        fetchData();
-        setIsModalOpen(false);
+      if (formData._id) {
+        // Approve existing contract
+        const res = await api.patch(`/contracts/${formData._id}/status`, { status: 'signed' });
+        if (res.data.success) {
+          alert('Đã XÁC NHẬN Hợp đồng thành công! Dữ liệu đã tự động tạo Đơn hàng và Vận chuyển để theo dõi.');
+          fetchData();
+          setIsModalOpen(false);
+        }
+      } else {
+        // Create new contract
+        const res = await api.post('/contracts', formData);
+        if (res.data.success) {
+          alert('Tạo hợp đồng thành công!');
+          fetchData();
+          setIsModalOpen(false);
+        }
       }
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Lỗi khi tạo hợp đồng');
+      alert(error.response?.data?.error || 'Lỗi khi thao tác hợp đồng');
     } finally {
       setIsSubmitting(false);
     }
@@ -319,12 +332,12 @@ export default function ContractsPage() {
         <table className="w-full text-left text-sm">
           <thead>
             <tr>
-              <th>Mã Hợp Đồng</th>
-              <th>Khách Hàng / Đối Tác</th>
-              <th>Tổng Giá Trị</th>
-              <th>Trạng Thái</th>
-              <th>Ngày Khởi Tạo</th>
-              <th style={{ textAlign: 'right' }}>Thao tác</th>
+              <th className="whitespace-nowrap">Mã Hợp Đồng</th>
+              <th className="whitespace-nowrap">Khách Hàng / Đối Tác</th>
+              <th className="whitespace-nowrap">Tổng Giá Trị</th>
+              <th className="whitespace-nowrap">Trạng Thái</th>
+              <th className="whitespace-nowrap">Ngày Khởi Tạo</th>
+              <th className="whitespace-nowrap" style={{ textAlign: 'right' }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -724,9 +737,11 @@ export default function ContractsPage() {
                     Tiếp theo <ChevronRight size={20} />
                   </button>
                 ) : (
-                  <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" disabled={isSubmitting} style={{ background: '#059669', border: 'none' }} onClick={handleSubmit}>
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : <ShieldCheck size={20} />}XÁC NHẬN
-                  </button>
+                  (!formData._id || formData.status === 'draft' || formData.status === 'created') && (
+                    <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" disabled={isSubmitting} style={{ background: '#059669', border: 'none' }} onClick={handleSubmit}>
+                      {isSubmitting ? <Loader2 className="animate-spin" /> : <ShieldCheck size={20} />} {formData._id ? 'XÁC NHẬN HỢP ĐỒNG' : 'LƯU & TẠO MỚI'}
+                    </button>
+                  )
                 )}
               </div>
             </div>

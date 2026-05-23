@@ -24,32 +24,19 @@ export default function RDTrackingPage() {
   const [filter, setFilter] = useState('all');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedSampleRequest, setSelectedSampleRequest] = useState<any>(null);
   const [contracts, setContracts] = useState<any[]>([]);
   const [selectedContract, setSelectedContract] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
-  
+
   const [sampleRequests, setSampleRequests] = useState<any[]>([]);
 
   useEffect(() => {
     fetchLogs();
     fetchContracts();
-    
-    // Load sample requests from localStorage
-    if (typeof window !== 'undefined') {
-      const storedRequests = localStorage.getItem('sampleRequests');
-      if (storedRequests) {
-        setSampleRequests(JSON.parse(storedRequests));
-      } else {
-        const defaultRequests = [
-          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026' },
-          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026' },
-        ];
-        setSampleRequests(defaultRequests);
-        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
-      }
-    }
   }, []);
 
   const fetchLogs = async () => {
@@ -70,7 +57,19 @@ export default function RDTrackingPage() {
     try {
       const res = await api.get('/contracts');
       if (res.data.success) {
-        setContracts(res.data.data);
+        const fetchedContracts = res.data.data;
+        setContracts(fetchedContracts);
+
+        // Khôi phục dữ liệu từ localStorage (Yêu cầu mẫu thử được tạo qua form /rd-tracking/new)
+        let localRequests: any[] = [];
+        try {
+          const stored = localStorage.getItem('sampleRequests');
+          if (stored) localRequests = JSON.parse(stored);
+        } catch (e) {
+          console.error('Error parsing local sample requests', e);
+        }
+
+        setSampleRequests(localRequests);
       }
     } catch (err) {
       console.error('Failed to fetch contracts:', err);
@@ -113,16 +112,20 @@ export default function RDTrackingPage() {
   };
 
   const STATS = useMemo(() => {
+    const contractLogs = data.filter(d => d.ContractID);
     return {
-      total: data.length,
-      testing: data.filter(d => d.TrangThai === 'testing' || d.TrangThai === 'pending').length,
-      success: data.filter(d => d.TrangThai === 'approved').length,
-      fail: data.filter(d => d.TrangThai === 'rejected').length,
+      total: contractLogs.length,
+      testing: contractLogs.filter(d => d.TrangThai === 'testing' || d.TrangThai === 'pending').length,
+      success: contractLogs.filter(d => d.TrangThai === 'approved').length,
+      fail: contractLogs.filter(d => d.TrangThai === 'rejected').length,
     };
   }, [data]);
 
   const filteredData = useMemo(() => {
     return data.filter(item => {
+      // Ẩn các mẻ log mẫu thử độc lập khỏi bảng định biên
+      if (!item.ContractID) return false;
+
       const colorInfo = paintColors.find(c => c.code === item.MaMauYeuCau);
       const matchSearch =
         String(item.MaMauYeuCau || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -311,7 +314,7 @@ export default function RDTrackingPage() {
                     const info = paintColors.find(c => c.code === color);
                     return (
                       <option key={color} value={color}>
-                         {color} {info ? `- ${info.name}` : ''}
+                        {color} {info ? `- ${info.name}` : ''}
                       </option>
                     );
                   })}
@@ -344,6 +347,8 @@ export default function RDTrackingPage() {
           </div>
         </div>
       )}
+
+
       {/* Sample Requests Table */}
       <div className="space-y-4">
         <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
@@ -392,10 +397,56 @@ export default function RDTrackingPage() {
                       {req.date}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end">
-                        <Link href={`/rd-tracking/${req.id}`} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-600 transition-all cursor-pointer">
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={async () => {
+                          if (req.status === 'processing' && req.logId) {
+                            router.push(`/rd-tracking/${req.logId}`);
+                            return;
+                          }
+
+                          // Thử tìm xem có log cũ không
+                          const existingLog = data.find(d => d.MaMauYeuCau === req.colorCode);
+                          if (existingLog) {
+                            // Cập nhật lại localStorage
+                            const stored = localStorage.getItem('sampleRequests');
+                            if (stored) {
+                              const localRequests = JSON.parse(stored);
+                              const updated = localRequests.map((r: any) =>
+                                r.id === req.id ? { ...r, status: 'processing', logId: existingLog._id } : r
+                              );
+                              localStorage.setItem('sampleRequests', JSON.stringify(updated));
+                              setSampleRequests(updated);
+                            }
+                            router.push(`/rd-tracking/${existingLog._id}`);
+                            return;
+                          }
+
+                          // Chưa có log -> Tạo tự động
+                          try {
+                            const res = await api.post('/rd-tracking', {
+                              ContractID: null,
+                              MaMauYeuCau: req.colorCode
+                            });
+                            if (res.data.success) {
+                              const newLogId = res.data.data._id;
+                              // Lưu localStorage
+                              const stored = localStorage.getItem('sampleRequests');
+                              if (stored) {
+                                const localRequests = JSON.parse(stored);
+                                const updated = localRequests.map((r: any) =>
+                                  r.id === req.id ? { ...r, status: 'processing', logId: newLogId } : r
+                                );
+                                localStorage.setItem('sampleRequests', JSON.stringify(updated));
+                                setSampleRequests(updated);
+                              }
+                              router.push(`/rd-tracking/${newLogId}`);
+                            }
+                          } catch (err) {
+                            alert('Lỗi khởi tạo Log R&D!');
+                          }
+                        }} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-600 transition-all cursor-pointer" title="Đi đến trang Log Chi Tiết">
                           <Eye size={18} />
-                        </Link>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -422,7 +473,7 @@ export default function RDTrackingPage() {
                 <tr className="bg-slate-50 border-b border-slate-100">
                   <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">ID Lab Định Biên</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Mã Màu Yêu Cầu</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Hợp Đồng</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Khách hàng / Yêu cầu</th>
                   <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Số Mẻ Test</th>
                   <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Hao Hụt % (Avg)</th>
                   <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
@@ -459,8 +510,19 @@ export default function RDTrackingPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-bold text-slate-700 text-[14px]">{item.ContractID?.MaHopDong || 'N/A'}</div>
-                        <div className="text-[12px] text-slate-400 font-medium truncate max-w-[150px]">{item.ContractID?.title || 'Unknown'}</div>
+                        {item.ContractID ? (
+                          <>
+                            <div className="font-bold text-slate-700 text-[14px]">{item.ContractID.MaHopDong}</div>
+                            <div className="text-[12px] text-slate-400 font-medium truncate max-w-[150px]">{item.ContractID.title || 'Unknown'}</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="font-bold text-slate-700 text-[14px]">
+                              {sampleRequests.find((r: any) => r.logId === item._id || r.colorCode === item.MaMauYeuCau)?.customer || 'Khách hàng ngoài'}
+                            </div>
+                            <div className="text-[12px] text-slate-400 font-medium truncate max-w-[150px]">Yêu cầu Mẫu thử</div>
+                          </>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className="font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-[13px]">{item.LichSuPhienBan?.length || 0}</span>
@@ -491,7 +553,7 @@ export default function RDTrackingPage() {
             </table>
           </div>
         </div>
-    </div>
+      </div>
     </div>
   );
 }
