@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const rdController = require('../controllers/rdController');
+const { protect } = require('../middleware/authMiddleware');
+
+router.use(protect);
 
 // @route   GET /api/rd-tracking
 router.get('/', rdController.getRDLogs);

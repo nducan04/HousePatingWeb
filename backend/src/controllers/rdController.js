@@ -6,7 +6,21 @@ const NhanVien = require('../models/NhanVien');
 // @route   GET /api/rd-tracking
 exports.getRDLogs = async (req, res) => {
   try {
-    const logs = await NhatKyTestMau.find()
+    let query = {};
+    if (req.user && (req.user.VaiTro === 'KhachHangB2C' || req.user.VaiTro === 'KhachHangB2B')) {
+      const KhachHang = require('../models/KhachHang');
+      const kh = await KhachHang.findOne({ AccountID: req.user._id });
+      if (kh) {
+        // Find all contracts belonging to this customer
+        const contracts = await HopDong.find({ CustomerID: kh._id });
+        const contractIds = contracts.map(c => c._id);
+        query.ContractID = { $in: contractIds };
+      } else {
+        return res.status(200).json({ success: true, count: 0, data: [] });
+      }
+    }
+
+    const logs = await NhatKyTestMau.find(query)
       .populate('ContractID', 'MaHopDong title')
       .sort({ updatedAt: -1 });
     res.status(200).json({ success: true, count: logs.length, data: logs });
@@ -25,6 +39,15 @@ exports.getRDLogById = async (req, res) => {
     if (!log) {
       return res.status(404).json({ success: false, message: 'Log not found' });
     }
+
+    // RBAC check
+    if (req.user && (req.user.VaiTro === 'KhachHangB2C' || req.user.VaiTro === 'KhachHangB2B')) {
+      const KhachHang = require('../models/KhachHang');
+      const kh = await KhachHang.findOne({ AccountID: req.user._id });
+      if (!kh || !log.ContractID || log.ContractID.CustomerID?.toString() !== kh._id.toString()) {
+        return res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập dữ liệu pha chế này.' });
+      }
+    }
     
     res.status(200).json({ success: true, data: log });
   } catch (error) {
@@ -42,13 +65,15 @@ exports.createRDLog = async (req, res) => {
     const count = await NhatKyTestMau.countDocuments();
     const MaNhatKy = `RD-${new Date().getFullYear() % 100}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(count + 1).padStart(2, '0')}`;
     
-    const log = await NhatKyTestMau.create({
+    const payload = {
       MaNhatKy,
-      ContractID,
       MaMauYeuCau,
       TrangThai: 'testing',
       LichSuPhienBan: []
-    });
+    };
+    if (ContractID) payload.ContractID = ContractID;
+    
+    const log = await NhatKyTestMau.create(payload);
     
     res.status(201).json({ success: true, data: log });
   } catch (error) {

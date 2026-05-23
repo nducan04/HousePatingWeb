@@ -17,6 +17,12 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
   const { user } = useAuthStore();
   const router = useRouter();
 
+  useEffect(() => {
+    if (user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C')) {
+      router.push(`/tracking?code=${id}&tab=rd`);
+    }
+  }, [user, router, id]);
+
   const [request, setRequest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAddVersion, setShowAddVersion] = useState(false);
@@ -106,7 +112,17 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
             ...v,
             tester: v.tester === 'Unknown Tester' || !v.tester ? ((user as any)?.name || 'Phi Binh Minh') : v.tester
           }));
-          setRequest({ ...data, LichSuPhienBan: fixedLichSu });
+          let customerName = null;
+          if (!data.ContractID && typeof window !== 'undefined') {
+            const storedRequests = localStorage.getItem('sampleRequests');
+            if (storedRequests) {
+              const reqs = JSON.parse(storedRequests);
+              const matchedReq = reqs.find((r: any) => r.logId === data._id);
+              if (matchedReq) customerName = matchedReq.customer;
+            }
+          }
+
+          setRequest({ ...data, LichSuPhienBan: fixedLichSu, sampleCustomer: customerName });
           setIsSigned(data.TrangThai === 'approved' || data.TrangThai === 'complete');
         }
       }
@@ -379,7 +395,11 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
             )}
 
             <p style={{ color: '#475569' }}>
-              Hợp đồng gốc: <strong style={{ color: '#0f172a' }}>{contract.MaHopDong} - {contract.title}</strong>
+              {contract.MaHopDong ? (
+                <>Hợp đồng gốc: <strong style={{ color: '#0f172a' }}>{contract.MaHopDong} - {contract.title}</strong></>
+              ) : (
+                <>Khách hàng yêu cầu: <strong style={{ color: '#0f172a' }}>{request.sampleCustomer || 'Khách hàng ngoài'}</strong></>
+              )}
             </p>
           </div>
 

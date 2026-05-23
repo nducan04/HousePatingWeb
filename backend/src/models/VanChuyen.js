@@ -25,10 +25,10 @@ const vanChuyenSchema = new mongoose.Schema({
   },
   VanChuyenInfo: {
     DonVi: { type: String, default: 'Đội xe nội bộ (Xe 2.5T)' },
-    NhanVien: { 
-      type: mongoose.Schema.Types.ObjectId, 
+    NhanVien: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'NhanVien',
-      required: true 
+      required: true
     },
     SDT: String,
     PhiVC: { type: Number, default: 0 }

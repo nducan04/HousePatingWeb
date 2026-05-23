@@ -13,8 +13,8 @@ exports.getContracts = async (req, res) => {
   try {
     let filter = {};
 
-    // RBAC: KhachHangB2B chỉ thấy hợp đồng của mình
-    if (req.user && req.user.VaiTro === 'KhachHangB2B') {
+    // RBAC: Khách hàng chỉ thấy hợp đồng của mình
+    if (req.user && (req.user.VaiTro === 'KhachHangB2B' || req.user.VaiTro === 'KhachHangB2C')) {
       const KhachHang = require('../models/KhachHang');
       const kh = await KhachHang.findOne({ AccountID: req.user._id });
       if (kh) filter.CustomerID = kh._id;
@@ -86,8 +86,8 @@ exports.getContractById = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Không tìm thấy hợp đồng' });
     }
 
-    // RBAC: KhachHangB2B chỉ xem hợp đồng của mình
-    if (req.user && req.user.VaiTro === 'KhachHangB2B') {
+    // RBAC: Khách hàng chỉ xem hợp đồng của mình
+    if (req.user && (req.user.VaiTro === 'KhachHangB2B' || req.user.VaiTro === 'KhachHangB2C')) {
       const KhachHang = require('../models/KhachHang');
       const kh = await KhachHang.findOne({ AccountID: req.user._id });
       if (!kh || String(contract.CustomerID?._id) !== String(kh._id)) {
@@ -176,18 +176,27 @@ exports.createContract = async (req, res) => {
       parsedTerms = JSON.parse(terms);
     }
 
-    // Tìm NhanVien từ JWT user (AccountID)
+    // Tìm NhanVien hoặc KhachHang từ JWT user
     let employeeId = undefined;
+    let actualCustomerId = customer;
+    
     if (req.user) {
       const NhanVien = require('../models/NhanVien');
       const nv = await NhanVien.findOne({ AccountID: req.user._id });
-      if (nv) employeeId = nv._id;
+      if (nv) {
+        employeeId = nv._id;
+      } else {
+        // Nếu không phải nhân viên, có thể là khách hàng tự tạo
+        const KhachHang = require('../models/KhachHang');
+        const kh = await KhachHang.findOne({ AccountID: req.user._id });
+        if (kh) actualCustomerId = kh._id;
+      }
     }
 
     const contractData = {
       MaHopDong: contractId,
       title,
-      CustomerID: customer,
+      CustomerID: actualCustomerId,
       EmployeeID: employeeId,
       TongGiaTri: value,
       vtscAddress: process.env.VTSC_WALLET || '0x0000000000000000000000000000000000000000',
@@ -562,6 +571,65 @@ exports.updateStatus = async (req, res) => {
 
     contract.TrangThai = status;
     await contract.save();
+
+    // Auto-create DonHang & VanChuyen if signed
+    if (status === 'signed') {
+      const DonHang = require('../models/DonHang');
+      const VanChuyen = require('../models/VanChuyen');
+      const NhanVien = require('../models/NhanVien');
+      const SanPhamSon = require('../models/SanPhamSon');
+      
+      // Tìm 1 sản phẩm bất kỳ làm tham chiếu (vì mongoose yêu cầu ObjectId)
+      const sampleSP = await SanPhamSon.findOne();
+      const defaultSpId = sampleSP ? sampleSP._id : null;
+      
+      // Tìm 1 nhân viên bất kỳ làm người phụ trách vận chuyển mặc định
+      const sampleNV = await NhanVien.findOne();
+      const defaultNvId = contract.EmployeeID || (sampleNV ? sampleNV._id : null);
+
+      // Tạo đơn hàng
+      const newOrder = await DonHang.create({
+        MaDonHang: `DH-${contract.MaHopDong}`,
+        KhachHang: contract.CustomerID,
+        NhanVienPhuTrach: defaultNvId,
+        Items: contract.ChiTietHopDong.map(item => ({
+          SanPham: defaultSpId, // ID tạm
+          TenSanPham: item.productName,
+          MaMau: item.colorCode,
+          SoLuong: item.quantity,
+          DonGia: item.unitPrice,
+          ThanhTien: item.quantity * item.unitPrice
+        })),
+        TongTien: contract.TongGiaTri,
+        TrangThai: 'DANG_XU_LY',
+        PhuongThucThanhToan: 'CHUYEN_KHOAN',
+        TrangThaiThanhToan: 'CHUA_THANH_TOAN',
+        DiaChiGiaoHang: contract.partyBAddress || 'Kho khách hàng',
+        GhiChu: `Người nhận: ${contract.partyBRepresentative || 'Khách hàng'} - SĐT: ${contract.partyBPhoneNumber || '0987654321'}. Đơn hàng tự động từ Hợp đồng R&D`
+      });
+
+      // Tạo vận chuyển
+      await VanChuyen.create({
+        MaVanChuyen: `VC-${contract.MaHopDong}`,
+        DonHang: newOrder._id,
+        LoHang: {
+          SoKien: 1,
+          KhoiLuong: contract.ChiTietHopDong.reduce((sum, i) => sum + i.quantity, 0),
+          MauSon: contract.ChiTietHopDong[0]?.colorCode || 'Mixed'
+        },
+        VanChuyenInfo: {
+          DonVi: 'VTSC Logistics',
+          NhanVien: defaultNvId // Tạm lấy Employee Hợp đồng làm NV giao hàng
+        },
+        LoTrinh: [{
+          ThoiGian: new Date(),
+          NoiDung: 'Tiếp nhận đơn hàng R&D từ Hợp đồng',
+          Status: 'COMPLETE',
+          Icon: 'Package'
+        }],
+        TrangThaiTongQuat: 'Chờ sản xuất R&D'
+      });
+    }
 
     res.status(200).json({
       success: true,

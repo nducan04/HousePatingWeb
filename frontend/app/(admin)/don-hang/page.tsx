@@ -8,7 +8,8 @@ import {
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import api from '@/lib/utils/axiosAuth';
-import { paintColors } from '@/lib/data/colors-data';
+import { paintColors, trackingData } from '@/lib/data/colors-data';
+import { QRCodeSVG } from 'qrcode.react';
 import * as XLSX from 'xlsx';
 import { useAuthStore } from '@/lib/store/authStore';
 import Link from 'next/link';
@@ -131,7 +132,7 @@ interface SanPham {
     MaSanPham: string;
     TenDongSon: string;
     DonGiaCoSo: number;
-    TonKho: number;
+    TongTonKho: number;
     HinhAnh?: string;
     DanhSachMaMau?: MaMauSon[];
 }
@@ -149,7 +150,14 @@ interface NewOrderItem {
 
 export default function OrderManagementPage() {
     const { user } = useAuthStore();
+    const router = useRouter();
     const isAdminOrEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
+
+    useEffect(() => {
+        if (user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C')) {
+            router.push('/my-orders');
+        }
+    }, [user, router]);
 
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
@@ -180,8 +188,11 @@ export default function OrderManagementPage() {
     const [doDayLopPhu, setDoDayLopPhu] = useState('75 µm');
     const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState('');
+    const [productSearchTerm, setProductSearchTerm] = useState('');
+    const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
     const [selectedColorCode, setSelectedColorCode] = useState('');
     const [colorSearchTerm, setColorSearchTerm] = useState('');
+    const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
     const [selectedSalespersonId, setSelectedSalespersonId] = useState('');
     const [allStaff, setAllStaff] = useState<any[]>([]);
 
@@ -900,7 +911,7 @@ export default function OrderManagementPage() {
         if (!selectedProductId) return;
         const sp = allProducts.find(p => p._id === selectedProductId);
         if (!sp) return;
-        if (sp.TonKho <= 0) { alert('Sản phẩm hết hàng'); return; }
+        if ((sp.TongTonKho || 0) <= 0) { alert('Sản phẩm hết hàng'); return; }
 
         if (!selectedColorCode) return alert('Vui lòng chọn mã màu sơn');
 
@@ -1121,7 +1132,7 @@ export default function OrderManagementPage() {
 
     const STATUS_MAP = {
         'CHO_XAC_NHAN': { label: 'Chờ xác nhận', color: '#d97706', icon: Clock },
-        'DANG_XU_LY': { label: 'Đang xử lý', color: '#2563eb', icon: Package },
+        'DANG_XU_LY': { label: 'Đã xử lý xong', color: '#2563eb', icon: Package },
         'DANG_GIAO': { label: 'Đang vận chuyển', color: '#7c3aed', icon: Truck },
         'DA_GIAO': { label: 'Đã giao hàng', color: '#059669', icon: CheckCircle },
         'DA_HUY': { label: 'Đã hủy', color: '#e11d48', icon: XCircle },
@@ -1130,7 +1141,7 @@ export default function OrderManagementPage() {
     const TABS = [
         { key: 'ALL', label: 'Tất cả' },
         { key: 'CHO_XAC_NHAN', label: 'Chờ xác nhận' },
-        { key: 'DANG_XU_LY', label: 'Đang xử lý' },
+        { key: 'DANG_XU_LY', label: 'Đã xử lý xong' },
         { key: 'DANG_GIAO', label: 'Đang vận chuyển' },
         { key: 'DA_GIAO', label: 'Đã giao hàng' },
         { key: 'DA_HUY', label: 'Đã hủy' }
@@ -1183,6 +1194,62 @@ export default function OrderManagementPage() {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Kiện Hàng Gần Đây / Tracking Section */}
+            <div className="bg-gradient-to-br from-blue-50/40 via-indigo-50/20 to-white p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+                        <Truck size={22} className="animate-bounce" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Theo Dõi Kiện Hàng Mới Nhất</h2>
+                        <p className="text-xs text-slate-400 font-semibold mt-0.5">Click vào kiện hàng để xem chi tiết lộ trình vận chuyển trên toàn cầu</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {trackingData.map(t => {
+                        const currentStep = t.steps.find(s => s.status === 'current');
+                        const completedSteps = t.steps.filter(s => s.status === 'completed').length;
+                        const totalSteps = t.steps.length;
+                        return (
+                            <div
+                                key={t.code}
+                                className="bg-white border border-slate-100 rounded-3xl p-6 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between group relative overflow-hidden"
+                                onClick={() => {
+                                    window.location.href = `/tracking?code=${t.code}`;
+                                }}
+                            >
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/20 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                                
+                                <div className="relative z-10 flex-1">
+                                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                                        {t.code}
+                                    </span>
+                                    <div className="font-extrabold text-slate-800 mt-3 text-[14px]">{t.customer}</div>
+                                    <div className="text-[12px] text-slate-400 font-semibold mt-0.5">{t.product}</div>
+                                    
+                                    <div className="flex items-center gap-2 mt-4">
+                                        <div className="w-28 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                            <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(completedSteps / totalSteps) * 100}%` }} />
+                                        </div>
+                                        <span className="text-[11px] font-bold text-slate-400">{completedSteps}/{totalSteps} chặng</span>
+                                    </div>
+                                    {currentStep && (
+                                        <span className="inline-block mt-3 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold shadow-sm">
+                                            • {currentStep.label.toUpperCase()}
+                                        </span>
+                                    )}
+                                </div>
+                                
+                                <div className="relative z-10 bg-white p-3 rounded-2xl border border-slate-100 group-hover:border-blue-200 transition-colors shadow-sm ml-4">
+                                    <QRCodeSVG value={`https://vtsc.vn/tracking/${t.code}`} size={75} bgColor="#ffffff" fgColor="#0c102a" level="M" />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Filters & Search */}
@@ -1243,14 +1310,14 @@ export default function OrderManagementPage() {
                     <table className="w-full border-collapse min-w-[1000px]">
                         <thead>
                             <tr className="border-b border-slate-50">
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-36">Mã đơn hàng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Khách hàng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Số lượng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Tổng tiền</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Thanh toán</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Hạn xác nhận</th>
-                                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest w-40">Thao tác</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-36 whitespace-nowrap">Mã đơn hàng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Khách hàng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Số lượng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Tổng tiền</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Thanh toán</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Trạng thái</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Hạn xác nhận</th>
+                                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest w-40 whitespace-nowrap">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -1338,10 +1405,6 @@ export default function OrderManagementPage() {
                                                     {order.TrangThai === 'CHO_XAC_NHAN' && (
                                                         <button
                                                             onClick={() => {
-                                                                if ((order.DaCoc || 0) <= 0) {
-                                                                    alert('Đơn hàng chưa có tiền cọc. Vui lòng cập nhật tiền cọc TRƯỚC khi xác nhận sản xuất.');
-                                                                    return;
-                                                                }
                                                                 handleUpdateStatus(order._id, 'DANG_XU_LY');
                                                             }}
                                                             className="inline-flex items-center px-3 py-1.5 rounded-xl font-bold text-[11px] bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-all cursor-pointer border-none"

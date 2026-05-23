@@ -18,7 +18,243 @@ export default function TrackingPage() {
 
   // Shipment states
   const [trackingCode, setTrackingCode] = useState('');
-  const [selectedTracking, setSelectedTracking] = useState<typeof trackingData[0] | null>(null);
+  const [selectedTracking, setSelectedTracking] = useState<any | null>(null);
+
+  // R&D Tracking states
+  const [activeTab, setActiveTab] = useState<'shipping' | 'rd'>('shipping');
+  const [selectedRDRequest, setSelectedRDRequest] = useState<any | null>(null);
+  const [sampleRequests, setSampleRequests] = useState<any[]>([]);
+  const [loadingRD, setLoadingRD] = useState(false);
+
+  // Live simulation states
+  const [simProgress, setSimProgress] = useState(0.45);
+  const [simSpeed, setSimSpeed] = useState(72);
+  const [simTemp, setSimTemp] = useState(19.4);
+  const [lastPing, setLastPing] = useState(0);
+
+  const { user } = useAuthStore();
+
+  const [dbTrackingList, setDbTrackingList] = useState<any[]>([]);
+
+  const mapDBTrackingToUI = (item: any) => {
+    const donHang = item.DonHang || {};
+    const khachHang = donHang.KhachHang || {};
+
+    let product = 'Sơn tĩnh điện AkzoNobel';
+    let qtyStr = 'N/A';
+    if (donHang.Items && donHang.Items.length > 0) {
+      product = donHang.Items[0].TenSanPham || product;
+      qtyStr = `${donHang.Items[0].SoLuong} Thùng`;
+    }
+
+    const isDelivered = item.TrangThaiTongQuat === 'Giao hàng thành công';
+
+    const realSteps = (item.LoTrinh || []).map((log: any) => ({
+      label: log.NoiDung,
+      status: log.Status === 'COMPLETE' ? ('completed' as const) : ('current' as const),
+      time: log.ThoiGian ? new Date(log.ThoiGian).toLocaleDateString('vi-VN') : ''
+    }));
+
+    const steps = realSteps.length > 0 ? realSteps : [
+      { label: 'Chờ lấy hàng', status: 'current' as const, time: new Date().toLocaleDateString('vi-VN') }
+    ];
+
+    return {
+      code: item.MaVanChuyen || `DEL-${donHang.MaDonHang || 'DH'}`,
+      customer: khachHang.TenKhachHang || 'Khách hàng',
+      product: product,
+      quantity: qtyStr,
+      steps: steps,
+      isRealDB: true,
+      dbRecord: item
+    };
+  };
+
+  const fetchDBTracking = async () => {
+    try {
+      const res = await api.get('/van-chuyen');
+      if (res.data.success) {
+        const mapped = res.data.data.map(mapDBTrackingToUI);
+        setDbTrackingList(mapped);
+
+        // Auto-select the first item if no query params exist
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const code = params.get('code');
+          const orderId = params.get('orderId');
+          if (!code && !orderId && mapped.length > 0) {
+            setSelectedTracking(mapped[0]);
+            setTrackingCode(mapped[0].code);
+            setActiveTab('shipping');
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching database shipping tracking:', e);
+    }
+  };
+
+  const [dbRDList, setDbRDList] = useState<any[]>([]);
+
+  const mapDBRDToUI = (item: any) => {
+    const itemCustomer = item.ContractID?.title || 'Khách hàng';
+    return {
+      id: item.MaNhatKy || item._id,
+      customer: itemCustomer,
+      colorCode: item.MaMauYeuCau || 'RAL-MIX',
+      surface: item.ContractID?.surface || 'Kim loại',
+      status: item.TrangThai || 'pending',
+      date: new Date(item.createdAt).toLocaleDateString('vi-VN'),
+      LichSuPhienBan: item.LichSuPhienBan || [],
+      signedBy: item.signedBy,
+      signedAt: item.signedAt,
+      isRealDB: true
+    };
+  };
+
+  const fetchDBRDRequests = async () => {
+    try {
+      const res = await api.get('/rd-tracking');
+      if (res.data.success) {
+        const mapped = res.data.data.map(mapDBRDToUI);
+        setDbRDList(mapped);
+      }
+    } catch (e) {
+      console.error('Error fetching database R&D requests:', e);
+    }
+  };
+
+  const filteredTrackingData = useMemo(() => {
+    return [...dbTrackingList];
+  }, [dbTrackingList]);
+
+  const filteredSampleRequests = useMemo(() => {
+    return [...dbRDList, ...sampleRequests];
+  }, [dbRDList, sampleRequests]);
+
+  const fetchDBRDRequest = async (code: string) => {
+    setLoadingRD(true);
+    try {
+      const res = await api.get(`/rd-tracking/${code}`);
+      if (res.data.success) {
+        const item = res.data.data;
+        const itemCustomer = item.ContractID?.title || 'Khách hàng';
+        if (user && user.role !== 'Admin' && user.role !== 'NhanVien') {
+          const customerName = user.profile?.TenKhachHang || '';
+          const belongsToMe = itemCustomer.toLowerCase().includes(customerName.toLowerCase()) ||
+            customerName.toLowerCase().includes(itemCustomer.toLowerCase());
+          if (!belongsToMe) {
+            alert('Bạn không có quyền truy cập dữ liệu pha chế này.');
+            setLoadingRD(false);
+            return;
+          }
+        }
+        setSelectedRDRequest({
+          id: item.MaNhatKy || code,
+          customer: itemCustomer,
+          colorCode: item.MaMauYeuCau || 'RAL-MIX',
+          surface: item.ContractID?.surface || 'Kim loại',
+          status: item.TrangThai || 'pending',
+          date: new Date(item.createdAt).toLocaleDateString('vi-VN'),
+          LichSuPhienBan: item.LichSuPhienBan || [],
+          signedBy: item.signedBy,
+          signedAt: item.signedAt
+        });
+        setActiveTab('rd');
+      } else {
+        alert('Không tìm thấy mã nhật ký R&D hoặc mã yêu cầu.');
+      }
+    } catch (e) {
+      console.error('Failed to load R&D from DB:', e);
+      alert('Không tìm thấy mã nhật ký R&D. Thử: REQ-001 hoặc REQ-002');
+    } finally {
+      setLoadingRD(false);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch real shipping tracking and R&D logs from DB
+    fetchDBTracking();
+    fetchDBRDRequests();
+  }, []);
+
+  useEffect(() => {
+    // Read pre-filled query param if exists
+    if (typeof window !== 'undefined' && filteredTrackingData.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const orderId = params.get('orderId');
+      const tabParam = params.get('tab');
+
+      if (tabParam === 'rd') {
+        setActiveTab('rd');
+      }
+
+      // Load sample requests from localstorage
+      const stored = localStorage.getItem('sampleRequests');
+      let localReqs = [];
+      if (stored) {
+        localReqs = JSON.parse(stored);
+        setSampleRequests(localReqs);
+      } else {
+        const defaultRequests = [
+          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
+          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026', LichSuPhienBan: [] },
+        ];
+        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
+        setSampleRequests(defaultRequests);
+        localReqs = defaultRequests;
+      }
+
+      if (orderId) {
+        const foundShipping = filteredTrackingData.find(t => t.dbRecord?.DonHang?._id === orderId || t.dbRecord?.DonHang === orderId);
+        if (foundShipping) {
+          setTrackingCode(foundShipping.code);
+          setSelectedTracking(foundShipping);
+          setActiveTab('shipping');
+        }
+      } else if (code) {
+        setTrackingCode(code);
+        // Try searching in shippingData
+        const foundShipping = filteredTrackingData.find(t => t.code.toLowerCase() === code.toLowerCase());
+        if (foundShipping) {
+          setSelectedTracking(foundShipping);
+          setActiveTab('shipping');
+        } else {
+          // Check local R&D requests
+          const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === code.toLowerCase());
+          if (foundRD) {
+            setSelectedRDRequest(foundRD);
+            setActiveTab('rd');
+          } else {
+            // Try fetching from DB if not start with REQ
+            if (!code.toLowerCase().startsWith('req-')) {
+              fetchDBRDRequest(code);
+            }
+          }
+        }
+      }
+    }
+  }, [filteredTrackingData, user]);
+
+  // Simulating live package metrics ticking
+  useEffect(() => {
+    const progressInterval = setInterval(() => {
+      setSimProgress(prev => (prev + 0.0008) % 1.0);
+      setSimSpeed(prev => Math.max(15, Math.min(110, prev + (Math.random() > 0.5 ? 1.5 : -1.5))));
+      setSimTemp(prev => Math.max(16.0, Math.min(24.0, prev + (Math.random() > 0.5 ? 0.05 : -0.05))));
+      setLastPing(0);
+    }, 200);
+
+    const pingInterval = setInterval(() => {
+      setLastPing(prev => prev + 1);
+    }, 1000);
+
+    return () => {
+      clearInterval(progressInterval);
+      clearInterval(pingInterval);
+    };
+  }, []);
 
   // R&D samples states
   const [sampleRequests, setSampleRequests] = useState<any[]>([]);
@@ -87,11 +323,51 @@ export default function TrackingPage() {
   };
 
   const handleSearch = () => {
-    const found = trackingData.find(t => t.code.toLowerCase() === trackingCode.toLowerCase());
-    if (found) {
-      setSelectedTracking(found);
-    } else if (trackingCode) {
-      alert('Không tìm thấy mã tracking. Thử: VTSC-240601-001');
+    if (!trackingCode) return;
+
+    if (activeTab === 'shipping') {
+      const found = filteredTrackingData.find(t => t.code.toLowerCase() === trackingCode.toLowerCase());
+      if (found) {
+        setSelectedTracking(found);
+      } else {
+        // Try searching in local R&D in case they entered R&D code under shipping tab
+        const stored = localStorage.getItem('sampleRequests');
+        if (stored) {
+          const reqs = JSON.parse(stored);
+          const foundRD = reqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
+          if (foundRD) {
+            setSelectedRDRequest(foundRD);
+            setActiveTab('rd');
+            setSelectedTracking(null);
+            return;
+          }
+        }
+
+        // Try DB R&D
+        if (!trackingCode.toLowerCase().startsWith('req-')) {
+          fetchDBRDRequest(trackingCode);
+          return;
+        }
+
+        alert('Không tìm thấy mã tracking vận chuyển. Thử: VTSC-240601-001 hoặc VTSC-240610-002');
+      }
+    } else {
+      // Searching under RD tab
+      const stored = localStorage.getItem('sampleRequests');
+      let localReqs = [];
+      if (stored) {
+        localReqs = JSON.parse(stored);
+      }
+
+      const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
+      if (foundRD) {
+        setSelectedRDRequest(foundRD);
+        setSelectedTracking(null);
+      } else if (!trackingCode.toLowerCase().startsWith('req-')) {
+        fetchDBRDRequest(trackingCode);
+      } else {
+        alert('Không tìm thấy yêu cầu R&D. Thử: REQ-001 hoặc REQ-002');
+      }
     }
   };
 
@@ -127,12 +403,18 @@ export default function TrackingPage() {
     'QC Pass': CheckCircle2,
     'Đang giao': Truck,
     'Đã nhận': MapPin,
+    'MapPin': MapPin,
+    'Truck': Truck,
+    'CheckCircle2': CheckCircle2,
+    'Package': Package,
+    'Clock': Clock,
+    'Camera': Camera,
   };
 
   const statusColors = {
-    completed: 'bg-emerald-500 text-white',
-    current: 'bg-amber-400 text-white animate-pulse',
-    upcoming: 'bg-slate-200 text-slate-400',
+    completed: 'bg-emerald-500 text-white shadow-emerald-500/20',
+    current: 'bg-amber-400 text-white animate-pulse shadow-amber-400/20',
+    upcoming: 'bg-slate-100 text-slate-400 border border-slate-200',
   };
 
   // Filter requests for the current customer
@@ -326,7 +608,6 @@ export default function TrackingPage() {
             </div>
           </div>
         </div>
-      )}
 
       {/* ═══════ TAB 2: R&D MIXING REQUEST TRACKING ═══════ */}
       {activeTab === 'samples' && (
