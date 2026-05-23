@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import RouteMap from './RouteMap';
 import {
   Truck,
   Map,
@@ -317,7 +318,12 @@ export default function VanChuyenPage() {
       tenKH.toLowerCase().includes(searchTerm.toLowerCase()) ||
       maVC.toLowerCase().includes(searchTerm.toLowerCase()) ||
       maDH.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchSearch;
+
+    const matchFilter = filter === 'all' ||
+      (filter === 'delivering' && item.TrangThaiTongQuat === "Đang giao hàng") ||
+      (filter === 'delivered' && item.TrangThaiTongQuat === "Giao hàng thành công");
+
+    return matchSearch && matchFilter;
   });
 
   if (loading) {
@@ -461,18 +467,14 @@ export default function VanChuyenPage() {
             </div>
 
             {/* Embedded Map */}
-            <div className="relative w-full" style={{ height: 500 }}>
-              <iframe
-                title="Delivery Map"
-                width="100%"
-                height="100%"
-                style={{ border: 0, display: 'block' }}
-                loading="lazy"
-                allowFullScreen
-                src={`https://maps.google.com/maps?saddr=${encodeURIComponent(mapOrigin)}&daddr=${encodeURIComponent(mapDestination)}&output=embed`}
+            <div className="relative w-full overflow-hidden rounded-xl border border-slate-200" style={{ height: 500 }}>
+              <RouteMap 
+                origin={mapOrigin} 
+                destination={mapDestination} 
+                isDelivered={isDelivered} 
               />
               {/* Overlay badge */}
-              <div className={`absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black shadow-lg ${isDelivered ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
+              <div className={`absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black shadow-lg z-[999] ${isDelivered ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
                 {isDelivered ? <CheckCircle2 size={13} /> : <Truck size={13} />}
                 {isDelivered ? 'Đã giao thành công' : 'Đang trên đường giao'}
               </div>
@@ -647,7 +649,61 @@ export default function VanChuyenPage() {
             })}
           </div>
 
+          {/* Form thêm trạm trung chuyển dành cho nhân viên/tài xế */}
+          {!isCustomer && (
+            <div className="mt-8 pt-8 border-t border-slate-100 bg-slate-50/50 p-6 rounded-2xl">
+              <h5 className="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Navigation size={14} className="text-blue-600 rotate-45" /> Cập nhật lộ trình hiện tại
+              </h5>
+              <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex-1 w-full space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Hoạt động tại trạm</label>
+                  <select
+                    value={waypointAction}
+                    onChange={(e) => setWaypointAction(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+                  >
+                    <option value="Đã đi đến trung tâm phân loại">Đã đến trung tâm phân loại</option>
+                    <option value="Đã xuất phát từ">Đã rời trạm</option>
+                    <option value="Đang trung chuyển qua">Đang trung chuyển qua</option>
+                    <option value="Đang di chuyển đến">Đang di chuyển đến</option>
+                    <option value="Gặp sự cố giao nhận tại">Gặp sự cố tại</option>
+                  </select>
+                </div>
+                <div className="flex-[2] w-full space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Địa điểm / Trạm</label>
+                  <LocationInput
+                    value={newWaypoint}
+                    onChange={setNewWaypoint}
+                    placeholder="Nhập hoặc tìm kiếm trạm trung chuyển..."
+                    icon={MapPin}
+                    iconColor="text-rose-500"
+                    ringColor="focus:ring-blue-500/20"
+                    onEnter={handleAddWaypoint}
+                  />
+                </div>
+                <button
+                  onClick={handleAddWaypoint}
+                  className="w-full md:w-auto px-5 py-2.5 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/10 transition-all cursor-pointer whitespace-nowrap h-[38px] flex items-center justify-center gap-1.5"
+                >
+                  Thêm Trạm
+                </button>
+              </div>
+            </div>
+          )}
 
+          {selectedTracking.HinhAnhGiaoHang && selectedTracking.HinhAnhGiaoHang.length > 0 && (
+            <div className="mt-8 pt-8 border-t border-slate-50">
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">📸 Hình ảnh minh chứng giao hàng</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {selectedTracking.HinhAnhGiaoHang.map((url, i) => (
+                  <div key={i} onClick={() => window.open(getMediaUrl(url), '_blank')} className="rounded-xl overflow-hidden h-36 bg-slate-50 hover:scale-105 transition-transform cursor-pointer">
+                    <img src={getMediaUrl(url)} alt={`Evidence ${i}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer Actions */}
@@ -689,57 +745,63 @@ export default function VanChuyenPage() {
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Quản lý Vận Chuyển</h1>
           <p className="text-sm text-slate-400 font-medium mt-1">Theo dõi trạng thái vận chuyển, lộ trình và tình trạng giao hàng theo thời gian thực.</p>
         </div>
+        <button 
+          className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-[14px] bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border border-slate-100 cursor-pointer self-start md:self-auto shadow-sm"
+          onClick={fetchTrackingData}
+        >
+          <Clock size={18} className="text-slate-500" /> Làm mới dữ liệu
+        </button>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-blue-500/10 group-hover:scale-150 transition-transform"></div>
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-blue-500/10 group-hover:scale-150 transition-transform duration-500"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tổng Chuyến Hàng</p>
               <h3 className="text-3xl font-black text-slate-900">{STATS.total} <span className="text-xs font-bold text-slate-400">chuyến</span></h3>
             </div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform shadow-sm">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform duration-300 shadow-sm">
               <Map size={22} />
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-violet-500/10 group-hover:scale-150 transition-transform"></div>
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-violet-500/10 group-hover:scale-150 transition-transform duration-500"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Đang Vận Chuyển</p>
               <h3 className="text-3xl font-black text-violet-600">{STATS.delivering} <span className="text-xs font-bold text-violet-400">chuyến</span></h3>
             </div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-violet-50 text-violet-600 group-hover:scale-110 transition-transform shadow-sm">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-violet-50 text-violet-600 group-hover:scale-110 transition-transform duration-300 shadow-sm">
               <Truck size={22} />
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-emerald-500/10 group-hover:scale-150 transition-transform"></div>
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-emerald-500/10 group-hover:scale-150 transition-transform duration-500"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Giao Thành Công</p>
               <h3 className="text-3xl font-black text-emerald-600">{STATS.delivered} <span className="text-xs font-bold text-emerald-400">chuyến</span></h3>
             </div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform shadow-sm">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform duration-300 shadow-sm">
               <PackageCheck size={22} />
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-amber-500/10 group-hover:scale-150 transition-transform"></div>
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-amber-500/10 group-hover:scale-150 transition-transform duration-500"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cảnh Báo Sự Cố</p>
               <h3 className="text-3xl font-black text-amber-600">{STATS.issues} <span className="text-xs font-bold text-amber-400">sự cố</span></h3>
             </div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-amber-50 text-amber-600 group-hover:scale-110 transition-transform shadow-sm">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-amber-50 text-amber-600 group-hover:scale-110 transition-transform duration-300 shadow-sm">
               <AlertTriangle size={22} />
             </div>
           </div>
@@ -748,15 +810,37 @@ export default function VanChuyenPage() {
 
       {/* Toolbar */}
       <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm">
-        <div className="relative w-full md:w-96 group">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-          <input
-            type="text"
-            className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
-            placeholder="Tra cứu mã vận chuyển, đơn hàng, khách hàng..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="relative w-full md:w-96 group">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+            <input
+              type="text"
+              className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+              placeholder="Tra cứu mã vận chuyển, đơn hàng, khách hàng..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl overflow-x-auto max-w-full">
+            {[
+              { id: 'all', label: 'Tất cả' },
+              { id: 'delivering', label: 'Đang giao hàng' },
+              { id: 'delivered', label: 'Giao thành công' }
+            ].map(f => (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                  filter === f.id
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

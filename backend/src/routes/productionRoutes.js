@@ -9,11 +9,11 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
+router.use(authorize('Admin', 'NhanVien'));
 
 router.get('/', getProductionOrders);
 router.get('/pre-create', getPreCreateData);
 router.get('/:id', getProductionOrderById);
-
-router.post('/', authorize('Admin', 'NhanVien'), createProductionOrder);
+router.post('/', createProductionOrder);
 
 module.exports = router;

@@ -67,7 +67,8 @@ export default function ThanhToanPage() {
     } else {
       const amount = prompt(`Nhập số tiền đã thanh toán cho hợp đồng ${record.code} (Tổng: ${record.totalAmount.toLocaleString()} đ):`, record.paidAmount.toString());
       if (amount === null) return;
-      const val = parseInt(amount);
+      const cleanAmount = amount.replace(/[,.]/g, '');
+      const val = parseInt(cleanAmount);
       if (isNaN(val)) return alert('Số tiền không hợp lệ');
       try {
         await api.patch(`${API_CONTRACT}/${record._id}`, { paidAmount: val });
@@ -112,8 +113,8 @@ export default function ThanhToanPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Tổng Doanh Thu */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150 bg-emerald-500/10"></div>
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform duration-500 group-hover:scale-150 bg-emerald-500/10"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -123,15 +124,15 @@ export default function ThanhToanPage() {
                 {STATS.totalExpected.toLocaleString()} <span className="text-xs font-bold text-slate-400 ml-0.5">₫</span>
               </h3>
             </div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform shadow-sm">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform duration-300 shadow-sm">
               <DollarSign size={22} />
             </div>
           </div>
         </div>
 
         {/* Card 2: Đã Thu Hồi */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150 bg-blue-500/10"></div>
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform duration-500 group-hover:scale-150 bg-blue-500/10"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -141,15 +142,15 @@ export default function ThanhToanPage() {
                 {STATS.totalPaid.toLocaleString()} <span className="text-xs font-bold text-slate-400 ml-0.5">₫</span>
               </h3>
             </div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform shadow-sm">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform duration-300 shadow-sm">
               <Wallet size={22} />
             </div>
           </div>
         </div>
 
         {/* Card 3: Công Nợ Phải Thu */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150 bg-rose-500/10"></div>
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform duration-500 group-hover:scale-150 bg-rose-500/10"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -159,15 +160,15 @@ export default function ThanhToanPage() {
                 {STATS.totalDebt.toLocaleString()} <span className="text-xs font-bold text-rose-400 ml-0.5">₫</span>
               </h3>
             </div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-rose-50 text-rose-600 group-hover:scale-110 transition-transform shadow-sm">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-rose-50 text-rose-600 group-hover:scale-110 transition-transform duration-300 shadow-sm">
               <CreditCard size={22} />
             </div>
           </div>
         </div>
 
         {/* Card 4: Đơn/HĐ Còn Lại */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150 bg-amber-500/10"></div>
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform duration-500 group-hover:scale-150 bg-amber-500/10"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -177,7 +178,7 @@ export default function ThanhToanPage() {
                 {STATS.pendingCount} <span className="text-xs font-bold text-slate-400 ml-0.5">mục</span>
               </h3>
             </div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-amber-50 text-amber-600 group-hover:scale-110 transition-transform shadow-sm">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-amber-50 text-amber-600 group-hover:scale-110 transition-transform duration-300 shadow-sm">
               <Clock size={22} />
             </div>
           </div>
