@@ -22,6 +22,10 @@ export default function CustomerOrderPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  
+  const [editingInfoId, setEditingInfoId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ tenNguoiNhan: '', sdtNguoiNhan: '', DiaChiGiaoHang: '' });
+  const [savingInfo, setSavingInfo] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -40,6 +44,22 @@ export default function CustomerOrderPage() {
       console.error('Error fetching orders:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateInfo = async (orderId: string) => {
+    setSavingInfo(true);
+    try {
+      const res = await api.patch(`/don-hang/${orderId}/info`, editForm);
+      if (res.data.success) {
+        setOrders(prev => prev.map(o => o._id === orderId ? { ...o, ...editForm } : o));
+        setEditingInfoId(null);
+        alert('Cập nhật thông tin thành công!');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật!');
+    } finally {
+      setSavingInfo(false);
     }
   };
 
@@ -149,11 +169,66 @@ export default function CustomerOrderPage() {
                 )}
               </div>
 
-              {/* Expanded address */}
-              {isExpanded && order.DiaChiGiaoHang && (
-                <div className="px-5 py-3 border-t border-slate-50 flex items-start gap-2 text-xs text-slate-500">
-                  <MapPin size={13} className="text-rose-400 mt-0.5 shrink-0" />
-                  <span className="font-medium">{order.DiaChiGiaoHang}</span>
+              {/* Expanded address & info */}
+              {isExpanded && (
+                <div className="px-5 py-4 border-t border-slate-50 text-sm">
+                  {editingInfoId === order._id ? (
+                    <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <h4 className="font-bold text-slate-800 text-[13px] mb-2">Chỉnh sửa thông tin người nhận</h4>
+                      <input 
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" 
+                        placeholder="Tên người nhận" 
+                        value={editForm.tenNguoiNhan} 
+                        onChange={e => setEditForm({...editForm, tenNguoiNhan: e.target.value})} 
+                      />
+                      <input 
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" 
+                        placeholder="Số điện thoại" 
+                        value={editForm.sdtNguoiNhan} 
+                        onChange={e => setEditForm({...editForm, sdtNguoiNhan: e.target.value})} 
+                      />
+                      <textarea 
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" 
+                        placeholder="Địa chỉ giao hàng" 
+                        value={editForm.DiaChiGiaoHang} 
+                        onChange={e => setEditForm({...editForm, DiaChiGiaoHang: e.target.value})} 
+                        rows={2}
+                      />
+                      <div className="flex justify-end gap-2 mt-2">
+                        <button onClick={() => setEditingInfoId(null)} className="px-4 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-lg transition-colors">Hủy</button>
+                        <button disabled={savingInfo} onClick={() => handleUpdateInfo(order._id)} className="px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50">Lưu thông tin</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div 
+                      className="group p-4 bg-slate-50 rounded-2xl border border-slate-100 relative cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all"
+                      onClick={() => {
+                        if (order.TrangThai === 'CHO_XAC_NHAN') {
+                          setEditForm({ 
+                            tenNguoiNhan: order.TenNguoiNhan || user?.profile?.HoTen || '', 
+                            sdtNguoiNhan: order.SDTNguoiNhan || user?.profile?.SoDienThoai || '', 
+                            DiaChiGiaoHang: order.DiaChiGiaoHang || '' 
+                          });
+                          setEditingInfoId(order._id);
+                        }
+                      }}
+                    >
+                      <h4 className="font-bold text-slate-800 text-[13px] mb-2 flex items-center gap-2">
+                        Thông tin người nhận
+                        {order.TrangThai === 'CHO_XAC_NHAN' && (
+                          <span className="text-[10px] font-medium text-blue-500 bg-blue-100 px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">Nhấn để sửa</span>
+                        )}
+                      </h4>
+                      <div className="space-y-1.5 text-slate-600 text-xs">
+                        <p><strong className="text-slate-500 font-medium">Người nhận:</strong> <span className="font-semibold text-slate-800">{order.TenNguoiNhan || user?.profile?.HoTen || user?.username || 'Chưa cập nhật'}</span></p>
+                        <p><strong className="text-slate-500 font-medium">Số điện thoại:</strong> <span className="font-semibold text-slate-800">{order.SDTNguoiNhan || user?.profile?.SoDienThoai || 'Chưa cập nhật'}</span></p>
+                        <div className="flex items-start gap-1">
+                          <strong className="text-slate-500 font-medium shrink-0">Địa chỉ:</strong>
+                          <span className="font-medium text-slate-800">{order.DiaChiGiaoHang || 'Chưa cập nhật'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

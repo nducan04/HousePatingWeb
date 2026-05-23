@@ -9,7 +9,8 @@ const {
     updateStatus,
     updatePaymentStatus,
     updateDeposit,
-    deleteOrder
+    deleteOrder,
+    updateOrderInfo
 } = require('../controllers/donHangController');
 
 router.use(protect);
@@ -18,6 +19,7 @@ router.use(protect);
 router.post('/checkout', checkoutFromCart);
 router.get('/', getOrders);
 router.get('/:id', getOrderById);
+router.patch('/:id/info', updateOrderInfo); // Allow customers to update their order info
 
 // 2. Administrative routes (Admin & NhanVien only)
 router.use(authorize('Admin', 'NhanVien'));

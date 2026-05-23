@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FileText, Eye, CheckCircle2, Clock, XCircle, Search, Building } from 'lucide-react';
+import { FileText, Eye, CheckCircle2, Clock, XCircle, Search, Building, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -44,8 +44,13 @@ export default function MyContractsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 relative">
       <div className="max-w-7xl mx-auto space-y-6">
+      {/* Back Button (Top Left) */}
+      <Link href="/" className="absolute top-8 left-4 lg:left-8 flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all z-10 shadow-sm cursor-pointer no-underline">
+        <ArrowLeft size={16} /> Quay lại
+      </Link>
+
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">

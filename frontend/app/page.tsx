@@ -299,6 +299,8 @@ export default function HomePage() {
     }
   };
 
+
+
   const updateQuantity = (id: string, delta: number, maxQuantity?: number) => {
     setProductQuantities((prev) => {
       const current = prev[id] || 1;
@@ -853,7 +855,7 @@ export default function HomePage() {
                         disabled={isCheckingOut}
                         className="w-full h-12 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 cursor-pointer border-none"
                       >
-                        Thanh toán ngay <ArrowRight size={16} />
+                        {isCheckingOut ? 'Đang xử lý...' : 'Thanh toán ngay'} <ArrowRight size={16} />
                       </button>
 
                       <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-200">

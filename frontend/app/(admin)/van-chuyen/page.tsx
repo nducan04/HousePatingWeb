@@ -45,9 +45,12 @@ interface VanChuyen {
     MaDonHang: string;
     DiaChiGiaoHang: string;
     GhiChu: string;
+    TenNguoiNhan?: string;
+    SDTNguoiNhan?: string;
     KhachHang: {
       MaKH: string;
       TenKhachHang: string;
+      SDT?: string;
     };
   } | null;
   LoHang: {
@@ -92,11 +95,17 @@ const LocationInput = ({ value, onChange, placeholder, icon: Icon, iconColor, ri
     const timer = setTimeout(async () => {
       if (value.length >= 3 && isOpen) {
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&countrycodes=vn&limit=5`, {
-            headers: { "Accept-Language": "vi", "User-Agent": "VTSC-PaintPro/1.0" }
-          });
+          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(value)}&limit=5&lat=16.0&lon=108.0`); // bias towards Vietnam
           const data = await res.json();
-          setSuggestions(data.map((item: any) => item.display_name));
+          const parsedSuggestions = data.features.map((f: any) => {
+            const p = f.properties;
+            // Build a readable address string without duplicates
+            return [p.name, p.street, p.district, p.city, p.state, p.country]
+              .filter(Boolean)
+              .filter((v, i, a) => a.indexOf(v) === i)
+              .join(', ');
+          });
+          setSuggestions(parsedSuggestions);
         } catch (e) {
           console.error("Geocoding error:", e);
         }
@@ -130,7 +139,7 @@ const LocationInput = ({ value, onChange, placeholder, icon: Icon, iconColor, ri
         placeholder={placeholder}
       />
       {isOpen && suggestions.length > 0 && (
-        <ul className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+        <ul className="absolute z-[2000] w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
           {suggestions.map((s, idx) => (
             <li
               key={idx}
@@ -291,7 +300,8 @@ export default function VanChuyenPage() {
     }
   };
 
-
+  const photoInputRef = React.useRef<HTMLInputElement>(null);
+  const receiptInputRef = React.useRef<HTMLInputElement>(null);
 
   const getReceiverPhone = (ghiChu: string) => {
     if (!ghiChu) return "N/A";
@@ -397,84 +407,85 @@ export default function VanChuyenPage() {
             </div>
 
             {/* Map Controls */}
-            <div className="p-4 border-b border-slate-50 flex flex-col gap-4 bg-slate-50/30">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm xuất phát (Xưởng)</label>
-                  <LocationInput
-                    value={mapOrigin}
-                    onChange={setMapOrigin}
-                    placeholder="Nhập địa chỉ kho/xưởng..."
-                    icon={Building}
-                    iconColor="text-blue-500"
-                    ringColor="focus:ring-blue-500"
-                  />
+            {!isCustomer && (
+              <div className="p-4 border-b border-slate-50 flex flex-col gap-4 bg-slate-50/30 relative z-20">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm xuất phát (Xưởng)</label>
+                    <LocationInput
+                      value={mapOrigin}
+                      onChange={setMapOrigin}
+                      placeholder="Nhập địa chỉ kho/xưởng..."
+                      icon={Building}
+                      iconColor="text-blue-500"
+                      ringColor="focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm đến (Khách hàng)</label>
+                    <LocationInput
+                      value={mapDestination}
+                      onChange={setMapDestination}
+                      placeholder="Nhập địa chỉ nhận hàng..."
+                      icon={MapPin}
+                      iconColor="text-rose-500"
+                      ringColor="focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
-                <div className="flex-1 space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm đến (Khách hàng)</label>
-                  <LocationInput
-                    value={mapDestination}
-                    onChange={setMapDestination}
-                    placeholder="Nhập địa chỉ nhận hàng..."
-                    icon={MapPin}
-                    iconColor="text-rose-500"
-                    ringColor="focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-              
-              {/* Waypoint Controls (Admin Only) */}
-              {!isCustomer && !isDelivered && (
-                <div className="flex flex-col sm:flex-row gap-4 pt-2 border-t border-slate-200/50 mt-2">
-                  <div className="w-1/3 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Hành động</label>
+
+                {/* Waypoint Update Section */}
+                <div className="flex flex-col sm:flex-row gap-4 mt-4 pt-4 border-t border-slate-200">
+                  <div className="w-full sm:w-1/3 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Hành động lộ trình</label>
                     <select
                       value={waypointAction}
                       onChange={(e) => setWaypointAction(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm h-[38px]"
                     >
+                      <option value="Đã đi đến trung tâm phân loại">Đã đi đến trung tâm phân loại</option>
+                      <option value="Đã xuất khỏi trung tâm phân loại">Đã xuất khỏi trung tâm phân loại</option>
                       <option value="Đã đi đến trạm">Đã đi đến trạm</option>
                       <option value="Đã xuất khỏi trạm">Đã xuất khỏi trạm</option>
-                      <option value="Đã đi đến trung tâm phân loại">Đã đi đến trung tâm phân loại</option>
                       <option value="Đã đến thành phố">Đã đến thành phố</option>
-                      <option value="Đang giao hàng">Đang giao hàng</option>
+                      <option value="Đang trung chuyển tại">Đang trung chuyển tại</option>
                     </select>
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Địa điểm (Phường, Đường, Quận, Thành phố)</label>
+                  <div className="w-full sm:w-2/3 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Địa điểm / Trạm / Thành phố</label>
                     <div className="flex gap-2">
                       <LocationInput
                         value={newWaypoint}
                         onChange={setNewWaypoint}
-                        placeholder="Nhập địa điểm trạm/thành phố..."
+                        placeholder="Tìm kiếm phường, đường, quận huyện, thành phố..."
                         icon={MapPin}
-                        iconColor="text-amber-500"
+                        iconColor="text-blue-500"
                         ringColor="focus:ring-blue-500"
                         onEnter={handleAddWaypoint}
                       />
-                      <button
+                      <button 
                         onClick={handleAddWaypoint}
                         disabled={!newWaypoint}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all cursor-pointer shadow-sm disabled:opacity-50 shrink-0"
+                        className="px-4 py-2 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm whitespace-nowrap h-[38px] flex items-center gap-1"
                       >
-                        Thêm Trạm
+                        <MapPin size={16} /> Thêm trạm
                       </button>
                     </div>
                   </div>
                 </div>
-              )}
-
-            </div>
+              </div>
+            )}
 
             {/* Embedded Map */}
-            <div className="relative w-full overflow-hidden rounded-xl border border-slate-200" style={{ height: 500 }}>
-              <RouteMap 
-                origin={mapOrigin} 
-                destination={mapDestination} 
-                isDelivered={isDelivered} 
+            <div className="relative w-full" style={{ height: 500 }}>
+              <RouteMap
+                origin={mapOrigin}
+                destination={mapDestination}
+                isDelivered={isDelivered}
+                onMapClick={setNewWaypoint}
               />
               {/* Overlay badge */}
-              <div className={`absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black shadow-lg z-[999] ${isDelivered ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
+              <div className={`absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black shadow-lg z-[400] pointer-events-none ${isDelivered ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
                 {isDelivered ? <CheckCircle2 size={13} /> : <Truck size={13} />}
                 {isDelivered ? 'Đã giao thành công' : 'Đang trên đường giao'}
               </div>
@@ -544,8 +555,8 @@ export default function VanChuyenPage() {
             <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-5 pb-3 border-b border-slate-50">Chi tiết lô hàng</h4>
             <div className="space-y-4 text-sm">
               {[
-                { label: 'Số kiện', value: `${selectedTracking.LoHang.SoKien} kiện (Đã đóng gói)` },
-                { label: 'Khối lượng', value: `${selectedTracking.LoHang.KhoiLuong} kg` },
+                { label: 'Số kiện', value: `${selectedTracking.LoHang?.SoKien || 0} kiện (Đã đóng gói)` },
+                { label: 'Khối lượng', value: `${selectedTracking.LoHang?.KhoiLuong || 0} kg` },
               ].map(r => (
                 <div key={r.label} className="flex justify-between items-center">
                   <span className="text-slate-400 font-medium">{r.label}</span>
@@ -554,7 +565,7 @@ export default function VanChuyenPage() {
               ))}
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 font-medium">Màu sơn</span>
-                <span className="font-bold text-blue-600">{selectedTracking.LoHang.MauSon} (Kiểm tra OK)</span>
+                <span className="font-bold text-blue-600">{selectedTracking.LoHang?.MauSon || 'N/A'} (Kiểm tra OK)</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 font-medium">Biên bản bàn giao</span>
@@ -577,8 +588,8 @@ export default function VanChuyenPage() {
             <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-5 pb-3 border-b border-slate-50">Thông tin vận chuyển</h4>
             <div className="space-y-4 text-sm">
               {[
-                { label: 'Đơn vị', value: selectedTracking.VanChuyenInfo.DonVi },
-                { label: 'Tài xế', value: selectedTracking.VanChuyenInfo.NhanVien?.HoTen || 'Chưa phân công' },
+                { label: 'Đơn vị', value: selectedTracking.VanChuyenInfo?.DonVi || 'N/A' },
+                { label: 'Tài xế', value: selectedTracking.VanChuyenInfo?.NhanVien?.HoTen || 'Chưa phân công' },
               ].map(r => (
                 <div key={r.label} className="flex justify-between items-center">
                   <span className="text-slate-400 font-medium">{r.label}</span>
@@ -587,11 +598,11 @@ export default function VanChuyenPage() {
               ))}
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 font-medium">SĐT tài xế</span>
-                <span className="font-bold text-amber-600">{selectedTracking.VanChuyenInfo.NhanVien?.SDT || selectedTracking.VanChuyenInfo.SDT || 'N/A'}</span>
+                <span className="font-bold text-amber-600">{selectedTracking.VanChuyenInfo?.NhanVien?.SDT || selectedTracking.VanChuyenInfo?.SDT || 'N/A'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 font-medium">Phí vận chuyển</span>
-                <span className="font-black text-emerald-600">{selectedTracking.VanChuyenInfo.PhiVC.toLocaleString()}đ</span>
+                <span className="font-black text-emerald-600">{selectedTracking.VanChuyenInfo?.PhiVC?.toLocaleString() || '0'}đ</span>
               </div>
             </div>
           </div>
@@ -603,11 +614,11 @@ export default function VanChuyenPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div>
               <p className="text-[11px] text-slate-400 font-black uppercase tracking-wider mb-1">Người nhận hàng</p>
-              <p className="font-black text-slate-900 text-base">{selectedTracking.DonHang?.KhachHang?.TenKhachHang || 'N/A'}</p>
+              <p className="font-black text-slate-900 text-base">{selectedTracking.DonHang?.TenNguoiNhan || selectedTracking.DonHang?.KhachHang?.TenKhachHang || 'N/A'}</p>
             </div>
             <div>
               <p className="text-[11px] text-slate-400 font-black uppercase tracking-wider mb-1">Số điện thoại</p>
-              <p className="font-black text-amber-600 text-base">{getReceiverPhone(selectedTracking.DonHang?.GhiChu || '')}</p>
+              <p className="font-black text-amber-600 text-base">{selectedTracking.DonHang?.SDTNguoiNhan || selectedTracking.DonHang?.KhachHang?.SDT || getReceiverPhone(selectedTracking.DonHang?.GhiChu || '')}</p>
             </div>
             <div>
               <p className="text-[11px] text-slate-400 font-black uppercase tracking-wider mb-1">Địa chỉ bàn giao</p>
@@ -883,11 +894,11 @@ export default function VanChuyenPage() {
                       <div className="text-[12px] text-slate-400 mt-0.5">{item.DonHang?.KhachHang?.MaKH || ''}</div>
                     </td>
                     <td className="px-6 py-4 text-slate-600 text-[14px] font-medium">
-                      {item.LoHang.SoKien} kiện — {item.LoHang.KhoiLuong}kg
+                      {item.LoHang?.SoKien || 0} kiện — {item.LoHang?.KhoiLuong || 0}kg
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`font-bold text-[14px] ${item.VanChuyenInfo.NhanVien ? 'text-amber-600' : 'text-slate-400 italic'}`}>
-                        {item.VanChuyenInfo.NhanVien?.HoTen || 'Chưa phân công'}
+                      <span className={`font-bold text-[14px] ${item.VanChuyenInfo?.NhanVien ? 'text-amber-600' : 'text-slate-400 italic'}`}>
+                        {item.VanChuyenInfo?.NhanVien?.HoTen || 'Chưa phân công'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
