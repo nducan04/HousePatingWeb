@@ -210,97 +210,37 @@ export default function VanChuyenPage() {
     }
   };
 
-  const handleUploadFile = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: "PHOTO" | "RECEIPT",
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file || !selectedTracking) return;
-
-    const formData = new FormData();
-    formData.append("image", file);
-
-    try {
-      // 1. Upload ảnh/file lên backend
-      const uploadRes = await api.post('/files/upload-image', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      if (uploadRes.data.success) {
-        const fileUrl = uploadRes.data.url;
-        let updatePayload: any = {};
-        let newLog: TrackingLog = {
-          ThoiGian: new Date().toISOString(),
-          NoiDung: "",
-          Status: "COMPLETE",
-          Icon: "Camera",
-        };
-
-        if (type === "PHOTO") {
-          const updatedPhotos = [
-            ...(selectedTracking.HinhAnhGiaoHang || []),
-            fileUrl,
-          ];
-          updatePayload.HinhAnhGiaoHang = updatedPhotos;
-          newLog.NoiDung = "Đã cập nhật ảnh bằng chứng giao hàng.";
-        } else {
-          updatePayload.BienBanFile = fileUrl;
-          newLog.NoiDung = "Đã tải lên biên bản bàn giao có chữ ký.";
-        }
-
-        const updatedLogs = [...selectedTracking.LoTrinh, newLog];
-        updatePayload.LoTrinh = updatedLogs;
-
-        // 2. Cập nhật thông tin đơn vận chuyển với URL file mới
-        const res = await api.patch(`/van-chuyen/${selectedTracking._id}`, updatePayload);
-        if (res.data.success) {
-          alert('Cập nhật thành công!');
-
-          // 3. Làm mới dữ liệu trên UI sau khi server đã lưu
-          const updatedTracking = {
-            ...selectedTracking,
-            ...updatePayload,
-            LoHang: { ...selectedTracking.LoHang, BienBanFile: updatePayload.BienBanFile || selectedTracking.LoHang.BienBanFile }
-          };
-          setSelectedTracking(updatedTracking);
-          setData(prev => prev.map(t => t._id === updatedTracking._id ? updatedTracking : t));
-        } else {
-          throw new Error('Server trả về lỗi khi cập nhật tracking');
-        }
-      } else {
-        throw new Error('Upload file thất bại từ server');
-      }
-    } catch (error) {
-      console.error('Lỗi khi upload:', error);
-      alert('Có lỗi xảy ra khi tải file lên server. Vui lòng thử lại sau.');
-    }
-  };
-
-  const handleConfirmSuccess = async () => {
+  const handleUpdateGeneralStatus = async (newStatus: string) => {
     if (!selectedTracking) return;
-    if (!window.confirm('Xác nhận đơn hàng đã được giao hàng thành công? Hệ thống sẽ tự động cập nhật trạng thái đơn hàng và ghi nhận công trạng cho tài xế.')) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn chuyển trạng thái đơn hàng thành "${newStatus}"?`)) return;
+
+    let icon = 'Truck';
+    let statusLog = 'PROCESSING';
+    if (newStatus === 'Giao hàng thành công') {
+      icon = 'CheckCircle';
+      statusLog = 'COMPLETE';
+    } else if (newStatus === 'Xuất xưởng') {
+      icon = 'Building';
+    }
 
     const updatePayload = {
-      TrangThaiTongQuat: 'Giao hàng thành công',
+      TrangThaiTongQuat: newStatus,
       LoTrinh: [
         ...selectedTracking.LoTrinh,
         {
           ThoiGian: new Date().toISOString(),
-          NoiDung: 'Đơn hàng đã được bàn giao thành công cho khách hàng.',
-          Status: 'COMPLETE',
-          Icon: 'CheckCircle'
+          NoiDung: `Trạng thái đơn hàng: ${newStatus}`,
+          Status: statusLog,
+          Icon: icon
         }
       ]
     };
 
     try {
-      // Gọi API cập nhật trạng thái trên backend
       const res = await api.patch(`/van-chuyen/${selectedTracking._id}`, updatePayload);
 
       if (res.data.success) {
-        alert('Đã xác nhận giao hàng thành công!');
-
-        // Chỉ cập nhật UI khi server đã xác nhận thành công
+        alert('Đã cập nhật trạng thái thành công!');
         const updated = { ...selectedTracking, ...updatePayload } as VanChuyen;
         setSelectedTracking(updated);
         setData(prev => prev.map(t => t._id === updated._id ? updated : t));
@@ -308,7 +248,7 @@ export default function VanChuyenPage() {
         throw new Error('Cập nhật thất bại từ server');
       }
     } catch (error) {
-      console.error('Lỗi khi xác nhận giao hàng:', error);
+      console.error('Lỗi khi cập nhật trạng thái:', error);
       alert('Đã xảy ra lỗi khi kết nối với server. Vui lòng thử lại sau.');
     }
   };
@@ -350,8 +290,7 @@ export default function VanChuyenPage() {
     }
   };
 
-  const photoInputRef = React.useRef<any>(null);
-  const receiptInputRef = React.useRef<any>(null);
+
 
   const getReceiverPhone = (ghiChu: string) => {
     if (!ghiChu) return "N/A";
@@ -477,7 +416,47 @@ export default function VanChuyenPage() {
                   />
                 </div>
               </div>
-
+              
+              {/* Waypoint Controls (Admin Only) */}
+              {!isCustomer && !isDelivered && (
+                <div className="flex flex-col sm:flex-row gap-4 pt-2 border-t border-slate-200/50 mt-2">
+                  <div className="w-1/3 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Hành động</label>
+                    <select
+                      value={waypointAction}
+                      onChange={(e) => setWaypointAction(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                    >
+                      <option value="Đã đi đến trạm">Đã đi đến trạm</option>
+                      <option value="Đã xuất khỏi trạm">Đã xuất khỏi trạm</option>
+                      <option value="Đã đi đến trung tâm phân loại">Đã đi đến trung tâm phân loại</option>
+                      <option value="Đã đến thành phố">Đã đến thành phố</option>
+                      <option value="Đang giao hàng">Đang giao hàng</option>
+                    </select>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Địa điểm (Phường, Đường, Quận, Thành phố)</label>
+                    <div className="flex gap-2">
+                      <LocationInput
+                        value={newWaypoint}
+                        onChange={setNewWaypoint}
+                        placeholder="Nhập địa điểm trạm/thành phố..."
+                        icon={MapPin}
+                        iconColor="text-amber-500"
+                        ringColor="focus:ring-blue-500"
+                        onEnter={handleAddWaypoint}
+                      />
+                      <button
+                        onClick={handleAddWaypoint}
+                        disabled={!newWaypoint}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all cursor-pointer shadow-sm disabled:opacity-50 shrink-0"
+                      >
+                        Thêm Trạm
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
             </div>
 
@@ -586,12 +565,6 @@ export default function VanChuyenPage() {
                   ) : (
                     <span className="text-xs text-slate-400 italic">Chưa cập nhật</span>
                   )}
-                  {!isCustomer && (
-                    <button onClick={() => receiptInputRef.current?.click()}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-slate-50 text-slate-500 hover:bg-slate-100 transition-all cursor-pointer border border-slate-100">
-                      <Upload size={12} /> Tải lên
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
@@ -674,22 +647,11 @@ export default function VanChuyenPage() {
             })}
           </div>
 
-          {selectedTracking.HinhAnhGiaoHang && selectedTracking.HinhAnhGiaoHang.length > 0 && (
-            <div className="mt-8 pt-8 border-t border-slate-50">
-              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">📸 Hình ảnh minh chứng giao hàng</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {selectedTracking.HinhAnhGiaoHang.map((url, i) => (
-                  <div key={i} onClick={() => window.open(getMediaUrl(url), '_blank')} className="rounded-xl overflow-hidden h-36 bg-slate-50 hover:scale-105 transition-transform cursor-pointer">
-                    <img src={getMediaUrl(url)} alt={`Evidence ${i}`} className="w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
         </div>
 
         {/* Footer Actions */}
-        <div className="flex flex-wrap gap-3 justify-center pt-2 border-t border-slate-100">
+        <div className="flex flex-wrap gap-3 justify-center pt-2 border-t border-slate-100 items-center">
           <button onClick={handleCallDriver}
             className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm border-2 border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 transition-all cursor-pointer">
             <PhoneCall size={18} /> Gọi Tài Xế
@@ -698,22 +660,23 @@ export default function VanChuyenPage() {
             className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm border-2 border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all cursor-pointer">
             <Share2 size={18} /> Chia Sẻ Vị Trí
           </button>
+          
           {!isCustomer && (
-            <button onClick={() => photoInputRef.current?.click()}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer">
-              <Upload size={18} /> Cập Nhật Ảnh Giao Hàng
-            </button>
-          )}
-          {!isCustomer && selectedTracking.TrangThaiTongQuat !== 'Giao hàng thành công' && (
-            <button onClick={handleConfirmSuccess}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all cursor-pointer">
-              <CheckCircle2 size={18} /> Xác nhận giao hàng thành công
-            </button>
+            <div className="flex items-center gap-2 ml-4 pl-4 border-l border-slate-200">
+              <span className="text-sm font-bold text-slate-600">Cập nhật trạng thái:</span>
+              <select
+                onChange={(e) => handleUpdateGeneralStatus(e.target.value)}
+                value=""
+                className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm cursor-pointer"
+              >
+                <option value="" disabled>-- Chọn trạng thái --</option>
+                <option value="Xuất xưởng">Xuất xưởng</option>
+                <option value="Đang giao hàng">Đang giao hàng</option>
+                <option value="Giao hàng thành công">Giao hàng thành công</option>
+              </select>
+            </div>
           )}
         </div>
-
-        <input type="file" ref={photoInputRef} style={{ display: 'none' }} accept="image/*" onChange={(e) => handleUploadFile(e, 'PHOTO')} />
-        <input type="file" ref={receiptInputRef} style={{ display: 'none' }} onChange={(e) => handleUploadFile(e, 'RECEIPT')} />
       </div>
     );
   }
