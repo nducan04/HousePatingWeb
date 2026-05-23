@@ -64,7 +64,15 @@ exports.getDashboardStats = async (req, res) => {
         { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: start, $lte: end } } },
         { $group: {
           _id: null,
-          totalRevenue: { $sum: '$TongTien' },
+          totalRevenue: { 
+            $sum: { 
+              $cond: [
+                { $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, 
+                '$TongTien', 
+                { $ifNull: ['$DaCoc', 0] } 
+              ]
+            }
+          },
           totalVolume: { $sum: { $sum: '$Items.SoLuong' } }
         }}
       ]);
@@ -72,7 +80,7 @@ exports.getDashboardStats = async (req, res) => {
         { $match: { createdAt: { $gte: start, $lte: end } } },
         { $group: {
           _id: null,
-          totalRevenue: { $sum: '$TongGiaTri' },
+          totalRevenue: { $sum: { $ifNull: ['$DaThanhToan', 0] } },
           totalVolume: { $sum: { $sum: '$ChiTietHopDong.quantity' } }
         }}
       ]);
@@ -113,9 +121,9 @@ exports.getDashboardStats = async (req, res) => {
       const monthStart = new Date(y, m - 1, 1);
       const monthEnd = new Date(y, m, 0, 23, 59, 59);
 
-      // Revenue for this month
-      const ordersM = await DonHang.aggregate([{ $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: monthStart, $lte: monthEnd } } }, { $group: { _id: null, total: { $sum: '$TongTien' } } }]);
-      const contractsM = await HopDong.aggregate([{ $match: { createdAt: { $gte: monthStart, $lte: monthEnd } } }, { $group: { _id: null, total: { $sum: '$TongGiaTri' } } }]);
+      // Revenue for this month (Based on actual payments)
+      const ordersM = await DonHang.aggregate([{ $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: monthStart, $lte: monthEnd } } }, { $group: { _id: null, total: { $sum: { $cond: [{ $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, '$TongTien', { $ifNull: ['$DaCoc', 0] }] } } } }]);
+      const contractsM = await HopDong.aggregate([{ $match: { createdAt: { $gte: monthStart, $lte: monthEnd } } }, { $group: { _id: null, total: { $sum: { $ifNull: ['$DaThanhToan', 0] } } } }]);
       
       // Target for this month
       const targetsM = await SalesTarget.aggregate([{ $match: { 'period.month': m, 'period.year': y } }, { $group: { _id: null, rev: { $sum: '$targetRevenue' }, vol: { $sum: '$targetKg' } } }]);
@@ -328,12 +336,20 @@ exports.getDetailedStats = async (req, res) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // 9. Top Sales Staff Performance (Revenue vs Count)
+    // 9. Top Sales Staff Performance (Revenue vs Count based on payments)
     const dhSalesStats = await DonHang.aggregate([
       { $match: { TrangThai: { $ne: 'DA_HUY' }, NhanVienPhuTrach: { $exists: true }, createdAt: { $gte: startDate, $lte: endDate } } },
       { $group: {
         _id: '$NhanVienPhuTrach',
-        revenue: { $sum: '$TongTien' },
+        revenue: { 
+          $sum: { 
+            $cond: [
+              { $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, 
+              '$TongTien', 
+              { $ifNull: ['$DaCoc', 0] } 
+            ]
+          } 
+        },
         orderCount: { $sum: 1 }
       }}
     ]);
@@ -342,7 +358,7 @@ exports.getDetailedStats = async (req, res) => {
       { $match: { TrangThai: { $nin: ['cancelled', 'draft'] }, EmployeeID: { $exists: true }, createdAt: { $gte: startDate, $lte: endDate } } },
       { $group: {
         _id: '$EmployeeID',
-        revenue: { $sum: '$TongGiaTri' },
+        revenue: { $sum: { $ifNull: ['$DaThanhToan', 0] } },
         contractCount: { $sum: 1 }
       }}
     ]);

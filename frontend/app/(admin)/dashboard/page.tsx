@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
+  Area,
+  AreaChart,
   ComposedChart,
   Bar,
   Line,
@@ -57,6 +59,35 @@ import api from "@/lib/utils/axiosAuth";
 import RevenuePlanChart from "./RevenuePlanChart";
 import ProductionPlanChart from "./ProductionPlanChart";
 import { exportDashboardToExcel } from "@/lib/utils/excelExport";
+
+// Tooltip cho biểu đồ
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-xl z-[100] min-w-[200px]">
+        <p className="text-slate-900 font-extrabold text-sm mb-3 border-b border-slate-100 pb-2">
+          Thống kê: {label}
+        </p>
+        <div className="space-y-2">
+          {payload.map((p: any, i: number) => (
+            <div key={i} className="flex justify-between gap-6">
+              <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.stroke || p.fill }} />
+                {p.name}
+              </span>
+              <span className="text-xs font-black text-slate-900">
+                {typeof p.value === "number" ? p.value.toLocaleString("vi-VN") : p.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+
 
 // ───────────────────────────────────────────────
 // Gauge (Semi-circle) chart component
@@ -376,8 +407,8 @@ export default function DashboardPage() {
                   key={y}
                   onClick={() => setActiveYears([y])}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeYears.includes(y)
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "text-slate-500 hover:bg-slate-100"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-500 hover:bg-slate-100"
                     }`}
                 >
                   {y}
@@ -397,8 +428,8 @@ export default function DashboardPage() {
                   key={m}
                   onClick={() => toggle(activeMonths, m, setActiveMonths)}
                   className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${activeMonths.includes(m)
-                      ? "bg-indigo-500 text-white shadow-sm"
-                      : "text-slate-500 hover:bg-slate-100"
+                    ? "bg-indigo-500 text-white shadow-sm"
+                    : "text-slate-500 hover:bg-slate-100"
                     }`}
                 >
                   {m}
@@ -579,7 +610,6 @@ export default function DashboardPage() {
           {/* Top Customers */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
-              uu
               <div>
                 <h3 className="font-black text-slate-900 text-sm">
                   Top Khách hàng trọng tâm
@@ -590,76 +620,76 @@ export default function DashboardPage() {
               </div>
               <Target size={18} className="text-blue-500" />
             </div>
-          </div>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%" minHeight={350}>
-              <AreaChart data={stats.monthlyTrends}>
-                <defs>
-                  <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="#F1F5F9"
-                />
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 700 }}
-                  dy={10}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 700 }}
-                  dx={-10}
-                />
-                <Tooltip
-                  content={<CustomTooltip />}
-                  cursor={{
-                    stroke: "#2563eb",
-                    strokeWidth: 1,
-                    strokeDasharray: "4 4",
-                  }}
-                />
-                <Legend
-                  wrapperStyle={{
-                    paddingTop: 30,
-                    fontSize: 12,
-                    fontWeight: 700,
-                  }}
-                  iconType="circle"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="revenuePlan"
-                  name="Kế hoạch"
-                  stroke="#CBD5E1"
-                  strokeWidth={2}
-                  fill="transparent"
-                  strokeDasharray="5 5"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="revenueActual"
-                  name="Thực tế"
-                  stroke="#2563eb"
-                  strokeWidth={4}
-                  fill="url(#gradActual)"
-                  dot={{
-                    r: 6,
-                    fill: "#2563eb",
-                    strokeWidth: 3,
-                    stroke: "#fff",
-                  }}
-                  activeDot={{ r: 8, strokeWidth: 0 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="h-[350px] w-full">
+              <ResponsiveContainer width="100%" height="100%" minHeight={350}>
+                <AreaChart data={stats.monthlyTrends}>
+                  <defs>
+                    <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#F1F5F9"
+                  />
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 700 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 700 }}
+                    dx={-10}
+                  />
+                  <Tooltip
+                    content={<CustomTooltip />}
+                    cursor={{
+                      stroke: "#2563eb",
+                      strokeWidth: 1,
+                      strokeDasharray: "4 4",
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{
+                      paddingTop: 30,
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }}
+                    iconType="circle"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenuePlan"
+                    name="Kế hoạch"
+                    stroke="#CBD5E1"
+                    strokeWidth={2}
+                    fill="transparent"
+                    strokeDasharray="5 5"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenueActual"
+                    name="Thực tế"
+                    stroke="#2563eb"
+                    strokeWidth={4}
+                    fill="url(#gradActual)"
+                    dot={{
+                      r: 6,
+                      fill: "#2563eb",
+                      strokeWidth: 3,
+                      stroke: "#fff",
+                    }}
+                    activeDot={{ r: 8, strokeWidth: 0 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
@@ -798,12 +828,12 @@ export default function DashboardPage() {
                     <td className="px-6 py-3.5">
                       <div
                         className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shadow-sm ${i === 0
-                            ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
-                            : i === 1
-                              ? "bg-gradient-to-br from-slate-300 to-slate-400 text-white"
-                              : i === 2
-                                ? "bg-gradient-to-br from-orange-300 to-orange-400 text-white"
-                                : "bg-slate-50 text-slate-400 border border-slate-100"
+                          ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
+                          : i === 1
+                            ? "bg-gradient-to-br from-slate-300 to-slate-400 text-white"
+                            : i === 2
+                              ? "bg-gradient-to-br from-orange-300 to-orange-400 text-white"
+                              : "bg-slate-50 text-slate-400 border border-slate-100"
                           }`}
                       >
                         {i + 1}
@@ -836,10 +866,10 @@ export default function DashboardPage() {
                         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                           <div
                             className={`h-full rounded-full transition-all duration-1000 shadow-sm ${pct >= 90
-                                ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                                : pct >= 70
-                                  ? "bg-gradient-to-r from-amber-400 to-amber-500"
-                                  : "bg-gradient-to-r from-rose-400 to-rose-500"
+                              ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                              : pct >= 70
+                                ? "bg-gradient-to-r from-amber-400 to-amber-500"
+                                : "bg-gradient-to-r from-rose-400 to-rose-500"
                               }`}
                             style={{ width: `${Math.min(pct, 100)}%` }}
                           />
@@ -852,18 +882,18 @@ export default function DashboardPage() {
                     <td className="px-6 py-3.5 text-center">
                       <div
                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight shadow-sm border ${pct >= 90
-                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                            : pct >= 70
-                              ? "bg-amber-50 text-amber-600 border-amber-100"
-                              : "bg-rose-50 text-rose-600 border-rose-100"
+                          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                          : pct >= 70
+                            ? "bg-amber-50 text-amber-600 border-amber-100"
+                            : "bg-rose-50 text-rose-600 border-rose-100"
                           }`}
                       >
                         <div
                           className={`w-1 h-1 rounded-full animate-pulse ${pct >= 90
-                              ? "bg-emerald-500"
-                              : pct >= 70
-                                ? "bg-amber-500"
-                                : "bg-rose-500"
+                            ? "bg-emerald-500"
+                            : pct >= 70
+                              ? "bg-amber-500"
+                              : "bg-rose-500"
                             }`}
                         />
                         {pct >= 90

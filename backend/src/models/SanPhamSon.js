@@ -37,7 +37,15 @@ const sanPhamSonSchema = new mongoose.Schema({
     default: 'Kg' 
   },
   DonGiaCoSo: { type: Number, required: [true, 'Vui lòng nhập đơn giá'], min: [0, 'Giá không được âm'] },
-  HinhAnh: { type: String, trim: true },
+  HinhAnh: [{ type: String, trim: true }],
+  
+  // Thông tin truy xuất nguồn gốc (QR)
+  TruyXuatNguonGoc: {
+    HoaDonMuaSon: { type: String, trim: true },
+    QuyTrinhSanXuat: { type: String, trim: true },
+    NgaySanXuat: { type: Date },
+    HanSuDung: { type: String, trim: true }
+  },
   
   // Tính tổng tự động từ mảng MaMau (Không nhập tay)
   TongTonKho: { type: Number, default: 0 }, 

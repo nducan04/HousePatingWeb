@@ -26,10 +26,16 @@ interface TinTuc {
   createdAt?: string;
 }
 
-const getImageUrl = (path: string) => {
-  if (!path) return '';
-  if (path.startsWith('http')) return path;
-  return `${BACKEND_URL}${path}`;
+const getImageUrl = (path: any) => {
+  let resolvedPath = path;
+  if (Array.isArray(path)) {
+    resolvedPath = path[0];
+  }
+  if (!resolvedPath || typeof resolvedPath !== 'string' || resolvedPath === 'undefined' || resolvedPath === 'null') {
+    return '';
+  }
+  if (resolvedPath.startsWith('http')) return resolvedPath;
+  return `${BACKEND_URL}${resolvedPath.startsWith('/') ? '' : '/'}${resolvedPath}`;
 };
 
 export default function TinTucPage() {

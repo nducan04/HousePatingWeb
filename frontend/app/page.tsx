@@ -36,11 +36,6 @@ import {
   Palette,
   Trash2,
   AlertCircle,
-  ClipboardList,
-  PackageOpen,
-  LogOut,
-  Droplets,
-  ListOrdered,
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -50,20 +45,7 @@ import { paintColors } from "@/lib/data/colors-data";
 const BACKEND_URL = "http://localhost:5000";
 
 export default function HomePage() {
-  const { user, isAuthenticated, logoutState } = useAuthStore();
-
-
-
-  const handleServiceClick = (href: string) => {
-    if (!isAuthenticated) {
-      setRedirectPath(href);
-      setIsLoginOpen(true);
-    } else {
-      router.push(href);
-    }
-  };
-
-
+  const { user, isAuthenticated } = useAuthStore();
   const [products, setProducts] = useState<any[]>([]);
   const [news, setNews] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -100,6 +82,7 @@ export default function HomePage() {
     fetchCart,
     addToCart: addToCartStore,
     removeFromCart: removeFromCartStore,
+    updateQuantity: updateQuantityStore,
   } = useCartStore();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartLoading, setIsCartLoading] = useState(false);
@@ -386,59 +369,13 @@ export default function HomePage() {
     }
   };
 
-  const handleUpdateCartItem = async (spId: string, currentQty: number, delta: number, maxQty?: number) => {
-    let newQty = currentQty + delta;
-    if (newQty < 1) newQty = 1;
-    if (maxQty !== undefined && newQty > maxQty) {
-      alert(`Kho chỉ còn ${maxQty} sản phẩm!`);
-      newQty = maxQty;
-    }
-    if (newQty === currentQty) return;
-
+  const handleUpdateCartItemQuantity = async (sanPhamId: string, soLuong: number) => {
+    if (soLuong < 1) return;
     try {
       const sessionId = user?.id || "GUEST_SESSION";
-      const { updateQuantity } = useCartStore.getState();
-      await updateQuantity(sessionId, spId, newQty);
+      await updateQuantityStore(sessionId, sanPhamId, soLuong);
     } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-
-  const handleDirectCheckout = async () => {
-    if (!isAuthenticated) {
-      setIsLoginOpen(true);
-      return;
-    }
-    if (cartItems.length === 0) return;
-
-    try {
-      setIsCheckingOut(true);
-      const sessionId = user?.id;
-      const res = await api.post("/don-hang/checkout", {
-        sessionId: sessionId,
-        khachHangId: user?.id,
-        diaChiGiaoHang: "Địa chỉ mặc định", // Mock data, since we bypassed checkout page
-        ghiChu: "Khách hàng đặt nhanh từ trang chủ"
-      });
-
-      if (res.data.success) {
-        setIsCartOpen(false);
-        useCartStore.setState({ cartItems: [], cartItemCount: 0, cartTotal: 0 });
-
-        alert("Đặt hàng thành công!");
-        if (user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C") {
-          router.push("/my-orders");
-        } else {
-          router.push("/don-hang");
-        }
-      }
-    } catch (error: any) {
-      console.error(error);
-      alert(error.response?.data?.message || "Lỗi khi đặt hàng");
-    } finally {
-      setIsCheckingOut(false);
+      console.error("Error updating quantity:", err);
     }
   };
 
@@ -460,12 +397,6 @@ export default function HomePage() {
         loginState(res.data.user, res.data.accessToken);
         setIsLoginOpen(false);
 
-        // Handle redirect if exists
-        if (redirectPath) {
-          router.push(redirectPath);
-          setRedirectPath(null);
-          return;
-        }
         const role = res.data.user.role;
         if (role === "Admin" || role === "Director") {
           router.push("/dashboard");
@@ -484,7 +415,13 @@ export default function HomePage() {
 
   const handlePageRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!registerUsername || !registerFullName || !registerEmail || !registerPassword || !registerRole) {
+    if (
+      !registerUsername ||
+      !registerFullName ||
+      !registerEmail ||
+      !registerPassword ||
+      !registerRole
+    ) {
       setRegisterError("Vui lòng điền đầy đủ thông tin");
       return;
     }
@@ -497,7 +434,7 @@ export default function HomePage() {
         HoTen: registerFullName,
         Email: registerEmail,
         MatKhau: registerPassword,
-        VaiTro: registerRole
+        VaiTro: registerRole,
       });
 
       if (res.data.success) {
@@ -517,7 +454,12 @@ export default function HomePage() {
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!forgotUsername || !forgotEmail || !forgotNewPassword || !forgotConfirmPassword) {
+    if (
+      !forgotUsername ||
+      !forgotEmail ||
+      !forgotNewPassword ||
+      !forgotConfirmPassword
+    ) {
       setForgotError("Vui lòng điền đầy đủ thông tin");
       return;
     }
@@ -532,7 +474,7 @@ export default function HomePage() {
       const res = await api.post("/auth/reset-password", {
         TenDangNhap: forgotUsername,
         Email: forgotEmail,
-        MatKhauMoi: forgotNewPassword
+        MatKhauMoi: forgotNewPassword,
       });
 
       if (res.data.success) {
@@ -559,11 +501,20 @@ export default function HomePage() {
     setIsViewOpen(true);
   };
 
-  const getImageUrl = (path: string) => {
-    if (!path || path === "undefined")
+  const getImageUrl = (path: any) => {
+    let resolvedPath = path;
+    if (Array.isArray(path)) {
+      resolvedPath = path[0];
+    }
+    if (
+      !resolvedPath ||
+      typeof resolvedPath !== "string" ||
+      resolvedPath === "undefined" ||
+      resolvedPath === "null"
+    )
       return "https://ui-avatars.com/api/?name=VTSC+Product&background=random";
-    if (path.startsWith("http")) return path;
-    return `${BACKEND_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+    if (resolvedPath.startsWith("http")) return resolvedPath;
+    return `${BACKEND_URL}${resolvedPath.startsWith("/") ? "" : "/"}${resolvedPath}`;
   };
 
   return (
@@ -598,6 +549,12 @@ export default function HomePage() {
               className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Bảng màu
+            </Link>
+            <Link
+              href="/tracking"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+            >
+              Theo dõi & Tra cứu
             </Link>
             <Link
               href="#quy-trinh"
@@ -775,19 +732,19 @@ export default function HomePage() {
                               </span>
                             </div>
                             <div className="flex justify-between items-center mt-1">
-                              <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-lg p-0.5">
-                                <button
-                                  onClick={() => handleUpdateCartItem(item.SanPham._id, item.SoLuong, -1, item.SanPham.TongTonKho)}
-                                  className="w-5 h-5 flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-md transition-all font-bold cursor-pointer"
+                              <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
+                                <button 
+                                  onClick={() => handleUpdateCartItemQuantity(item.SanPham?._id, item.SoLuong - 1)}
+                                  className="w-5 h-5 rounded-md bg-white text-slate-600 hover:text-blue-600 flex items-center justify-center font-bold shadow-sm text-xs"
                                 >
                                   -
                                 </button>
                                 <span className="text-[11px] font-bold text-blue-600 w-4 text-center">
                                   {item.SoLuong}
                                 </span>
-                                <button
-                                  onClick={() => handleUpdateCartItem(item.SanPham._id, item.SoLuong, 1, item.SanPham.TongTonKho)}
-                                  className="w-5 h-5 flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-md transition-all font-bold cursor-pointer"
+                                <button 
+                                  onClick={() => handleUpdateCartItemQuantity(item.SanPham?._id, item.SoLuong + 1)}
+                                  className="w-5 h-5 rounded-md bg-white text-slate-600 hover:text-blue-600 flex items-center justify-center font-bold shadow-sm text-xs"
                                 >
                                   +
                                 </button>
@@ -838,8 +795,27 @@ export default function HomePage() {
                         disabled={isCheckingOut}
                         className="w-full h-12 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 cursor-pointer border-none"
                       >
-                        {isCheckingOut ? <Loader2 className="animate-spin" size={16} /> : "Đặt mua ngay"} <ArrowRight size={16} />
-                      </button>
+                        Thanh toán ngay <ArrowRight size={16} />
+                      </Link>
+
+                      <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-200">
+                        <Link href="/don-hang" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
+                          <Package size={16} className="text-blue-600" />
+                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Đơn hàng<br/>của tôi</span>
+                        </Link>
+                        <Link href="/tracking" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
+                          <Truck size={16} className="text-emerald-600" />
+                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Theo dõi<br/>vận chuyển</span>
+                        </Link>
+                        <Link href="/thanh-toan" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
+                          <QrCode size={16} className="text-indigo-600" />
+                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Thanh toán<br/>đơn hàng</span>
+                        </Link>
+                        <Link href="/tracking?tab=samples" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
+                          <FlaskConical size={16} className="text-purple-600" />
+                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Theo dõi<br/>quy trình R&D</span>
+                        </Link>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -894,7 +870,6 @@ export default function HomePage() {
         </div>
       </section>
 
-
       {/* ═══════ DỊCH VỤ & THẾ MẠNH (Uniform Typography) ═══════ */}
       <section id="dich-vu" className="px-6 py-20 bg-white">
         <div className="max-w-[1300px] mx-auto">
@@ -919,10 +894,13 @@ export default function HomePage() {
               desc="Nhận yêu cầu R&D mẫu màu sơn theo yêu cầu của dự án, đảm bảo chính xác tuyệt đối."
               ctaText="Gửi mẫu"
               ctaColor="text-blue-600"
-              href="/rd-tracking/new"
-              onClick={(e: any) => {
-                e.preventDefault();
-                handleServiceClick("/rd-tracking/new");
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setRedirectPath("/rd-tracking/new");
+                  setIsLoginOpen(true);
+                } else {
+                  router.push("/rd-tracking/new");
+                }
               }}
             />
             <ServiceCard
@@ -947,11 +925,7 @@ export default function HomePage() {
               desc="Theo dõi lộ trình giao nhận hàng minh bạch, đảm bảo tiến độ công trình của bạn."
               ctaText="Tra cứu"
               ctaColor="text-emerald-600"
-              href="/van-chuyen"
-              onClick={(e: any) => {
-                e.preventDefault();
-                handleServiceClick("/van-chuyen");
-              }}
+              href="/tracking"
             />
             <ServiceCard
               icon={<ShieldCheck size={28} />}
@@ -1680,13 +1654,11 @@ export default function HomePage() {
             <div className="p-6 pt-0 flex gap-3">
               <button
                 onClick={() => {
-                  const targetPath = `/rd-tracking/new?colorCode=${selectedTrendingColor.code}&colorName=${selectedTrendingColor.name}`;
-                  setSelectedTrendingColor(null); // Close modal
                   if (!isAuthenticated) {
-                    setRedirectPath(targetPath);
+                    setRedirectPath("/rd-tracking/new");
                     setIsLoginOpen(true);
                   } else {
-                    router.push(targetPath);
+                    router.push("/rd-tracking/new");
                   }
                 }}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 cursor-pointer"
@@ -1790,7 +1762,7 @@ export default function HomePage() {
             </button>
 
             <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">
-              {isForgotMode ? "Đặt Lại Mật Khẩu" : isRegisterMode ? "Đăng Ký Tài Khoản" : "Chào Mừng Trở Lại"}
+              Chào Mừng Trở Lại
             </h2>
 
             {isForgotMode ? (
@@ -1847,7 +1819,11 @@ export default function HomePage() {
                     disabled={isResetting}
                     className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
                   >
-                    {isResetting ? <Loader2 className="animate-spin" size={18} /> : "Cập Nhật Mật Khẩu"}
+                    {isResetting ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      "Cập Nhật Mật Khẩu"
+                    )}
                   </button>
                 </div>
 
@@ -1903,7 +1879,11 @@ export default function HomePage() {
                     disabled={isLoggingIn}
                     className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
                   >
-                    {isLoggingIn ? <Loader2 className="animate-spin" size={18} /> : "Đăng Nhập"}
+                    {isLoggingIn ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      "Đăng Nhập"
+                    )}
                   </button>
                 </div>
 
@@ -1921,17 +1901,37 @@ export default function HomePage() {
                 </div>
 
                 <div className="relative py-4">
-                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400 font-bold">Hoặc</span></div>
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-100"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-slate-400 font-bold">
+                      Hoặc
+                    </span>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  <button type="button" className="w-full h-12 bg-[#0f172a] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer">
-                    <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png" className="w-4 h-4" alt="Apple" />
+                <div className="space-y-3 pt-4">
+                  <button
+                    type="button"
+                    className="w-full h-12 bg-[#0f172a] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer"
+                  >
+                    <img
+                      src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png"
+                      className="w-4 h-4"
+                      alt="Apple"
+                    />
                     Đăng nhập bằng Apple
                   </button>
-                  <button type="button" className="w-full h-12 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer">
-                    <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png" className="w-4 h-4" alt="Google" />
+                  <button
+                    type="button"
+                    className="w-full h-12 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer"
+                  >
+                    <img
+                      src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png"
+                      className="w-4 h-4"
+                      alt="Google"
+                    />
                     Đăng nhập bằng Google
                   </button>
                 </div>
@@ -1945,7 +1945,8 @@ export default function HomePage() {
                 )}
                 {registerSuccess && (
                   <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3 text-emerald-600 text-xs font-bold">
-                    <ShieldCheck size={16} /> Đăng ký thành công! Đang chuyển sang đăng nhập...
+                    <ShieldCheck size={16} /> Đăng ký thành công! Đang chuyển
+                    sang đăng nhập...
                   </div>
                 )}
 
@@ -1987,39 +1988,44 @@ export default function HomePage() {
                   />
 
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Loại khách hàng</label>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                      Loại khách hàng
+                    </label>
                     <select
                       value={registerRole}
                       onChange={(e) => setRegisterRole(e.target.value)}
                       className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all cursor-pointer"
                     >
                       <option value="KhachHangB2C">Khách hàng cá nhân</option>
-                      <option value="KhachHangB2B">Khách hàng doanh nghiệp</option>
+                      <option value="KhachHangB2B">
+                        Khách hàng doanh nghiệp
+                      </option>
                     </select>
                   </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-4">
                   <button
                     type="submit"
-                    disabled={registerLoading || registerSuccess}
-                    className="w-full h-12 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                    disabled={registerLoading}
+                    className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
                   >
-                    {registerLoading ? <Loader2 className="animate-spin" size={18} /> : "Đăng Ký"}
+                    {registerLoading ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      "Đăng Ký Tài Khoản"
+                    )}
                   </button>
                 </div>
 
-                <div className="text-center pt-4">
-                  <p className="text-sm text-slate-500 font-medium">
-                    Đã có tài khoản?{" "}
-                    <button
-                      type="button"
-                      onClick={() => setIsRegisterMode(false)}
-                      className="text-blue-600 font-bold hover:underline bg-transparent border-none cursor-pointer"
-                    >
-                      Đăng nhập ngay
-                    </button>
-                  </p>
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsRegisterMode(false)}
+                    className="text-[11px] font-bold text-slate-400 hover:text-blue-600 bg-transparent border-none cursor-pointer transition-colors"
+                  >
+                    Đã có tài khoản? Đăng nhập
+                  </button>
                 </div>
               </form>
             )}
@@ -2156,12 +2162,8 @@ function ServiceCard({
   href,
   onClick,
 }: any) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="flex flex-col bg-white p-10 rounded-3xl border border-slate-100 no-underline text-inherit transition-all duration-300 hover:shadow-xl hover:border-blue-100 group"
-    >
+  const CardContent = (
+    <div className="flex flex-col bg-white p-10 rounded-3xl border border-slate-100 no-underline text-inherit transition-all duration-300 hover:shadow-xl hover:border-blue-100 h-full">
       <div
         className={`w-14 h-14 ${iconBg} ${iconColor} rounded-xl flex items-center justify-center mb-8 flex-shrink-0 transition-all duration-300`}
       >
@@ -2177,6 +2179,23 @@ function ServiceCard({
         {ctaText}
         <ChevronRight size={18} />
       </span>
+    </div>
+  );
+
+  if (onClick) {
+    return (
+      <div onClick={onClick} className="cursor-pointer h-full">
+        {CardContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={href || "#"}
+      className="no-underline text-inherit h-full block"
+    >
+      {CardContent}
     </Link>
   );
 }

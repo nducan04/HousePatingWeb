@@ -49,7 +49,7 @@ import api from "@/lib/utils/axiosAuth";
 
 export default function ColorsPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, loginState } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedColor, setSelectedColor] = useState<
     (typeof paintColors)[0] | null
