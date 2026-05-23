@@ -855,6 +855,75 @@ export default function SanPhamPage() {
                   ></textarea>
                 </div>
 
+                {/* KHU VỰC QUẢN LÝ MÃ MÀU (SKU) */}
+                <div className="col-span-1 md:col-span-2 mt-4 pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <Layers size={18} className="text-blue-500" /> Danh sách Biến thể Màu sắc (SKU)
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={handleAddColor}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"
+                    >
+                      <Plus size={14} strokeWidth={2} /> Thêm Màu
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {formData.DanhSachMaMau.map((mau, index) => (
+                      <div key={index} className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl relative group animate-in fade-in zoom-in-95 duration-200">
+                        {/* Cột 1: Chọn màu (Hex) */}
+                        <div className="flex flex-col items-center gap-1">
+                          <input
+                            type="color"
+                            value={mau.HexCode}
+                            onChange={(e) => handleColorChange(index, "HexCode", e.target.value)}
+                            className="w-10 h-10 p-0 border-0 rounded overflow-hidden cursor-pointer"
+                          />
+                          <span className="text-[10px] font-mono text-slate-500 uppercase">{mau.HexCode}</span>
+                        </div>
+
+                        {/* Cột 2 & 3: Mã và Tên */}
+                        <div className="flex-1 grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">Mã màu</label>
+                            <input
+                              type="text"
+                              placeholder="VD: WHT01"
+                              value={mau.MaMau}
+                              onChange={(e) => handleColorChange(index, "MaMau", e.target.value)}
+                              className="w-full mt-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">Tên màu</label>
+                            <input
+                              type="text"
+                              placeholder="VD: Trắng Sứ"
+                              value={mau.TenMau}
+                              onChange={(e) => handleColorChange(index, "TenMau", e.target.value)}
+                              className="w-full mt-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Nút xóa màu */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveColor(index)}
+                          className="absolute top-3 right-3 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    {formData.DanhSachMaMau.length === 0 && (
+                      <p className="text-sm text-slate-500 italic text-center py-4">Chưa có mã màu nào. Vui lòng thêm màu để khách hàng có thể đặt mua!</p>
+                    )}
+                  </div>
+                </div>
+
                 {/* Phần thông tin Truy Xuất Nguồn Gốc (QR Code) */}
                 <div className="col-span-1 md:col-span-2 mt-2 pt-4 border-t border-slate-100">
                   <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -1026,6 +1095,32 @@ export default function SanPhamPage() {
                       <p className="text-xl font-semibold text-slate-900 mt-1">
                         {selectedProduct.TongTonKho || 0} <span className="text-sm font-normal text-slate-500">{selectedProduct.DonViTinh}</span>
                       </p>
+                    </div>
+                  </div>
+
+                  {/* BẢNG MÀU LỰA CHỌN */}
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 mb-2">Bảng màu lựa chọn (SKU)</p>
+                    <div className="flex flex-wrap gap-2.5">
+                      {selectedProduct.DanhSachMaMau && selectedProduct.DanhSachMaMau.length > 0 ? (
+                        selectedProduct.DanhSachMaMau.map((mau, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-blue-400 transition-colors"
+                          >
+                            <span
+                              className="w-5 h-5 rounded-full border border-slate-200 block"
+                              style={{ backgroundColor: mau.HexCode || "#cccccc" }}
+                            />
+                            <div className="text-left">
+                              <p className="text-xs font-bold text-slate-800 leading-none">{mau.TenMau}</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">{mau.MaMau} {mau.TonKhoKhaDung > 0 ? `(Còn ${mau.TonKhoKhaDung})` : '(Hết hàng)'}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">Không có biến thể màu nào.</p>
+                      )}
                     </div>
                   </div>
 

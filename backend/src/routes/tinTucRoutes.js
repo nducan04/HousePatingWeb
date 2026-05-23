@@ -6,10 +6,12 @@ const {
 
 const router = express.Router();
 
+// Public route to view news articles
 router.get('/', getAll);
-// Tạm thời mở Route nếu chưa setup full Auth ở client, có thể dùng protect sau
-router.post('/', create);
-router.put('/:id', update);
-router.delete('/:id', remove);
+
+// Protected routes to write news articles
+router.post('/', protect, authorize('Admin', 'NhanVien'), create);
+router.put('/:id', protect, authorize('Admin', 'NhanVien'), update);
+router.delete('/:id', protect, authorize('Admin', 'NhanVien'), remove);
 
 module.exports = router;

@@ -9,11 +9,11 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
+router.use(authorize('Admin', 'NhanVien'));
 
 router.get('/', getPackagingSlips);
 router.get('/pending-rd', getPendingRDLogs);
 router.get('/:id', getPackagingSlipById);
-
-router.post('/', authorize('Admin', 'NhanVien'), createPackagingSlip);
+router.post('/', createPackagingSlip);
 
 module.exports = router;

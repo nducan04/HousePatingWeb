@@ -278,12 +278,45 @@ export default function AdminLayout({
     }));
   };
 
-  // Chặn nhân viên xem Dashboard - Redirect về Sản phẩm
+  // Chặn truy cập trái phép ở cấp giao diện dựa trên allNavItems và dashboard
   React.useEffect(() => {
-    if (!isLoading && userRole === "NhanVien" && pathname === "/dashboard") {
-      router.push("/san-pham");
+    if (isLoading || !user) return;
+
+    // Phân quyền cho trang Dashboard
+    if (pathname === "/dashboard") {
+      if (userRole === "NhanVien") {
+        router.push("/san-pham");
+        return;
+      }
+      if (isCustomer) {
+        router.push("/");
+        return;
+      }
+      return;
     }
-  }, [userRole, pathname, isLoading, router]);
+
+    // Tìm item khớp với pathname hiện tại (chọn item có href dài nhất để xử lý chính xác các trang con như /rd-tracking/new)
+    let matchedItem: any = null;
+    allNavItems.forEach((section) => {
+      section.items.forEach((item) => {
+        if (item.href && (pathname === item.href || pathname.startsWith(item.href + "/"))) {
+          if (!matchedItem || item.href.length > matchedItem.href.length) {
+            matchedItem = item;
+          }
+        }
+      });
+    });
+
+    if (matchedItem) {
+      if (!matchedItem.roles.includes(userRole)) {
+        if (isCustomer) {
+          router.push("/");
+        } else {
+          router.push("/unauthorized");
+        }
+      }
+    }
+  }, [pathname, user, userRole, isLoading, router, isCustomer]);
 
   // Lọc menu theo vai trò người dùng
   const filteredNav = allNavItems

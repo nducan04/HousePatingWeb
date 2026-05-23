@@ -23,10 +23,10 @@ const {
 const router = express.Router();
 
 // API Lấy danh sách tồn kho
-router.get('/', protect, getTonKho);
+router.get('/', protect, authorize('Admin', 'NhanVien'), getTonKho);
 
 // API Danh sách Phiếu kiểm
-router.get('/kiem-kho', protect, getDanhSachPhieu);
+router.get('/kiem-kho', protect, authorize('Admin', 'NhanVien'), getDanhSachPhieu);
 
 // API Nhập kho (Tạo biến động số lượng dương)
 router.post('/nhap', protect, authorize('Admin', 'NhanVien'), nhapKho);
@@ -38,13 +38,13 @@ router.post('/kiem-kho', protect, authorize('Admin', 'NhanVien'), luuPhieuKiemKh
 router.post('/kiem-kho/:MaPhieu/hoan-thanh', protect, authorize('Admin', 'NhanVien'), hoanThanhKiemKho);
 
 // --- QUẢN LÝ NGUYÊN VẬT LIÊU ---
-router.get('/nguyen-vat-lieu', protect, getNguyenVatLieu);
+router.get('/nguyen-vat-lieu', protect, authorize('Admin', 'NhanVien'), getNguyenVatLieu);
 router.post('/nguyen-vat-lieu', protect, authorize('Admin', 'NhanVien'), createNguyenVatLieu);
 router.put('/nguyen-vat-lieu/:id', protect, authorize('Admin', 'NhanVien'), updateNguyenVatLieu);
 router.delete('/nguyen-vat-lieu/:id', protect, authorize('Admin', 'NhanVien'), deleteNguyenVatLieu);
 
 // ═══ QUẢN LÝ PHIẾU NHẬP / XUẤT KHO — APPROVAL WORKFLOW ═══
-router.get('/nhap-xuat', protect, getPhieuNhapXuat);
+router.get('/nhap-xuat', protect, authorize('Admin', 'NhanVien'), getPhieuNhapXuat);
 router.post('/nhap-xuat', protect, authorize('Admin', 'NhanVien'), createPhieuNhapXuat);
 router.put('/nhap-xuat/:id', protect, authorize('Admin', 'NhanVien'), updatePhieuNhapXuat);
 router.delete('/nhap-xuat/:id', protect, authorize('Admin'), deletePhieuNhapXuat);
