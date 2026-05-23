@@ -18,6 +18,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+
 import {
   BarChart3,
   Users,
@@ -39,35 +40,34 @@ import RevenuePlanChart from "./RevenuePlanChart";
 import ProductionPlanChart from "./ProductionPlanChart";
 import { exportDashboardToExcel } from "@/lib/utils/excelExport";
 
-// ───────────────────────────────────────────────
-// Custom Tooltip for Recharts
-// ───────────────────────────────────────────────
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload || !payload.length) return null;
-  return (
-    <div className="bg-white border border-slate-100 rounded-xl shadow-lg p-3 min-w-[140px]">
-      <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">
-        {label}
-      </p>
-      {payload.map((entry: any, i: number) => (
-        <div key={i} className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
-            <span
-              className="w-2 h-2 rounded-full inline-block"
-              style={{ background: entry.color }}
-            />
-            {entry.name}
-          </span>
-          <span className="text-xs font-black text-slate-900">
-            {typeof entry.value === "number"
-              ? entry.value.toLocaleString("vi-VN")
-              : entry.value}
-          </span>
+// Tooltip cho biểu đồ
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-xl z-[100] min-w-[200px]">
+        <p className="text-slate-900 font-extrabold text-sm mb-3 border-b border-slate-100 pb-2">
+          Thống kê: {label}
+        </p>
+        <div className="space-y-2">
+          {payload.map((p: any, i: number) => (
+            <div key={i} className="flex justify-between gap-6">
+              <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.stroke || p.fill }} />
+                {p.name}
+              </span>
+              <span className="text-xs font-black text-slate-900">
+                {typeof p.value === "number" ? p.value.toLocaleString("vi-VN") : p.value}
+              </span>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
-  );
-}
+      </div>
+    );
+  }
+  return null;
+};
+
+
 
 // ───────────────────────────────────────────────
 // Gauge (Semi-circle) chart component

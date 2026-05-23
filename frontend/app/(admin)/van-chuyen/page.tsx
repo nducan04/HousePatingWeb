@@ -26,6 +26,7 @@ import {
   User,
   Navigation,
   Building,
+  XCircle,
 } from "lucide-react";
 
 interface TrackingLog {
@@ -71,6 +72,89 @@ interface VanChuyen {
   createdAt: string;
 }
 
+const LocationInput = ({ value, onChange, placeholder, icon: Icon, iconColor, ringColor, onEnter }: any) => {
+  const [suggestions, setSuggestions] = React.useState<string[]>([]);
+  const [isOpen, setIsOpen] = React.useState(false);
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  React.useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (value.length >= 3 && isOpen) {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&countrycodes=vn&limit=5`, {
+            headers: { "Accept-Language": "vi", "User-Agent": "VTSC-PaintPro/1.0" }
+          });
+          const data = await res.json();
+          setSuggestions(data.map((item: any) => item.display_name));
+        } catch (e) {
+          console.error("Geocoding error:", e);
+        }
+      } else {
+        setSuggestions([]);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [value, isOpen]);
+
+  return (
+    <div className="relative flex-1" ref={wrapperRef}>
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+        <Icon size={14} className={iconColor || "text-slate-400"} />
+      </div>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onEnter) {
+            onEnter();
+            setIsOpen(false);
+          }
+        }}
+        className={`w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 ${ringColor || 'focus:ring-blue-500'} focus:border-transparent transition-all shadow-sm`}
+        placeholder={placeholder}
+      />
+      {isOpen && suggestions.length > 0 && (
+        <ul className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+          {suggestions.map((s, idx) => (
+            <li
+              key={idx}
+              className="px-4 py-2 hover:bg-slate-50 cursor-pointer text-sm text-slate-700 border-b last:border-0 border-slate-50 text-left"
+              onClick={() => {
+                onChange(s);
+                setIsOpen(false);
+              }}
+            >
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+const getMediaUrl = (url: string) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function VanChuyenPage() {
   const { user } = useAuthStore();
   const isCustomer = user?.role === 'KhachHangB2B' || user?.role === 'KhachHangB2C';
@@ -83,6 +167,8 @@ export default function VanChuyenPage() {
   const [viewMode, setViewMode] = useState<'LIST' | 'DETAIL'>('LIST');
   const [mapOrigin, setMapOrigin] = useState('Số 215 Lạch Tray, Gia Viên, Hải Phòng');
   const [mapDestination, setMapDestination] = useState('');
+  const [newWaypoint, setNewWaypoint] = useState('');
+  const [waypointAction, setWaypointAction] = useState('Đã đi đến trung tâm phân loại');
 
   useEffect(() => {
     if (selectedTracking) {
@@ -227,8 +313,45 @@ export default function VanChuyenPage() {
     }
   };
 
-  const photoInputRef = React.useRef<HTMLInputElement>(null);
-  const receiptInputRef = React.useRef<HTMLInputElement>(null);
+  const handleAddWaypoint = async () => {
+    if (!newWaypoint || !selectedTracking) return;
+
+    if (!window.confirm(`Bạn có chắc chắn muốn thêm trạm trung chuyển/phân loại "${newWaypoint}" vào lộ trình?`)) return;
+
+    const waypointName = newWaypoint;
+    const newLog: TrackingLog = {
+      ThoiGian: new Date().toISOString(),
+      NoiDung: `${waypointAction}: ${waypointName}`,
+      Status: 'PROCESSING',
+      Icon: 'MapPin'
+    };
+
+    const updatePayload = {
+      LoTrinh: [...selectedTracking.LoTrinh, newLog]
+    };
+
+    try {
+      const res = await api.patch(`/van-chuyen/${selectedTracking._id}`, updatePayload);
+
+      if (res.data.success) {
+        setNewWaypoint('');
+
+        // Cập nhật UI Tracking
+        const updated = { ...selectedTracking, ...updatePayload } as VanChuyen;
+        setSelectedTracking(updated);
+        setData(prev => prev.map(t => t._id === updated._id ? updated : t));
+        alert('Đã thêm trạm và cập nhật lịch sử lộ trình thành công!');
+      } else {
+        throw new Error('Cập nhật thất bại từ server');
+      }
+    } catch (error) {
+      console.error('Lỗi khi thêm trạm trung chuyển:', error);
+      alert('Đã xảy ra lỗi khi kết nối với server. Vui lòng thử lại sau.');
+    }
+  };
+
+  const photoInputRef = React.useRef<any>(null);
+  const receiptInputRef = React.useRef<any>(null);
 
   const getReceiverPhone = (ghiChu: string) => {
     if (!ghiChu) return "N/A";
@@ -290,156 +413,148 @@ export default function VanChuyenPage() {
         </div>
 
         {/* Status Banner */}
-        {(() => {
-          return (
-            <>
-              <div className={`bg-white rounded-2xl border-l-4 border border-slate-100 shadow-sm p-6 flex items-center justify-between ${isDelivered ? 'border-l-emerald-500' : 'border-l-blue-500'}`}>
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDelivered ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                    {isDelivered ? <CheckCircle2 size={24} /> : <Truck size={24} />}
+        <>
+          <div className={`bg-white rounded-2xl border-l-4 border border-slate-100 shadow-sm p-6 flex items-center justify-between ${isDelivered ? 'border-l-emerald-500' : 'border-l-blue-500'}`}>
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDelivered ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                {isDelivered ? <CheckCircle2 size={24} /> : <Truck size={24} />}
+              </div>
+              <div>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Trạng thái tổng quát</p>
+                <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-sm font-black uppercase tracking-wider ${isDelivered ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                  {isDelivered ? '✅' : '🚚'} {selectedTracking.TrangThaiTongQuat}
+                </span>
+              </div>
+            </div>
+            <div className="text-right text-sm text-slate-400 font-medium">
+              {isDelivered
+                ? `Hoàn tất: ${new Date().toLocaleDateString()}`
+                : `Dự kiến: ${selectedTracking.DuKienBanGiao ? new Date(selectedTracking.DuKienBanGiao).toLocaleDateString() : 'N/A'}`}
+            </div>
+          </div>
+
+          {/* Route Map Card - with real embedded map */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            {/* Card Header */}
+            <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MapPin size={16} className="text-rose-500" />
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Bản đồ lộ trình giao hàng</span>
+              </div>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(mapOrigin)}&destination=${encodeURIComponent(mapDestination)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:underline"
+              >
+                <Navigation size={12} /> Mở Google Maps
+              </a>
+            </div>
+
+            {/* Map Controls */}
+            <div className="p-4 border-b border-slate-50 flex flex-col gap-4 bg-slate-50/30">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm xuất phát (Xưởng)</label>
+                  <LocationInput
+                    value={mapOrigin}
+                    onChange={setMapOrigin}
+                    placeholder="Nhập địa chỉ kho/xưởng..."
+                    icon={Building}
+                    iconColor="text-blue-500"
+                    ringColor="focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm đến (Khách hàng)</label>
+                  <LocationInput
+                    value={mapDestination}
+                    onChange={setMapDestination}
+                    placeholder="Nhập địa chỉ nhận hàng..."
+                    icon={MapPin}
+                    iconColor="text-rose-500"
+                    ringColor="focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+
+            </div>
+
+            {/* Embedded Map */}
+            <div className="relative w-full" style={{ height: 500 }}>
+              <iframe
+                title="Delivery Map"
+                width="100%"
+                height="100%"
+                style={{ border: 0, display: 'block' }}
+                loading="lazy"
+                allowFullScreen
+                src={`https://maps.google.com/maps?saddr=${encodeURIComponent(mapOrigin)}&daddr=${encodeURIComponent(mapDestination)}&output=embed`}
+              />
+              {/* Overlay badge */}
+              <div className={`absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black shadow-lg ${isDelivered ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
+                {isDelivered ? <CheckCircle2 size={13} /> : <Truck size={13} />}
+                {isDelivered ? 'Đã giao thành công' : 'Đang trên đường giao'}
+              </div>
+            </div>
+
+            {/* Progress Tracker */}
+            <div className="px-8 py-6 bg-slate-50/50">
+              <div className="relative">
+                {/* Track background */}
+                <div className="absolute top-5 left-6 right-6 h-1 bg-slate-200 rounded-full"></div>
+                {/* Active track */}
+                <div
+                  className="absolute top-5 left-6 h-1 rounded-full transition-all duration-1000"
+                  style={{
+                    width: isDelivered ? 'calc(100% - 3rem)' : 'calc(50% - 1.5rem)',
+                    background: isDelivered ? '#059669' : '#2563eb',
+                    boxShadow: `0 0 8px ${isDelivered ? '#05966980' : '#2563eb80'}`
+                  }}
+                ></div>
+
+                {/* Waypoints */}
+                <div className="relative flex justify-between">
+                  {/* Origin */}
+                  <div className="flex flex-col items-center gap-2 w-20">
+                    <div className="w-10 h-10 rounded-2xl bg-white border-2 border-blue-500 flex items-center justify-center shadow-sm z-10">
+                      <Building size={18} className="text-blue-600" />
+                    </div>
+                    <span className="text-[11px] font-black text-slate-600 text-center leading-tight">Xưởng Sơn</span>
                   </div>
-                  <div>
-                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Trạng thái tổng quát</p>
-                    <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-sm font-black uppercase tracking-wider ${isDelivered ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
-                      {isDelivered ? '✅' : '🚚'} {selectedTracking.TrangThaiTongQuat}
+
+                  {/* Truck position */}
+                  <div
+                    className="absolute -top-7 flex flex-col items-center transition-all duration-1000"
+                    style={{ left: isDelivered ? 'calc(100% - 5rem)' : 'calc(50% - 2rem)' }}
+                  >
+                    <span className={`text-[10px] font-black text-white px-2 py-0.5 rounded-lg mb-1.5 whitespace-nowrap ${isDelivered ? 'bg-emerald-600' : 'bg-blue-600'}`}>
+                      {isDelivered ? 'Đã bàn giao' : 'Đang di chuyển'}
+                    </span>
+                    <Truck size={26} style={{ color: isDelivered ? '#059669' : '#2563eb', filter: `drop-shadow(0 0 6px ${isDelivered ? '#059669' : '#2563eb'})` }} />
+                  </div>
+
+                  {/* Destination */}
+                  <div className="flex flex-col items-center gap-2 w-20">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 shadow-sm z-10 transition-all duration-500 ${isDelivered ? 'bg-emerald-50 border-emerald-500' : 'bg-white border-slate-200'}`}>
+                      {isDelivered ? <CheckCircle2 size={20} className="text-emerald-600" /> : <User size={18} className="text-slate-400" />}
+                    </div>
+                    <span className={`text-[11px] font-black text-center leading-tight ${isDelivered ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      {selectedTracking.DonHang?.KhachHang?.TenKhachHang || 'Khách hàng'}
                     </span>
                   </div>
                 </div>
-                <div className="text-right text-sm text-slate-400 font-medium">
-                  {isDelivered
-                    ? `Hoàn tất: ${new Date().toLocaleDateString()}`
-                    : `Dự kiến: ${selectedTracking.DuKienBanGiao ? new Date(selectedTracking.DuKienBanGiao).toLocaleDateString() : 'N/A'}`}
-                </div>
               </div>
 
-              {/* Route Map Card - with real embedded map */}
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                {/* Card Header */}
-                <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MapPin size={16} className="text-rose-500" />
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Bản đồ lộ trình giao hàng</span>
-                  </div>
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(mapOrigin)}&destination=${encodeURIComponent(mapDestination)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:underline"
-                  >
-                    <Navigation size={12} /> Mở Google Maps
-                  </a>
-                </div>
-
-                {/* Map Controls */}
-                <div className="p-4 border-b border-slate-50 flex flex-col sm:flex-row gap-4 bg-slate-50/30">
-                  <div className="flex-1 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm xuất phát (Xưởng)</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Building size={14} className="text-blue-500" />
-                      </div>
-                      <input
-                        type="text"
-                        value={mapOrigin}
-                        onChange={(e) => setMapOrigin(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
-                        placeholder="Nhập địa chỉ kho/xưởng..."
-                      />
-                    </div>
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Điểm đến (Khách hàng)</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <MapPin size={14} className="text-rose-500" />
-                      </div>
-                      <input
-                        type="text"
-                        value={mapDestination}
-                        onChange={(e) => setMapDestination(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
-                        placeholder="Nhập địa chỉ nhận hàng..."
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Embedded Map */}
-                <div className="relative w-full" style={{ height: 280 }}>
-                  <iframe
-                    title="Delivery Map"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0, display: 'block' }}
-                    loading="lazy"
-                    allowFullScreen
-                    src={`https://maps.google.com/maps?saddr=${encodeURIComponent(mapOrigin)}&daddr=${encodeURIComponent(mapDestination)}&output=embed`}
-                  />
-                  {/* Overlay badge */}
-                  <div className={`absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black shadow-lg ${isDelivered ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
-                    {isDelivered ? <CheckCircle2 size={13} /> : <Truck size={13} />}
-                    {isDelivered ? 'Đã giao thành công' : 'Đang trên đường giao'}
-                  </div>
-                </div>
-
-                {/* Progress Tracker */}
-                <div className="px-8 py-6 bg-slate-50/50">
-                  <div className="relative">
-                    {/* Track background */}
-                    <div className="absolute top-5 left-6 right-6 h-1 bg-slate-200 rounded-full"></div>
-                    {/* Active track */}
-                    <div
-                      className="absolute top-5 left-6 h-1 rounded-full transition-all duration-1000"
-                      style={{
-                        width: isDelivered ? 'calc(100% - 3rem)' : 'calc(50% - 1.5rem)',
-                        background: isDelivered ? '#059669' : '#2563eb',
-                        boxShadow: `0 0 8px ${isDelivered ? '#05966980' : '#2563eb80'}`
-                      }}
-                    ></div>
-
-                    {/* Waypoints */}
-                    <div className="relative flex justify-between">
-                      {/* Origin */}
-                      <div className="flex flex-col items-center gap-2 w-20">
-                        <div className="w-10 h-10 rounded-2xl bg-white border-2 border-blue-500 flex items-center justify-center shadow-sm z-10">
-                          <Building size={18} className="text-blue-600" />
-                        </div>
-                        <span className="text-[11px] font-black text-slate-600 text-center leading-tight">Xưởng Sơn</span>
-                      </div>
-
-                      {/* Truck position */}
-                      <div
-                        className="absolute -top-7 flex flex-col items-center transition-all duration-1000"
-                        style={{ left: isDelivered ? 'calc(100% - 5rem)' : 'calc(50% - 2rem)' }}
-                      >
-                        <span className={`text-[10px] font-black text-white px-2 py-0.5 rounded-lg mb-1.5 whitespace-nowrap ${isDelivered ? 'bg-emerald-600' : 'bg-blue-600'}`}>
-                          {isDelivered ? 'Đã bàn giao' : 'Đang di chuyển'}
-                        </span>
-                        <Truck size={26} style={{ color: isDelivered ? '#059669' : '#2563eb', filter: `drop-shadow(0 0 6px ${isDelivered ? '#059669' : '#2563eb'})` }} />
-                      </div>
-
-                      {/* Destination */}
-                      <div className="flex flex-col items-center gap-2 w-20">
-                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 shadow-sm z-10 transition-all duration-500 ${isDelivered ? 'bg-emerald-50 border-emerald-500' : 'bg-white border-slate-200'}`}>
-                          {isDelivered ? <CheckCircle2 size={20} className="text-emerald-600" /> : <User size={18} className="text-slate-400" />}
-                        </div>
-                        <span className={`text-[11px] font-black text-center leading-tight ${isDelivered ? 'text-emerald-600' : 'text-slate-400'}`}>
-                          {selectedTracking.DonHang?.KhachHang?.TenKhachHang || 'Khách hàng'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Address row */}
-                  <div className="mt-8 flex items-start gap-2 text-xs text-slate-500">
-                    <MapPin size={13} className="text-rose-400 mt-0.5 shrink-0" />
-                    <span className="font-medium">{selectedTracking.DonHang?.DiaChiGiaoHang || 'Chưa cập nhật địa chỉ giao hàng'}</span>
-                  </div>
-                </div>
+              {/* Address row */}
+              <div className="mt-8 flex items-start gap-2 text-xs text-slate-500">
+                <MapPin size={13} className="text-rose-400 mt-0.5 shrink-0" />
+                <span className="font-medium">{selectedTracking.DonHang?.DiaChiGiaoHang || 'Chưa cập nhật địa chỉ giao hàng'}</span>
               </div>
-            </>
-          );
-        })()}
+            </div>
+          </div>
+        </>
 
         {/* Info Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -463,8 +578,8 @@ export default function VanChuyenPage() {
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 font-medium">Biên bản bàn giao</span>
                 <div className="flex items-center gap-2">
-                  {selectedTracking.LoHang.BienBanFile ? (
-                    <a href={selectedTracking.LoHang.BienBanFile} target="_blank" rel="noreferrer"
+                  {selectedTracking.LoHang.BienBanFile || (selectedTracking as any).BienBanFile ? (
+                    <a href={getMediaUrl(selectedTracking.LoHang.BienBanFile || (selectedTracking as any).BienBanFile)} target="_blank" rel="noreferrer"
                       className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:underline">
                       <FileText size={14} /> Xem File
                     </a>
@@ -564,8 +679,8 @@ export default function VanChuyenPage() {
               <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">📸 Hình ảnh minh chứng giao hàng</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {selectedTracking.HinhAnhGiaoHang.map((url, i) => (
-                  <div key={i} className="rounded-xl overflow-hidden h-36 bg-slate-50 hover:scale-105 transition-transform cursor-pointer">
-                    <img src={url} alt={`Evidence ${i}`} className="w-full h-full object-cover" />
+                  <div key={i} onClick={() => window.open(getMediaUrl(url), '_blank')} className="rounded-xl overflow-hidden h-36 bg-slate-50 hover:scale-105 transition-transform cursor-pointer">
+                    <img src={getMediaUrl(url)} alt={`Evidence ${i}`} className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>

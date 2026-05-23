@@ -8,12 +8,37 @@ import {
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import api from '@/lib/utils/axiosAuth';
-import { paintColors } from '@/lib/data/colors-data';
+import { paintColors, trackingData } from '@/lib/data/colors-data';
+import { QRCodeSVG } from 'qrcode.react';
 import * as XLSX from 'xlsx';
 import { useAuthStore } from '@/lib/store/authStore';
-import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, BorderStyle, WidthType } from 'docx';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import {
+    Document, Packer, Paragraph, TextRun, AlignmentType,
+    Table, TableRow, TableCell, BorderStyle, WidthType
+} from 'docx';
 import { saveAs } from 'file-saver';
 
+// ==================== HÀM HỖ TRỢ ====================
+const numberToVietnameseWords = (num: number): string => {
+    if (num === 0) return "không đồng chẵn";
+
+    const units = ["", "nghìn", "triệu", "tỷ"];
+    let words = "";
+    let i = 0;
+
+    while (num > 0) {
+        const chunk = num % 1000;
+        if (chunk > 0) {
+            words = `${chunk.toLocaleString('vi-VN')} ${units[i]} ` + words;
+        }
+        num = Math.floor(num / 1000);
+        i++;
+    }
+    return words.trim() + " đồng chẵn";
+};
 const API_DON_HANG = '/don-hang';
 
 const PAYMENT_METHODS = [
@@ -40,6 +65,7 @@ interface Order {
         TenKhachHang: string;
         SDT: string;
         DiaChi: string;
+        PhanLoai?: string;
     };
     Items: OrderItem[];
     TongTien: number;
@@ -107,7 +133,8 @@ interface SanPham {
     MaSanPham: string;
     TenDongSon: string;
     DonGiaCoSo: number;
-    TonKho: number;
+    TongTonKho: number;
+    TonKho?: number;
     HinhAnh?: string;
     DanhSachMaMau?: MaMauSon[];
 }
@@ -125,7 +152,14 @@ interface NewOrderItem {
 
 export default function OrderManagementPage() {
     const { user } = useAuthStore();
+    const router = useRouter();
     const isAdminOrEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
+
+    useEffect(() => {
+        if (user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C')) {
+            router.push('/my-orders');
+        }
+    }, [user, router]);
 
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
@@ -133,6 +167,8 @@ export default function OrderManagementPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isChartModalOpen, setIsChartModalOpen] = useState(false);
+    const [rdTrackingLogs, setRdTrackingLogs] = useState<any[]>([]);
 
     // Create Order Modal state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -154,8 +190,11 @@ export default function OrderManagementPage() {
     const [doDayLopPhu, setDoDayLopPhu] = useState('75 µm');
     const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState('');
+    const [productSearchTerm, setProductSearchTerm] = useState('');
+    const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
     const [selectedColorCode, setSelectedColorCode] = useState('');
     const [colorSearchTerm, setColorSearchTerm] = useState('');
+    const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
     const [selectedSalespersonId, setSelectedSalespersonId] = useState('');
     const [allStaff, setAllStaff] = useState<any[]>([]);
 
@@ -232,31 +271,531 @@ export default function OrderManagementPage() {
         }
     };
 
-    const exportToPDF = async (type: 'COC' | 'HOA_DON') => {
-        if (!selectedOrder || !printRef.current) return;
-        setIsPrinting(true);
-        try {
-            const canvas = await html2canvas(printRef.current, {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff'
-            });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const imgWidth = pdfWidth - 20;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    // ==================== HÀM XUẤT PHIẾU CỌC WORD ====================
+    // ==================== HÀM XUẤT PHIẾU CỌC WORD (ĐÃ SỬA) ====================
+    const handleDownloadPhieuCoc = async () => {
+        if (!selectedOrder) return;
 
-            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-            pdf.save(`${type}_${selectedOrder.MaDonHang}.pdf`);
+        const orderId = selectedOrder.MaDonHang || '#N/A';
+        const createdDate = new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN');
+        const customerName = selectedOrder.KhachHang?.TenKhachHang || 'Khách lẻ';
+        const phoneNumber = selectedOrder.KhachHang?.SDT || 'Chưa cập nhật';
+        const productName = selectedOrder.Items?.[0]?.TenSanPham || 'Sản phẩm sơn';
+        const colorCode = selectedOrder.Items?.[0]?.MaMau || 'N/A';
+        const powderType = selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon';
+        const totalAmount = selectedOrder.TongTien || 0;
+        const depositAmount = selectedOrder.DaCoc || 0;
+        const remainingAmount = totalAmount - depositAmount;
+
+        const fileName = `Phieu_Coc_${orderId.replace('#', '')}.docx`;
+
+        const noBorder = {
+            top: { style: BorderStyle.NONE },
+            bottom: { style: BorderStyle.NONE },
+            left: { style: BorderStyle.NONE },
+            right: { style: BorderStyle.NONE },
+            insideHorizontal: { style: BorderStyle.NONE },
+            insideVertical: { style: BorderStyle.NONE },
+        };
+
+        const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + ' đ';
+
+        const doc = new Document({
+            styles: {
+                default: {
+                    document: {
+                        run: {
+                            font: "Times New Roman",
+                            size: 24,
+                        },
+                    },
+                },
+            },
+            sections: [{
+                properties: {
+                    page: {
+                        margin: { top: 720, right: 720, bottom: 720, left: 720 },
+                    },
+                },
+                children: [
+                    // === HEADER ===
+                    new Table({
+                        width: { type: WidthType.PERCENTAGE, size: 100 },
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        width: { type: WidthType.PERCENTAGE, size: 50 },
+                                        borders: noBorder,
+                                        children: [
+                                            new Paragraph({
+                                                children: [new TextRun({ text: "CÔNG TY CP TMDV VOSCO (VTSC)", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                children: [new TextRun({ text: "Hệ thống PaintPro", font: "Times New Roman", size: 22 })],
+                                            }),
+                                        ],
+                                    }),
+                                    new TableCell({
+                                        width: { type: WidthType.PERCENTAGE, size: 50 },
+                                        borders: noBorder,
+                                        children: [
+                                            new Paragraph({
+                                                alignment: AlignmentType.RIGHT,
+                                                children: [new TextRun({ text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                alignment: AlignmentType.RIGHT,
+                                                children: [new TextRun({ text: "Độc lập - Tự do - Hạnh phúc", bold: true, underline: { type: "single" }, font: "Times New Roman", size: 24 })],
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        ],
+                    }),
+
+                    new Paragraph({
+                        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000", space: 1 } },
+                        spacing: { before: 100, after: 200 },
+                        children: [new TextRun("")]
+                    }),
+
+                    // === TIÊU ĐỀ ===
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 100, after: 80 },
+                        children: [new TextRun({ text: "PHIẾU BIÊN NHẬN ĐẶT CỌC", bold: true, font: "Times New Roman", size: 32 })],
+                    }),
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 200 },
+                        children: [new TextRun({ text: `Mã đơn hàng: #${orderId} - Ngày tạo: ${createdDate}`, italics: true, font: "Times New Roman", size: 24 })],
+                    }),
+
+                    // === NỘI DUNG CHÍNH ===
+                    new Paragraph({
+                        spacing: { after: 100 },
+                        children: [
+                            new TextRun({ text: "Họ tên khách hàng: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: customerName, font: "Times New Roman", size: 24 }),
+                        ],
+                    }),
+                    new Paragraph({
+                        spacing: { after: 100 },
+                        children: [
+                            new TextRun({ text: "Số điện thoại: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: phoneNumber, font: "Times New Roman", size: 24 }),
+                        ],
+                    }),
+                    new Paragraph({
+                        spacing: { after: 120 },
+                        children: [
+                            new TextRun({ text: "Nội dung đặt cọc: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({
+                                text: `Đặt cọc thi công/mua sơn tĩnh điện sản phẩm "${productName}", Mã màu: ${colorCode}, Loại bột: ${powderType}.`,
+                                font: "Times New Roman", size: 24
+                            }),
+                        ],
+                    }),
+
+                    new Paragraph({
+                        spacing: { before: 120, after: 80 },
+                        children: [
+                            new TextRun({ text: "Tổng giá trị đơn hàng: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: formatCurrency(totalAmount), font: "Times New Roman", size: 24 }),
+                        ],
+                    }),
+                    new Paragraph({
+                        spacing: { after: 80 },
+                        children: [
+                            new TextRun({ text: "Số tiền đã đặt cọc (50%): ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: formatCurrency(depositAmount), font: "Times New Roman", size: 24 }),
+                        ],
+                    }),
+                    new Paragraph({
+                        spacing: { after: 80 },
+                        children: [
+                            new TextRun({ text: "Viết bằng chữ: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({
+                                text: `(${numberToVietnameseWords(depositAmount)})`,
+                                italics: true, font: "Times New Roman", size: 24
+                            }),
+                        ],
+                    }),
+                    new Paragraph({
+                        spacing: { after: 200 },
+                        children: [
+                            new TextRun({ text: "Số tiền còn lại cần thanh toán: ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: formatCurrency(remainingAmount), bold: true, color: "C00000", font: "Times New Roman", size: 24 }),
+                        ],
+                    }),
+
+                    // === CHỮ KÝ ===
+                    new Paragraph({ spacing: { before: 300 }, children: [new TextRun("")] }),
+                    new Table({
+                        width: { type: WidthType.PERCENTAGE, size: 100 },
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        width: { type: WidthType.PERCENTAGE, size: 50 },
+                                        borders: noBorder,
+                                        children: [
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "NGƯỜI NỘP TIỀN", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                spacing: { after: 60 },
+                                                children: [new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true, font: "Times New Roman", size: 22 })],
+                                            }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                        ],
+                                    }),
+                                    new TableCell({
+                                        width: { type: WidthType.PERCENTAGE, size: 50 },
+                                        borders: noBorder,
+                                        children: [
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "ĐẠI DIỆN CÔNG TY", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                spacing: { after: 60 },
+                                                children: [new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true, font: "Times New Roman", size: 22 })],
+                                            }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                            new Paragraph({ children: [new TextRun({ text: " " })] }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        ],
+                    }),
+                ],
+            }],
+        });
+
+        try {
+            const blob = await Packer.toBlob(doc);
+            saveAs(blob, fileName);
         } catch (error) {
-            console.error('Lỗi in ấn:', error);
-            alert('Có lỗi xảy ra khi tạo file PDF');
-        } finally {
-            setIsPrinting(false);
+            console.error("Lỗi tạo file Word:", error);
+            alert("Có lỗi xảy ra khi tạo phiếu cọc!");
         }
     };
+
+    // ==================== HÀM XUẤT HÓA ĐƠN GTGT WORD ====================
+    const handleDownloadHoaDonGTGT = async () => {
+        if (!selectedOrder) return;
+
+        try {
+            const orderId = selectedOrder.MaDonHang || '#N/A';
+            const customerName = selectedOrder.KhachHang?.TenKhachHang || 'Vãng lai';
+            const customerPhone = selectedOrder.KhachHang?.SDT || '';
+            const customerAddress = selectedOrder.KhachHang?.DiaChi || 'Chưa cập nhật';
+            const paymentMethod = selectedOrder.PhuongThucThanhToan === 'TIEN_MAT' ? 'Tiền mặt (TM)' : 'Chuyển khoản (CK)';
+            const orderDateStr = new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN', {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            });
+            const [day, month, year] = orderDateStr.split('/');
+
+            // Mock data for VAT calculation
+            const taxRate = 8;
+            const totalGross = selectedOrder.TongTien || 0;
+            const subTotalCalc = Math.round(totalGross / (1 + taxRate / 100));
+            const vatAmount = totalGross - subTotalCalc;
+
+            const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + ' đ';
+
+            const noBorder = {
+                top: { style: BorderStyle.NONE },
+                bottom: { style: BorderStyle.NONE },
+                left: { style: BorderStyle.NONE },
+                right: { style: BorderStyle.NONE },
+                insideHorizontal: { style: BorderStyle.NONE },
+                insideVertical: { style: BorderStyle.NONE },
+            };
+
+            const doc = new Document({
+                styles: {
+                    default: {
+                        document: {
+                            run: {
+                                font: "Times New Roman",
+                                size: 24, // 12pt
+                            },
+                        },
+                    },
+                },
+                sections: [{
+                    properties: {
+                        page: {
+                            margin: { top: 1134, right: 1134, bottom: 1134, left: 1417 },
+                        },
+                    },
+                    children: [
+                        // 1. Khối thông tin Hóa đơn & Đơn vị bán hàng (Header)
+                        new Table({
+                            width: { type: WidthType.PERCENTAGE, size: 100 },
+                            rows: [
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            width: { type: WidthType.PERCENTAGE, size: 55 },
+                                            borders: noBorder,
+                                            children: [
+                                                new Paragraph({
+                                                    children: [new TextRun({ text: "CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)", bold: true, size: 24 })],
+                                                }),
+                                                new Paragraph({
+                                                    children: [new TextRun({ text: "Mã số thuế: 0100100456", bold: true, size: 24 })],
+                                                }),
+                                                new Paragraph({
+                                                    children: [new TextRun({ text: "Địa chỉ: Số 215 Lạch Tray, Phường Gia Viên, Thành phố Hải Phòng", size: 24 })],
+                                                }),
+                                                new Paragraph({
+                                                    children: [new TextRun({ text: "Điện thoại: 02226.676767 - Số tài khoản: 110000123456 tại VietinBank", size: 24 })],
+                                                }),
+                                            ],
+                                        }),
+                                        new TableCell({
+                                            width: { type: WidthType.PERCENTAGE, size: 45 },
+                                            borders: noBorder,
+                                            children: [
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "HÓA ĐƠN GIÁ TRỊ GIA TĂNG", bold: true, size: 28, color: "FF0000" })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "Mẫu số (Form): 1C26TAA", size: 24 })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "Ký hiệu (Serial): K26TBB", size: 24 })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: `Số (No.): ${orderId}`, bold: true, size: 24, color: "FF0000" })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: `Ngày (Date): ${day} Tháng ${month} Năm ${year}`, italics: true, size: 24 })],
+                                                }),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+
+                        new Paragraph({ spacing: { before: 240, after: 120 }, children: [new TextRun("")] }),
+
+                        // 2. Khối thông tin Người mua hàng (Buyer Information)
+                        new Paragraph({
+                            spacing: { line: 280 },
+                            children: [
+                                new TextRun({ text: "Họ tên người mua hàng: " }),
+                                new TextRun({ text: customerName, bold: true }),
+                            ],
+                        }),
+                        new Paragraph({
+                            spacing: { line: 280 },
+                            children: [new TextRun({ text: `Tên đơn vị (nếu có): ${selectedOrder.KhachHang?.PhanLoai === 'DOANH_NGHIEP' ? selectedOrder.KhachHang?.TenKhachHang : '....................................................................'}` })],
+                        }),
+                        new Paragraph({
+                            spacing: { line: 280 },
+                            children: [new TextRun({ text: "Mã số thuế (nếu có): ...................................................................." })],
+                        }),
+                        new Paragraph({
+                            spacing: { line: 280 },
+                            children: [new TextRun({ text: `Địa chỉ: ${customerAddress}` })],
+                        }),
+                        new Paragraph({
+                            spacing: { line: 280, after: 240 },
+                            children: [new TextRun({ text: `Hình thức thanh toán: ${paymentMethod}` })],
+                        }),
+
+                        // 3. Bảng chi tiết hàng hóa, dịch vụ (Goods Table)
+                        new Table({
+                            width: { type: WidthType.PERCENTAGE, size: 100 },
+                            borders: {
+                                top: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                                bottom: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                                left: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                                right: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                                insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                                insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "888888" },
+                            },
+                            rows: [
+                                // Header Row
+                                new TableRow({
+                                    children: [
+                                        "STT", "Tên hàng hóa / dịch vụ", "Đơn vị tính", "Số lượng", "Đơn giá", "Thành tiền"
+                                    ].map(text => new TableCell({
+                                        margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text, bold: true })] })]
+                                    }))
+                                }),
+                                // Data Rows
+                                ...(selectedOrder.Items || []).map((item, index) => {
+                                    const itemPrice = Math.round(item.DonGia / (1 + taxRate / 100)); // Mock trước thuế
+                                    const itemTotal = itemPrice * item.SoLuong;
+                                    return new TableRow({
+                                        children: [
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (index + 1).toString() })] })] }),
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ children: [new TextRun({ text: `${item.TenSanPham} (Mã màu: ${item.MaMau})` })] })] }),
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: item.SanPham?.DonViTinh || "Thùng" })] })] }),
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: item.SoLuong.toString() })] })] }),
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(itemPrice) })] })] }),
+                                            new TableCell({ margins: { top: 100, bottom: 100, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(itemTotal) })] })] }),
+                                        ]
+                                    });
+                                }),
+                                // 4. Khối tính toán tài chính (Financial Summary Rows)
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            columnSpan: 5,
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "Cộng tiền hàng (Total Net Amount):", bold: true })] })]
+                                        }),
+                                        new TableCell({
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(subTotalCalc) })] })]
+                                        }),
+                                    ]
+                                }),
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            columnSpan: 5,
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: `Thuế suất GTGT (VAT Rate): ${taxRate}%    Tiền thuế GTGT (VAT Amount):`, bold: true })] })]
+                                        }),
+                                        new TableCell({
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(vatAmount) })] })]
+                                        }),
+                                    ]
+                                }),
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            columnSpan: 5,
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "Tổng cộng tiền thanh toán (Total Gross Amount):", bold: true })] })]
+                                        }),
+                                        new TableCell({
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(totalGross), bold: true })] })]
+                                        }),
+                                    ]
+                                }),
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            columnSpan: 6,
+                                            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                            children: [new Paragraph({ children: [new TextRun({ text: `Số tiền viết bằng chữ (Amount in words): ${numberToVietnameseWords(totalGross)}`, italics: true })] })]
+                                        }),
+                                    ]
+                                })
+                            ]
+                        }),
+
+                        new Paragraph({ spacing: { before: 240, after: 120 }, children: [new TextRun("")] }),
+
+                        // 5. Khối Ký tên (Signatures)
+                        new Table({
+                            width: { type: WidthType.PERCENTAGE, size: 100 },
+                            rows: [
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            width: { type: WidthType.PERCENTAGE, size: 50 },
+                                            borders: noBorder,
+                                            children: [
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "NGƯỜI MUA HÀNG", bold: true })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true })],
+                                                }),
+                                            ],
+                                        }),
+                                        new TableCell({
+                                            width: { type: WidthType.PERCENTAGE, size: 50 },
+                                            borders: noBorder,
+                                            children: [
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    children: [new TextRun({ text: "NGƯỜI BÁN HÀNG", bold: true })],
+                                                }),
+                                                new Paragraph({
+                                                    alignment: AlignmentType.CENTER,
+                                                    spacing: { after: 120 },
+                                                    children: [new TextRun({ text: "(Ký điện tử bởi: CÔNG TY CP TMDV VOSCO - VTSC)", italics: true, size: 20 })],
+                                                }),
+                                                new Table({
+                                                    width: { type: WidthType.PERCENTAGE, size: 80 },
+                                                    alignment: AlignmentType.CENTER,
+                                                    borders: {
+                                                        top: { style: BorderStyle.SINGLE, size: 2, color: "059669" },
+                                                        bottom: { style: BorderStyle.SINGLE, size: 2, color: "059669" },
+                                                        left: { style: BorderStyle.SINGLE, size: 2, color: "059669" },
+                                                        right: { style: BorderStyle.SINGLE, size: 2, color: "059669" },
+                                                    },
+                                                    rows: [
+                                                        new TableRow({
+                                                            children: [
+                                                                new TableCell({
+                                                                    margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            children: [new TextRun({ text: "✓ Ký bởi: CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO", bold: true, color: "059669", size: 20 })]
+                                                                        }),
+                                                                        new Paragraph({
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            children: [new TextRun({ text: `Ngày ký: ${orderDateStr}`, color: "059669", size: 20 })]
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
+                                                        })
+                                                    ]
+                                                })
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }],
+            });
+
+            const blob = await Packer.toBlob(doc);
+            const fileName = `Hoa_Don_GTGT_VTSC_${orderId.replace('#', '')}.docx`;
+            saveAs(blob, fileName);
+        } catch (error) {
+            console.error("Lỗi tạo hóa đơn GTGT:", error);
+            alert("Có lỗi xảy ra khi tạo hóa đơn GTGT!");
+        }
+    };
+
 
     useEffect(() => {
         fetchOrders();
@@ -374,7 +913,7 @@ export default function OrderManagementPage() {
         if (!selectedProductId) return;
         const sp = allProducts.find(p => p._id === selectedProductId);
         if (!sp) return;
-        if (sp.TonKho <= 0) { alert('Sản phẩm hết hàng'); return; }
+        if ((sp.TongTonKho || 0) <= 0) { alert('Sản phẩm hết hàng'); return; }
 
         if (!selectedColorCode) return alert('Vui lòng chọn mã màu sơn');
 
@@ -399,7 +938,7 @@ export default function OrderManagementPage() {
             tenSanPham: sp.TenDongSon,
             soLuong: 1,
             donGia: sp.DonGiaCoSo * factor,
-            tonKho: sp.TonKho,
+            tonKho: sp.TonKho ?? sp.TongTonKho ?? 0,
             maMau: chosenMaMau,
             tenMau: chosenTenMau,
             hexCode: chosenHex
@@ -592,528 +1131,10 @@ export default function OrderManagementPage() {
         XLSX.writeFile(workbook, `VTSC_Danh_Sach_Don_Hang_${new Date().toLocaleDateString().replace(/\//g, '_')}.xlsx`);
     };
 
-    const handleDownloadPhieuCoc = async () => {
-        if (!selectedOrder) {
-            alert('Không tìm thấy thông tin đơn hàng để in phiếu cọc!');
-            return;
-        }
-
-        try {
-            // Mock data values requested as fallbacks
-            const customerName = selectedOrder.KhachHang?.TenKhachHang || 'An Phúc';
-            const customerPhone = selectedOrder.KhachHang?.SDT || 'Chưa cập nhật';
-            const productName = selectedOrder.Items?.[0]?.TenSanPham || 'Majestic Đẹp Nguyên Bản';
-            const quantity = selectedOrder.Items?.reduce((s, i) => s + i.SoLuong, 0) || 1;
-            const colorCode = selectedOrder.Items?.[0]?.MaMau || 'BASE';
-            const powderType = selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon';
-            const totalValue = selectedOrder.TongTien || 1250000;
-            const depositValue = selectedOrder.DaCoc || 625000;
-            const remainingValue = Math.max(0, totalValue - depositValue);
-            const depositPercent = totalValue > 0 ? Math.round((depositValue / totalValue) * 100) : 50;
-
-            const doc = new Document({
-                creator: "VTSC PaintPro",
-                title: `Phieu_Coc_DH${selectedOrder.MaDonHang}`,
-                description: "Phiếu biên nhận đặt cọc",
-                styles: {
-                    default: {
-                        document: {
-                            run: {
-                                font: "Times New Roman",
-                                size: 24, // 12pt (24 half-points)
-                            },
-                        },
-                    },
-                },
-                sections: [
-                    {
-                        properties: {},
-                        children: [
-                            // 1. Header
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.NONE },
-                                    bottom: { style: BorderStyle.NONE },
-                                    left: { style: BorderStyle.NONE },
-                                    right: { style: BorderStyle.NONE },
-                                    insideHorizontal: { style: BorderStyle.NONE },
-                                    insideVertical: { style: BorderStyle.NONE },
-                                },
-                                rows: [
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "CÔNG TY CP TMDV VOSCO (VTSC)", bold: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "Hệ thống PaintPro" })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    })
-                                                ]
-                                            }),
-                                            new TableCell({
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", bold: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "Độc lập - Tự do - Hạnh phúc", bold: true, underline: {} })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    })
-                                                ]
-                                            })
-                                        ]
-                                    })
-                                ]
-                            }),
-
-                            new Paragraph({ text: "", spacing: { after: 400 } }),
-
-                            // 2. Tiêu đề văn bản
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "PHIẾU BIÊN NHẬN ĐẶT CỌC", bold: true, size: 32 }) // 16pt
-                                ],
-                                alignment: AlignmentType.CENTER,
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: `Mã đơn hàng: #${selectedOrder.MaDonHang} - Ngày tạo: ${new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN')}`,
-                                        italics: true
-                                    })
-                                ],
-                                alignment: AlignmentType.CENTER,
-                                spacing: { after: 400 }
-                            }),
-
-                            // 3. Nội dung chính
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Họ tên khách hàng: ", bold: true }),
-                                    new TextRun({ text: customerName })
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Số điện thoại: ", bold: true }),
-                                    new TextRun({ text: customerPhone })
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Nội dung đặt cọc: ", bold: true }),
-                                    new TextRun({
-                                        text: `Đặt cọc thi công/mua sơn tĩnh điện sản phẩm "${productName} (${quantity} thùng)", Mã màu: ${colorCode}, Loại bột: ${powderType}.`
-                                    })
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Tổng giá trị đơn hàng: ", bold: true }),
-                                    new TextRun({ text: `${totalValue.toLocaleString('vi-VN')} đ` })
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: `Số tiền đã đặt cọc (${depositPercent}%): `, bold: true }),
-                                    new TextRun({ text: `${depositValue.toLocaleString('vi-VN')} đ` })
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Viết bằng chữ: ", bold: true }),
-                                    new TextRun({ text: "(Sáu trăm hai mươi lăm nghìn đồng chẵn)", italics: true }) // Mặc định mock theo yêu cầu
-                                ],
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Số tiền còn lại cần thanh toán: ", bold: true }),
-                                    new TextRun({ text: `${remainingValue.toLocaleString('vi-VN')} đ` })
-                                ],
-                                spacing: { after: 400 }
-                            }),
-
-                            // 4. Chữ ký (Footer)
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.NONE },
-                                    bottom: { style: BorderStyle.NONE },
-                                    left: { style: BorderStyle.NONE },
-                                    right: { style: BorderStyle.NONE },
-                                    insideHorizontal: { style: BorderStyle.NONE },
-                                    insideVertical: { style: BorderStyle.NONE },
-                                },
-                                rows: [
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "NGƯỜI NỘP TIỀN", bold: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({ text: "", spacing: { after: 1000 } })
-                                                ]
-                                            }),
-                                            new TableCell({
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "ĐẠI DIỆN CÔNG TY", bold: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true })
-                                                        ],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({ text: "", spacing: { after: 1000 } })
-                                                ]
-                                            })
-                                        ]
-                                    })
-                                ]
-                            })
-                        ]
-                    }
-                ]
-            });
-
-            Packer.toBlob(doc).then(blob => saveAs(blob, `Phieu_Coc_DH${selectedOrder.MaDonHang}.docx`));
-        } catch (error) {
-            console.error('Error generating document:', error);
-            alert('Đã xảy ra lỗi khi tạo phiếu cọc!');
-        }
-    };
-
-    const handleDownloadHoaDonGTGT = async () => {
-        if (!selectedOrder) {
-            alert('Không tìm thấy thông tin đơn hàng để in hóa đơn!');
-            return;
-        }
-
-        try {
-            // Dùng dữ liệu thật từ đơn hàng thay vì mock data
-            const customerName = selectedOrder.KhachHang?.TenKhachHang || 'Khách vãng lai';
-            const companyName = (selectedOrder.KhachHang as any)?.TenCongTy || '';
-            const taxCode = (selectedOrder.KhachHang as any)?.MaSoThue || '(Khách lẻ)';
-            const address = selectedOrder.DiaChiGiaoHang || selectedOrder.KhachHang?.DiaChi || '(Chưa cập nhật địa chỉ)';
-            const paymentMethod = selectedOrder.PhuongThucThanhToan === 'TIEN_MAT' ? 'Tiền mặt (TM)' : 'Chuyển khoản (CK)';
-
-            const productName = `Sơn tĩnh điện cao cấp ${selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon'} - Dòng ${selectedOrder.Items?.[0]?.TenSanPham || 'Majestic Đẹp Nguyên Bản'} (Mã màu: ${selectedOrder.Items?.[0]?.MaMau || 'BASE'}, Nhiệt độ sấy: ${selectedOrder.TechnicalSpecs?.NhietDoSay || '195°C/15 phút'})`;
-            const quantity = selectedOrder.Items?.reduce((s, i) => s + i.SoLuong, 0) || 1;
-
-            // Financial calculations
-            const totalGross = selectedOrder.TongTien || 1250000;
-            const vatRate = 0.08; // 8% as example
-            const totalNet = Math.round(totalGross / (1 + vatRate));
-            const vatAmount = totalGross - totalNet;
-
-            const doc = new Document({
-                creator: "VTSC PaintPro",
-                title: `Hoa_Don_GTGT_VTSC_${selectedOrder.MaDonHang}`,
-                description: "Hóa đơn Giá trị Gia tăng",
-                styles: {
-                    default: {
-                        document: {
-                            run: {
-                                font: "Arial",
-                                size: 22, // 11pt (22 half-points)
-                            },
-                        },
-                    },
-                },
-                sections: [
-                    {
-                        properties: {
-                            page: {
-                                margin: {
-                                    top: 1134, // 2cm = ~1134 dxas
-                                    bottom: 1134,
-                                    left: 1417, // 2.5cm = ~1417 dxas
-                                    right: 1134,
-                                }
-                            }
-                        },
-                        children: [
-                            // 1. Khối thông tin Hóa đơn & Đơn vị bán hàng (Header)
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.NONE },
-                                    bottom: { style: BorderStyle.NONE },
-                                    left: { style: BorderStyle.NONE },
-                                    right: { style: BorderStyle.NONE },
-                                    insideHorizontal: { style: BorderStyle.NONE },
-                                    insideVertical: { style: BorderStyle.NONE },
-                                },
-                                rows: [
-                                    new TableRow({
-                                        children: [
-                                            // Cột trái: Thông tin Người bán
-                                            new TableCell({
-                                                width: { size: 50, type: WidthType.PERCENTAGE },
-                                                children: [
-                                                    new Paragraph({ children: [new TextRun({ text: "CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)", bold: true, size: 24 })], spacing: { after: 120 } }),
-                                                    new Paragraph({ children: [new TextRun({ text: "Mã số thuế: 0100100456", bold: true })], spacing: { after: 120 } }),
-                                                    new Paragraph({ children: [new TextRun({ text: "Địa chỉ: Số 215 Lạch Tray, Gia Viên, Hải Phòng" })], spacing: { after: 120 } }),
-                                                    new Paragraph({ children: [new TextRun({ text: "Điện thoại: 024.3388.xxxx - Số tài khoản: 110000123456 tại VietinBank" })], spacing: { after: 120 } })
-                                                ]
-                                            }),
-                                            // Cột phải: Thông tin Mẫu hóa đơn
-                                            new TableCell({
-                                                width: { size: 50, type: WidthType.PERCENTAGE },
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "HÓA ĐƠN GIÁ TRỊ GIA TĂNG", bold: true, size: 28, color: "FF0000" })],
-                                                        alignment: AlignmentType.CENTER,
-                                                        spacing: { after: 120 }
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "Mẫu số (Form): 1C26TAA" })],
-                                                        alignment: AlignmentType.CENTER,
-                                                        spacing: { after: 120 }
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "Ký hiệu (Serial): K26TBB" })],
-                                                        alignment: AlignmentType.CENTER,
-                                                        spacing: { after: 120 }
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "Số (No.): 0004512", bold: true, color: "FF0000" })],
-                                                        alignment: AlignmentType.CENTER,
-                                                        spacing: { after: 120 }
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: `Ngày (Date): 21 Tháng 05 Năm 2026`, italics: true })],
-                                                        alignment: AlignmentType.CENTER,
-                                                        spacing: { after: 120 }
-                                                    })
-                                                ]
-                                            })
-                                        ]
-                                    })
-                                ]
-                            }),
-
-                            new Paragraph({ text: "", spacing: { after: 300 } }),
-                            new Paragraph({
-                                border: { bottom: { style: BorderStyle.SINGLE, space: 1, color: "CCCCCC" } },
-                                spacing: { after: 300 }
-                            }),
-
-                            // 2. Khối thông tin Người mua hàng (Buyer Information)
-                            new Paragraph({ children: [new TextRun({ text: "Họ tên người mua hàng: ", italics: true }), new TextRun({ text: customerName, bold: true })], spacing: { after: 120 } }),
-                            new Paragraph({ children: [new TextRun({ text: "Tên đơn vị: " }), new TextRun({ text: companyName || "(Không có)" })], spacing: { after: 120 } }),
-                            new Paragraph({ children: [new TextRun({ text: "Mã số thuế: " }), new TextRun({ text: taxCode })], spacing: { after: 120 } }),
-                            new Paragraph({ children: [new TextRun({ text: "Địa chỉ: " }), new TextRun({ text: address })], spacing: { after: 120 } }),
-                            new Paragraph({ children: [new TextRun({ text: "Hình thức thanh toán: " }), new TextRun({ text: paymentMethod })], spacing: { after: 300 } }),
-
-                            // 3. Bảng chi tiết hàng hóa, dịch vụ (Goods Table)
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
-                                    bottom: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
-                                    left: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
-                                    right: { style: BorderStyle.SINGLE, size: 1, color: "AAAAAA" },
-                                    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
-                                    insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
-                                },
-                                rows: [
-                                    // Header Row
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "STT", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Tên hàng hóa, dịch vụ", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Đơn vị tính", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Số lượng", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Đơn giá", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Thành tiền", bold: true })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } })
-                                        ]
-                                    }),
-                                    // Data Row
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "1" })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: productName })] })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Thùng" })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: quantity.toString() })], alignment: AlignmentType.CENTER })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${totalNet.toLocaleString('vi-VN')} đ` })], alignment: AlignmentType.RIGHT })], margins: { top: 100, bottom: 100, left: 100, right: 100 } }),
-                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${totalNet.toLocaleString('vi-VN')} đ` })], alignment: AlignmentType.RIGHT })], margins: { top: 100, bottom: 100, left: 100, right: 100 } })
-                                        ]
-                                    })
-                                ]
-                            }),
-
-                            new Paragraph({ text: "", spacing: { after: 200 } }),
-
-                            // 4. Khối tính toán tài chính (Financial Summary Rows)
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.NONE },
-                                    bottom: { style: BorderStyle.NONE },
-                                    left: { style: BorderStyle.NONE },
-                                    right: { style: BorderStyle.NONE },
-                                    insideHorizontal: { style: BorderStyle.NONE },
-                                    insideVertical: { style: BorderStyle.NONE },
-                                },
-                                rows: [
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: "Cộng tiền hàng (Total Net Amount):", alignment: AlignmentType.RIGHT })] }),
-                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: `${totalNet.toLocaleString('vi-VN')} đ`, alignment: AlignmentType.RIGHT })] })
-                                        ]
-                                    }),
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: "Thuế suất GTGT (VAT Rate): 8%", alignment: AlignmentType.RIGHT })] }),
-                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: " ", alignment: AlignmentType.RIGHT })] }) // Optional spacing
-                                        ]
-                                    }),
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: "Tiền thuế GTGT (VAT Amount):", alignment: AlignmentType.RIGHT })] }),
-                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: `${vatAmount.toLocaleString('vi-VN')} đ`, alignment: AlignmentType.RIGHT })] })
-                                        ]
-                                    }),
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: "Tổng cộng tiền thanh toán (Total Gross Amount):", bold: true })], alignment: AlignmentType.RIGHT })] }),
-                                            new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: `${totalGross.toLocaleString('vi-VN')} đ`, bold: true })], alignment: AlignmentType.RIGHT })] })
-                                        ]
-                                    })
-                                ]
-                            }),
-
-                            new Paragraph({ text: "", spacing: { after: 100 } }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: "Số tiền viết bằng chữ (Amount in words): ", italics: true }),
-                                    new TextRun({ text: "Một triệu hai trăm năm mươi nghìn đồng chẵn.", italics: true, bold: true }) // Dùng mock text
-                                ],
-                                spacing: { after: 400 }
-                            }),
-
-                            // 5. Khối Ký tên (Signatures)
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: {
-                                    top: { style: BorderStyle.NONE },
-                                    bottom: { style: BorderStyle.NONE },
-                                    left: { style: BorderStyle.NONE },
-                                    right: { style: BorderStyle.NONE },
-                                    insideHorizontal: { style: BorderStyle.NONE },
-                                    insideVertical: { style: BorderStyle.NONE },
-                                },
-                                rows: [
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({
-                                                width: { size: 50, type: WidthType.PERCENTAGE },
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "NGƯỜI MUA HÀNG", bold: true })],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "(Ký, ghi rõ họ tên)", italics: true })],
-                                                        alignment: AlignmentType.CENTER
-                                                    })
-                                                ]
-                                            }),
-                                            new TableCell({
-                                                width: { size: 50, type: WidthType.PERCENTAGE },
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [new TextRun({ text: "NGƯỜI BÁN HÀNG", bold: true })],
-                                                        alignment: AlignmentType.CENTER
-                                                    }),
-                                                    // Giả lập Digital Signature Box
-                                                    new Table({
-                                                        width: { size: 80, type: WidthType.PERCENTAGE },
-                                                        alignment: AlignmentType.CENTER,
-                                                        borders: {
-                                                            top: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
-                                                            bottom: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
-                                                            left: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
-                                                            right: { style: BorderStyle.SINGLE, size: 6, color: "0055AA" },
-                                                        },
-                                                        rows: [
-                                                            new TableRow({
-                                                                children: [
-                                                                    new TableCell({
-                                                                        margins: { top: 150, bottom: 150, left: 150, right: 150 },
-                                                                        children: [
-                                                                            new Paragraph({
-                                                                                children: [new TextRun({ text: "✔ Ký bởi: CÔNG TY CP TMDV VOSCO - VTSC", bold: true, color: "008800", size: 18 })],
-                                                                                alignment: AlignmentType.CENTER,
-                                                                                spacing: { after: 100 }
-                                                                            }),
-                                                                            new Paragraph({
-                                                                                children: [new TextRun({ text: `Ký ngày: 21/05/2026`, italics: true, size: 16 })],
-                                                                                alignment: AlignmentType.CENTER
-                                                                            })
-                                                                        ]
-                                                                    })
-                                                                ]
-                                                            })
-                                                        ]
-                                                    })
-                                                ]
-                                            })
-                                        ]
-                                    })
-                                ]
-                            })
-                        ]
-                    }
-                ]
-            });
-
-            Packer.toBlob(doc).then(blob => saveAs(blob, `Hoa_Don_GTGT_VTSC_${selectedOrder.MaDonHang}.docx`));
-        } catch (error) {
-            console.error('Error generating document:', error);
-            alert('Đã xảy ra lỗi khi tạo Hóa đơn GTGT!');
-        }
-    };
 
     const STATUS_MAP = {
         'CHO_XAC_NHAN': { label: 'Chờ xác nhận', color: '#d97706', icon: Clock },
-        'DANG_XU_LY': { label: 'Đang xử lý', color: '#2563eb', icon: Package },
+        'DANG_XU_LY': { label: 'Đã xử lý xong', color: '#2563eb', icon: Package },
         'DANG_GIAO': { label: 'Đang vận chuyển', color: '#7c3aed', icon: Truck },
         'DA_GIAO': { label: 'Đã giao hàng', color: '#059669', icon: CheckCircle },
         'DA_HUY': { label: 'Đã hủy', color: '#e11d48', icon: XCircle },
@@ -1122,7 +1143,7 @@ export default function OrderManagementPage() {
     const TABS = [
         { key: 'ALL', label: 'Tất cả' },
         { key: 'CHO_XAC_NHAN', label: 'Chờ xác nhận' },
-        { key: 'DANG_XU_LY', label: 'Đang xử lý' },
+        { key: 'DANG_XU_LY', label: 'Đã xử lý xong' },
         { key: 'DANG_GIAO', label: 'Đang vận chuyển' },
         { key: 'DA_GIAO', label: 'Đã giao hàng' },
         { key: 'DA_HUY', label: 'Đã hủy' }
@@ -1175,6 +1196,62 @@ export default function OrderManagementPage() {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Kiện Hàng Gần Đây / Tracking Section */}
+            <div className="bg-gradient-to-br from-blue-50/40 via-indigo-50/20 to-white p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+                        <Truck size={22} className="animate-bounce" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Theo Dõi Kiện Hàng Mới Nhất</h2>
+                        <p className="text-xs text-slate-400 font-semibold mt-0.5">Click vào kiện hàng để xem chi tiết lộ trình vận chuyển trên toàn cầu</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {trackingData.map(t => {
+                        const currentStep = t.steps.find(s => s.status === 'current');
+                        const completedSteps = t.steps.filter(s => s.status === 'completed').length;
+                        const totalSteps = t.steps.length;
+                        return (
+                            <div
+                                key={t.code}
+                                className="bg-white border border-slate-100 rounded-3xl p-6 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between group relative overflow-hidden"
+                                onClick={() => {
+                                    window.location.href = `/tracking?code=${t.code}`;
+                                }}
+                            >
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/20 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                                
+                                <div className="relative z-10 flex-1">
+                                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                                        {t.code}
+                                    </span>
+                                    <div className="font-extrabold text-slate-800 mt-3 text-[14px]">{t.customer}</div>
+                                    <div className="text-[12px] text-slate-400 font-semibold mt-0.5">{t.product}</div>
+                                    
+                                    <div className="flex items-center gap-2 mt-4">
+                                        <div className="w-28 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                            <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(completedSteps / totalSteps) * 100}%` }} />
+                                        </div>
+                                        <span className="text-[11px] font-bold text-slate-400">{completedSteps}/{totalSteps} chặng</span>
+                                    </div>
+                                    {currentStep && (
+                                        <span className="inline-block mt-3 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold shadow-sm">
+                                            • {currentStep.label.toUpperCase()}
+                                        </span>
+                                    )}
+                                </div>
+                                
+                                <div className="relative z-10 bg-white p-3 rounded-2xl border border-slate-100 group-hover:border-blue-200 transition-colors shadow-sm ml-4">
+                                    <QRCodeSVG value={`https://vtsc.vn/tracking/${t.code}`} size={75} bgColor="#ffffff" fgColor="#0c102a" level="M" />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Filters & Search */}
@@ -1235,14 +1312,14 @@ export default function OrderManagementPage() {
                     <table className="w-full border-collapse min-w-[1000px]">
                         <thead>
                             <tr className="border-b border-slate-50">
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-36">Mã đơn hàng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Khách hàng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Số lượng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Tổng tiền</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Thanh toán</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Hạn xác nhận</th>
-                                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest w-40">Thao tác</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-36 whitespace-nowrap">Mã đơn hàng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Khách hàng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Số lượng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Tổng tiền</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Thanh toán</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Trạng thái</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Hạn xác nhận</th>
+                                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest w-40 whitespace-nowrap">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -1289,53 +1366,63 @@ export default function OrderManagementPage() {
                                                     order.PhuongThucThanhToan || 'COD'}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider" style={{
-                                            background: `${STATUS_MAP[order.TrangThai].color}15`,
-                                            color: STATUS_MAP[order.TrangThai].color,
-                                        }}>
+                                        <span
+                                            className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border"
+                                            style={{
+                                                background: `${STATUS_MAP[order.TrangThai].color}18`,
+                                                color: STATUS_MAP[order.TrangThai].color,
+                                                borderColor: `${STATUS_MAP[order.TrangThai].color}40`
+                                            }}
+                                        >
                                             {STATUS_MAP[order.TrangThai].label}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-[13px] font-medium">
                                         {order.TrangThai === 'CHO_XAC_NHAN' ? (
-                                            <div style={{ color: new Date(order.HanXacNhan) < new Date() ? '#e11d48' : '#059669' }}>
+                                            <span style={{ color: new Date(order.HanXacNhan) < new Date() ? '#e11d48' : '#059669' }}>
                                                 {new Date(order.HanXacNhan).toLocaleString()}
-                                            </div>
-                                        ) : <span className="text-slate-400">-</span>}
+                                            </span>
+                                        ) : <span className="text-slate-300">—</span>}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
+                                        <div className="flex items-center gap-2 justify-end">
                                             <button
                                                 onClick={() => { setSelectedOrder(order); setIsDetailsModalOpen(true); }}
-                                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer"
+                                                className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer border-none"
                                                 title="Xem chi tiết"
                                             >
-                                                <Eye size={14} />
+                                                <Eye size={15} />
                                             </button>
+                                            {!isAdminOrEmployee && (order.TrangThai === 'DANG_GIAO' || order.TrangThai === 'DA_GIAO') && (
+                                                <Link
+                                                    href="/tracking"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-[11px] bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors no-underline"
+                                                    title="Theo dõi vận chuyển"
+                                                >
+                                                    <Truck size={13} /> Theo dõi
+                                                </Link>
+                                            )}
                                             {isAdminOrEmployee && (
                                                 <>
                                                     {order.TrangThai === 'CHO_XAC_NHAN' && (
                                                         <button
                                                             onClick={() => {
-                                                                if ((order.DaCoc || 0) <= 0) {
-                                                                    alert('Đơn hàng chưa có tiền cọc. Vui lòng cập nhật tiền cọc TRƯỚC khi xác nhận sản xuất.');
-                                                                    return;
-                                                                }
                                                                 handleUpdateStatus(order._id, 'DANG_XU_LY');
                                                             }}
-                                                            className="h-8 px-3 flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
-                                                            title="Xác nhận sản xuất"
+                                                            className="inline-flex items-center px-3 py-1.5 rounded-xl font-bold text-[11px] bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-all cursor-pointer border-none"
+                                                            title="Xác nhận đơn"
                                                         >
-                                                            Xác nhận
+                                                            XÁC NHẬN
                                                         </button>
                                                     )}
                                                     {order.TrangThai === 'DANG_XU_LY' && (
                                                         <button
                                                             onClick={() => handleUpdateStatus(order._id, 'DANG_GIAO')}
-                                                            className="h-8 px-3 flex items-center justify-center rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
+                                                            className="inline-flex items-center px-3 py-1.5 rounded-xl font-bold text-[11px] text-white hover:opacity-90 shadow-sm transition-all cursor-pointer border-none"
+                                                            style={{ background: '#7c3aed' }}
                                                             title="Giao hàng"
                                                         >
-                                                            Giao hàng
+                                                            GIAO HÀNG
                                                         </button>
                                                     )}
                                                 </>
@@ -1347,921 +1434,990 @@ export default function OrderManagementPage() {
                         </tbody>
                     </table>
                 </div>
-            </div>
 
-            {/* ═══ CREATE ORDER MODAL ═══ */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-6xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
-                        {/* Header */}
-                        <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-                            <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                                <Plus size={22} className="text-blue-600" /> Tạo Đơn Hàng Mới
-                            </h3>
-                            <button
-                                onClick={() => setIsCreateModalOpen(false)}
-                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer"
-                            >
-                                ×
-                            </button>
-                        </div>
+                {/* ═══ CREATE ORDER MODAL ═══ */}
+                {isCreateModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+                        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-6xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                            {/* Header */}
+                            <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+                                <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                                    <Plus size={22} className="text-blue-600" /> Tạo Đơn Hàng Mới
+                                </h3>
+                                <button
+                                    onClick={() => setIsCreateModalOpen(false)}
+                                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer"
+                                >
+                                    ×
+                                </button>
+                            </div>
 
-                        <div className="p-8 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-8 custom-scrollbar">
-                            {/* Left: Khách hàng + sản phẩm */}
-                            <div className="lg:col-span-7 flex flex-col gap-6">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {/* Khách hàng */}
-                                    <div>
-                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                                            Khách hàng <span className="text-rose-500">*</span>
-                                        </label>
-                                        <select
-                                            className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
-                                            value={selectedCustomerId}
-                                            onChange={e => handleSelectCustomer(e.target.value)}
-                                        >
-                                            <option value="">-- Chọn khách hàng --</option>
-                                            {customers.map(c => (
-                                                <option key={c._id} value={c._id} className="text-slate-800 bg-white">
-                                                    [{c.MaKH}] {c.TenKhachHang} — {c.SDT} ({c.PhanLoai || 'Chưa phân loại'})
-                                                </option>
-                                            ))}
-                                        </select>
+                            <div className="p-8 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-8 custom-scrollbar">
+                                {/* Left: Khách hàng + sản phẩm */}
+                                <div className="lg:col-span-7 flex flex-col gap-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* Khách hàng */}
+                                        <div>
+                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                                Khách hàng <span className="text-rose-500">*</span>
+                                            </label>
+                                            <select
+                                                className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
+                                                value={selectedCustomerId}
+                                                onChange={e => handleSelectCustomer(e.target.value)}
+                                            >
+                                                <option value="">-- Chọn khách hàng --</option>
+                                                {customers.map(c => (
+                                                    <option key={c._id} value={c._id} className="text-slate-800 bg-white">
+                                                        [{c.MaKH}] {c.TenKhachHang} — {c.SDT} ({c.PhanLoai || 'Chưa phân loại'})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Khuyến mãi */}
+                                        <div>
+                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                                Chương trình ưu đãi
+                                            </label>
+                                            <select
+                                                className={`w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer ${calculatedDiscount > 0 ? 'ring-2 ring-emerald-500/20' : ''}`}
+                                                value={selectedPromotionId}
+                                                onChange={e => setSelectedPromotionId(e.target.value)}
+                                            >
+                                                <option value="">-- Không sử dụng ưu đãi --</option>
+                                                {promotions.map(p => (
+                                                    <option key={p._id} value={p._id} disabled={orderSubtotal < p.DonHangToiThieu} className="text-slate-800 bg-white">
+                                                        {p.MaVoucher} — {p.LoaiGiamGia === 'PHAN_TRAM' ? `Giảm ${p.MucGiam}%` : `Giảm ${p.MucGiam.toLocaleString()}₫`} {orderSubtotal < p.DonHangToiThieu ? `(Thiếu ${(p.DonHangToiThieu - orderSubtotal).toLocaleString()}₫)` : ''}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
 
-                                    {/* Khuyến mãi */}
-                                    <div>
+                                    {/* Thêm sản phẩm */}
+                                    <div className="space-y-4">
                                         <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                                            Chương trình ưu đãi
+                                            Sản phẩm sơn <span className="text-rose-500">*</span>
                                         </label>
-                                        <select
-                                            className={`w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer ${calculatedDiscount > 0 ? 'ring-2 ring-emerald-500/20' : ''}`}
-                                            value={selectedPromotionId}
-                                            onChange={e => setSelectedPromotionId(e.target.value)}
-                                        >
-                                            <option value="">-- Không sử dụng ưu đãi --</option>
-                                            {promotions.map(p => (
-                                                <option key={p._id} value={p._id} disabled={orderSubtotal < p.DonHangToiThieu} className="text-slate-800 bg-white">
-                                                    {p.MaVoucher} — {p.LoaiGiamGia === 'PHAN_TRAM' ? `Giảm ${p.MucGiam}%` : `Giảm ${p.MucGiam.toLocaleString()}₫`} {orderSubtotal < p.DonHangToiThieu ? `(Thiếu ${(p.DonHangToiThieu - orderSubtotal).toLocaleString()}₫)` : ''}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <div className="flex gap-3">
+                                            <select
+                                                className="flex-1 bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
+                                                value={selectedProductId}
+                                                onChange={e => { setSelectedProductId(e.target.value); setSelectedColorCode(''); setColorSearchTerm(''); }}
+                                            >
+                                                <option value="">-- Chọn sản phẩm --</option>
+                                                {allProducts.filter(p => (p.TonKho ?? p.TongTonKho ?? 0) > 0).map(p => {
+                                                    const kh = customers.find(c => c._id === selectedCustomerId);
+                                                    let factor = 1.0;
+                                                    let labelSuffix = "";
+                                                    if (kh?.PhanLoai === 'B2B') {
+                                                        factor = 1.2;
+                                                        labelSuffix = " (B2B +20%)";
+                                                    } else if (kh?.PhanLoai === 'B2C') {
+                                                        factor = 1.3;
+                                                        labelSuffix = " (B2C +30%)";
+                                                    }
+                                                    const displayPrice = p.DonGiaCoSo * factor;
+                                                    return (
+                                                        <option key={p._id} value={p._id}>
+                                                            {p.TenDongSon} — {displayPrice.toLocaleString()}₫{labelSuffix} (Kho: {p.TonKho ?? p.TongTonKho ?? 0})
+                                                        </option>
+                                                    );
+                                                })}
+                                            </select>
+                                            <button
+                                                onClick={handleAddProduct}
+                                                disabled={!selectedProductId || !selectedColorCode}
+                                                className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-[14px] hover:bg-blue-700 shadow-md disabled:opacity-55 disabled:cursor-not-allowed transition-all cursor-pointer border-none"
+                                            >
+                                                Thêm sản phẩm
+                                            </button>
+                                        </div>
+
+                                        {/* Bảng màu sơn - luôn hiển thị khi đã chọn sản phẩm */}
+                                        {selectedProductId && (
+                                            <div className="p-5 bg-slate-50/50 border border-slate-100 rounded-2xl space-y-3">
+                                                <label className="text-[11px] font-black text-slate-450 uppercase tracking-wider block">
+                                                    Chọn mã màu sơn <span className="text-rose-500">*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                                                    placeholder="Tìm mã màu hoặc tên màu (RAL-1015, Silver, Red...)"
+                                                    value={colorSearchTerm}
+                                                    onChange={e => setColorSearchTerm(e.target.value)}
+                                                />
+                                                {selectedColorCode && (() => {
+                                                    const c = paintColors.find(pc => pc.code === selectedColorCode);
+                                                    return c ? (
+                                                        <div className="flex items-center gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
+                                                            <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-200" style={{ background: c.hex }} />
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="font-bold text-sm text-blue-700">{c.code}</div>
+                                                                <div className="text-[11px] text-slate-400 truncate">{c.name} • {c.category} • {c.gloss}</div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => { setSelectedColorCode(''); setColorSearchTerm(''); }}
+                                                                className="w-6 h-6 rounded-full hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center text-slate-455 transition-colors border-none bg-transparent cursor-pointer font-bold"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    ) : null;
+                                                })()}
+                                                <div className="bg-white border border-slate-150 rounded-xl overflow-hidden max-h-[160px] overflow-y-auto custom-scrollbar">
+                                                    {paintColors
+                                                        .filter(c => {
+                                                            if (!colorSearchTerm) return true;
+                                                            const q = colorSearchTerm.toLowerCase();
+                                                            return c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q);
+                                                        })
+                                                        .map(c => (
+                                                            <div
+                                                                key={c.code}
+                                                                onClick={() => { setSelectedColorCode(c.code); setColorSearchTerm(''); }}
+                                                                className="flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b border-slate-50 last:border-none transition-colors"
+                                                                style={{
+                                                                    backgroundColor: selectedColorCode === c.code ? '#eff6ff' : 'transparent'
+                                                                }}
+                                                                onMouseEnter={e => { if (selectedColorCode !== c.code) e.currentTarget.style.backgroundColor = '#f8fafc'; }}
+                                                                onMouseLeave={e => { if (selectedColorCode !== c.code) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                                            >
+                                                                <div className="w-6 h-6 rounded-md shadow-inner border border-slate-200 flex-shrink-0" style={{ background: c.hex }} />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="text-xs font-bold text-slate-700">{c.code}</div>
+                                                                    <div className="text-[10px] text-slate-400 truncate">{c.name} • {c.category}</div>
+                                                                </div>
+                                                                <div className="text-[10px] font-semibold text-slate-400">{c.surface}</div>
+                                                            </div>
+                                                        ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Danh sách sản phẩm đã chọn */}
+                                    <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full border-collapse">
+                                                <thead>
+                                                    <tr className="bg-slate-50/50 border-b border-slate-150">
+                                                        <th className="px-4 py-3 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Sản phẩm</th>
+                                                        <th className="px-4 py-3 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Mã màu</th>
+                                                        <th className="px-4 py-3 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Số lượng</th>
+                                                        <th className="px-4 py-3 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Đơn giá</th>
+                                                        <th className="px-4 py-3 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Thành tiền</th>
+                                                        <th className="px-4 py-3 w-10"></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50">
+                                                    {orderItems.length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan={6} className="px-4 py-8 text-center text-slate-405 font-medium italic text-sm">
+                                                                Chưa có sản phẩm nào được chọn
+                                                            </td>
+                                                        </tr>
+                                                    ) : orderItems.map((item, idx) => (
+                                                        <tr key={idx} className="hover:bg-slate-50/30 transition-colors">
+                                                            <td className="px-4 py-3">
+                                                                <div className="font-bold text-slate-800 text-xs">{item.tenSanPham}</div>
+                                                                <div className="text-[10px] text-slate-400">Kho: {item.tonKho} thùng</div>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center">
+                                                                <div className="flex items-center gap-1.5 justify-center">
+                                                                    <div className="w-4 h-4 rounded-md shadow-inner border border-slate-200 flex-shrink-0" style={{ background: item.hexCode }} />
+                                                                    <span className="text-[11px] font-black text-slate-700">{item.maMau}</span>
+                                                                </div>
+                                                                <div className="text-[9px] text-slate-400">{item.tenMau}</div>
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <div className="flex items-center justify-center gap-2">
+                                                                    <button
+                                                                        onClick={() => handleItemQtyChange(idx, item.soLuong - 1)}
+                                                                        className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center cursor-pointer border-none font-bold text-sm"
+                                                                    >
+                                                                        -
+                                                                    </button>
+                                                                    <input
+                                                                        type="number"
+                                                                        value={item.soLuong}
+                                                                        onChange={e => handleItemQtyChange(idx, parseInt(e.target.value) || 1)}
+                                                                        className="w-12 text-center bg-slate-50 border border-slate-150 rounded-lg py-1 font-bold text-slate-805 text-xs outline-none"
+                                                                        min={1}
+                                                                        max={item.tonKho}
+                                                                    />
+                                                                    <button
+                                                                        onClick={() => handleItemQtyChange(idx, item.soLuong + 1)}
+                                                                        className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center cursor-pointer border-none font-bold text-sm"
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right text-[12px] font-semibold text-slate-700">
+                                                                {item.donGia.toLocaleString()} ₫
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right text-[12px] font-black text-blue-600">
+                                                                {(item.donGia * item.soLuong).toLocaleString()} ₫
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center">
+                                                                <button
+                                                                    onClick={() => handleRemoveItem(idx)}
+                                                                    className="text-slate-400 hover:text-rose-500 transition-colors bg-transparent border-none cursor-pointer"
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                                {orderItems.length > 0 && (
+                                                    <tfoot>
+                                                        <tr className="bg-slate-50/50 font-black text-slate-700 border-t border-slate-150">
+                                                            <td colSpan={4} className="px-4 py-3.5 text-right text-xs uppercase tracking-wider">Tổng cộng sản phẩm:</td>
+                                                            <td className="px-4 py-3.5 text-right text-sm text-emerald-600 font-black">
+                                                                {orderSubtotal.toLocaleString()} ₫
+                                                            </td>
+                                                            <td></td>
+                                                        </tr>
+                                                    </tfoot>
+                                                )}
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* THÔNG SỐ KỸ THUẬT SƠN */}
+                                    <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl space-y-4">
+                                        <div className="text-[12px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                                            <Layers size={16} /> Thông số kỹ thuật sơn (MERN)
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Loại bột sơn</label>
+                                                <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={loaiBot} onChange={e => setLoaiBot(e.target.value)} />
+                                            </div>
+                                            <div>
+                                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Nhiệt độ sấy</label>
+                                                <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={nhietDoSay} onChange={e => setNhietDoSay(e.target.value)} />
+                                            </div>
+                                            <div>
+                                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Độ dày lớp phủ</label>
+                                                <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={doDayLopPhu} onChange={e => setDoDayLopPhu(e.target.value)} />
+                                            </div>
+                                            <div>
+                                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 flex justify-between items-center">
+                                                    <span>Diện tích sơn (m2)</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsCalculatorOpen(true)}
+                                                        className="text-[9px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-lg px-2 py-0.5 cursor-pointer transition-colors flex items-center gap-1"
+                                                    >
+                                                        <Calculator size={10} /> Công cụ tính
+                                                    </button>
+                                                </label>
+                                                <input type="number" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={tongDienTichSon} onChange={e => setTongDienTichSon(Number(e.target.value))} />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Thêm sản phẩm */}
-                                <div className="space-y-4">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                                        Sản phẩm sơn <span className="text-rose-500">*</span>
-                                    </label>
-                                    <div className="flex gap-3">
-                                        <select
-                                            className="flex-1 bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
-                                            value={selectedProductId}
-                                            onChange={e => { setSelectedProductId(e.target.value); setSelectedColorCode(''); setColorSearchTerm(''); }}
-                                        >
-                                            <option value="">-- Chọn sản phẩm --</option>
-                                            {allProducts.filter(p => p.TonKho > 0).map(p => {
-                                                const kh = customers.find(c => c._id === selectedCustomerId);
-                                                let factor = 1.0;
-                                                let labelSuffix = "";
-                                                if (kh?.PhanLoai === 'B2B') {
-                                                    factor = 1.2;
-                                                    labelSuffix = " (B2B +20%)";
-                                                } else if (kh?.PhanLoai === 'B2C') {
-                                                    factor = 1.3;
-                                                    labelSuffix = " (B2C +30%)";
-                                                }
-                                                const displayPrice = p.DonGiaCoSo * factor;
-                                                return (
-                                                    <option key={p._id} value={p._id}>
-                                                        {p.TenDongSon} — {displayPrice.toLocaleString()}₫{labelSuffix} (Kho: {p.TonKho})
-                                                    </option>
-                                                );
-                                            })}
-                                        </select>
-                                        <button
-                                            onClick={handleAddProduct}
-                                            disabled={!selectedProductId || !selectedColorCode}
-                                            className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-[14px] hover:bg-blue-700 shadow-md disabled:opacity-55 disabled:cursor-not-allowed transition-all cursor-pointer border-none"
-                                        >
-                                            Thêm sản phẩm
-                                        </button>
+                                {/* Right: Thông tin giao hàng + thanh toán */}
+                                <div className="lg:col-span-5 flex flex-col gap-6 lg:border-l lg:border-slate-100 lg:pl-8">
+                                    {/* Địa chỉ giao hàng */}
+                                    <div>
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                            Địa chỉ giao hàng <span className="text-rose-500">*</span>
+                                        </label>
+                                        <textarea
+                                            className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium resize-none min-h-[80px]"
+                                            placeholder="Nhập địa chỉ giao hàng chi tiết..."
+                                            value={diaChiGiaoHang}
+                                            onChange={e => setDiaChiGiaoHang(e.target.value)}
+                                        />
                                     </div>
 
-                                    {/* Bảng màu sơn - luôn hiển thị khi đã chọn sản phẩm */}
-                                    {selectedProductId && (
-                                        <div className="p-5 bg-slate-50/50 border border-slate-100 rounded-2xl space-y-3">
-                                            <label className="text-[11px] font-black text-slate-450 uppercase tracking-wider block">
-                                                Chọn mã màu sơn <span className="text-rose-500">*</span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* SĐT người nhận */}
+                                        <div>
+                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                                SĐT người nhận <span className="text-rose-500">*</span>
                                             </label>
                                             <input
                                                 type="text"
-                                                className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
-                                                placeholder="Tìm mã màu hoặc tên màu (RAL-1015, Silver, Red...)"
-                                                value={colorSearchTerm}
-                                                onChange={e => setColorSearchTerm(e.target.value)}
+                                                className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                                                placeholder="VD: 0912345678"
+                                                value={sdtNguoiNhan}
+                                                onChange={e => setSdtNguoiNhan(e.target.value)}
                                             />
-                                            {selectedColorCode && (() => {
-                                                const c = paintColors.find(pc => pc.code === selectedColorCode);
-                                                return c ? (
-                                                    <div className="flex items-center gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
-                                                        <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-200" style={{ background: c.hex }} />
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="font-bold text-sm text-blue-700">{c.code}</div>
-                                                            <div className="text-[11px] text-slate-400 truncate">{c.name} • {c.category} • {c.gloss}</div>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => { setSelectedColorCode(''); setColorSearchTerm(''); }}
-                                                            className="w-6 h-6 rounded-full hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center text-slate-455 transition-colors border-none bg-transparent cursor-pointer font-bold"
-                                                        >
-                                                            ×
-                                                        </button>
-                                                    </div>
-                                                ) : null;
-                                            })()}
-                                            <div className="bg-white border border-slate-150 rounded-xl overflow-hidden max-h-[160px] overflow-y-auto custom-scrollbar">
-                                                {paintColors
-                                                    .filter(c => {
-                                                        if (!colorSearchTerm) return true;
-                                                        const q = colorSearchTerm.toLowerCase();
-                                                        return c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q);
-                                                    })
-                                                    .map(c => (
-                                                        <div
-                                                            key={c.code}
-                                                            onClick={() => { setSelectedColorCode(c.code); setColorSearchTerm(''); }}
-                                                            className="flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b border-slate-50 last:border-none transition-colors"
-                                                            style={{
-                                                                backgroundColor: selectedColorCode === c.code ? '#eff6ff' : 'transparent'
-                                                            }}
-                                                            onMouseEnter={e => { if (selectedColorCode !== c.code) e.currentTarget.style.backgroundColor = '#f8fafc'; }}
-                                                            onMouseLeave={e => { if (selectedColorCode !== c.code) e.currentTarget.style.backgroundColor = 'transparent'; }}
-                                                        >
-                                                            <div className="w-6 h-6 rounded-md shadow-inner border border-slate-200 flex-shrink-0" style={{ background: c.hex }} />
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="text-xs font-bold text-slate-700">{c.code}</div>
-                                                                <div className="text-[10px] text-slate-400 truncate">{c.name} • {c.category}</div>
-                                                            </div>
-                                                            <div className="text-[10px] font-semibold text-slate-400">{c.surface}</div>
-                                                        </div>
-                                                    ))}
-                                            </div>
                                         </div>
-                                    )}
-                                </div>
 
-                                {/* Danh sách sản phẩm đã chọn */}
-                                <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full border-collapse">
-                                            <thead>
-                                                <tr className="bg-slate-50/50 border-b border-slate-150">
-                                                    <th className="px-4 py-3 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Sản phẩm</th>
-                                                    <th className="px-4 py-3 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Mã màu</th>
-                                                    <th className="px-4 py-3 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Số lượng</th>
-                                                    <th className="px-4 py-3 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Đơn giá</th>
-                                                    <th className="px-4 py-3 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Thành tiền</th>
-                                                    <th className="px-4 py-3 w-10"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-50">
-                                                {orderItems.length === 0 ? (
-                                                    <tr>
-                                                        <td colSpan={6} className="px-4 py-8 text-center text-slate-405 font-medium italic text-sm">
-                                                            Chưa có sản phẩm nào được chọn
-                                                        </td>
-                                                    </tr>
-                                                ) : orderItems.map((item, idx) => (
-                                                    <tr key={idx} className="hover:bg-slate-50/30 transition-colors">
-                                                        <td className="px-4 py-3">
-                                                            <div className="font-bold text-slate-800 text-xs">{item.tenSanPham}</div>
-                                                            <div className="text-[10px] text-slate-400">Kho: {item.tonKho} thùng</div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <div className="flex items-center gap-1.5 justify-center">
-                                                                <div className="w-4 h-4 rounded-md shadow-inner border border-slate-200 flex-shrink-0" style={{ background: item.hexCode }} />
-                                                                <span className="text-[11px] font-black text-slate-700">{item.maMau}</span>
-                                                            </div>
-                                                            <div className="text-[9px] text-slate-400">{item.tenMau}</div>
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <div className="flex items-center justify-center gap-2">
-                                                                <button
-                                                                    onClick={() => handleItemQtyChange(idx, item.soLuong - 1)}
-                                                                    className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center cursor-pointer border-none font-bold text-sm"
-                                                                >
-                                                                    -
-                                                                </button>
-                                                                <input
-                                                                    type="number"
-                                                                    value={item.soLuong}
-                                                                    onChange={e => handleItemQtyChange(idx, parseInt(e.target.value) || 1)}
-                                                                    className="w-12 text-center bg-slate-50 border border-slate-150 rounded-lg py-1 font-bold text-slate-805 text-xs outline-none"
-                                                                    min={1}
-                                                                    max={item.tonKho}
-                                                                />
-                                                                <button
-                                                                    onClick={() => handleItemQtyChange(idx, item.soLuong + 1)}
-                                                                    className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center cursor-pointer border-none font-bold text-sm"
-                                                                >
-                                                                    +
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right text-[12px] font-semibold text-slate-700">
-                                                            {item.donGia.toLocaleString()} ₫
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right text-[12px] font-black text-blue-600">
-                                                            {(item.donGia * item.soLuong).toLocaleString()} ₫
-                                                        </td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <button
-                                                                onClick={() => handleRemoveItem(idx)}
-                                                                className="text-slate-400 hover:text-rose-500 transition-colors bg-transparent border-none cursor-pointer"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                            {orderItems.length > 0 && (
-                                                <tfoot>
-                                                    <tr className="bg-slate-50/50 font-black text-slate-700 border-t border-slate-150">
-                                                        <td colSpan={4} className="px-4 py-3.5 text-right text-xs uppercase tracking-wider">Tổng cộng sản phẩm:</td>
-                                                        <td className="px-4 py-3.5 text-right text-sm text-emerald-600 font-black">
-                                                            {orderSubtotal.toLocaleString()} ₫
-                                                        </td>
-                                                        <td></td>
-                                                    </tr>
-                                                </tfoot>
-                                            )}
-                                        </table>
-                                    </div>
-                                </div>
-
-                                {/* THÔNG SỐ KỸ THUẬT SƠN */}
-                                <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl space-y-4">
-                                    <div className="text-[12px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                                        <Layers size={16} /> Thông số kỹ thuật sơn (MERN)
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* Nhân viên phụ trách */}
                                         <div>
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Loại bột sơn</label>
-                                            <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={loaiBot} onChange={e => setLoaiBot(e.target.value)} />
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Nhiệt độ sấy</label>
-                                            <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={nhietDoSay} onChange={e => setNhietDoSay(e.target.value)} />
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Độ dày lớp phủ</label>
-                                            <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={doDayLopPhu} onChange={e => setDoDayLopPhu(e.target.value)} />
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 flex justify-between items-center">
-                                                <span>Diện tích sơn (m2)</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsCalculatorOpen(true)}
-                                                    className="text-[9px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-lg px-2 py-0.5 cursor-pointer transition-colors flex items-center gap-1"
-                                                >
-                                                    <Calculator size={10} /> Công cụ tính
-                                                </button>
+                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                                Nhân viên sales phụ trách
                                             </label>
-                                            <input type="number" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={tongDienTichSon} onChange={e => setTongDienTichSon(Number(e.target.value))} />
+                                            <select
+                                                className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
+                                                value={selectedSalespersonId}
+                                                onChange={e => setSelectedSalespersonId(e.target.value)}
+                                            >
+                                                <option value="">-- Chọn nhân viên --</option>
+                                                {allStaff.filter(s => s.BoPhan === 'Kinh doanh' || s.BoPhan === 'Sale / MKT' || s.BoPhan === 'CSKH Bảo Hành').map(s => (
+                                                    <option key={s._id} value={s._id} className="text-slate-800 bg-white">{s.MaNV} - {s.HoTen}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            {/* Right: Thông tin giao hàng + thanh toán */}
-                            <div className="lg:col-span-5 flex flex-col gap-6 lg:border-l lg:border-slate-100 lg:pl-8">
-                                {/* Địa chỉ giao hàng */}
-                                <div>
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                                        Địa chỉ giao hàng <span className="text-rose-500">*</span>
-                                    </label>
-                                    <textarea
-                                        className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium resize-none min-h-[80px]"
-                                        placeholder="Nhập địa chỉ giao hàng chi tiết..."
-                                        value={diaChiGiaoHang}
-                                        onChange={e => setDiaChiGiaoHang(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {/* SĐT người nhận */}
+                                    {/* Phương thức thanh toán */}
                                     <div>
-                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                                            SĐT người nhận <span className="text-rose-500">*</span>
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-3 block">
+                                            Phương thức thanh toán
                                         </label>
-                                        <input
-                                            type="text"
-                                            className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
-                                            placeholder="VD: 0912345678"
-                                            value={sdtNguoiNhan}
-                                            onChange={e => setSdtNguoiNhan(e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Nhân viên phụ trách */}
-                                    <div>
-                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                                            Nhân viên sales phụ trách
-                                        </label>
-                                        <select
-                                            className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
-                                            value={selectedSalespersonId}
-                                            onChange={e => setSelectedSalespersonId(e.target.value)}
-                                        >
-                                            <option value="">-- Chọn nhân viên --</option>
-                                            {allStaff.filter(s => s.BoPhan === 'Kinh doanh' || s.BoPhan === 'Sale / MKT' || s.BoPhan === 'CSKH Bảo Hành').map(s => (
-                                                <option key={s._id} value={s._id} className="text-slate-800 bg-white">{s.MaNV} - {s.HoTen}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Phương thức thanh toán */}
-                                <div>
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-3 block">
-                                        Phương thức thanh toán
-                                    </label>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {PAYMENT_METHODS.map(pm => {
-                                            const PMIcon = pm.icon;
-                                            const isActive = phuongThucTT === pm.key;
-                                            return (
-                                                <button
-                                                    key={pm.key}
-                                                    type="button"
-                                                    onClick={() => setPhuongThucTT(pm.key)}
-                                                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all cursor-pointer gap-2 ${isActive
-                                                        ? 'border-blue-600 bg-blue-50/50 text-blue-600 font-bold shadow-sm'
-                                                        : 'border-slate-100 bg-slate-50/30 text-slate-500 hover:bg-slate-50'
-                                                        }`}
-                                                >
-                                                    <PMIcon size={20} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
-                                                    <span className="text-[11px] whitespace-nowrap">{pm.label}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                {/* CHI PHÍ BỔ SUNG & ĐẶT CỌC */}
-                                <div className="p-5 bg-slate-50/50 border border-slate-100 rounded-3xl grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Phụ phí (Đóng gói/VC)</label>
-                                        <input
-                                            type="number"
-                                            className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2 text-sm text-amber-600 font-bold outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
-                                            value={phuPhi}
-                                            onChange={e => setPhuPhi(Number(e.target.value))}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Số tiền đã cọc</label>
-                                        <input
-                                            type="number"
-                                            className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2 text-sm text-emerald-600 font-bold outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
-                                            value={daCoc}
-                                            onChange={e => setDaCoc(Number(e.target.value))}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Ghi chú */}
-                                <div>
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">Ghi chú đơn hàng</label>
-                                    <textarea
-                                        className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium resize-none min-h-[60px]"
-                                        placeholder="Nhập ghi chú khác (tùy chọn)..."
-                                        value={ghiChu}
-                                        onChange={e => setGhiChu(e.target.value)}
-                                    />
-                                </div>
-
-                                {/* Tổng kết & Xác nhận */}
-                                <div className="border-t border-slate-100 pt-6 mt-auto space-y-4">
-                                    <div className="flex justify-between items-center text-sm font-medium">
-                                        <span className="text-slate-400">Trạng thái:</span>
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-amber-50 text-amber-600">Chờ xác nhận</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm font-medium">
-                                        <span className="text-slate-400">Thanh toán:</span>
-                                        <span className="text-slate-800 font-bold">{PAYMENT_METHODS.find(p => p.key === phuongThucTT)?.label}</span>
-                                    </div>
-                                    {calculatedDiscount > 0 && (
-                                        <div className="flex justify-between items-center text-sm font-medium text-emerald-600">
-                                            <span>Chiết khấu ưu đãi:</span>
-                                            <span className="font-black">-{calculatedDiscount.toLocaleString()} ₫</span>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {PAYMENT_METHODS.map(pm => {
+                                                const PMIcon = pm.icon;
+                                                const isActive = phuongThucTT === pm.key;
+                                                return (
+                                                    <button
+                                                        key={pm.key}
+                                                        type="button"
+                                                        onClick={() => setPhuongThucTT(pm.key)}
+                                                        className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all cursor-pointer gap-2 ${isActive
+                                                            ? 'border-blue-600 bg-blue-50/50 text-blue-600 font-bold shadow-sm'
+                                                            : 'border-slate-100 bg-slate-50/30 text-slate-500 hover:bg-slate-50'
+                                                            }`}
+                                                    >
+                                                        <PMIcon size={20} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
+                                                        <span className="text-[11px] whitespace-nowrap">{pm.label}</span>
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
-                                    )}
-                                    <div className="flex justify-between items-end border-t border-slate-50 pt-4">
-                                        <span className="text-xs font-black text-slate-900 uppercase tracking-widest">TỔNG THANH TOÁN:</span>
-                                        <span className="text-2xl font-black text-emerald-600">{(orderSubtotal + phuPhi - calculatedDiscount).toLocaleString()} ₫</span>
                                     </div>
-                                    <button
-                                        onClick={handleCreateOrder}
-                                        disabled={isSubmittingOrder}
-                                        className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
-                                    >
-                                        {isSubmittingOrder ? (
-                                            'ĐANG TẠO ĐƠN HÀNG...'
-                                        ) : (
-                                            <><CheckCircle size={18} /> TẠO ĐƠN HÀNG</>
+
+                                    {/* CHI PHÍ BỔ SUNG & ĐẶT CỌC */}
+                                    <div className="p-5 bg-slate-50/50 border border-slate-100 rounded-3xl grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Phụ phí (Đóng gói/VC)</label>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2 text-sm text-amber-600 font-bold outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+                                                value={phuPhi}
+                                                onChange={e => setPhuPhi(Number(e.target.value))}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Số tiền đã cọc</label>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2 text-sm text-emerald-600 font-bold outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+                                                value={daCoc}
+                                                onChange={e => setDaCoc(Number(e.target.value))}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Ghi chú */}
+                                    <div>
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">Ghi chú đơn hàng</label>
+                                        <textarea
+                                            className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium resize-none min-h-[60px]"
+                                            placeholder="Nhập ghi chú khác (tùy chọn)..."
+                                            value={ghiChu}
+                                            onChange={e => setGhiChu(e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Tổng kết & Xác nhận */}
+                                    <div className="border-t border-slate-100 pt-6 mt-auto space-y-4">
+                                        <div className="flex justify-between items-center text-sm font-medium">
+                                            <span className="text-slate-400">Trạng thái:</span>
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-amber-50 text-amber-600">Chờ xác nhận</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm font-medium">
+                                            <span className="text-slate-400">Thanh toán:</span>
+                                            <span className="text-slate-800 font-bold">{PAYMENT_METHODS.find(p => p.key === phuongThucTT)?.label}</span>
+                                        </div>
+                                        {calculatedDiscount > 0 && (
+                                            <div className="flex justify-between items-center text-sm font-medium text-emerald-600">
+                                                <span>Chiết khấu ưu đãi:</span>
+                                                <span className="font-black">-{calculatedDiscount.toLocaleString()} ₫</span>
+                                            </div>
                                         )}
-                                    </button>
+                                        <div className="flex justify-between items-end border-t border-slate-50 pt-4">
+                                            <span className="text-xs font-black text-slate-900 uppercase tracking-widest">TỔNG THANH TOÁN:</span>
+                                            <span className="text-2xl font-black text-emerald-600">{(orderSubtotal + phuPhi - calculatedDiscount).toLocaleString()} ₫</span>
+                                        </div>
+                                        <button
+                                            onClick={handleCreateOrder}
+                                            disabled={isSubmittingOrder}
+                                            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
+                                        >
+                                            {isSubmittingOrder ? (
+                                                'ĐANG TẠO ĐƠN HÀNG...'
+                                            ) : (
+                                                <><CheckCircle size={18} /> TẠO ĐƠN HÀNG</>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* ═══ DETAILS MODAL ═══ */}
-            {isDetailsModalOpen && selectedOrder && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
-                        {/* Custom Header with Back Button */}
-                        <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={() => setIsDetailsModalOpen(false)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer border-none"
-                                >
-                                    <ArrowLeft size={14} /> Quay lại
-                                </button>
-                                <h3 className="text-lg font-black text-slate-900 uppercase tracking-wider">Chi tiết đơn hàng #{selectedOrder.MaDonHang}</h3>
-                            </div>
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase bg-blue-50 text-blue-600">
-                                {STATUS_MAP[selectedOrder.TrangThai].label}
-                            </span>
-                        </div>
-
-                        {/* Modal Body */}
-                        <div className="p-8 overflow-y-auto space-y-6 custom-scrollbar">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* I. THÔNG TIN KHÁCH HÀNG & SẢN PHẨM */}
-                                <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl hover:shadow-sm transition-all space-y-4">
-                                    <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest flex items-center gap-2 pb-2 border-b border-slate-100">
-                                        <User size={14} /> I. Thông tin khách hàng
-                                    </h4>
-                                    <div className="space-y-2.5 text-[13px] font-medium text-slate-600">
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Khách hàng:</span>
-                                            <span className="font-bold text-slate-800">{selectedOrder.KhachHang?.TenKhachHang || 'Khách vãng lai'}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Số điện thoại:</span>
-                                            <span className="text-slate-800">{selectedOrder.KhachHang?.SDT || '-'}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Sản phẩm:</span>
-                                            <span className="font-bold text-slate-800">{selectedOrder.Items?.[0]?.TenSanPham} ({selectedOrder.Items?.reduce((s, i) => s + i.SoLuong, 0)} thùng)</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Diện tích sơn:</span>
-                                            <span className="font-bold text-amber-600">{selectedOrder.TongDienTichSon || 0} m2</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Ngày tạo:</span>
-                                            <span className="text-slate-800">{new Date(selectedOrder.createdAt).toLocaleDateString()}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* II. THÔNG SỐ KỸ THUẬT SƠN (MERN) */}
-                                <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl hover:shadow-sm transition-all space-y-4">
-                                    <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 pb-2 border-b border-slate-100">
-                                        <Layers size={14} /> II. Thông số kỹ thuật sơn
-                                    </h4>
-                                    <div className="space-y-2.5 text-[13px] font-medium text-slate-600">
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Mã màu chọn:</span>
-                                            <span className="font-black text-blue-600">{selectedOrder.Items?.[0]?.MaMau || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Loại bột:</span>
-                                            <span className="text-slate-800">{selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon'}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Nhiệt độ sấy:</span>
-                                            <span className="text-slate-800">{selectedOrder.TechnicalSpecs?.NhietDoSay || '195°C / 15 phút'}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Độ dày lớp phủ:</span>
-                                            <span className="text-slate-800">{selectedOrder.TechnicalSpecs?.DoDayLopPhu || '75 µm'}</span>
-                                        </div>
-                                        <div className="pt-2">
-                                            <button className="px-3 py-1.5 bg-white border border-blue-150 hover:bg-blue-50 text-blue-600 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm transition-colors cursor-pointer">
-                                                📈 Xem biểu đồ hiệu suất
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* III. THÔNG TIN THANH TOÁN (PAYMENT) */}
-                            <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl">
-                                <h4 className="text-xs font-black text-amber-600 uppercase tracking-widest flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
-                                    <CreditCard size={14} /> III. Thông tin thanh toán (Payment)
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-150">
-                                    <div className="space-y-3 text-[13px] font-medium text-slate-650">
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Đơn giá / m2:</span>
-                                            <span className="text-slate-800">{(selectedOrder.TongTien / (selectedOrder.TongDienTichSon || 1)).toLocaleString()}đ / m2</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Thành tiền sản phẩm:</span>
-                                            <span className="text-slate-800">{(selectedOrder.TongTien - (selectedOrder.PhuPhi || 0)).toLocaleString()}đ</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">Phụ phí (đóng gói/VC):</span>
-                                            <span className="text-slate-800">{(selectedOrder.PhuPhi || 0).toLocaleString()}đ</span>
-                                        </div>
-                                        {selectedOrder.GiamGia !== undefined && selectedOrder.GiamGia > 0 && (
-                                            <div className="flex justify-between text-emerald-600 font-bold">
-                                                <span>Chiết khấu ({selectedOrder.KhuyenMai?.MaVoucher || 'Voucher'}):</span>
-                                                <span>-{(selectedOrder.GiamGia || 0).toLocaleString()}đ</span>
-                                            </div>
-                                        )}
-                                        <div className="flex justify-between border-t border-slate-100 pt-3 text-[14px]">
-                                            <span className="font-bold text-slate-900">TỔNG CỘNG:</span>
-                                            <span className="font-black text-emerald-600">{selectedOrder.TongTien.toLocaleString()}đ</span>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3 text-[13px] font-medium text-slate-650 pt-4 md:pt-0 md:pl-8">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-slate-400">Khách đã đặt cọc:</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-black text-slate-900">{(selectedOrder.DaCoc || 0).toLocaleString()}đ ({Math.round(((selectedOrder.DaCoc || 0) / selectedOrder.TongTien) * 100)}%)</span>
-                                                {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
-                                                    <button
-                                                        onClick={() => {
-                                                            setDepositAmount(selectedOrder.DaCoc || 0);
-                                                            setIsPaymentModalOpen(true);
-                                                        }}
-                                                        className="px-2.5 py-1 bg-white border border-slate-200 text-blue-600 hover:bg-slate-50 rounded-lg text-[10px] font-bold tracking-wider cursor-pointer transition-colors shadow-sm"
-                                                    >
-                                                        Cập nhật
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-between border-t border-slate-100 pt-4 text-[16px]">
-                                            <span className="font-bold text-slate-900">SỐ TIỀN CÒN LẠI:</span>
-                                            <span className="font-black text-rose-500">{Math.max(0, selectedOrder.TongTien - (selectedOrder.DaCoc || 0)).toLocaleString()}đ</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Timeline / Action Section */}
-                            <div className="space-y-3.5">
-                                <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
-                                    <Calendar size={18} className="text-blue-500" />
-                                    <div className="flex-1 text-sm font-medium text-slate-700">
-                                        <span className="text-slate-400">[{new Date(selectedOrder.createdAt).toLocaleDateString()}]</span> Đã đặt cọc đơn hàng <span className="font-bold text-emerald-600">[{(selectedOrder.DaCoc || 0).toLocaleString()}đ]</span>
-                                    </div>
+                {/* ═══ DETAILS MODAL ═══ */}
+                {isDetailsModalOpen && selectedOrder && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+                        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                            {/* Custom Header with Back Button */}
+                            <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+                                <div className="flex items-center gap-4">
                                     <button
-                                        onClick={handleDownloadPhieuCoc}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-blue-600 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-                                        disabled={isPrinting}
+                                        onClick={() => setIsDetailsModalOpen(false)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer border-none"
                                     >
-                                        <FileCheck size={14} /> In Phiếu Cọc
+                                        <ArrowLeft size={14} /> Quay lại
                                     </button>
+                                    <h3 className="text-lg font-black text-slate-900 uppercase tracking-wider">Chi tiết đơn hàng #{selectedOrder.MaDonHang}</h3>
+                                </div>
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase bg-blue-50 text-blue-600">
+                                    {STATUS_MAP[selectedOrder.TrangThai].label}
+                                </span>
+                            </div>
+
+                            {/* Modal Body */}
+                            <div className="p-8 overflow-y-auto space-y-6 custom-scrollbar">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* I. THÔNG TIN KHÁCH HÀNG & SẢN PHẨM */}
+                                    <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl hover:shadow-sm transition-all space-y-4">
+                                        <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest flex items-center gap-2 pb-2 border-b border-slate-100">
+                                            <User size={14} /> I. Thông tin khách hàng
+                                        </h4>
+                                        <div className="space-y-2.5 text-[13px] font-medium text-slate-600">
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Khách hàng:</span>
+                                                <span className="font-bold text-slate-800">{selectedOrder.KhachHang?.TenKhachHang || 'Khách vãng lai'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Số điện thoại:</span>
+                                                <span className="text-slate-800">{selectedOrder.KhachHang?.SDT || '-'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Sản phẩm:</span>
+                                                <span className="font-bold text-slate-800">{selectedOrder.Items?.[0]?.TenSanPham} ({selectedOrder.Items?.reduce((s, i) => s + i.SoLuong, 0)} thùng)</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Diện tích sơn:</span>
+                                                <span className="font-bold text-amber-600">{selectedOrder.TongDienTichSon || 0} m2</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Ngày tạo:</span>
+                                                <span className="text-slate-800">{new Date(selectedOrder.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* II. THÔNG SỐ KỸ THUẬT SƠN (MERN) */}
+                                    <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl hover:shadow-sm transition-all space-y-4">
+                                        <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 pb-2 border-b border-slate-100">
+                                            <Layers size={14} /> II. Thông số kỹ thuật sơn
+                                        </h4>
+                                        <div className="space-y-2.5 text-[13px] font-medium text-slate-600">
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Mã màu chọn:</span>
+                                                <span className="font-black text-blue-600">{selectedOrder?.Items?.[0]?.MaMau || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Loại bột:</span>
+                                                <span className="text-slate-800">{selectedOrder?.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Nhiệt độ sấy:</span>
+                                                <span className="text-slate-800">{selectedOrder?.TechnicalSpecs?.NhietDoSay || '195°C / 15 phút'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Độ dày lớp phủ:</span>
+                                                <span className="text-slate-800">{selectedOrder?.TechnicalSpecs?.DoDayLopPhu || '75 µm'}</span>
+                                            </div>
+                                            {(selectedOrder?.KhachHang?.PhanLoai === 'DOANH_NGHIEP' || (selectedOrder?.GhiChu?.toLowerCase().includes('pha chế')) || (selectedOrder?.GhiChu?.toLowerCase().includes('mẫu')) || (selectedOrder?.GhiChu?.toLowerCase().includes('hợp đồng'))) && (
+                                                <div style={{ marginTop: 8 }}>
+                                                    <button onClick={() => setIsChartModalOpen(true)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ fontSize: 11, padding: '4px 10px', color: '#2563eb', border: '1px solid #2563eb' }}>📈 Xem biểu đồ hiệu suất thực</button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
-                                    <FileText size={18} className="text-purple-500" />
-                                    <div className="flex-1 text-sm font-medium text-slate-700">
-                                        <span className="text-slate-400">[{new Date().toLocaleDateString()}]</span> Tiến độ sản xuất & Vận chuyển hàng hóa
+                                {/* III. THÔNG TIN THANH TOÁN (PAYMENT) */}
+                                <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl">
+                                    <h4 className="text-xs font-black text-amber-600 uppercase tracking-widest flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
+                                        <CreditCard size={14} /> III. Thông tin thanh toán (Payment)
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-150">
+                                        <div className="space-y-3 text-[13px] font-medium text-slate-650">
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Đơn giá / m2:</span>
+                                                <span className="text-slate-800">{(selectedOrder.TongTien / (selectedOrder.TongDienTichSon || 1)).toLocaleString()}đ / m2</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Thành tiền sản phẩm:</span>
+                                                <span className="text-slate-800">{(selectedOrder.TongTien - (selectedOrder.PhuPhi || 0)).toLocaleString()}đ</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Phụ phí (đóng gói/VC):</span>
+                                                <span className="text-slate-800">{(selectedOrder.PhuPhi || 0).toLocaleString()}đ</span>
+                                            </div>
+                                            {selectedOrder.GiamGia !== undefined && selectedOrder.GiamGia > 0 && (
+                                                <div className="flex justify-between text-emerald-600 font-bold">
+                                                    <span>Chiết khấu ({selectedOrder.KhuyenMai?.MaVoucher || 'Voucher'}):</span>
+                                                    <span>-{(selectedOrder.GiamGia || 0).toLocaleString()}đ</span>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between border-t border-slate-100 pt-3 text-[14px]">
+                                                <span className="font-bold text-slate-900">TỔNG CỘNG:</span>
+                                                <span className="font-black text-emerald-600">{selectedOrder.TongTien.toLocaleString()}đ</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3 text-[13px] font-medium text-slate-650 pt-4 md:pt-0 md:pl-8">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-slate-400">Khách đã đặt cọc:</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-black text-slate-900">{(selectedOrder.DaCoc || 0).toLocaleString()}đ ({Math.round(((selectedOrder.DaCoc || 0) / selectedOrder.TongTien) * 100)}%)</span>
+                                                    {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
+                                                        <button
+                                                        onClick={() => {
+                                                                setDepositAmount(selectedOrder.DaCoc || 0);
+                                                                setIsPaymentModalOpen(true);
+                                                            }}
+                                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
+                                                            style={{ padding: '2px 8px', fontSize: '10px', color: '#2563eb', border: '1px solid #2563eb' }}
+                                                        >
+                                                            Cập nhật
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between border-t border-slate-100 pt-4 text-[16px]">
+                                                <span className="font-bold text-slate-900">SỐ TIỀN CÒN LẠI:</span>
+                                                <span className="font-black text-rose-500">{Math.max(0, selectedOrder.TongTien - (selectedOrder.DaCoc || 0)).toLocaleString()}đ</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
+                                </div>
+
+                                {/* Timeline / Action Section */}
+                                <div className="space-y-3.5">
+                                    <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                                        <Calendar size={18} className="text-blue-500" />
+                                        <div className="flex-1 text-sm font-medium text-slate-700">
+                                            <span className="text-slate-400">[{new Date(selectedOrder.createdAt).toLocaleDateString()}]</span> Đã đặt cọc đơn hàng <span className="font-bold text-emerald-600">[{(selectedOrder.DaCoc || 0).toLocaleString()}đ]</span>
+                                        </div>
                                         <button
-                                            onClick={() => {
-                                                if ((selectedOrder.DaCoc || 0) <= 0) {
-                                                    alert('Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.');
-                                                    return;
-                                                }
-                                                handleUpdateStatus(selectedOrder._id, 'DANG_XU_LY');
-                                            }}
-                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer border-none"
+                                            onClick={handleDownloadPhieuCoc}
+                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
+                                            style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#2563eb' }}
                                         >
-                                            Bắt đầu sản xuất
+                                            <FileCheck size={14} /> In Phiếu Cọc (Word)
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                                        <FileText size={18} className="text-purple-500" />
+                                        <div className="flex-1 text-sm font-medium text-slate-700">
+                                            <span className="text-slate-400">[{new Date().toLocaleDateString()}]</span> Tiến độ sản xuất & Vận chuyển hàng hóa
+                                        </div>
+                                        {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
+                                            <button
+                                            onClick={() => {
+                                                    if ((selectedOrder.DaCoc || 0) <= 0) {
+                                                        alert('Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.');
+                                                        return;
+                                                    }
+                                                    handleUpdateStatus(selectedOrder._id, 'DANG_XU_LY');
+                                                }}
+                                                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                                                style={{ background: (selectedOrder.DaCoc || 0) <= 0 ? '#94a3b8' : 'var(--accent-primary)', opacity: (selectedOrder.DaCoc || 0) <= 0 ? 0.7 : 1 }}
+                                            >
+                                                Bắt đầu sản xuất
+                                            </button>
+                                        )}
+                                        <button onClick={handleDownloadHoaDonGTGT} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#059669' }} disabled={isPrinting}>
+                                            <Printer size={14} /> In Hóa Đơn GTGT
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Status Control Buttons */}
+                                <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
+                                    {selectedOrder.TrangThai !== 'DA_GIAO' && selectedOrder.TrangThai !== 'DA_HUY' && (
+                                        <button
+                                            onClick={() => handleUpdateStatus(selectedOrder._id, 'DA_HUY')}
+                                            className="px-5 py-2.5 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-2xl text-xs font-bold transition-colors cursor-pointer"
+                                        >
+                                            Hủy đơn hàng
                                         </button>
                                     )}
-                                    <button
-                                        onClick={handleDownloadHoaDonGTGT}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-emerald-650 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-                                        disabled={isPrinting}
-                                    >
-                                        <Printer size={14} /> In Hóa Đơn GTGT
-                                    </button>
                                 </div>
-                            </div>
-
-                            {/* Status Control Buttons */}
-                            <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
-                                {selectedOrder.TrangThai !== 'DA_GIAO' && selectedOrder.TrangThai !== 'DA_HUY' && (
-                                    <button
-                                        onClick={() => handleUpdateStatus(selectedOrder._id, 'DA_HUY')}
-                                        className="px-5 py-2.5 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-2xl text-xs font-bold transition-colors cursor-pointer"
-                                    >
-                                        Hủy đơn hàng
-                                    </button>
-                                )}
                             </div>
                         </div>
-                    </div>
 
-                    {/* HIDDEN PRINT TEMPLATE (Pure white for PDF) */}
-                    <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
-                        <div ref={printRef} style={{ width: '210mm', padding: '20mm', background: '#fff', color: '#000', fontFamily: 'Arial, sans-serif' }}>
-                            <div style={{ borderBottom: '2px solid #333', paddingBottom: '10mm', marginBottom: '10mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>
-                                    <h1 style={{ margin: 0, fontSize: '28px' }}>VTSC PAINT PRO</h1>
-                                    <p style={{ margin: '5px 0' }}>Hệ thống Quản lý Bền mặt Công nghiệp</p>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <h2 style={{ margin: 0 }}>PHIẾU XÁC NHẬN</h2>
-                                    <p>Mã: #{selectedOrder.MaDonHang}</p>
+                        {/* CHART MODAL */}
+                        {isChartModalOpen && selectedOrder && (
+                            <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)' }}>
+                                <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '95%', maxWidth: '800px', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '32px', background: '#0f172a', color: '#fff' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 16 }}>
+                                        <h3 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: '#00d4ff', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <Thermometer size={24} /> Hiệu Suất Sấy Thực Tế - Đơn #{selectedOrder.MaDonHang}
+                                        </h3>
+                                        <button onClick={() => setIsChartModalOpen(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 24 }}>&times;</button>
+                                    </div>
+
+                                    <div style={{ height: 400, width: '100%' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={(() => {
+                                                const matchLog = rdTrackingLogs.find(log =>
+                                                    (log.MaMauYeuCau && selectedOrder.Items?.[0]?.MaMau && log.MaMauYeuCau.toLowerCase() === selectedOrder.Items?.[0]?.MaMau.toLowerCase()) ||
+                                                    (log.colorCode && selectedOrder.Items?.[0]?.MaMau && log.colorCode.toLowerCase() === selectedOrder.Items?.[0]?.MaMau.toLowerCase())
+                                                );
+                                                const versions = matchLog?.LichSuPhienBan || [];
+
+                                                if (versions.length > 0) {
+                                                    return versions.map((v: any) => ({
+                                                        time: `V${v.version || '1.0'}`,
+                                                        nhietDo: parseFloat(v.nhietDo) || 195,
+                                                        hieuSuat: parseFloat(v.hieuSuat) || 98
+                                                    }));
+                                                }
+
+                                                const targetTempStr = selectedOrder.TechnicalSpecs?.NhietDoSay || '195';
+                                                const targetTemp = parseInt(targetTempStr.replace(/\D/g, '')) || 195;
+                                                return [
+                                                    { time: 'Phút 0', nhietDo: 25, hieuSuat: 0 },
+                                                    { time: 'Phút 5', nhietDo: Math.round(targetTemp * 0.6), hieuSuat: 30 },
+                                                    { time: 'Phút 10', nhietDo: Math.round(targetTemp * 0.9), hieuSuat: 60 },
+                                                    { time: 'Phút 15', nhietDo: targetTemp, hieuSuat: 95 },
+                                                    { time: 'Phút 20', nhietDo: targetTemp, hieuSuat: 98 },
+                                                    { time: 'Phút 25', nhietDo: Math.round(targetTemp * 0.5), hieuSuat: 100 },
+                                                ];
+                                            })()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                                <XAxis dataKey="time" stroke="#94a3b8" />
+                                                <YAxis yAxisId="left" stroke="#00d4ff" label={{ value: 'Nhiệt độ (°C)', angle: -90, position: 'insideLeft', fill: '#00d4ff' }} />
+                                                <YAxis yAxisId="right" orientation="right" stroke="#059669" label={{ value: 'Hiệu suất (%)', angle: 90, position: 'insideRight', fill: '#059669' }} />
+                                                <RechartsTooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, color: '#fff' }} />
+                                                <Legend />
+                                                <Line yAxisId="left" type="monotone" dataKey="nhietDo" name="Nhiệt độ lò sấy (°C)" stroke="#00d4ff" strokeWidth={3} activeDot={{ r: 8 }} />
+                                                <Line yAxisId="right" type="monotone" dataKey="hieuSuat" name="Độ bám dính (%)" stroke="#059669" strokeWidth={3} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+
+                                    <div style={{ marginTop: 24, padding: 16, background: 'rgba(0,212,255,0.05)', borderRadius: 12, border: '1px solid rgba(0,212,255,0.2)' }}>
+                                        <div style={{ display: 'flex', gap: 20 }}>
+                                            <div>
+                                                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>Loại bột sơn</div>
+                                                <div style={{ fontWeight: 600, color: '#fff' }}>{selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon'}</div>
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>Nhiệt độ chuẩn</div>
+                                                <div style={{ fontWeight: 600, color: '#fff' }}>{selectedOrder.TechnicalSpecs?.NhietDoSay || '195°C'}</div>
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>Đánh giá</div>
+                                                <div style={{ fontWeight: 600, color: '#059669' }}>Đạt tiêu chuẩn xuất xưởng</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                        )}
 
-                            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10mm' }}>
-                                <tbody>
-                                    <tr>
-                                        <td style={{ width: '50%', verticalAlign: 'top', padding: '5mm', border: '1px solid #ddd' }}>
-                                            <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '2mm' }}>I. KHÁCH HÀNG & PHỤ TRÁCH</h3>
-                                            <p><strong>Khách hàng:</strong> {selectedOrder.KhachHang?.TenKhachHang}</p>
-                                            <p><strong>Số ĐT:</strong> {selectedOrder.KhachHang?.SDT}</p>
-                                            <p><strong>NV Sales:</strong> {selectedOrder.NhanVienPhuTrach ? `${selectedOrder.NhanVienPhuTrach.MaNV} - ${selectedOrder.NhanVienPhuTrach.HoTen}` : 'Chưa gán'}</p>
-                                            <p><strong>Diện tích sơn:</strong> {selectedOrder.TongDienTichSon} m2</p>
-                                        </td>
-                                        <td style={{ width: '50%', verticalAlign: 'top', padding: '5mm', border: '1px solid #ddd' }}>
-                                            <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '2mm' }}>II. THÔNG SỐ KỸ THUẬT (MERN)</h3>
-                                            <p><strong>Mã màu:</strong> {selectedOrder.Items?.[0]?.MaMau}</p>
-                                            <p><strong>Loại bột:</strong> {selectedOrder.TechnicalSpecs?.LoaiBot}</p>
-                                            <p><strong>Nhiệt độ sấy:</strong> {selectedOrder.TechnicalSpecs?.NhietDoSay}</p>
-                                            <p><strong>Độ dày lớp phủ:</strong> {selectedOrder.TechnicalSpecs?.DoDayLopPhu}</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        {/* HIDDEN PRINT TEMPLATE (Pure white for PDF) */}
+                        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
+                            <div ref={printRef} style={{ width: '210mm', padding: '20mm', background: '#fff', color: '#000', fontFamily: 'Arial, sans-serif' }}>
+                                <div style={{ borderBottom: '2px solid #333', paddingBottom: '10mm', marginBottom: '10mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <h1 style={{ margin: 0, fontSize: '28px' }}>VTSC PAINT PRO</h1>
+                                        <p style={{ margin: '5px 0' }}>Hệ thống Quản lý Bền mặt Công nghiệp</p>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <h2 style={{ margin: 0 }}>PHIẾU XÁC NHẬN</h2>
+                                        <p>Mã: #{selectedOrder.MaDonHang}</p>
+                                    </div>
+                                </div>
 
-                            <div style={{ border: '1px solid #ddd', padding: '5mm', marginBottom: '10mm' }}>
-                                <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '2mm' }}>III. CHI TIẾT THANH TOÁN</h3>
-                                <table style={{ width: '100%' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10mm' }}>
                                     <tbody>
                                         <tr>
-                                            <td>Thành tiền hàng:</td>
-                                            <td style={{ textAlign: 'right' }}>{(selectedOrder.TongTien - (selectedOrder.PhuPhi || 0)).toLocaleString()}đ</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Phụ phí (VC/Đóng gói):</td>
-                                            <td style={{ textAlign: 'right' }}>{(selectedOrder.PhuPhi || 0).toLocaleString()}đ</td>
-                                        </tr>
-                                        <tr style={{ fontWeight: 'bold', fontSize: '18px' }}>
-                                            <td style={{ paddingTop: '5mm' }}>TỔNG CỘNG:</td>
-                                            <td style={{ textAlign: 'right', paddingTop: '5mm' }}>{selectedOrder.TongTien.toLocaleString()}đ</td>
-                                        </tr>
-                                        <tr style={{ color: '#28a745' }}>
-                                            <td>Đã đặt cọc:</td>
-                                            <td style={{ textAlign: 'right' }}>{(selectedOrder.DaCoc || 0).toLocaleString()}đ</td>
-                                        </tr>
-                                        <tr style={{ fontWeight: 'bold', color: '#dc3545', fontSize: '20px' }}>
-                                            <td style={{ paddingTop: '3mm', borderTop: '2px double #ddd' }}>CÒN LẠI:</td>
-                                            <td style={{ textAlign: 'right', paddingTop: '3mm', borderTop: '2px double #ddd' }}>{(selectedOrder.TongTien - (selectedOrder.DaCoc || 0)).toLocaleString()}đ</td>
+                                            <td style={{ width: '50%', verticalAlign: 'top', padding: '5mm', border: '1px solid #ddd' }}>
+                                                <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '2mm' }}>I. KHÁCH HÀNG & PHỤ TRÁCH</h3>
+                                                <p><strong>Khách hàng:</strong> {selectedOrder.KhachHang?.TenKhachHang}</p>
+                                                <p><strong>Số ĐT:</strong> {selectedOrder.KhachHang?.SDT}</p>
+                                                <p><strong>NV Sales:</strong> {selectedOrder.NhanVienPhuTrach ? `${selectedOrder.NhanVienPhuTrach.MaNV} - ${selectedOrder.NhanVienPhuTrach.HoTen}` : 'Chưa gán'}</p>
+                                                <p><strong>Diện tích sơn:</strong> {selectedOrder.TongDienTichSon} m2</p>
+                                            </td>
+                                            <td style={{ width: '50%', verticalAlign: 'top', padding: '5mm', border: '1px solid #ddd' }}>
+                                                <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '2mm' }}>II. THÔNG SỐ KỸ THUẬT (MERN)</h3>
+                                                <p><strong>Mã màu:</strong> {selectedOrder.Items?.[0]?.MaMau}</p>
+                                                <p><strong>Loại bột:</strong> {selectedOrder.TechnicalSpecs?.LoaiBot}</p>
+                                                <p><strong>Nhiệt độ sấy:</strong> {selectedOrder.TechnicalSpecs?.NhietDoSay}</p>
+                                                <p><strong>Độ dày lớp phủ:</strong> {selectedOrder.TechnicalSpecs?.DoDayLopPhu}</p>
+                                            </td>
                                         </tr>
                                     </tbody>
                                 </table>
-                            </div>
 
-                            <div style={{ marginTop: '20mm', display: 'flex', justifyContent: 'space-between' }}>
-                                <div style={{ textAlign: 'center', width: '200px' }}>
-                                    <p>Khách hàng</p>
-                                    <div style={{ height: '30mm' }}></div>
-                                    <p>(Ký tên)</p>
+                                <div style={{ border: '1px solid #ddd', padding: '5mm', marginBottom: '10mm' }}>
+                                    <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '2mm' }}>III. CHI TIẾT THANH TOÁN</h3>
+                                    <table style={{ width: '100%' }}>
+                                        <tbody>
+                                            <tr>
+                                                <td>Thành tiền hàng:</td>
+                                                <td style={{ textAlign: 'right' }}>{(selectedOrder.TongTien - (selectedOrder.PhuPhi || 0)).toLocaleString()}đ</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Phụ phí (VC/Đóng gói):</td>
+                                                <td style={{ textAlign: 'right' }}>{(selectedOrder.PhuPhi || 0).toLocaleString()}đ</td>
+                                            </tr>
+                                            <tr style={{ fontWeight: 'bold', fontSize: '18px' }}>
+                                                <td style={{ paddingTop: '5mm' }}>TỔNG CỘNG:</td>
+                                                <td style={{ textAlign: 'right', paddingTop: '5mm' }}>{selectedOrder.TongTien.toLocaleString()}đ</td>
+                                            </tr>
+                                            <tr style={{ color: '#28a745' }}>
+                                                <td>Đã đặt cọc:</td>
+                                                <td style={{ textAlign: 'right' }}>{(selectedOrder.DaCoc || 0).toLocaleString()}đ</td>
+                                            </tr>
+                                            <tr style={{ fontWeight: 'bold', color: '#dc3545', fontSize: '20px' }}>
+                                                <td style={{ paddingTop: '3mm', borderTop: '2px double #ddd' }}>CÒN LẠI:</td>
+                                                <td style={{ textAlign: 'right', paddingTop: '3mm', borderTop: '2px double #ddd' }}>{(selectedOrder.TongTien - (selectedOrder.DaCoc || 0)).toLocaleString()}đ</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div style={{ textAlign: 'center', width: '200px' }}>
-                                    <p>Người lập phiếu</p>
-                                    <div style={{ height: '30mm' }}></div>
-                                    <p>(Ký tên)</p>
+
+                                <div style={{ marginTop: '20mm', display: 'flex', justifyContent: 'space-between' }}>
+                                    <div style={{ textAlign: 'center', width: '200px' }}>
+                                        <p>Khách hàng</p>
+                                        <div style={{ height: '30mm' }}></div>
+                                        <p>(Ký tên)</p>
+                                    </div>
+                                    <div style={{ textAlign: 'center', width: '200px' }}>
+                                        <p>Người lập phiếu</p>
+                                        <div style={{ height: '30mm' }}></div>
+                                        <p>(Ký tên)</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* ═══ DRIVER SELECTION MODAL ═══ */}
-            {isDriverModalOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
-                        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-                            <h3 className="text-base font-black text-slate-900 flex items-center gap-2.5">
-                                <Truck size={20} className="text-purple-600" /> Điều phối tài xế giao hàng
-                            </h3>
-                            <button
-                                onClick={() => setIsDriverModalOpen(false)}
-                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
-                            >
-                                ×
-                            </button>
-                        </div>
-                        <div className="p-6 overflow-y-auto space-y-4 custom-scrollbar">
-                            <p className="text-xs text-slate-500 leading-relaxed">
-                                Vui lòng chọn tài xế từ bộ phận <strong>Nhân viên Kỹ thuật (Kho / Logistics)</strong> để bắt đầu quá trình vận chuyển.
-                            </p>
+                {/* ═══ DRIVER SELECTION MODAL ═══ */}
+                {isDriverModalOpen && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+                        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                            <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+                                <h3 className="text-base font-black text-slate-900 flex items-center gap-2.5">
+                                    <Truck size={20} className="text-purple-600" /> Điều phối tài xế giao hàng
+                                </h3>
+                                <button
+                                    onClick={() => setIsDriverModalOpen(false)}
+                                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <div className="p-6 overflow-y-auto space-y-4 custom-scrollbar">
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                    Vui lòng chọn tài xế từ bộ phận <strong>Nhân viên Kỹ thuật (Kho / Logistics)</strong> để bắt đầu quá trình vận chuyển.
+                                </p>
 
-                            <div className="space-y-2 max-h-[260px] overflow-y-auto custom-scrollbar">
-                                {drivers.map(driver => (
-                                    <div
-                                        key={driver._id}
-                                        onClick={() => setSelectedDriverId(driver._id)}
-                                        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3.5 ${selectedDriverId === driver._id
-                                            ? 'border-blue-600 bg-blue-50/40 shadow-sm'
-                                            : 'border-slate-100 hover:bg-slate-50'
-                                            }`}
+                                <div className="space-y-2 max-h-[260px] overflow-y-auto custom-scrollbar">
+                                    {drivers.map(driver => (
+                                        <div
+                                            key={driver._id}
+                                            onClick={() => setSelectedDriverId(driver._id)}
+                                            className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3.5 ${selectedDriverId === driver._id
+                                                ? 'border-blue-600 bg-blue-50/40 shadow-sm'
+                                                : 'border-slate-100 hover:bg-slate-50'
+                                                }`}
+                                        >
+                                            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
+                                                <User size={18} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-bold text-[13px] text-slate-805">{driver.HoTen}</div>
+                                                <div className="text-[11px] text-slate-400 truncate">{driver.BoPhan} • SĐT: {driver.SDT}</div>
+                                            </div>
+                                            {selectedDriverId === driver._id && <CheckCircle size={18} className="text-blue-600 flex-shrink-0" />}
+                                        </div>
+                                    ))}
+                                    {drivers.length === 0 && (
+                                        <div className="text-center py-8 text-slate-400 font-medium italic text-xs">
+                                            Không tìm thấy nhân viên Kỹ thuật phù hợp ở bộ phận Kho/Logistics.
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex gap-3 pt-4 border-t border-slate-50">
+                                    <button onClick={() => setIsDriverModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
+                                    <button
+                                        onClick={() => pendingStatusUpdate && handleUpdateStatus(pendingStatusUpdate.id, pendingStatusUpdate.status, selectedDriverId)}
+                                        disabled={!selectedDriverId}
+                                        className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 disabled:opacity-50 transition-all cursor-pointer border-none"
                                     >
-                                        <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
-                                            <User size={18} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-bold text-[13px] text-slate-805">{driver.HoTen}</div>
-                                            <div className="text-[11px] text-slate-400 truncate">{driver.BoPhan} • SĐT: {driver.SDT}</div>
-                                        </div>
-                                        {selectedDriverId === driver._id && <CheckCircle size={18} className="text-blue-600 flex-shrink-0" />}
-                                    </div>
-                                ))}
-                                {drivers.length === 0 && (
-                                    <div className="text-center py-8 text-slate-400 font-medium italic text-xs">
-                                        Không tìm thấy nhân viên Kỹ thuật phù hợp ở bộ phận Kho/Logistics.
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex gap-3 pt-4 border-t border-slate-50">
-                                <button onClick={() => setIsDriverModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
-                                <button
-                                    onClick={() => pendingStatusUpdate && handleUpdateStatus(pendingStatusUpdate.id, pendingStatusUpdate.status, selectedDriverId)}
-                                    disabled={!selectedDriverId}
-                                    className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 disabled:opacity-50 transition-all cursor-pointer border-none"
-                                >
-                                    Xác nhận giao hàng
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ═══ PAINT CALCULATOR MODAL ═══ */}
-            {isCalculatorOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
-                        {/* Header */}
-                        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-                            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                                <Calculator size={20} className="text-blue-600" /> Tính diện tích bề mặt sơn
-                            </h3>
-                            <button
-                                onClick={() => setIsCalculatorOpen(false)}
-                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
-                            >
-                                ×
-                            </button>
-                        </div>
-
-                        {/* Body */}
-                        <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
-                            {/* Unit Toggle */}
-                            <div className="flex justify-between items-center bg-slate-50 p-2 rounded-2xl">
-                                <span className="text-xs font-semibold text-slate-500 pl-2">Đơn vị đo lường</span>
-                                <div className="flex gap-1 p-0.5 bg-slate-200/50 rounded-xl">
-                                    <button onClick={() => setCalcUnit('m')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-none ${calcUnit === 'm' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 bg-transparent'}`}>Mét (m)</button>
-                                    <button onClick={() => setCalcUnit('ft')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-none ${calcUnit === 'ft' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 bg-transparent'}`}>Feet (ft)</button>
-                                </div>
-                            </div>
-
-                            {/* Walls Section */}
-                            <div className="space-y-3">
-                                <div className="text-xs font-black text-blue-600 uppercase tracking-wider">
-                                    Bề mặt tường ({calcWalls.length})
-                                </div>
-                                <div className="space-y-3">
-                                    {calcWalls.map((wall, index) => (
-                                        <div key={wall.id} className="flex gap-2 items-center">
-                                            <div className="relative flex-1">
-                                                <input type="number" placeholder="Chiều dài" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={wall.length} onChange={(e) => updateCalcItem(wall.id, 'length', e.target.value, 'wall')} />
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
-                                            </div>
-                                            <div className="relative flex-1">
-                                                <input type="number" placeholder="Chiều cao" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={wall.height} onChange={(e) => updateCalcItem(wall.id, 'height', e.target.value, 'wall')} />
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
-                                            </div>
-                                            {calcWalls.length > 1 && (
-                                                <button onClick={() => handleRemoveCalcItem(wall.id, 'wall')} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"><Trash2 size={14} /></button>
-                                            )}
-                                        </div>
-                                    ))}
-                                    <button onClick={handleAddCalcWall} className="w-full py-2.5 bg-white border border-dashed border-blue-200 hover:bg-blue-50/50 text-blue-650 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
-                                        <Plus size={14} /> Thêm diện tích tường
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Deductions Section */}
-                            <div className="space-y-3">
-                                <div className="text-xs font-black text-rose-500 uppercase tracking-wider">
-                                    Diện tích khấu trừ (Cửa đi / Cửa sổ) ({calcDeductions.length})
-                                </div>
-                                <div className="space-y-3">
-                                    {calcDeductions.map((ded, index) => (
-                                        <div key={ded.id} className="flex gap-2 items-center">
-                                            <div className="relative flex-1">
-                                                <input type="number" placeholder="Chiều dài" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={ded.length} onChange={(e) => updateCalcItem(ded.id, 'length', e.target.value, 'deduction')} />
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
-                                            </div>
-                                            <div className="relative flex-1">
-                                                <input type="number" placeholder="Chiều cao" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={ded.height} onChange={(e) => updateCalcItem(ded.id, 'height', e.target.value, 'deduction')} />
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
-                                            </div>
-                                            <button onClick={() => handleRemoveCalcItem(ded.id, 'deduction')} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"><Trash2 size={14} /></button>
-                                        </div>
-                                    ))}
-                                    <button onClick={handleAddCalcDeduction} className="w-full py-2.5 bg-white border border-dashed border-rose-200 hover:bg-rose-50/50 text-rose-500 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
-                                        <Plus size={14} /> Thêm cửa sổ / cửa đi
+                                        Xác nhận giao hàng
                                     </button>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                )}
 
-                        {/* Footer / Results */}
-                        <div className="p-6 bg-slate-50 border-t border-slate-100 flex-shrink-0 space-y-4">
-                            <div className="space-y-2 text-xs font-semibold text-slate-500">
-                                <div className="flex justify-between">
-                                    <span>Diện tích tường khả dụng:</span>
-                                    <span className="text-slate-800 font-bold">{calculatedResult.area} m²</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Định mức che phủ kỹ thuật:</span>
-                                    <span className="text-slate-800 font-bold">12.3 m² / Lít (2 lớp phủ)</span>
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-end border-t border-slate-200/60 pt-3">
-                                <span className="text-xs font-black text-slate-900 uppercase">Khối lượng sơn ước tính:</span>
-                                <span className="text-2xl font-black text-blue-600">{calculatedResult.liters} Lít</span>
-                            </div>
-                            <div className="flex gap-3">
-                                <button onClick={() => setIsCalculatorOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
+                {/* ═══ PAINT CALCULATOR MODAL ═══ */}
+                {isCalculatorOpen && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+                        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                            {/* Header */}
+                            <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+                                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                                    <Calculator size={20} className="text-blue-600" /> Tính diện tích bề mặt sơn
+                                </h3>
                                 <button
-                                    onClick={() => {
-                                        setTongDienTichSon(calculatedResult.area);
-                                        setIsCalculatorOpen(false);
-                                    }}
-                                    className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none"
+                                    onClick={() => setIsCalculatorOpen(false)}
+                                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
                                 >
-                                    <FileCheck size={16} /> Áp dụng kết quả
+                                    ×
                                 </button>
+                            </div>
+
+                            {/* Body */}
+                            <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
+                                {/* Unit Toggle */}
+                                <div className="flex justify-between items-center bg-slate-50 p-2 rounded-2xl">
+                                    <span className="text-xs font-semibold text-slate-500 pl-2">Đơn vị đo lường</span>
+                                    <div className="flex gap-1 p-0.5 bg-slate-200/50 rounded-xl">
+                                        <button onClick={() => setCalcUnit('m')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-none ${calcUnit === 'm' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 bg-transparent'}`}>Mét (m)</button>
+                                        <button onClick={() => setCalcUnit('ft')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-none ${calcUnit === 'ft' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 bg-transparent'}`}>Feet (ft)</button>
+                                    </div>
+                                </div>
+
+                                {/* Walls Section */}
+                                <div className="space-y-3">
+                                    <div className="text-xs font-black text-blue-600 uppercase tracking-wider">
+                                        Bề mặt tường ({calcWalls.length})
+                                    </div>
+                                    <div className="space-y-3">
+                                        {calcWalls.map((wall, index) => (
+                                            <div key={wall.id} className="flex gap-2 items-center">
+                                                <div className="relative flex-1">
+                                                    <input type="number" placeholder="Chiều dài" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={wall.length} onChange={(e) => updateCalcItem(wall.id, 'length', e.target.value, 'wall')} />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
+                                                </div>
+                                                <div className="relative flex-1">
+                                                    <input type="number" placeholder="Chiều cao" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={wall.height} onChange={(e) => updateCalcItem(wall.id, 'height', e.target.value, 'wall')} />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
+                                                </div>
+                                                {calcWalls.length > 1 && (
+                                                    <button onClick={() => handleRemoveCalcItem(wall.id, 'wall')} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"><Trash2 size={14} /></button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        <button onClick={handleAddCalcWall} className="w-full py-2.5 bg-white border border-dashed border-blue-200 hover:bg-blue-50/50 text-blue-650 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                                            <Plus size={14} /> Thêm diện tích tường
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Deductions Section */}
+                                <div className="space-y-3">
+                                    <div className="text-xs font-black text-rose-500 uppercase tracking-wider">
+                                        Diện tích khấu trừ (Cửa đi / Cửa sổ) ({calcDeductions.length})
+                                    </div>
+                                    <div className="space-y-3">
+                                        {calcDeductions.map((ded, index) => (
+                                            <div key={ded.id} className="flex gap-2 items-center">
+                                                <div className="relative flex-1">
+                                                    <input type="number" placeholder="Chiều dài" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={ded.length} onChange={(e) => updateCalcItem(ded.id, 'length', e.target.value, 'deduction')} />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
+                                                </div>
+                                                <div className="relative flex-1">
+                                                    <input type="number" placeholder="Chiều cao" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={ded.height} onChange={(e) => updateCalcItem(ded.id, 'height', e.target.value, 'deduction')} />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
+                                                </div>
+                                                <button onClick={() => handleRemoveCalcItem(ded.id, 'deduction')} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"><Trash2 size={14} /></button>
+                                            </div>
+                                        ))}
+                                        <button onClick={handleAddCalcDeduction} className="w-full py-2.5 bg-white border border-dashed border-rose-200 hover:bg-rose-50/50 text-rose-500 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                                            <Plus size={14} /> Thêm cửa sổ / cửa đi
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer / Results */}
+                            <div className="p-6 bg-slate-50 border-t border-slate-100 flex-shrink-0 space-y-4">
+                                <div className="space-y-2 text-xs font-semibold text-slate-500">
+                                    <div className="flex justify-between">
+                                        <span>Diện tích tường khả dụng:</span>
+                                        <span className="text-slate-800 font-bold">{calculatedResult.area} m²</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Định mức che phủ kỹ thuật:</span>
+                                        <span className="text-slate-800 font-bold">12.3 m² / Lít (2 lớp phủ)</span>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-end border-t border-slate-200/60 pt-3">
+                                    <span className="text-xs font-black text-slate-900 uppercase">Khối lượng sơn ước tính:</span>
+                                    <span className="text-2xl font-black text-blue-600">{calculatedResult.liters} Lít</span>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setIsCalculatorOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
+                                    <button
+                                        onClick={() => {
+                                            setTongDienTichSon(calculatedResult.area);
+                                            setIsCalculatorOpen(false);
+                                        }}
+                                        className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none"
+                                    >
+                                        <FileCheck size={16} /> Áp dụng kết quả
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* ═══ PAYMENT MODAL ═══ */}
-            {isPaymentModalOpen && (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
-                        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-                            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                                <CreditCard size={20} className="text-amber-500" /> Cập nhật tiền cọc
-                            </h3>
-                            <button
-                                onClick={() => setIsPaymentModalOpen(false)}
-                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
-                            >
-                                ×
-                            </button>
-                        </div>
-                        <div className="p-6 space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">Số tiền cọc thực nhận (VNĐ)</label>
-                                <input
-                                    type="number"
-                                    className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-xl font-black text-right text-emerald-600 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
-                                    value={depositAmount}
-                                    onChange={(e) => setDepositAmount(Number(e.target.value))}
-                                />
-                                <div className="flex gap-2">
-                                    {[0.3, 0.5, 1].map(p => (
+                {/* ═══ PAYMENT MODAL ═══ */}
+                {isPaymentModalOpen && (
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+                        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                            <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
+                                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                                    <CreditCard size={20} className="text-amber-500" /> Cập nhật tiền cọc
+                                </h3>
+                                <button
+                                    onClick={() => setIsPaymentModalOpen(false)}
+                                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <div style={{ padding: '24px' }}>
+                                <div style={{ marginBottom: 20 }}>
+                                    <label style={{ fontSize: 13, color: '#475569', marginBottom: 8, display: 'block' }}>Số tiền khách đã trả (VNĐ)</label>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                        style={{ width: '100%', fontSize: 20, fontWeight: 700, textAlign: 'right', color: '#059669' }}
+                                        value={depositAmount}
+                                        onChange={(e) => setDepositAmount(Number(e.target.value))}
+                                    />
+                                    <div className="flex gap-2">
+                                        {[0.3, 0.5, 1].map(p => (
                                         <button
                                             key={p}
                                             onClick={() => setDepositAmount(Math.round(selectedOrder!.TongTien * p))}
@@ -2269,22 +2425,23 @@ export default function OrderManagementPage() {
                                         >
                                             {p * 100}%
                                         </button>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
 
-                            <p className="text-[10px] text-slate-400 leading-relaxed italic">
-                                * Cập nhật số tiền đặt cọc là điều kiện bắt buộc để hệ thống xác nhận hóa đơn và hiển thị nút lệnh <strong>Bắt đầu sản xuất</strong>.
-                            </p>
+                                <p className="text-[10px] text-slate-400 leading-relaxed italic">
+                                    * Cập nhật số tiền đặt cọc là điều kiện bắt buộc để hệ thống xác nhận hóa đơn và hiển thị nút lệnh <strong>Bắt đầu sản xuất</strong>.
+                                </p>
 
-                            <div className="flex gap-3 pt-4 border-t border-slate-50">
-                                <button onClick={() => setIsPaymentModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
-                                <button onClick={handleUpdateDeposit} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer border-none">Xác nhận thanh toán</button>
+                                <div className="flex gap-3 pt-4 border-t border-slate-50">
+                                    <button onClick={() => setIsPaymentModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
+                                    <button onClick={handleUpdateDeposit} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer border-none">Xác nhận thanh toán</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

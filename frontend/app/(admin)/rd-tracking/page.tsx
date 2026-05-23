@@ -39,6 +39,8 @@ export default function RDTrackingPage() {
   const [filter, setFilter] = useState("all");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedSampleRequest, setSelectedSampleRequest] = useState<any>(null);
   const [contracts, setContracts] = useState<any[]>([]);
   const [selectedContract, setSelectedContract] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
@@ -99,7 +101,19 @@ export default function RDTrackingPage() {
     try {
       const res = await api.get("/contracts");
       if (res.data.success) {
-        setContracts(res.data.data);
+        const fetchedContracts = res.data.data;
+        setContracts(fetchedContracts);
+
+        // Khôi phục dữ liệu từ localStorage (Yêu cầu mẫu thử được tạo qua form /rd-tracking/new)
+        let localRequests: any[] = [];
+        try {
+          const stored = localStorage.getItem('sampleRequests');
+          if (stored) localRequests = JSON.parse(stored);
+        } catch (e) {
+          console.error('Error parsing local sample requests', e);
+        }
+
+        setSampleRequests(localRequests);
       }
     } catch (err) {
       console.error("Failed to fetch contracts:", err);
@@ -144,6 +158,7 @@ export default function RDTrackingPage() {
   };
 
   const STATS = useMemo(() => {
+    const contractLogs = data.filter(d => d.ContractID);
     return {
       total: data.length,
       testing: data.filter(

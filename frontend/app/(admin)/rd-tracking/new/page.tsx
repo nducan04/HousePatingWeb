@@ -9,7 +9,7 @@
 //  5. Render <img> preview + nút X để reset
 // ═══════════════════════════════════════════════════════════
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -22,9 +22,11 @@ import {
   CheckCircle2,
   AlertCircle,
   CloudUpload,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/authStore";
+import { paintColors } from "@/lib/data/colors-data";
 
 // ─── IPFS Gateway công khai ──────────────────────────────
 const IPFS_GATEWAY = "https://gateway.pinata.cloud/ipfs";
@@ -248,7 +250,7 @@ function IpfsDropzone({
 // ═══════════════════════════════════════════════════════════
 //  Main Page: Form Tạo Yêu cầu R&D
 // ═══════════════════════════════════════════════════════════
-export default function NewRDRequestPage() {
+function NewRDRequestPage() {
   const { user } = useAuthStore();
   const isCustomer =
     user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C";
@@ -278,11 +280,46 @@ export default function NewRDRequestPage() {
   // CID trả về từ IPFS sau khi upload thành công
   const [imageCid, setImageCid] = useState<string>("");
 
+  const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
+  const colorDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (colorDropdownRef.current && !colorDropdownRef.current.contains(event.target as Node)) {
+        setIsColorDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   useEffect(() => {
     if (isCustomer && displayName) {
       setFormData((prev) => ({ ...prev, customer: displayName }));
     }
   }, [isCustomer, displayName]);
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const filteredColors = paintColors.filter(
+    (color) =>
+      color.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      color.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,7 +361,9 @@ export default function NewRDRequestPage() {
         id: nextId,
         customer: formData.customer,
         colorCode: formData.colorCode,
+        colorName: formData.colorName,
         surface: formData.surface,
+        substrate: formData.substrate,
         status: "pending",
         date: dateStr,
         deadline: formData.deadline,
@@ -338,7 +377,7 @@ export default function NewRDRequestPage() {
     }
 
     alert("✅ Yêu cầu R&D đã được tạo thành công! (Version 1.0)");
-    router.push(backPath);
+    router.push(isCustomer ? "/tracking?tab=samples" : "/rd-tracking");
   };
 
   return (
@@ -351,7 +390,7 @@ export default function NewRDRequestPage() {
           size={16}
           className="group-hover:-translate-x-1 transition-transform"
         />
-        Quay lại
+        {isCustomer ? "Quay lại trang chủ" : "Quay lại"}
       </Link>
 
       <div className="bg-white border border-slate-100 rounded-[24px] shadow-xl shadow-slate-100/50 overflow-hidden">
@@ -406,16 +445,60 @@ export default function NewRDRequestPage() {
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                 Mã Màu Mục tiêu *
               </label>
-              <input
-                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
-                type="text"
-                placeholder="VD: INT-D2525"
-                required
-                value={formData.colorCode}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, colorCode: e.target.value }))
-                }
-              />
+              <div className="relative" ref={colorDropdownRef}>
+                <div className="relative flex items-center">
+                  <input
+                    className="w-full bg-slate-50 border-none rounded-xl pl-12 pr-10 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all cursor-pointer"
+                    type="text"
+                    placeholder="Tìm hoặc chọn mã màu..."
+                    required
+                    value={formData.colorCode}
+                    onChange={(e) => {
+                      setFormData((p) => ({ ...p, colorCode: e.target.value }));
+                      setIsColorDropdownOpen(true);
+                    }}
+                    onClick={() => setIsColorDropdownOpen(true)}
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                    <div 
+                      className="w-5 h-5 rounded-full border border-slate-200 shadow-sm"
+                      style={{ background: paintColors.find(c => c.code === formData.colorCode)?.hex || '#e2e8f0' }}
+                    />
+                  </div>
+                  <div 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer" 
+                    onClick={() => setIsColorDropdownOpen(!isColorDropdownOpen)}
+                  >
+                    <ChevronDown size={16} />
+                  </div>
+                </div>
+
+                {isColorDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar">
+                    {paintColors
+                      .filter(c => c.code.toLowerCase().includes(formData.colorCode.toLowerCase()) || c.name.toLowerCase().includes(formData.colorCode.toLowerCase()))
+                      .map(color => (
+                        <div
+                          key={color.code}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-50 last:border-none"
+                          onClick={() => {
+                            setFormData((p) => ({ ...p, colorCode: color.code, colorName: color.name }));
+                            setIsColorDropdownOpen(false);
+                          }}
+                        >
+                          <div className="w-6 h-6 rounded-full border border-slate-200 shadow-sm shrink-0" style={{ background: color.hex }} />
+                          <div>
+                            <div className="text-sm font-bold text-slate-800">{color.code}</div>
+                            <div className="text-xs text-slate-500">{color.name}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {paintColors.filter(c => c.code.toLowerCase().includes(formData.colorCode.toLowerCase()) || c.name.toLowerCase().includes(formData.colorCode.toLowerCase())).length === 0 && (
+                          <div className="px-4 py-3 text-sm text-slate-500 text-center">Không tìm thấy mã màu</div>
+                      )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Tên màu */}
@@ -549,5 +632,13 @@ export default function NewRDRequestPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-purple-600" size={32} /></div>}>
+      <NewRDRequestPage />
+    </Suspense>
   );
 }
