@@ -40,16 +40,19 @@ exports.updateCart = async (req, res) => {
     const { sessionId } = req.params;
     const { SanPhamId, SoLuong, MaMau } = req.body;
 
-    if (!MaMau) {
-      return res.status(400).json({ success: false, error: 'Vui lòng chọn mã màu cho sản phẩm' });
-    }
-    
     let cart = await GioHang.findOne({ SessionId: sessionId });
     if (!cart) {
       cart = new GioHang({ SessionId: sessionId, Items: [] });
     }
 
-    const itemIndex = cart.Items.findIndex(i => i.SanPham.toString() === SanPhamId && i.MaMau === MaMau);
+    // Tìm theo SanPhamId và MaMau (nếu có)
+    const itemIndex = cart.Items.findIndex(i => {
+      const sameProduct = i.SanPham.toString() === SanPhamId;
+      if (MaMau) {
+        return sameProduct && i.MaMau === MaMau;
+      }
+      return sameProduct;
+    });
     
     if (itemIndex > -1) {
       if (SoLuong <= 0) {

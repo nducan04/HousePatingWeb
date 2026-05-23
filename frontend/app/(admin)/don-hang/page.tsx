@@ -913,7 +913,8 @@ export default function OrderManagementPage() {
         if (!selectedProductId) return;
         const sp = allProducts.find(p => p._id === selectedProductId);
         if (!sp) return;
-        if ((sp.TongTonKho || 0) <= 0) { alert('Sản phẩm hết hàng'); return; }
+        const stockAvailable = Math.max(sp.TongTonKho || 0, sp.TonKho || 0);
+        if (stockAvailable <= 0) { alert('Sản phẩm hết hàng'); return; }
 
         if (!selectedColorCode) return alert('Vui lòng chọn mã màu sơn');
 
@@ -938,7 +939,7 @@ export default function OrderManagementPage() {
             tenSanPham: sp.TenDongSon,
             soLuong: 1,
             donGia: sp.DonGiaCoSo * factor,
-            tonKho: sp.TonKho ?? sp.TongTonKho ?? 0,
+            tonKho: Math.max(sp.TongTonKho || 0, sp.TonKho || 0),
             maMau: chosenMaMau,
             tenMau: chosenTenMau,
             hexCode: chosenHex
@@ -1507,7 +1508,7 @@ export default function OrderManagementPage() {
                                                 onChange={e => { setSelectedProductId(e.target.value); setSelectedColorCode(''); setColorSearchTerm(''); }}
                                             >
                                                 <option value="">-- Chọn sản phẩm --</option>
-                                                {allProducts.filter(p => (p.TonKho ?? p.TongTonKho ?? 0) > 0).map(p => {
+                                                {allProducts.filter(p => Math.max(p.TongTonKho || 0, p.TonKho || 0) > 0).map(p => {
                                                     const kh = customers.find(c => c._id === selectedCustomerId);
                                                     let factor = 1.0;
                                                     let labelSuffix = "";
@@ -1519,9 +1520,10 @@ export default function OrderManagementPage() {
                                                         labelSuffix = " (B2C +30%)";
                                                     }
                                                     const displayPrice = p.DonGiaCoSo * factor;
+                                                    const availableStock = Math.max(p.TongTonKho || 0, p.TonKho || 0);
                                                     return (
                                                         <option key={p._id} value={p._id}>
-                                                            {p.TenDongSon} — {displayPrice.toLocaleString()}₫{labelSuffix} (Kho: {p.TonKho ?? p.TongTonKho ?? 0})
+                                                            {p.TenDongSon} — {displayPrice.toLocaleString()}₫{labelSuffix} (Kho: {availableStock})
                                                         </option>
                                                     );
                                                 })}
