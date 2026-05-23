@@ -72,6 +72,7 @@ export default function HomePage() {
   // Product Detail Modal state
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<any | null>(null);
   const [cartLoading, setCartLoading] = useState("");
   const [cartMessage, setCartMessage] = useState({ id: "", text: "" });
 
@@ -549,8 +550,12 @@ export default function HomePage() {
     }
   };
 
+  const [mtoRequested, setMtoRequested] = useState(false); // Add state for Production Request/MTO
+
   const handleViewProduct = (product: any) => {
     setSelectedProduct(product);
+    setSelectedColor(null);
+    setMtoRequested(false);
     setIsViewOpen(true);
   };
 

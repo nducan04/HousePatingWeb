@@ -35,7 +35,7 @@ exports.checkoutFromCart = async (req, res) => {
             orderItems.push({
                 SanPham: sp._id,
                 TenSanPham: sp.TenDongSon,
-                MaMau: sp.MaMau || 'BASE',
+                MaMau: item.MaMau,
                 SoLuong: item.SoLuong,
                 DonGia: sp.DonGiaCoSo,
                 ThanhTien: sp.DonGiaCoSo * item.SoLuong
@@ -200,8 +200,8 @@ exports.updateStatus = async (req, res) => {
 
         const oldStatus = order.TrangThai;
 
-        // Nếu chuyển sang DANG_XU_LY thì trừ kho
-        if (status === 'DANG_XU_LY' && oldStatus === 'CHO_XAC_NHAN') {
+        // 1. Nếu đơn hàng được giao (DANG_GIAO hoặc DA_GIAO), trừ tồn kho tạm giữ
+        if ((status === 'DANG_GIAO' || status === 'DA_GIAO') && (oldStatus === 'CHO_XAC_NHAN' || oldStatus === 'DANG_XU_LY')) {
             for (let item of order.Items) {
                 const sp = await SanPhamSon.findById(item.SanPham).session(session);
                 if (!sp) throw new Error(`Không tìm thấy sản phẩm ${item.TenSanPham}`);
