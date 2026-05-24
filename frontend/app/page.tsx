@@ -273,11 +273,12 @@ export default function HomePage() {
     setSendingChat(true);
 
     try {
-      const res = await api.post("/chatbot/message", { message: userMsg });
+      const sessionId = user?.id || "GUEST_SESSION";
+      const res = await api.post("/chatbot/message", { sessionId, message: userMsg });
       if (res.data.success) {
         setChatHistory((prev) => [
           ...prev,
-          { role: "bot", text: res.data.reply },
+          { role: "bot", text: res.data.data.response },
         ]);
       } else {
         setChatHistory((prev) => [
