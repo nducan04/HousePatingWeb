@@ -26,7 +26,7 @@ exports.getCart = async (req, res) => {
     if (!cart) {
       cart = await GioHang.create({ SessionId: sessionId, Items: [], TongTienTamTinh: 0 });
     }
-    
+
     res.status(200).json({ success: true, data: cart });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -38,7 +38,7 @@ exports.getCart = async (req, res) => {
 exports.updateCart = async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const { SanPhamId, SoLuong, MaMau } = req.body;
+    const { SanPhamId, SoLuong, MaMau = 'N/A' } = req.body;
 
     let cart = await GioHang.findOne({ SessionId: sessionId });
     if (!cart) {
@@ -53,7 +53,7 @@ exports.updateCart = async (req, res) => {
       }
       return sameProduct;
     });
-    
+
     if (itemIndex > -1) {
       if (SoLuong <= 0) {
         // Remove item if SoLuong is 0 or less

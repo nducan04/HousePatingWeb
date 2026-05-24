@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Package, Truck, CheckCircle2, Clock, XCircle, ChevronRight, ArrowLeft, MapPin, RefreshCw, ShoppingBag } from 'lucide-react';
+import { Package, Truck, CheckCircle2, Clock, XCircle, ChevronRight, ArrowLeft, MapPin, RefreshCw, ShoppingBag, Circle } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import CustomerOrderModal from '@/components/CustomerOrderModal';
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   CHO_XAC_NHAN: { label: 'Chờ xác nhận', color: 'bg-amber-50 text-amber-700 border border-amber-200', icon: <Clock size={13} /> },
@@ -22,10 +23,39 @@ export default function CustomerOrderPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
   
   const [editingInfoId, setEditingInfoId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ tenNguoiNhan: '', sdtNguoiNhan: '', DiaChiGiaoHang: '' });
   const [savingInfo, setSavingInfo] = useState(false);
+
+  const [trackingInfo, setTrackingInfo] = useState<any>(null);
+  const [loadingTracking, setLoadingTracking] = useState(false);
+
+  const handleExpand = async (order: any) => {
+    if (expandedId === order._id) {
+      setExpandedId(null);
+      setTrackingInfo(null);
+      setEditingInfoId(null);
+    } else {
+      setExpandedId(order._id);
+      setTrackingInfo(null);
+      setEditingInfoId(null);
+      if (['DANG_XU_LY', 'DANG_GIAO', 'DA_GIAO'].includes(order.TrangThai)) {
+        setLoadingTracking(true);
+        try {
+          const res = await api.get(`/van-chuyen/order/${order._id}`);
+          if (res.data.success) {
+            setTrackingInfo(res.data.data);
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setLoadingTracking(false);
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -136,9 +166,12 @@ export default function CustomerOrderPage() {
               {/* Order Header */}
               <div className="px-5 pt-5 pb-3 flex items-start justify-between gap-3">
                 <div>
-                  <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                  <button 
+                    onClick={() => setSelectedOrderDetails(order)}
+                    className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider border-none cursor-pointer hover:bg-blue-100 transition-colors"
+                  >
                     #{order.MaDonHang}
-                  </span>
+                  </button>
                   <p className="text-[11px] text-slate-400 font-medium mt-1.5">
                     {new Date(order.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
@@ -207,7 +240,7 @@ export default function CustomerOrderPage() {
                           setEditForm({ 
                             tenNguoiNhan: order.TenNguoiNhan || user?.profile?.HoTen || '', 
                             sdtNguoiNhan: order.SDTNguoiNhan || user?.profile?.SoDienThoai || '', 
-                            DiaChiGiaoHang: order.DiaChiGiaoHang || '' 
+                            DiaChiGiaoHang: order.DiaChiGiaoHang === "Địa chỉ mặc định" ? (user?.profile?.DiaChi || "") : (order.DiaChiGiaoHang || user?.profile?.DiaChi || '') 
                           });
                           setEditingInfoId(order._id);
                         }
@@ -224,11 +257,55 @@ export default function CustomerOrderPage() {
                         <p><strong className="text-slate-500 font-medium">Số điện thoại:</strong> <span className="font-semibold text-slate-800">{order.SDTNguoiNhan || user?.profile?.SoDienThoai || 'Chưa cập nhật'}</span></p>
                         <div className="flex items-start gap-1">
                           <strong className="text-slate-500 font-medium shrink-0">Địa chỉ:</strong>
-                          <span className="font-medium text-slate-800">{order.DiaChiGiaoHang || 'Chưa cập nhật'}</span>
+                          <span className="font-medium text-slate-800">{order.DiaChiGiaoHang === "Địa chỉ mặc định" ? (user?.profile?.DiaChi || "Chưa cập nhật") : (order.DiaChiGiaoHang || user?.profile?.DiaChi || 'Chưa cập nhật')}</span>
                         </div>
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* In-line Tracking Timeline */}
+              {isExpanded && trackingInfo && (
+                <div className="px-5 py-5 bg-slate-50/80 border-t border-slate-100">
+                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                     <Truck size={13} className="text-blue-500" /> Tiến độ giao hàng
+                   </h4>
+                   <div className="space-y-5 pl-1">
+                     {trackingInfo.LoTrinh?.map((log: any, idx: number) => {
+                        const isComplete = log.Status === "COMPLETE";
+                        const isProcessing = log.Status === "PROCESSING";
+                        return (
+                          <div key={idx} className="flex items-start gap-4 relative">
+                            {/* Vertical Line */}
+                            {idx < trackingInfo.LoTrinh.length - 1 && (
+                              <div className="absolute left-2 top-5 bottom-[-24px] w-[2px] bg-slate-200"></div>
+                            )}
+                            {/* Dot */}
+                            <div className="relative z-10 bg-slate-50 mt-0.5">
+                              {isComplete 
+                                ? <CheckCircle2 size={16} className="text-emerald-500 bg-white rounded-full" />
+                                : isProcessing 
+                                  ? <div className="w-4 h-4 rounded-full bg-blue-600 border-[3px] border-blue-100"></div>
+                                  : <Circle size={16} className="text-slate-300 bg-white rounded-full" />
+                              }
+                            </div>
+                            <div className="-mt-0.5">
+                               <p className={`text-[13px] leading-tight mb-1 ${isComplete || isProcessing ? 'font-bold text-slate-800' : 'font-medium text-slate-500'}`}>{log.NoiDung}</p>
+                               <span className="text-[10px] text-slate-400 font-medium">
+                                 {log.ThoiGian ? new Date(log.ThoiGian).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}
+                               </span>
+                            </div>
+                          </div>
+                        )
+                     })}
+                   </div>
+                </div>
+              )}
+              {isExpanded && loadingTracking && (
+                <div className="px-5 py-6 flex items-center justify-center gap-2 text-[11px] font-bold text-slate-400 border-t border-slate-50 bg-slate-50/50">
+                  <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-200 border-t-slate-400 animate-spin" />
+                  Đang tải thông tin lộ trình...
                 </div>
               )}
 
@@ -240,7 +317,7 @@ export default function CustomerOrderPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setExpandedId(isExpanded ? null : order._id)}
+                    onClick={() => handleExpand(order)}
                     className="px-4 py-2 rounded-2xl text-xs font-bold border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
                   >
                     {isExpanded ? 'Thu gọn' : 'Chi tiết'}
@@ -259,6 +336,13 @@ export default function CustomerOrderPage() {
           );
         })}
       </div>
+
+      {selectedOrderDetails && (
+        <CustomerOrderModal 
+          order={selectedOrderDetails} 
+          onClose={() => setSelectedOrderDetails(null)} 
+        />
+      )}
     </div>
   );
 }

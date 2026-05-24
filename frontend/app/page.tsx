@@ -341,9 +341,11 @@ export default function HomePage() {
       setIsLoginOpen(true);
       return;
     }
-    const qty = productQuantities[sp._id] || 1;
+    const qtyToAdd = productQuantities[sp._id] || 1;
+    const existingItem = cartItems.find((item) => item.SanPham?._id === sp._id);
+    const newQty = existingItem ? existingItem.SoLuong + qtyToAdd : qtyToAdd;
 
-    if (qty > (sp.TongTonKho || 0)) {
+    if (newQty > (sp.TongTonKho || 0)) {
       setCartMessage({ id: sp._id, text: `Kho chỉ còn ${sp.TongTonKho || 0}!` });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 3000);
       return;
@@ -352,17 +354,18 @@ export default function HomePage() {
     setCartLoading(sp._id);
     try {
       const sessionId = user?.id || "GUEST_SESSION";
-      await addToCartStore(sessionId, sp._id, qty);
+      await addToCartStore(sessionId, sp._id, newQty);
       setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
     } catch (err: any) {
       console.error(err);
       setCartMessage({ id: sp._id, text: err.response?.data?.error || "Lỗi!" });
-      setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
+      setTimeout(() => setCartMessage({ id: "", text: "" }), 3000);
     } finally {
       setCartLoading("");
     }
   };
+
 
   const removeFromCart = async (sanPhamId: string) => {
     try {
@@ -405,7 +408,7 @@ export default function HomePage() {
       const res = await api.post("/don-hang/checkout", {
         sessionId: sessionId,
         khachHangId: user?.id,
-        diaChiGiaoHang: "Địa chỉ mặc định",
+        diaChiGiaoHang: user?.profile?.DiaChi || "Địa chỉ mặc định",
         ghiChu: "Khách hàng đặt nhanh từ trang chủ",
       });
 
@@ -685,11 +688,11 @@ export default function HomePage() {
                     </span>
                   </div>
 
-                  {/* Premium Horizontal Navigation Slider */}
-                  <div className="flex gap-2.5 overflow-x-auto py-3 px-4 bg-slate-50/60 border-b border-slate-100 scrollbar-none whitespace-nowrap">
+                  {/* Premium Horizontal Navigation */}
+                  <div className="grid grid-cols-4 gap-2 py-3 px-4 bg-slate-50/60 border-b border-slate-100">
                     <Link
                       href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/don-hang"}
-                      className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-blue-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+                      className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-blue-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
                       onClick={(e) => {
                         setIsCartOpen(false);
                         if (!isAuthenticated) {
@@ -698,15 +701,15 @@ export default function HomePage() {
                         }
                       }}
                     >
-                      <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform">
                         <Package size={14} />
                       </div>
-                      <span className="text-[11px] font-black text-slate-800 tracking-tight">Đơn hàng của tôi</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-700 leading-tight">Đơn hàng</span>
                     </Link>
 
                     <Link
                       href="/tracking"
-                      className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-emerald-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+                      className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-emerald-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
                       onClick={(e) => {
                         setIsCartOpen(false);
                         if (!isAuthenticated) {
@@ -715,15 +718,15 @@ export default function HomePage() {
                         }
                       }}
                     >
-                      <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
                         <Truck size={14} />
                       </div>
-                      <span className="text-[11px] font-black text-slate-800 tracking-tight">Theo dõi vận chuyển</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-700 leading-tight">Tracking</span>
                     </Link>
 
                     <Link
                       href="/thanh-toan"
-                      className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+                      className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
                       onClick={(e) => {
                         setIsCartOpen(false);
                         if (!isAuthenticated) {
@@ -732,15 +735,15 @@ export default function HomePage() {
                         }
                       }}
                     >
-                      <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform">
                         <QrCode size={14} />
                       </div>
-                      <span className="text-[11px] font-black text-slate-800 tracking-tight">Thanh toán</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-700 leading-tight">Thanh toán</span>
                     </Link>
 
                     <Link
                       href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/tracking?tab=rd" : "/rd-tracking"}
-                      className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-purple-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
+                      className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-purple-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
                       onClick={(e) => {
                         setIsCartOpen(false);
                         if (!isAuthenticated) {
@@ -749,10 +752,10 @@ export default function HomePage() {
                         }
                       }}
                     >
-                      <div className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition-transform">
                         <Beaker size={14} />
                       </div>
-                      <span className="text-[11px] font-black text-slate-800 tracking-tight">Theo dõi R&D</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-700 leading-tight">R&D</span>
                     </Link>
                   </div>
 
@@ -855,27 +858,8 @@ export default function HomePage() {
                         disabled={isCheckingOut}
                         className="w-full h-12 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 cursor-pointer border-none"
                       >
-                        {isCheckingOut ? 'Đang xử lý...' : 'Thanh toán ngay'} <ArrowRight size={16} />
+                        {isCheckingOut ? 'Đang xử lý...' : 'Đặt hàng ngay'} <ArrowRight size={16} />
                       </button>
-
-                      <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-200">
-                        <Link href="/don-hang" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
-                          <Package size={16} className="text-blue-600" />
-                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Đơn hàng<br/>của tôi</span>
-                        </Link>
-                        <Link href="/tracking" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
-                          <Truck size={16} className="text-emerald-600" />
-                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Theo dõi<br/>vận chuyển</span>
-                        </Link>
-                        <Link href="/thanh-toan" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
-                          <QrCode size={16} className="text-indigo-600" />
-                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Thanh toán<br/>đơn hàng</span>
-                        </Link>
-                        <Link href="/tracking?tab=samples" onClick={() => setIsCartOpen(false)} className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors no-underline shadow-sm">
-                          <FlaskConical size={16} className="text-purple-600" />
-                          <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">Theo dõi<br/>quy trình R&D</span>
-                        </Link>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -1290,12 +1274,12 @@ export default function HomePage() {
                         <button
                           onClick={() => addToCart(sp)}
                           disabled={cartLoading === sp._id}
-                          className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? "bg-emerald-500 text-white" : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
+                          className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500 text-white" : "bg-red-500 text-white text-[10px]") : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
                         >
                           {cartLoading === sp._id ? (
                             <Loader2 size={16} className="animate-spin" />
                           ) : cartMessage.id === sp._id ? (
-                            <ShoppingCart size={16} />
+                            cartMessage.text === "Đã thêm vào giỏ!" ? <ShoppingCart size={16} /> : <span>{cartMessage.text}</span>
                           ) : (
                             <>
                               <Plus size={16} /> Thêm
@@ -1626,16 +1610,23 @@ export default function HomePage() {
                   <button
                     onClick={() => addToCart(selectedProduct)}
                     disabled={cartLoading === selectedProduct._id}
-                    className="w-full h-16 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer"
+                    className={`w-full h-16 text-white rounded-2xl font-bold text-lg shadow-xl transition-all flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer ${cartMessage.id === selectedProduct._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500" : "bg-red-500 text-sm") : "bg-blue-600 hover:bg-blue-700 hover:-translate-y-1"}`}
                   >
                     {cartLoading === selectedProduct._id ? (
                       <Loader2 className="animate-spin" size={24} />
+                    ) : cartMessage.id === selectedProduct._id ? (
+                      cartMessage.text === "Đã thêm vào giỏ!" ? (
+                        <>
+                          <ShoppingCart size={24} />
+                          Đã vào giỏ!
+                        </>
+                      ) : (
+                        <span>{cartMessage.text}</span>
+                      )
                     ) : (
                       <>
                         <ShoppingCart size={24} />
-                        {cartMessage.id === selectedProduct._id
-                          ? "Đã vào giỏ!"
-                          : "Thêm vào giỏ hàng"}
+                        Thêm vào giỏ hàng
                       </>
                     )}
                   </button>

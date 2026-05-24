@@ -35,6 +35,7 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
     if (!mapRef.current || !origin || !destination) return;
 
     let cleanup: any = null;
+    let isMounted = true;
 
     (async () => {
       // Delay initialization slightly to ensure React has painted the DOM and container has a size.
@@ -60,7 +61,7 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
         mapInstanceRef.current = null;
       }
 
-      if (!mapRef.current) return;
+      if (!mapRef.current || !isMounted) return;
 
       // Create map with bright OpenStreetMap tiles
       const map = L.map(mapRef.current, {
@@ -107,6 +108,8 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
         geocode(destination),
         currentLocation ? geocode(currentLocation) : Promise.resolve(null),
       ]);
+
+      if (!isMounted) return;
 
       if (!originCoords || !destCoords) {
         // Fallback: just center on Vietnam
@@ -182,6 +185,8 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
         const routeRes = await fetch(osrmUrl);
         const routeData = await routeRes.json();
 
+        if (!isMounted) return;
+
         if (routeData.code === "Ok" && routeData.routes?.length > 0) {
           const coords = routeData.routes[0].geometry.coordinates.map(
             ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
@@ -248,6 +253,7 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
 
     // Cleanup on unmount
     return () => {
+      isMounted = false;
       if (cleanup) cleanup();
 
       window.removeEventListener('keydown', handleKeyDown);

@@ -25,6 +25,7 @@ export default function TrackingPage() {
   const [sampleRequests, setSampleRequests] = useState<any[]>([]);
   const [selectedSample, setSelectedSample] = useState<any | null>(null);
   const [sampleSearchTerm, setSampleSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'shipment' | 'samples'>('shipment');
 
   // Live simulation states
   const [simProgress, setSimProgress] = useState(0.45);
@@ -82,6 +83,7 @@ export default function TrackingPage() {
       allProducts: allProducts,
       steps: steps,
       isRealDB: true,
+      dbRecord: item,
     };
   };
 
@@ -271,10 +273,6 @@ export default function TrackingPage() {
       clearInterval(pingInterval);
     };
   }, []);
-
-
-
-  const [activeTab, setActiveTab] = useState<'shipment' | 'samples'>('shipment');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -532,39 +530,59 @@ export default function TrackingPage() {
                       <h3 className="text-2xl font-black text-slate-900 mt-2 mb-4">
                         {selectedTracking.code}
                       </h3>
-                      <div className="space-y-3 mt-4 text-[13px]">
-                        <div className="flex items-start gap-2">
-                          <span className="text-slate-400 font-semibold shrink-0">Khách hàng:</span>
-                          <strong className="text-slate-900">{selectedTracking.customer}</strong>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-slate-400 font-semibold shrink-0">SĐT:</span>
-                          <strong className="text-slate-900">{selectedTracking.phone}</strong>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-slate-400 font-semibold shrink-0">Địa chỉ:</span>
-                          <strong className="text-slate-900">{selectedTracking.address}</strong>
+                      {/* Enhanced Order Info Cards */}
+                      <div className="mt-4 space-y-6">
+                        
+                        {/* Customer Info Card */}
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <User size={12} className="text-blue-500" /> Thông tin người nhận
+                          </h4>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-start">
+                              <span className="text-slate-500 text-xs font-semibold">Khách hàng:</span>
+                              <strong className="text-slate-900 text-sm">{selectedTracking.customer}</strong>
+                            </div>
+                            <div className="flex justify-between items-start">
+                              <span className="text-slate-500 text-xs font-semibold">Số điện thoại:</span>
+                              <strong className="text-slate-900 text-sm">{selectedTracking.phone}</strong>
+                            </div>
+                            <div className="flex justify-between items-start pt-2 border-t border-slate-200/60 mt-1">
+                              <span className="text-slate-500 text-xs font-semibold shrink-0 mt-0.5">Địa chỉ:</span>
+                              <strong className="text-slate-800 text-[13px] text-right leading-tight ml-4">{selectedTracking.address}</strong>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Display all products */}
-                        <div className="flex items-start gap-2">
-                          <span className="text-slate-400 font-semibold shrink-0">Sản phẩm:</span>
-                          <div className="space-y-1.5">
+                        {/* Product List Card */}
+                        <div>
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2 px-1">
+                            <Package size={12} className="text-amber-500" /> Sản phẩm ({selectedTracking.allProducts?.length || 1})
+                          </h4>
+                          <div className="space-y-2.5">
                             {selectedTracking.allProducts && selectedTracking.allProducts.length > 0 ? (
                               selectedTracking.allProducts.map((p: any, idx: number) => (
-                                <div key={idx} className="flex items-center gap-2">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
-                                  <strong className="text-slate-900">{p.TenSanPham || p.name}</strong>
-                                  <span className="text-amber-600 font-bold bg-amber-50 px-2 rounded text-[11px] whitespace-nowrap">
+                                <div key={idx} className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all group">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
+                                      <Package size={16} />
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-800 line-clamp-2">{p.TenSanPham || p.name}</span>
+                                  </div>
+                                  <span className="text-blue-700 font-bold bg-blue-50 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border border-blue-100/50 shrink-0 ml-3">
                                     {p.SoLuong ? `${p.SoLuong} Thùng` : p.quantity}
                                   </span>
                                 </div>
                               ))
                             ) : (
-                              <div className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
-                                <strong className="text-slate-900">{selectedTracking.product}</strong>
-                                <span className="text-amber-600 font-bold bg-amber-50 px-2 rounded text-[11px] whitespace-nowrap">
+                              <div className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all group">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
+                                    <Package size={16} />
+                                  </div>
+                                  <span className="text-sm font-bold text-slate-800 line-clamp-2">{selectedTracking.product}</span>
+                                </div>
+                                <span className="text-blue-700 font-bold bg-blue-50 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border border-blue-100/50 shrink-0 ml-3">
                                   {selectedTracking.quantity}
                                 </span>
                               </div>
@@ -588,11 +606,13 @@ export default function TrackingPage() {
                   </div>
 
                   {/* Timeline */}
-                  <div className="flex-1">
+                  <div className="flex-1 mt-8">
                     {selectedTracking.isRealDB ? (
-                      <div className="bg-white rounded-2xl">
-                        <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6">Lịch sử lộ trình</h4>
-                        <div className="relative space-y-6">
+                      <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                          <Truck size={12} className="text-emerald-500" /> Lịch sử lộ trình
+                        </h4>
+                        <div className="relative space-y-6 pl-2">
                           <div className="absolute left-[72px] top-1 bottom-1 w-px bg-slate-100"></div>
                           {selectedTracking.dbRecord?.LoTrinh?.map((log: any, idx: number) => {
                             const isComplete = log.Status === "COMPLETE";
@@ -607,7 +627,7 @@ export default function TrackingPage() {
                                     {log.ThoiGian ? new Date(log.ThoiGian).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}
                                   </div>
                                 </div>
-                                <div className="relative z-10 bg-white pt-0.5">
+                                <div className="relative z-10 bg-slate-50 pt-0.5">
                                   {isComplete
                                     ? <CheckCircle2 size={16} className="text-emerald-500" />
                                     : isProcessing
@@ -729,270 +749,270 @@ export default function TrackingPage() {
                   <AlertCircle size={16} /> {loginError}
                 </div>
               )}  <form onSubmit={handleInlineLogin} className="space-y-4">
-    <div className="space-y-1">
-      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Tên đăng nhập</label>
-      <input
-        type="text"
-        value={loginUsername}
-        onChange={(e) => setLoginUsername(e.target.value)}
-        className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-5 text-sm font-bold text-slate-800 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-400/5 transition-all"
-        placeholder="Nhập tên đăng nhập của bạn..."
-        required
-      />
-    </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Tên đăng nhập</label>
+                  <input
+                    type="text"
+                    value={loginUsername}
+                    onChange={(e) => setLoginUsername(e.target.value)}
+                    className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-5 text-sm font-bold text-slate-800 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-400/5 transition-all"
+                    placeholder="Nhập tên đăng nhập của bạn..."
+                    required
+                  />
+                </div>
 
-    <div className="space-y-1">
-      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Mật khẩu</label>
-      <input
-        type="password"
-        value={loginPassword}
-        onChange={(e) => setLoginPassword(e.target.value)}
-        className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-5 text-sm font-bold text-slate-800 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-400/5 transition-all"
-        placeholder="••••••••"
-        required
-      />
-    </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Mật khẩu</label>
+                  <input
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-5 text-sm font-bold text-slate-800 outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-400/5 transition-all"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
 
-    <button
-      type="submit"
-      disabled={isLoggingIn}
-      className="w-full h-12 bg-purple-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:-translate-y-0.5 transition-all cursor-pointer border-none mt-6 disabled:opacity-50"
-    >
-      {isLoggingIn ? <Clock className="animate-spin" size={18} /> : <LogIn size={18} />}
-      Đăng Nhập Ngay
-    </button>
-  </form>
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="w-full h-12 bg-purple-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:-translate-y-0.5 transition-all cursor-pointer border-none mt-6 disabled:opacity-50"
+                >
+                  {isLoggingIn ? <Clock className="animate-spin" size={18} /> : <LogIn size={18} />}
+                  Đăng Nhập Ngay
+                </button>
+              </form>
             </div >
           ) : (
-    /* ═══════ AUTHENTICATED R&D DASHBOARD ═══════ */
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-      {/* Left Column: Your Sample Requests List */}
-      <div className="lg:col-span-1 space-y-6">
-        <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-6">
-          <div>
-            <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
-                <Beaker size={18} />
-              </span>
-              Lịch Sử Yêu Cầu R&D
-            </h3>
-            <p className="text-xs text-slate-400 font-medium mt-1">Danh sách mẫu pha chế bạn đã gửi</p>
-          </div>
-
-          {/* Quick Search */}
-          <div className="relative group">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              className="w-full bg-slate-50 border-none rounded-xl px-10 py-3 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-purple-600/10 font-bold"
-              placeholder="Tìm theo Mã Yêu Cầu, Màu..."
-              value={sampleSearchTerm}
-              onChange={e => setSampleSearchTerm(e.target.value)}
-            />
-          </div>
-
-          {/* List Container */}
-          <div className="space-y-3 max-h-[450px] overflow-y-auto pr-1">
-            {customerRequests.length === 0 ? (
-              <div className="text-center py-10 text-slate-400 font-medium italic text-sm">
-                Không tìm thấy yêu cầu pha chế nào.
-              </div>
-            ) : (
-              customerRequests.map(req => {
-                const isSelected = selectedSample?.id === req.id;
-                return (
-                  <div
-                    key={req.id}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer ${isSelected
-                      ? 'bg-purple-50/50 border-purple-200'
-                      : 'bg-white border-slate-100 hover:bg-slate-50'
-                      }`}
-                    onClick={() => setSelectedSample(req)}
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-[12px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
-                        {req.id}
+            /* ═══════ AUTHENTICATED R&D DASHBOARD ═══════ */
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+              {/* Left Column: Your Sample Requests List */}
+              <div className="lg:col-span-1 space-y-6">
+                <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-6">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                        <Beaker size={18} />
                       </span>
-                      <span className="text-[10px] font-bold text-slate-400">{req.date}</span>
-                    </div>
-                    <h4 className="font-extrabold text-slate-800 text-sm">{req.colorCode}</h4>
-                    <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-50">
-                      <span className="text-[11px] text-slate-400 font-medium">{req.surface}</span>
-                      <span className={`status-badge text-[10px] font-black px-2 py-0.5 rounded-md ${req.status === 'approved'
-                        ? 'bg-emerald-50 text-emerald-600'
-                        : req.status === 'processing'
-                          ? 'bg-orange-50 text-orange-600 animate-pulse'
-                          : 'bg-amber-50 text-amber-600'
-                        }`}>
-                        {req.status.toUpperCase()}
-                      </span>
-                    </div>
+                      Lịch Sử Yêu Cầu R&D
+                    </h3>
+                    <p className="text-xs text-slate-400 font-medium mt-1">Danh sách mẫu pha chế bạn đã gửi</p>
                   </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Right Column: Visual R&D Process Timeline Roadmap */}
-      <div className="lg:col-span-2 space-y-6">
-        {selectedSample ? (
-          <>
-            {/* Header Detail Card */}
-            <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-purple-600/5 rounded-full blur-2xl" />
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black text-purple-600 bg-purple-50 px-3 py-1 rounded-lg">
-                      ID Yêu cầu: {selectedSample.id}
-                    </span>
-                    <span className={`status-badge text-xs font-black px-2.5 py-1 rounded-lg ${selectedSample.status === 'approved'
-                      ? 'bg-emerald-50 text-emerald-600'
-                      : selectedSample.status === 'processing'
-                        ? 'bg-orange-50 text-orange-600'
-                        : 'bg-amber-50 text-amber-600'
-                      }`}>
-                      {selectedSample.status === 'approved' ? 'APPROVED KCS' : selectedSample.status.toUpperCase()}
-                    </span>
+                  {/* Quick Search */}
+                  <div className="relative group">
+                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      className="w-full bg-slate-50 border-none rounded-xl px-10 py-3 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-purple-600/10 font-bold"
+                      placeholder="Tìm theo Mã Yêu Cầu, Màu..."
+                      value={sampleSearchTerm}
+                      onChange={e => setSampleSearchTerm(e.target.value)}
+                    />
                   </div>
-                  <h2 className="text-2xl font-black text-slate-900 mt-3 mb-2">{selectedSample.colorCode}</h2>
-                  <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-400">
-                    <span className="flex items-center gap-1.5"><Calendar size={14} /> Ngày tạo: <span className="text-slate-800">{selectedSample.date}</span></span>
-                    {selectedSample.deadline && (
-                      <span className="flex items-center gap-1.5"><Clock size={14} /> Hạn R&D: <span className="text-rose-600 font-bold">{selectedSample.deadline}</span></span>
+
+                  {/* List Container */}
+                  <div className="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                    {customerRequests.length === 0 ? (
+                      <div className="text-center py-10 text-slate-400 font-medium italic text-sm">
+                        Không tìm thấy yêu cầu pha chế nào.
+                      </div>
+                    ) : (
+                      customerRequests.map(req => {
+                        const isSelected = selectedSample?.id === req.id;
+                        return (
+                          <div
+                            key={req.id}
+                            className={`p-4 rounded-2xl border transition-all cursor-pointer ${isSelected
+                              ? 'bg-purple-50/50 border-purple-200'
+                              : 'bg-white border-slate-100 hover:bg-slate-50'
+                              }`}
+                            onClick={() => setSelectedSample(req)}
+                          >
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-[12px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+                                {req.id}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400">{req.date}</span>
+                            </div>
+                            <h4 className="font-extrabold text-slate-800 text-sm">{req.colorCode}</h4>
+                            <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-50">
+                              <span className="text-[11px] text-slate-400 font-medium">{req.surface}</span>
+                              <span className={`status-badge text-[10px] font-black px-2 py-0.5 rounded-md ${req.status === 'approved'
+                                ? 'bg-emerald-50 text-emerald-600'
+                                : req.status === 'processing'
+                                  ? 'bg-orange-50 text-orange-600 animate-pulse'
+                                  : 'bg-amber-50 text-amber-600'
+                                }`}>
+                                {req.status.toUpperCase()}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
-                    <span className="flex items-center gap-1.5"><Layers size={14} /> Bề mặt: <span className="text-slate-800">{selectedSample.surface}</span></span>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* interactive 5-Step Process Timeline */}
-            <div className="bg-white border border-slate-100 rounded-[28px] p-8 shadow-sm space-y-8">
-              <div>
-                <h3 className="text-lg font-black text-slate-800">Bản Đồ Lộ Trình Quy Trình Pha Chế Sơn</h3>
-                <p className="text-xs text-slate-400 font-medium mt-1">Lịch trình pha chế R&D thời gian thực tương tác với phòng thí nghiệm</p>
-              </div>
-
-              {/* 5 Steps Render */}
-              <div className="space-y-6 relative before:absolute before:left-5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-                {(() => {
-                  const versions = selectedSample.LichSuPhienBan || [];
-                  const hasVersions = versions.length > 0;
-                  const isApproved = selectedSample.status === 'approved' || selectedSample.status === 'complete';
-                  const hasPassed = versions.some((v: any) => v.result === 'pass') || isApproved;
-                  const isProcessing = selectedSample.status === 'processing' || hasVersions;
-
-                  const steps = [
-                    {
-                      label: 'Tiếp nhận yêu cầu R&D',
-                      desc: 'Yêu cầu của bạn đã được tiếp nhận và ghi nhận thành công trên hệ thống VTSC PaintPro.',
-                      status: 'completed', // always complete
-                      time: selectedSample.date
-                    },
-                    {
-                      label: 'Phân tích Lab & Hạt màu',
-                      desc: 'Chuyên gia Lab VTSC đang phân tích đặc tính quang phổ hạt màu, độ bền và lựa chọn cấu trúc lớp nền.',
-                      status: isProcessing ? 'completed' : 'current',
-                      time: isProcessing ? selectedSample.date : null
-                    },
-                    {
-                      label: 'Pha chế mẫu thử (Lab Mixing)',
-                      desc: 'Hệ thống thiết bị R&D tiến hành pha chế các mẻ test định biên theo công thức tiêu chuẩn AkzoNobel.',
-                      status: hasVersions ? (hasPassed ? 'completed' : 'current') : 'upcoming',
-                      detail: hasVersions ? (
-                        <div className="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-4">
-                          <div className="text-[11px] font-bold text-purple-600 uppercase tracking-widest flex items-center gap-1.5">
-                            <Beaker size={12} /> Nhật ký test của R&D Lab ({versions.length} phiên bản)
+              {/* Right Column: Visual R&D Process Timeline Roadmap */}
+              <div className="lg:col-span-2 space-y-6">
+                {selectedSample ? (
+                  <>
+                    {/* Header Detail Card */}
+                    <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-purple-600/5 rounded-full blur-2xl" />
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-purple-600 bg-purple-50 px-3 py-1 rounded-lg">
+                              ID Yêu cầu: {selectedSample.id}
+                            </span>
+                            <span className={`status-badge text-xs font-black px-2.5 py-1 rounded-lg ${selectedSample.status === 'approved'
+                              ? 'bg-emerald-50 text-emerald-600'
+                              : selectedSample.status === 'processing'
+                                ? 'bg-orange-50 text-orange-600'
+                                : 'bg-amber-50 text-amber-600'
+                              }`}>
+                              {selectedSample.status === 'approved' ? 'APPROVED KCS' : selectedSample.status.toUpperCase()}
+                            </span>
                           </div>
-                          <div className="space-y-3">
-                            {versions.map((v: any, index: number) => (
-                              <div key={index} className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm space-y-2.5">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-xs font-black text-slate-800">Phiên bản {v.version}</span>
-                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${v.result === 'pass'
-                                    ? 'bg-emerald-50 text-emerald-600'
-                                    : 'bg-rose-50 text-rose-600'
-                                    }`}>
-                                    {v.result === 'pass' ? 'ĐẠT CHUẨN KCS' : 'CHƯA ĐẠT - RE-TEST'}
-                                  </span>
-                                </div>
-                                {v.parameters && (
-                                  <div className="text-xs text-slate-500 font-medium">
-                                    <strong>Thông số: </strong>{v.parameters}
-                                  </div>
-                                )}
-                                {v.feedback && (
-                                  <div className="text-xs text-slate-600 font-medium bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
-                                    <strong>Phản hồi kỹ thuật: </strong>{v.feedback}
-                                  </div>
-                                )}
-                                <div className="flex flex-wrap gap-3 text-[10px] font-bold text-slate-400">
-                                  <span>Hao hụt: <strong className="text-slate-700">{(v.inputWeight && v.outputWeight) ? ((v.inputWeight - v.outputWeight) / v.inputWeight * 100).toFixed(1) : '0.0'}%</strong></span>
-                                  <span>Người test: <strong className="text-slate-700">{v.tester || 'Admin'}</strong></span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null
-                    },
-                    {
-                      label: 'Kiểm định KCS chất lượng',
-                      desc: 'Mẫu sơn pha chế được test va đập vật lý, đo độ bóng bề mặt và sai lệch sai số màu Delta E.',
-                      status: hasPassed ? (isApproved ? 'completed' : 'current') : 'upcoming'
-                    },
-                    {
-                      label: 'Bàn giao mẫu thực tế & Duyệt',
-                      desc: 'Khách hàng nhận mẫu màu thật, thử nghiệm thực tế tại công trình để phê duyệt sản xuất hàng loạt.',
-                      status: isApproved ? 'completed' : 'upcoming'
-                    }
-                  ];
-
-                  return steps.map((s, i) => {
-                    const isComp = s.status === 'completed';
-                    const isCurr = s.status === 'current';
-                    return (
-                      <div key={i} className="relative pl-10 group">
-                        {/* Step Icon/Dot */}
-                        <div className={`absolute left-0 top-1 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center shadow-sm z-10 transition-all ${isComp
-                          ? 'bg-emerald-500 text-white'
-                          : isCurr
-                            ? 'bg-purple-600 text-white animate-pulse'
-                            : 'bg-slate-100 text-slate-400'
-                          }`}>
-                          {isComp ? <CheckCircle2 size={16} /> : isCurr ? <Clock size={16} /> : <span className="text-[11px] font-bold">{i + 1}</span>}
-                        </div>
-
-                        {/* Step Card */}
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-3">
-                            <h4 className="font-extrabold text-slate-800 text-sm sm:text-base">{s.label}</h4>
-                            {isCurr && (
-                              <span className="text-[9px] font-black bg-purple-100 text-purple-600 px-2 py-0.5 rounded uppercase tracking-wider">Đang Xử Lý</span>
+                          <h2 className="text-2xl font-black text-slate-900 mt-3 mb-2">{selectedSample.colorCode}</h2>
+                          <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-400">
+                            <span className="flex items-center gap-1.5"><Calendar size={14} /> Ngày tạo: <span className="text-slate-800">{selectedSample.date}</span></span>
+                            {selectedSample.deadline && (
+                              <span className="flex items-center gap-1.5"><Clock size={14} /> Hạn R&D: <span className="text-rose-600 font-bold">{selectedSample.deadline}</span></span>
                             )}
+                            <span className="flex items-center gap-1.5"><Layers size={14} /> Bề mặt: <span className="text-slate-800">{selectedSample.surface}</span></span>
                           </div>
-                          <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed max-w-xl">{s.desc}</p>
-                          {s.detail}
                         </div>
                       </div>
-                    );
-                  });
-                })()}
+                    </div>
+
+                    {/* interactive 5-Step Process Timeline */}
+                    <div className="bg-white border border-slate-100 rounded-[28px] p-8 shadow-sm space-y-8">
+                      <div>
+                        <h3 className="text-lg font-black text-slate-800">Bản Đồ Lộ Trình Quy Trình Pha Chế Sơn</h3>
+                        <p className="text-xs text-slate-400 font-medium mt-1">Lịch trình pha chế R&D thời gian thực tương tác với phòng thí nghiệm</p>
+                      </div>
+
+                      {/* 5 Steps Render */}
+                      <div className="space-y-6 relative before:absolute before:left-5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                        {(() => {
+                          const versions = selectedSample.LichSuPhienBan || [];
+                          const hasVersions = versions.length > 0;
+                          const isApproved = selectedSample.status === 'approved' || selectedSample.status === 'complete';
+                          const hasPassed = versions.some((v: any) => v.result === 'pass') || isApproved;
+                          const isProcessing = selectedSample.status === 'processing' || hasVersions;
+
+                          const steps = [
+                            {
+                              label: 'Tiếp nhận yêu cầu R&D',
+                              desc: 'Yêu cầu của bạn đã được tiếp nhận và ghi nhận thành công trên hệ thống VTSC PaintPro.',
+                              status: 'completed', // always complete
+                              time: selectedSample.date
+                            },
+                            {
+                              label: 'Phân tích Lab & Hạt màu',
+                              desc: 'Chuyên gia Lab VTSC đang phân tích đặc tính quang phổ hạt màu, độ bền và lựa chọn cấu trúc lớp nền.',
+                              status: isProcessing ? 'completed' : 'current',
+                              time: isProcessing ? selectedSample.date : null
+                            },
+                            {
+                              label: 'Pha chế mẫu thử (Lab Mixing)',
+                              desc: 'Hệ thống thiết bị R&D tiến hành pha chế các mẻ test định biên theo công thức tiêu chuẩn AkzoNobel.',
+                              status: hasVersions ? (hasPassed ? 'completed' : 'current') : 'upcoming',
+                              detail: hasVersions ? (
+                                <div className="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-4">
+                                  <div className="text-[11px] font-bold text-purple-600 uppercase tracking-widest flex items-center gap-1.5">
+                                    <Beaker size={12} /> Nhật ký test của R&D Lab ({versions.length} phiên bản)
+                                  </div>
+                                  <div className="space-y-3">
+                                    {versions.map((v: any, index: number) => (
+                                      <div key={index} className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm space-y-2.5">
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs font-black text-slate-800">Phiên bản {v.version}</span>
+                                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${v.result === 'pass'
+                                            ? 'bg-emerald-50 text-emerald-600'
+                                            : 'bg-rose-50 text-rose-600'
+                                            }`}>
+                                            {v.result === 'pass' ? 'ĐẠT CHUẨN KCS' : 'CHƯA ĐẠT - RE-TEST'}
+                                          </span>
+                                        </div>
+                                        {v.parameters && (
+                                          <div className="text-xs text-slate-500 font-medium">
+                                            <strong>Thông số: </strong>{v.parameters}
+                                          </div>
+                                        )}
+                                        {v.feedback && (
+                                          <div className="text-xs text-slate-600 font-medium bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
+                                            <strong>Phản hồi kỹ thuật: </strong>{v.feedback}
+                                          </div>
+                                        )}
+                                        <div className="flex flex-wrap gap-3 text-[10px] font-bold text-slate-400">
+                                          <span>Hao hụt: <strong className="text-slate-700">{(v.inputWeight && v.outputWeight) ? ((v.inputWeight - v.outputWeight) / v.inputWeight * 100).toFixed(1) : '0.0'}%</strong></span>
+                                          <span>Người test: <strong className="text-slate-700">{v.tester || 'Admin'}</strong></span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null
+                            },
+                            {
+                              label: 'Kiểm định KCS chất lượng',
+                              desc: 'Mẫu sơn pha chế được test va đập vật lý, đo độ bóng bề mặt và sai lệch sai số màu Delta E.',
+                              status: hasPassed ? (isApproved ? 'completed' : 'current') : 'upcoming'
+                            },
+                            {
+                              label: 'Bàn giao mẫu thực tế & Duyệt',
+                              desc: 'Khách hàng nhận mẫu màu thật, thử nghiệm thực tế tại công trình để phê duyệt sản xuất hàng loạt.',
+                              status: isApproved ? 'completed' : 'upcoming'
+                            }
+                          ];
+
+                          return steps.map((s, i) => {
+                            const isComp = s.status === 'completed';
+                            const isCurr = s.status === 'current';
+                            return (
+                              <div key={i} className="relative pl-10 group">
+                                {/* Step Icon/Dot */}
+                                <div className={`absolute left-0 top-1 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center shadow-sm z-10 transition-all ${isComp
+                                  ? 'bg-emerald-500 text-white'
+                                  : isCurr
+                                    ? 'bg-purple-600 text-white animate-pulse'
+                                    : 'bg-slate-100 text-slate-400'
+                                  }`}>
+                                  {isComp ? <CheckCircle2 size={16} /> : isCurr ? <Clock size={16} /> : <span className="text-[11px] font-bold">{i + 1}</span>}
+                                </div>
+
+                                {/* Step Card */}
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-3">
+                                    <h4 className="font-extrabold text-slate-800 text-sm sm:text-base">{s.label}</h4>
+                                    {isCurr && (
+                                      <span className="text-[9px] font-black bg-purple-100 text-purple-600 px-2 py-0.5 rounded uppercase tracking-wider">Đang Xử Lý</span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed max-w-xl">{s.desc}</p>
+                                  {s.detail}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-100 rounded-[28px] p-8 h-full flex flex-col items-center justify-center text-center">
+                    <Beaker size={48} className="text-slate-200 mb-4" />
+                    <h4 className="text-lg font-black text-slate-800">Chọn Một Yêu Cầu R&D</h4>
+                    <p className="text-sm text-slate-400 font-medium mt-1">Bấm vào một mẫu bên danh sách trái để theo dõi chi tiết</p>
+                  </div>
+                )}
               </div>
             </div>
-          </>
-        ) : (
-          <div className="bg-slate-50 border border-slate-100 rounded-[28px] p-8 h-full flex flex-col items-center justify-center text-center">
-            <Beaker size={48} className="text-slate-200 mb-4" />
-            <h4 className="text-lg font-black text-slate-800">Chọn Một Yêu Cầu R&D</h4>
-            <p className="text-sm text-slate-400 font-medium mt-1">Bấm vào một mẫu bên danh sách trái để theo dõi chi tiết</p>
-          </div>
-        )}
-      </div>
-    </div>
           )}
         </div>
       )}

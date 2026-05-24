@@ -437,7 +437,7 @@ export default function VanChuyenPage() {
                 {/* Waypoint Update Section */}
                 <div className="flex flex-col sm:flex-row gap-4 mt-4 pt-4 border-t border-slate-200">
                   <div className="w-full sm:w-1/3 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Hành động lộ trình</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Hoạt động tại trạm</label>
                     <select
                       value={waypointAction}
                       onChange={(e) => setWaypointAction(e.target.value)}
@@ -473,6 +473,7 @@ export default function VanChuyenPage() {
                     </div>
                   </div>
                 </div>
+
               </div>
             )}
 
@@ -660,48 +661,7 @@ export default function VanChuyenPage() {
             })}
           </div>
 
-          {/* Form thêm trạm trung chuyển dành cho nhân viên/tài xế */}
-          {!isCustomer && (
-            <div className="mt-8 pt-8 border-t border-slate-100 bg-slate-50/50 p-6 rounded-2xl">
-              <h5 className="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Navigation size={14} className="text-blue-600 rotate-45" /> Cập nhật lộ trình hiện tại
-              </h5>
-              <div className="flex flex-col md:flex-row gap-4 items-end">
-                <div className="flex-1 w-full space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Hoạt động tại trạm</label>
-                  <select
-                    value={waypointAction}
-                    onChange={(e) => setWaypointAction(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
-                  >
-                    <option value="Đã đi đến trung tâm phân loại">Đã đến trung tâm phân loại</option>
-                    <option value="Đã xuất phát từ">Đã rời trạm</option>
-                    <option value="Đang trung chuyển qua">Đang trung chuyển qua</option>
-                    <option value="Đang di chuyển đến">Đang di chuyển đến</option>
-                    <option value="Gặp sự cố giao nhận tại">Gặp sự cố tại</option>
-                  </select>
-                </div>
-                <div className="flex-[2] w-full space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Địa điểm / Trạm</label>
-                  <LocationInput
-                    value={newWaypoint}
-                    onChange={setNewWaypoint}
-                    placeholder="Nhập hoặc tìm kiếm trạm trung chuyển..."
-                    icon={MapPin}
-                    iconColor="text-rose-500"
-                    ringColor="focus:ring-blue-500/20"
-                    onEnter={handleAddWaypoint}
-                  />
-                </div>
-                <button
-                  onClick={handleAddWaypoint}
-                  className="w-full md:w-auto px-5 py-2.5 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/10 transition-all cursor-pointer whitespace-nowrap h-[38px] flex items-center justify-center gap-1.5"
-                >
-                  Thêm Trạm
-                </button>
-              </div>
-            </div>
-          )}
+
 
           {selectedTracking.HinhAnhGiaoHang && selectedTracking.HinhAnhGiaoHang.length > 0 && (
             <div className="mt-8 pt-8 border-t border-slate-50">
@@ -728,19 +688,14 @@ export default function VanChuyenPage() {
             <Share2 size={18} /> Chia Sẻ Vị Trí
           </button>
           
-          {!isCustomer && (
+          {!isCustomer && !isDelivered && (
             <div className="flex items-center gap-2 ml-4 pl-4 border-l border-slate-200">
-              <span className="text-sm font-bold text-slate-600">Cập nhật trạng thái:</span>
-              <select
-                onChange={(e) => handleUpdateGeneralStatus(e.target.value)}
-                value=""
-                className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm cursor-pointer"
+              <button
+                onClick={() => handleUpdateGeneralStatus("Giao hàng thành công")}
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2 cursor-pointer"
               >
-                <option value="" disabled>-- Chọn trạng thái --</option>
-                <option value="Xuất xưởng">Xuất xưởng</option>
-                <option value="Đang giao hàng">Đang giao hàng</option>
-                <option value="Giao hàng thành công">Giao hàng thành công</option>
-              </select>
+                <CheckCircle2 size={18} /> Xác nhận giao hàng thành công
+              </button>
             </div>
           )}
         </div>

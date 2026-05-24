@@ -8,7 +8,7 @@ const gioHangItemSchema = new mongoose.Schema({
   },
   MaMau: {
     type: String,
-    required: [true, 'Vui lòng chọn mã màu']
+    default: 'N/A'
   },
   SoLuong: {
     type: Number,
