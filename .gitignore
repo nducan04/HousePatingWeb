@@ -52,3 +52,4 @@ test.log
 .vscode/
 frontend/tsconfig.tsbuildinfo
 frontend/tsconfig.tsbuildinfo
+tsconfig.ts

@@ -799,19 +799,27 @@ export default function OrderManagementPage() {
 
     useEffect(() => {
         fetchOrders();
+
+        // Auto-refresh real-time every 5 seconds
+        const intervalId = setInterval(() => {
+            fetchOrders(false);
+        }, 5000);
+
+        return () => clearInterval(intervalId);
     }, [activeTab]);
 
-    const fetchOrders = async () => {
-        setLoading(true);
+    const fetchOrders = async (showLoading = true) => {
+        if (showLoading) setLoading(true);
         try {
             const res = await api.get(`${API_DON_HANG}?status=${activeTab}`);
             if (res.data.success) {
-                setOrders(res.data.data);
+                const sortedData = res.data.data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setOrders(sortedData);
             }
         } catch (error) {
             console.error('Error fetching orders:', error);
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
     };
 
@@ -1206,7 +1214,7 @@ export default function OrderManagementPage() {
                         <Truck size={22} className="animate-bounce" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Theo Dõi Kiện Hàng Mới Nhất</h2>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Theo Dõi Đơn Hàng Mới Nhất</h2>
                         <p className="text-xs text-slate-400 font-semibold mt-0.5">Click vào kiện hàng để xem chi tiết lộ trình vận chuyển trên toàn cầu</p>
                     </div>
                 </div>
@@ -1225,14 +1233,14 @@ export default function OrderManagementPage() {
                                 }}
                             >
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/20 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
-                                
+
                                 <div className="relative z-10 flex-1">
                                     <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
                                         {t.code}
                                     </span>
                                     <div className="font-extrabold text-slate-800 mt-3 text-[14px]">{t.customer}</div>
                                     <div className="text-[12px] text-slate-400 font-semibold mt-0.5">{t.product}</div>
-                                    
+
                                     <div className="flex items-center gap-2 mt-4">
                                         <div className="w-28 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                             <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(completedSteps / totalSteps) * 100}%` }} />
@@ -1245,7 +1253,7 @@ export default function OrderManagementPage() {
                                         </span>
                                     )}
                                 </div>
-                                
+
                                 <div className="relative z-10 bg-white p-3 rounded-2xl border border-slate-100 group-hover:border-blue-200 transition-colors shadow-sm ml-4">
                                     <QRCodeSVG value={`https://vtsc.vn/tracking/${t.code}`} size={75} bgColor="#ffffff" fgColor="#0c102a" level="M" />
                                 </div>
@@ -1990,7 +1998,7 @@ export default function OrderManagementPage() {
                                                     <span className="font-black text-slate-900">{(selectedOrder.DaCoc || 0).toLocaleString()}đ ({Math.round(((selectedOrder.DaCoc || 0) / selectedOrder.TongTien) * 100)}%)</span>
                                                     {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
                                                         <button
-                                                        onClick={() => {
+                                                            onClick={() => {
                                                                 setDepositAmount(selectedOrder.DaCoc || 0);
                                                                 setIsPaymentModalOpen(true);
                                                             }}
@@ -2033,7 +2041,7 @@ export default function OrderManagementPage() {
                                         </div>
                                         {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
                                             <button
-                                            onClick={() => {
+                                                onClick={() => {
                                                     if ((selectedOrder.DaCoc || 0) <= 0) {
                                                         alert('Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.');
                                                         return;
@@ -2420,13 +2428,13 @@ export default function OrderManagementPage() {
                                     />
                                     <div className="flex gap-2">
                                         {[0.3, 0.5, 1].map(p => (
-                                        <button
-                                            key={p}
-                                            onClick={() => setDepositAmount(Math.round(selectedOrder!.TongTien * p))}
-                                            className="flex-1 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                                        >
-                                            {p * 100}%
-                                        </button>
+                                            <button
+                                                key={p}
+                                                onClick={() => setDepositAmount(Math.round(selectedOrder!.TongTien * p))}
+                                                className="flex-1 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                            >
+                                                {p * 100}%
+                                            </button>
                                         ))}
                                     </div>
                                 </div>

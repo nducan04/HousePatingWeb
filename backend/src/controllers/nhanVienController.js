@@ -63,10 +63,20 @@ exports.create = async (req, res) => {
 // @route   PUT /api/nhan-vien/:id
 exports.update = async (req, res) => {
   try {
-    const item = await NhanVien.findByIdAndUpdate(req.params.id, req.body, {
+    let item = await NhanVien.findById(req.params.id);
+    if (!item) return res.status(404).json({ success: false, error: 'Không tìm thấy nhân viên' });
+
+    // NhanVien can only update their own profile
+    if (req.user.VaiTro === 'NhanVien') {
+      if (item.AccountID.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ success: false, error: 'Bạn không có quyền sửa thông tin người khác' });
+      }
+    }
+
+    item = await NhanVien.findByIdAndUpdate(req.params.id, req.body, {
       new: true, runValidators: true,
     });
-    if (!item) return res.status(404).json({ success: false, error: 'Không tìm thấy nhân viên' });
+    
     res.status(200).json({ success: true, data: item });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });

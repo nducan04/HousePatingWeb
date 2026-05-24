@@ -66,6 +66,12 @@ const donHangSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  TenNguoiNhan: {
+    type: String,
+  },
+  SDTNguoiNhan: {
+    type: String,
+  },
   HanXacNhan: {
     type: Date,
     default: () => new Date(+new Date() + 24 * 60 * 60 * 1000) // 24h từ lúc đặt
