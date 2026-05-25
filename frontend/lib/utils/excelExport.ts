@@ -780,156 +780,197 @@ export const exportProductionReportExcel = async (
 };
 
 export const exportCustomerServiceReportExcel = async (
-  stats: any,
-  csLogs: any[],
+  summaryData: any,
+  ticketList: any[],
   period: string
 ) => {
-  const workbook = new ExcelJS.Workbook();
-  const exportDate = new Date().toLocaleString('vi-VN');
-  
-  const baseFont = { name: 'Times New Roman', size: 11 };
-  const boldFont = { name: 'Times New Roman', size: 11, bold: true };
-  const italicFont = { name: 'Times New Roman', size: 11, italic: true };
-  const headerFont = { name: 'Times New Roman', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
-  const titleFont = { name: 'Times New Roman', size: 16, bold: true };
-
-  const sheet = workbook.addWorksheet('Báo Cáo CSKH', {
-    views: [{ showGridLines: false }]
-  });
-
-  // Header hành chính
-  sheet.mergeCells('A1:C1');
-  const companyCell = sheet.getCell('A1');
-  companyCell.value = 'CÔNG TY CP TMDV VOSCO (VTSC)';
-  companyCell.font = boldFont;
-
-  sheet.mergeCells('E1:G1');
-  const countryCell = sheet.getCell('E1');
-  countryCell.value = 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM';
-  countryCell.font = boldFont;
-  countryCell.alignment = { horizontal: 'center' };
-
-  sheet.mergeCells('E2:G2');
-  const mottoCell = sheet.getCell('E2');
-  mottoCell.value = 'Độc lập - Tự do - Hạnh phúc';
-  mottoCell.font = { ...boldFont, underline: true };
-  mottoCell.alignment = { horizontal: 'center' };
-
-  // Tiêu đề
-  sheet.mergeCells('A4:G4');
-  const titleCell = sheet.getCell('A4');
-  titleCell.value = 'BÁO CÁO TÌNH HÌNH HẬU MÃI VÀ CHĂM SÓC KHÁCH HÀNG';
-  titleCell.font = titleFont;
-  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-  // Subtitle
-  sheet.mergeCells('A5:G5');
-  const subTitleCell = sheet.getCell('A5');
-  subTitleCell.value = `Kỳ báo cáo: ${period} - Ngày xuất: ${exportDate}`;
-  subTitleCell.font = italicFont;
-  subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-  // Khối 1: Tóm tắt KPI
-  const kpiTitleRow = sheet.getRow(7);
-  kpiTitleRow.values = ['', 'Tổng số ca hỗ trợ/bảo hành', 'Tỷ lệ xử lý dứt điểm (%)', 'Điểm hài lòng khách hàng CSAT'];
-  kpiTitleRow.font = headerFont;
-  kpiTitleRow.alignment = { horizontal: 'center', vertical: 'middle' };
-
-  [2, 3, 4].forEach(colIdx => {
-    const cell = kpiTitleRow.getCell(colIdx);
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
-    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-  });
-
-  const kpiDataRow = sheet.getRow(8);
-  const kpiStats = stats?.kpi || {};
-  
-  kpiDataRow.values = [
-    '', 
-    kpiStats.totalReturns || 0, 
-    `${kpiStats.successRate || 0}%`, 
-    `${kpiStats.csatScore || 0}/5`
-  ];
-  kpiDataRow.font = boldFont;
-  kpiDataRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
-  [2, 3, 4].forEach(colIdx => {
-    const cell = kpiDataRow.getCell(colIdx);
-    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-  });
-
-  // Khối 2: Bảng chi tiết
-  const tableStartRow = 11;
-  const headers = ['STT', 'Mã Phiếu Hỗ Trợ', 'Tên Khách Hàng', 'Nội Dung Yêu Cầu', 'Nguyên Nhân Lỗi', 'Trạng Thái Xử Lý', 'Phương Án Khắc Phục'];
-  
-  const headerRow = sheet.getRow(tableStartRow);
-  headerRow.values = headers;
-  headerRow.font = headerFont;
-  headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
-  headers.forEach((_, idx) => {
-    const cell = headerRow.getCell(idx + 1);
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
-    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-  });
-
-  csLogs.forEach((t, idx) => {
-    const r = sheet.getRow(tableStartRow + 1 + idx);
-    r.values = [
-      idx + 1,
-      t.id,
-      t.customer,
-      t.content,
-      t.cause,
-      t.status,
-      t.solution
-    ];
-    r.font = baseFont;
-    r.alignment = { vertical: 'middle', wrapText: true }; // Wrap text for long content
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const exportDate = new Date().toLocaleString('vi-VN');
     
-    // Borders
-    [1, 2, 3, 4, 5, 6, 7].forEach(colIdx => {
-      r.getCell(colIdx).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    // Yêu cầu font chữ chủ đạo: Times New Roman, cỡ 11
+    const baseFont = { name: 'Times New Roman', size: 11 };
+    const boldFont = { name: 'Times New Roman', size: 11, bold: true };
+    const italicFont = { name: 'Times New Roman', size: 11, italic: true };
+    const headerFont = { name: 'Times New Roman', size: 11, bold: true, color: { argb: 'FFFFFFFF' } }; // Chữ trắng
+    const titleFont = { name: 'Times New Roman', size: 16, bold: true };
+
+    const sheet = workbook.addWorksheet('Báo Cáo Hậu Mãi CSKH', {
+      views: [{ showGridLines: false }]
     });
+
+    // --- 1. KHỐI TIÊU ĐỀ HÀNH CHÍNH ---
+    // Ô A1:C1
+    sheet.mergeCells('A1:C1');
+    const companyCell = sheet.getCell('A1');
+    companyCell.value = 'CÔNG TY CP TMDV VOSCO (VTSC)';
+    companyCell.font = boldFont;
+
+    // Ô E1:H1
+    sheet.mergeCells('E1:H1');
+    const countryCell = sheet.getCell('E1');
+    countryCell.value = 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM';
+    countryCell.font = boldFont;
+    countryCell.alignment = { horizontal: 'center' };
+
+    // Ô E2:H2
+    sheet.mergeCells('E2:H2');
+    const mottoCell = sheet.getCell('E2');
+    mottoCell.value = 'Độc lập - Tự do - Hạnh phúc';
+    mottoCell.font = { ...boldFont, underline: true };
+    mottoCell.alignment = { horizontal: 'center' };
+
+    // Ô A4:H4
+    sheet.mergeCells('A4:H4');
+    const titleCell = sheet.getCell('A4');
+    titleCell.value = 'BÁO CÁO TÌNH HÌNH HẬU MÃI VÀ CHĂM SÓC KHÁCH HÀNG';
+    titleCell.font = titleFont;
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    // Ô A5:H5
+    sheet.mergeCells('A5:H5');
+    const subTitleCell = sheet.getCell('A5');
+    subTitleCell.value = `Kỳ báo cáo: ${period} - Thời gian xuất: ${exportDate}`;
+    subTitleCell.font = italicFont;
+    subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    // --- 2. KHỐI 1: BẢNG TÓM TẮT SỐ LIỆU KPI ---
+    // Bắt đầu từ dòng 7
+    const kpiTitleRow = sheet.getRow(7);
+    kpiTitleRow.values = ['', 'Tổng ca bảo hành/đổi trả', 'Tỷ lệ xử lý thành công', 'Thời gian phản hồi TB', 'Điểm hài lòng CSAT'];
+    kpiTitleRow.font = headerFont;
+    kpiTitleRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    // Format header bảng KPI (Màu xanh dương đậm, chữ trắng)
+    [2, 3, 4, 5].forEach(colIdx => {
+      const cell = kpiTitleRow.getCell(colIdx);
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    });
+
+    const kpiDataRow = sheet.getRow(8);
+    // Render dữ liệu thực từ object summaryData
+    kpiDataRow.values = [
+      '', 
+      summaryData?.kpi?.totalReturns || 0, 
+      `${summaryData?.kpi?.successRate || 0}%`, 
+      `${summaryData?.kpi?.avgResponseTime || 0}h`,
+      `${summaryData?.kpi?.csatScore || 0}/5`
+    ];
+    kpiDataRow.font = boldFont;
+    kpiDataRow.alignment = { horizontal: 'center', vertical: 'middle' };
     
-    r.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
-    r.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
-    r.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
-    r.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
-  });
+    // Format data KPI
+    [2, 3, 4, 5].forEach(colIdx => {
+      const cell = kpiDataRow.getCell(colIdx);
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    });
 
-  // Auto-fit columns
-  sheet.getColumn(1).width = 6;
-  sheet.getColumn(2).width = 25; // Mã Phiếu
-  sheet.getColumn(3).width = 30; // Tên Khách Hàng
-  sheet.getColumn(4).width = 45; // Nội Dung Yêu Cầu
-  sheet.getColumn(5).width = 25; // Nguyên Nhân Lỗi
-  sheet.getColumn(6).width = 25; // Trạng Thái
-  sheet.getColumn(7).width = 45; // Phương Án Khắc Phục
+    // --- 3. KHỐI 2: BẢNG DANH SÁCH CHI TIẾT ---
+    // Cách khối 1 khoảng 2 dòng => Bắt đầu từ dòng 11
+    const tableStartRow = 11;
+    const headers = [
+      'STT', 
+      'Mã Phiếu', 
+      'Tên Khách Hàng', 
+      'Loại Yêu Cầu', 
+      'Trạng Thái Xử Lý', 
+      'Nhân Viên Phụ Trách', 
+      'Ngày Tạo', 
+      'Kết Quả Kiểm Định KCS / Nguyên Nhân Lỗi', 
+      'Ghi Chú / Phương Án Xử Lý'
+    ];
+    
+    const headerRow = sheet.getRow(tableStartRow);
+    headerRow.values = headers;
+    headerRow.font = headerFont;
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    
+    // Format Table Header Chi tiết
+    headers.forEach((_, idx) => {
+      const cell = headerRow.getCell(idx + 1);
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    });
 
-  // Khối chữ ký
-  const currentLastRow = tableStartRow + csLogs.length + 3;
-  
-  const sigRow1 = sheet.getRow(currentLastRow);
-  sigRow1.getCell(2).value = 'NGƯỜI LẬP BIỂU';
-  sigRow1.getCell(2).font = boldFont;
-  sigRow1.getCell(2).alignment = { horizontal: 'center' };
-  
-  sigRow1.getCell(5).value = 'TRƯỞNG BỘ PHẬN CSKH';
-  sigRow1.getCell(5).font = boldFont;
-  sigRow1.getCell(5).alignment = { horizontal: 'center' };
-  
-  sheet.mergeCells(`F${currentLastRow}:G${currentLastRow}`);
-  sigRow1.getCell(6).value = 'GIÁM ĐỐC PHÊ DUYỆT';
-  sigRow1.getCell(6).font = boldFont;
-  sigRow1.getCell(6).alignment = { horizontal: 'center' };
+    // Đổ dữ liệu từ mảng ticketList
+    ticketList.forEach((ticket, idx) => {
+      const r = sheet.getRow(tableStartRow + 1 + idx);
+      r.values = [
+        idx + 1, // A: STT
+        ticket.id, // B: Mã Phiếu
+        ticket.customer, // C: Tên Khách Hàng
+        ticket.type || ticket.LoaiYeuCau, // D: Loại Yêu Cầu
+        ticket.status || ticket.TrangThai, // E: Trạng Thái Xử Lý
+        ticket.assignee || 'Chưa phân công', // F: Nhân Viên Phụ Trách
+        (ticket.createdAt || ticket.time) ? new Date(ticket.createdAt || ticket.time).toLocaleDateString('vi-VN') : '', // G: Ngày Tạo
+        ticket.cause || ticket.KetQuaKiemDinh || '', // H: Nguyên Nhân Lỗi
+        ticket.solution || '' // I: Ghi Chú / Phương Án
+      ];
+      r.font = baseFont;
+      
+      // Định dạng Căn lề và Border cho dòng dữ liệu thô
+      [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(colIdx => {
+        const cell = r.getCell(colIdx);
+        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        // Mặc định căn trái, nhưng STT, Mã Phiếu, Loại, Trạng thái, Ngày tạo căn giữa
+        if ([1, 2, 4, 5, 7].includes(colIdx)) {
+          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        } else {
+          cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        }
+      });
+    });
 
-  // Write and Save
-  const buffer = await workbook.xlsx.writeBuffer();
-  // Safe filename
-  const safePeriod = period.replace(/[^a-zA-Z0-9]/g, '_');
-  const fileName = `VTSC_Bao_Cao_Hau_Mai_CSKH_${safePeriod}.xlsx`;
-  saveAs(new Blob([buffer]), fileName);
+    // --- 4. CĂN CHỈNH ĐỘ RỘNG CỘT MẶC ĐỊNH CHUẨN ---
+    sheet.getColumn(1).width = 6;  // STT
+    sheet.getColumn(2).width = 25; // Mã Phiếu & Tổng ca bảo hành
+    sheet.getColumn(3).width = 30; // Tên Khách Hàng & Tỷ lệ xử lý
+    sheet.getColumn(4).width = 25; // Loại Yêu Cầu & Thời gian phản hồi
+    sheet.getColumn(5).width = 25; // Trạng Thái Xử Lý & CSAT
+    sheet.getColumn(6).width = 25; // Nhân Viên Phụ Trách
+    sheet.getColumn(7).width = 15; // Ngày Tạo
+    sheet.getColumn(8).width = 45; // Nguyên Nhân Lỗi
+    sheet.getColumn(9).width = 55; // Ghi Chú / Phương Án
+
+    // --- 5. KHỐI CHỮ KÝ HÀNH CHÍNH ---
+    // Cách bảng dữ liệu 3 dòng
+    const currentLastRow = tableStartRow + ticketList.length + 3;
+    
+    const sigRow = sheet.getRow(currentLastRow);
+    // Cột B: NGƯỜI LẬP BIỂU
+    sigRow.getCell(2).value = 'NGƯỜI LẬP BIỂU';
+    sigRow.getCell(2).font = boldFont;
+    sigRow.getCell(2).alignment = { horizontal: 'center' };
+    sheet.getRow(currentLastRow + 1).getCell(2).value = '(Ký, ghi rõ họ tên)';
+    sheet.getRow(currentLastRow + 1).getCell(2).font = italicFont;
+    sheet.getRow(currentLastRow + 1).getCell(2).alignment = { horizontal: 'center' };
+    
+    // Cột E: TRƯỞNG BỘ PHẬN CSKH
+    sigRow.getCell(5).value = 'TRƯỞNG BỘ PHẬN CSKH';
+    sigRow.getCell(5).font = boldFont;
+    sigRow.getCell(5).alignment = { horizontal: 'center' };
+    sheet.getRow(currentLastRow + 1).getCell(5).value = '(Ký, ghi rõ họ tên)';
+    sheet.getRow(currentLastRow + 1).getCell(5).font = italicFont;
+    sheet.getRow(currentLastRow + 1).getCell(5).alignment = { horizontal: 'center' };
+    
+    // Cột H: GIÁM ĐỐC PHÊ DUYỆT
+    sigRow.getCell(8).value = 'GIÁM ĐỐC PHÊ DUYỆT';
+    sigRow.getCell(8).font = boldFont;
+    sigRow.getCell(8).alignment = { horizontal: 'center' };
+    sheet.getRow(currentLastRow + 1).getCell(8).value = '(Ký, ghi rõ họ tên)';
+    sheet.getRow(currentLastRow + 1).getCell(8).font = italicFont;
+    sheet.getRow(currentLastRow + 1).getCell(8).alignment = { horizontal: 'center' };
+
+    // --- LƯU FILE EXCEL ---
+    const buffer = await workbook.xlsx.writeBuffer();
+    const fileName = `VTSC_Bao_Cao_Hau_Mai_CSKH_2026.xlsx`;
+    saveAs(new Blob([buffer]), fileName);
+    
+  } catch (error) {
+    console.error("Lỗi khi kết xuất file Excel:", error);
+    // throw new Error("Không thể kết xuất báo cáo Excel Hậu mãi & CSKH");
+  }
 };
 
 export const exportHrLegalReportExcel = async (

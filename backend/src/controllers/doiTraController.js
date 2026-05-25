@@ -19,10 +19,10 @@ exports.getReturns = async (req, res) => {
 // @desc    Tạo lệnh đổi trả thủ công
 exports.createReturn = async (req, res) => {
     try {
-        const { MaDoiTra, DonHang, KhachHang, LyDo, LoaiYeuCau, DuKienDenHang, GiaTriTru } = req.body;
+        const { MaDoiTra, DonHang, KhachHang, LyDo, LoaiYeuCau, DuKienDenHang, GiaTriTru, NhanVienPhuTrach } = req.body;
 
-        let nvPhuTrach = null;
-        if (req.user) {
+        let nvPhuTrach = NhanVienPhuTrach;
+        if (!nvPhuTrach && req.user) {
             const nv = await NhanVien.findOne({ AccountID: req.user._id });
             if (nv) nvPhuTrach = nv._id;
         }
