@@ -4,7 +4,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./utils/db');
 
-// Load env vars
+// Trigger nodemon restart after env update
 dotenv.config();
 
 // Connect to database
