@@ -576,24 +576,24 @@ exports.getCustomerServiceStats = async (req, res) => {
 
     const successRate = totalReturns > 0 ? ((fixedReturns / totalReturns) * 100).toFixed(1) : 100;
 
-    // 2. Pending Complaints (PhanHoiHoTro)
-    const pendingTickets = await PhanHoiHoTro.find({
-      TrangThai: { $in: ['Đang mở', 'Đang xử lý'] },
-      PhanLoai: 'Khiếu nại'
+    // 2. Pending Requests (DoiTra)
+    const pendingTickets = await DoiTra.find({
+      TrangThai: { $nin: ['Đã hoàn tất', 'Đã hủy', 'Đã hoàn tiền'] },
+      createdAt: { $gte: startDate, $lte: endDate }
     })
-      .populate('CustomerID', 'TenKhachHang')
+      .populate('KhachHang', 'TenKhachHang')
       .sort({ createdAt: -1 })
       .limit(10);
 
     const pendingComplaints = pendingTickets.map(t => ({
-      id: t.MaPhanHoi,
-      customer: t.CustomerID?.TenKhachHang || 'Khách lẻ',
-      status: t.TrangThai,
+      id: t.MaDoiTra || t._id.toString(),
+      customer: t.KhachHang?.TenKhachHang || 'Khách hàng',
+      status: t.TrangThai === 'draft' ? 'Chờ tiếp nhận' : (t.TrangThai || 'Chờ tiếp nhận'),
       time: new Date(t.createdAt).toLocaleDateString('vi-VN')
     }));
 
-    // 3. Trends (PhanHoiHoTro theo thời gian thực)
-    const supportTrendsRaw = await PhanHoiHoTro.aggregate([
+    // 3. Trends (DoiTra theo thời gian thực)
+    const supportTrendsRaw = await DoiTra.aggregate([
       { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
       { $group: {
         _id: granularity === 'day' 
@@ -615,6 +615,38 @@ exports.getCustomerServiceStats = async (req, res) => {
       };
     });
 
+    // 4. Loyalty & Vouchers (From KhuyenMai and DonHang)
+    let activeVouchers = 0;
+    let vipCustomers = 0;
+    let churnAlerts = 0;
+    
+    try {
+      const KhuyenMai = require('../models/KhuyenMai');
+      activeVouchers = await KhuyenMai.countDocuments({ TrangThai: 'DANG_DIEN_RA', createdAt: { $lte: endDate } });
+      
+      const DonHang = require('../models/DonHang');
+      
+      // Calculate VIP Customers (Spent > 1,000,000,000)
+      const vipAggregation = await DonHang.aggregate([
+        { $match: { TrangThai: { $ne: 'DA_HUY' } } },
+        { $group: { _id: '$KhachHang', totalSpent: { $sum: '$TongTien' } } },
+        { $match: { totalSpent: { $gte: 1000000000 } } }
+      ]);
+      vipCustomers = vipAggregation.length;
+
+      // Calculate Churn Alerts (No orders in the last 60 days)
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+      
+      const recentOrders = await DonHang.aggregate([
+        { $match: { TrangThai: { $ne: 'DA_HUY' } } },
+        { $group: { _id: '$KhachHang', lastOrder: { $max: '$createdAt' } } }
+      ]);
+      churnAlerts = recentOrders.filter(o => o.lastOrder < sixtyDaysAgo).length;
+    } catch (err) {
+      console.log('Error fetching loyalty stats:', err.message);
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -623,6 +655,11 @@ exports.getCustomerServiceStats = async (req, res) => {
           successRate,
           avgResponseTime: 2.5, // Mock data since no time tracking yet
           csatScore: 4.5
+        },
+        loyalty: {
+          activeVouchers,
+          vipCustomers,
+          churnAlerts
         },
         supportTrends: formattedTrends,
         pendingComplaints
@@ -642,48 +679,29 @@ exports.getCustomerServiceReportData = async (req, res) => {
     const { startDate, endDate } = resolvePeriodDates(period);
 
     const DoiTra = require('../models/DoiTra');
-    const PhanHoiHoTro = require('../models/PhanHoiHoTro');
 
     const returns = await DoiTra.find({
       createdAt: { $gte: startDate, $lte: endDate }
-    }).populate('KhachHang', 'TenKhachHang').sort({ createdAt: -1 });
-
-    const tickets = await PhanHoiHoTro.find({
-      createdAt: { $gte: startDate, $lte: endDate }
-    }).populate('CustomerID', 'TenKhachHang').sort({ createdAt: -1 });
+    }).populate('KhachHang', 'TenKhachHang')
+      .populate('NhanVienPhuTrach', 'HoTen')
+      .sort({ createdAt: -1 });
 
     let combinedLogs = [];
 
     returns.forEach(r => {
       combinedLogs.push({
-        id: r.MaDoiTra,
-        customer: r.KhachHang?.TenKhachHang || 'Khách lẻ',
-        content: r.LyDo,
-        cause: r.LoaiYeuCau,
-        status: r.TrangThai,
-        solution: r.PhuongAnGiaiQuyet || r.DuKienDenHang || 'Đang chờ xử lý',
-        date: r.createdAt
+        id: r.MaDoiTra || r._id.toString(),
+        customer: r.KhachHang?.TenKhachHang || 'Khách hàng',
+        type: r.LoaiYeuCau || 'Đổi trả',
+        cause: r.LyDo || '',
+        status: r.TrangThai === 'draft' ? 'Chờ tiếp nhận' : (r.TrangThai || 'Chờ tiếp nhận'),
+        assignee: r.NhanVienPhuTrach?.HoTen || '',
+        solution: r.PhuongAnGiaiQuyet || '',
+        createdAt: r.createdAt
       });
     });
 
-    tickets.forEach(t => {
-      let solution = 'Chưa xử lý';
-      if (t.LichSuTraLoi && t.LichSuTraLoi.length > 0) {
-        solution = t.LichSuTraLoi[t.LichSuTraLoi.length - 1].NoiDung;
-      }
-      combinedLogs.push({
-        id: t.MaPhanHoi,
-        customer: t.CustomerID?.TenKhachHang || 'Khách lẻ',
-        content: t.NoiDungYeuCau,
-        cause: t.PhanLoai,
-        status: t.TrangThai,
-        solution: solution,
-        date: t.createdAt
-      });
-    });
-
-    // Sort descending by date
-    combinedLogs.sort((a, b) => b.date - a.date);
+    combinedLogs.sort((a, b) => b.createdAt - a.createdAt);
 
     res.status(200).json({
       success: true,
