@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./utils/db');
-// Trigger nodemon restart after port 5000 release
+// Trigger nodemon restart after env change
 
 // Load env vars
 dotenv.config();
