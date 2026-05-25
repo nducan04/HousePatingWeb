@@ -3,14 +3,19 @@ const SanPhamSon = require('../models/SanPhamSon');
 
 // Helper tính tổng tiền
 const calculateTotal = async (items) => {
-  let total = 0;
+  let subtotal = 0;
   for (let item of items) {
     const sp = await SanPhamSon.findById(item.SanPham);
     if (sp) {
-      total += (sp.DonGiaCoSo || 0) * item.SoLuong;
+      subtotal += (sp.DonGiaCoSo || 0) * item.SoLuong;
     }
   }
-  return total;
+  const tax = subtotal >= 5000000 ? subtotal * 0.08 : 0;
+  return {
+    TongTienTamTinh: subtotal,
+    TienThue: tax,
+    TongThanhToan: subtotal + tax
+  };
 };
 
 // @desc    Lấy giỏ hàng theo SessionId
@@ -69,7 +74,10 @@ exports.updateCart = async (req, res) => {
     }
 
     // Tính tổng tiền
-    cart.TongTienTamTinh = await calculateTotal(cart.Items);
+    const totals = await calculateTotal(cart.Items);
+    cart.TongTienTamTinh = totals.TongTienTamTinh;
+    cart.TienThue = totals.TienThue;
+    cart.TongThanhToan = totals.TongThanhToan;
     await cart.save();
 
     // Lấy lại cart info với populate

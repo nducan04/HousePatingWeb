@@ -133,6 +133,7 @@ interface Order {
     };
     Items: OrderItem[];
     TongTien: number;
+    TienThue?: number;
     TrangThai: 'CHO_XAC_NHAN' | 'DANG_XU_LY' | 'DANG_GIAO' | 'DA_GIAO' | 'DA_HUY';
     PhuongThucThanhToan: string;
     TrangThaiThanhToan: string;
@@ -591,10 +592,10 @@ export default function OrderManagementPage() {
             const [day, month, year] = orderDateStr.split('/');
 
             // Mock data for VAT calculation
-            const taxRate = 8;
+            const vatAmount = selectedOrder.TienThue || 0;
             const totalGross = selectedOrder.TongTien || 0;
-            const subTotalCalc = Math.round(totalGross / (1 + taxRate / 100));
-            const vatAmount = totalGross - subTotalCalc;
+            const subTotalCalc = totalGross - vatAmount;
+            const taxRate = vatAmount > 0 ? 8 : 0;
 
             const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + ' đ';
 
@@ -730,7 +731,11 @@ export default function OrderManagementPage() {
                                 }),
                                 // Data Rows
                                 ...(selectedOrder.Items || []).map((item, index) => {
-                                    const itemPrice = Math.round(item.DonGia / (1 + taxRate / 100)); // Mock trước thuế
+                                    const itemRatio = (item.DonGia * item.SoLuong) / (subTotalCalc > 0 ? subTotalCalc : 1);
+                                    // If there's tax, the line item price without tax is its proportion of the total. 
+                                    // Actually, item.DonGia is the base price. Since no discount is applied to line items here, 
+                                    // we can just use item.DonGia (which doesn't include tax in DB).
+                                    const itemPrice = item.DonGia;
                                     const itemTotal = itemPrice * item.SoLuong;
                                     return new TableRow({
                                         children: [

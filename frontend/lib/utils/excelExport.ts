@@ -377,7 +377,7 @@ export const exportBusinessReportExcel = async (
 
   // Khối 2: Bảng chi tiết
   const tableStartRow = 11;
-  const headers = ['STT', 'Mã Đơn Hàng', 'Khách Hàng', 'Loại Hình', 'Sản Phẩm', 'Số Lượng (kg)', 'Đơn Giá (VNĐ)', 'Thuế (8%)', 'Tổng Tiền Thanh Toán (VNĐ)'];
+  const headers = ['STT', 'Mã Đơn Hàng', 'Ngày Bán', 'Khách Hàng', 'Loại Hình', 'Sản Phẩm', 'Số Lượng (kg)', 'Đơn Giá (VNĐ)', 'Thuế (8%)', 'Tổng Tiền Thanh Toán (VNĐ)'];
   
   const headerRow = sheet.getRow(tableStartRow);
   headerRow.values = headers;
@@ -395,6 +395,7 @@ export const exportBusinessReportExcel = async (
     r.values = [
       idx + 1,
       t.id,
+      t.date ? new Date(t.date).toLocaleDateString('vi-VN') : '──/──/────',
       t.customer,
       t.type,
       t.product,
@@ -407,30 +408,32 @@ export const exportBusinessReportExcel = async (
     r.alignment = { vertical: 'middle' };
     
     // Borders
-    [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(colIdx => {
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].forEach(colIdx => {
       r.getCell(colIdx).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
     });
 
     // Formatting numbers
-    r.getCell(6).numFmt = '#,##0';
     r.getCell(7).numFmt = '#,##0';
     r.getCell(8).numFmt = '#,##0';
     r.getCell(9).numFmt = '#,##0';
+    r.getCell(10).numFmt = '#,##0';
     
     r.getCell(1).alignment = { horizontal: 'center' };
-    r.getCell(4).alignment = { horizontal: 'center' };
+    r.getCell(3).alignment = { horizontal: 'center' };
+    r.getCell(5).alignment = { horizontal: 'center' };
   });
 
   // Auto-fit columns (approximate)
   sheet.getColumn(1).width = 6;
   sheet.getColumn(2).width = 25;
-  sheet.getColumn(3).width = 30;
-  sheet.getColumn(4).width = 22;
-  sheet.getColumn(5).width = 25;
-  sheet.getColumn(6).width = 15;
-  sheet.getColumn(7).width = 18;
+  sheet.getColumn(3).width = 15;
+  sheet.getColumn(4).width = 30;
+  sheet.getColumn(5).width = 22;
+  sheet.getColumn(6).width = 25;
+  sheet.getColumn(7).width = 15;
   sheet.getColumn(8).width = 18;
-  sheet.getColumn(9).width = 30;
+  sheet.getColumn(9).width = 18;
+  sheet.getColumn(10).width = 30;
 
   // Khối chữ ký
   const currentLastRow = tableStartRow + transactions.length + 3;
@@ -440,14 +443,14 @@ export const exportBusinessReportExcel = async (
   sigRow1.getCell(2).font = boldFont;
   sigRow1.getCell(2).alignment = { horizontal: 'center' };
   
-  sigRow1.getCell(5).value = 'KẾ TOÁN TRƯỞNG';
-  sigRow1.getCell(5).font = boldFont;
-  sigRow1.getCell(5).alignment = { horizontal: 'center' };
+  sigRow1.getCell(6).value = 'KẾ TOÁN TRƯỞNG';
+  sigRow1.getCell(6).font = boldFont;
+  sigRow1.getCell(6).alignment = { horizontal: 'center' };
   
-  sheet.mergeCells(`H${currentLastRow}:I${currentLastRow}`);
-  sigRow1.getCell(8).value = 'GIÁM ĐỐC PHÊ DUYỆT';
-  sigRow1.getCell(8).font = boldFont;
-  sigRow1.getCell(8).alignment = { horizontal: 'center' };
+  sheet.mergeCells(`I${currentLastRow}:J${currentLastRow}`);
+  sigRow1.getCell(9).value = 'GIÁM ĐỐC PHÊ DUYỆT';
+  sigRow1.getCell(9).font = boldFont;
+  sigRow1.getCell(9).alignment = { horizontal: 'center' };
 
   // Write and Save
   const buffer = await workbook.xlsx.writeBuffer();
