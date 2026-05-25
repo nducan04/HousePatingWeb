@@ -839,20 +839,38 @@ export default function HomePage() {
 
                   {cartItems.length > 0 && (
                     <div className="p-6 bg-slate-50 border-t border-slate-100">
-                      <div className="flex justify-between items-center mb-6">
-                        <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">
-                          Tổng cộng
-                        </span>
-                        <span className="text-lg font-bold text-blue-600">
-                          {cartItems
-                            .reduce(
-                              (acc, item) =>
-                                acc + item.SanPham?.DonGiaCoSo * item.SoLuong,
-                              0,
-                            )
-                            .toLocaleString()}{" "}
-                          ₫
-                        </span>
+                      <div className="space-y-3 mb-6">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                            Tạm tính
+                          </span>
+                          <span className="text-sm font-bold text-slate-600">
+                            {cartItems
+                              .reduce(
+                                (acc, item) =>
+                                  acc + item.SanPham?.DonGiaCoSo * item.SoLuong,
+                                0,
+                              )
+                              .toLocaleString()}{" "}
+                            ₫
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                            Thuế VAT (8%)
+                          </span>
+                          <span className="text-sm font-bold text-slate-600">
+                            {((cartItems.reduce((acc, item) => acc + item.SanPham?.DonGiaCoSo * item.SoLuong, 0)) >= 5000000 ? (cartItems.reduce((acc, item) => acc + item.SanPham?.DonGiaCoSo * item.SoLuong, 0) * 0.08) : 0).toLocaleString()} ₫
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center pt-3 border-t border-slate-200">
+                          <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+                            Tổng cộng
+                          </span>
+                          <span className="text-lg font-bold text-blue-600">
+                            {((cartItems.reduce((acc, item) => acc + item.SanPham?.DonGiaCoSo * item.SoLuong, 0)) >= 5000000 ? (cartItems.reduce((acc, item) => acc + item.SanPham?.DonGiaCoSo * item.SoLuong, 0) * 1.08) : cartItems.reduce((acc, item) => acc + item.SanPham?.DonGiaCoSo * item.SoLuong, 0)).toLocaleString()} ₫
+                          </span>
+                        </div>
                       </div>
                       <button
                         onClick={handleDirectCheckout}

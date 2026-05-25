@@ -427,10 +427,16 @@ export default function GioHangPage() {
               <span className="text-sm font-extrabold text-rose-500">-{discountInfo.DiscountAmount.toLocaleString()} ₫</span>
             </div>
           )}
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Thuế VAT (8%):</span>
+            <span className="text-sm font-extrabold text-slate-700">
+              {((cartTotal - (discountInfo?.DiscountAmount || 0)) >= 5000000 ? (cartTotal - (discountInfo?.DiscountAmount || 0)) * 0.08 : 0).toLocaleString()} ₫
+            </span>
+          </div>
           <div className="flex justify-between items-center mt-4 mb-6">
             <span className="text-sm font-black text-slate-500 uppercase tracking-widest">TỔNG CỘNG:</span>
             <span className="text-2xl font-black text-blue-600">
-              {(cartTotal - (discountInfo?.DiscountAmount || 0)).toLocaleString()} ₫
+              {((cartTotal - (discountInfo?.DiscountAmount || 0)) >= 5000000 ? (cartTotal - (discountInfo?.DiscountAmount || 0)) * 1.08 : (cartTotal - (discountInfo?.DiscountAmount || 0))).toLocaleString()} ₫
             </span>
           </div>
 

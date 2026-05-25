@@ -32,6 +32,14 @@ const gioHangSchema = new mongoose.Schema({
   TongTienTamTinh: {
     type: Number,
     default: 0
+  },
+  TienThue: {
+    type: Number,
+    default: 0
+  },
+  TongThanhToan: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true,

@@ -820,11 +820,13 @@ exports.getBusinessReportData = async (req, res) => {
 
     // Map Orders
     orders.forEach(order => {
+      const orderSubtotal = order.Items.reduce((acc, i) => acc + ((i.SoLuong || 0) * (i.DonGia || 0)), 0);
+      const applyTax = orderSubtotal >= 5000000;
       order.Items.forEach(item => {
         const qty = item.SoLuong || 0;
         const price = item.DonGia || 0;
         const amount = qty * price;
-        const tax = amount * 0.08;
+        const tax = applyTax ? amount * 0.08 : 0;
         transactions.push({
           id: order.MaDonHang || order._id.toString(),
           customer: order.KhachHang?.TenKhachHang || 'Khách lẻ',
@@ -841,11 +843,13 @@ exports.getBusinessReportData = async (req, res) => {
 
     // Map Contracts
     contracts.forEach(contract => {
+      const contractSubtotal = contract.ChiTietHopDong.reduce((acc, i) => acc + ((i.quantity || 0) * (i.unitPrice || 0)), 0);
+      const applyTax = contractSubtotal >= 5000000;
       contract.ChiTietHopDong.forEach(item => {
         const qty = item.quantity || 0;
         const price = item.unitPrice || 0;
         const amount = qty * price;
-        const tax = amount * 0.08;
+        const tax = applyTax ? amount * 0.08 : 0;
         transactions.push({
           id: contract.MaHopDong || contract._id.toString(),
           customer: contract.CustomerID?.TenKhachHang || 'Dự án B2B',

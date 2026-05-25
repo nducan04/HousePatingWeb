@@ -77,13 +77,18 @@ exports.checkoutFromCart = async (req, res) => {
 
         // 4. Tạo đơn hàng
         const maDonHang = `DH${Date.now().toString().slice(-8)}`;
+        const finalSubtotal = subtotal - discountAmount;
+        const taxAmount = finalSubtotal >= 5000000 ? finalSubtotal * 0.08 : 0;
+        const totalAmount = finalSubtotal + taxAmount;
+        
         const donHang = new DonHang({
             MaDonHang: maDonHang,
             KhachHang: realKhachHangId,
             TenNguoiNhan: typeof kh !== 'undefined' && kh ? kh.TenKhachHang : '',
             SDTNguoiNhan: typeof kh !== 'undefined' && kh ? kh.SDT : '',
             Items: orderItems,
-            TongTien: subtotal - discountAmount,
+            TienThue: taxAmount,
+            TongTien: totalAmount,
             TrangThai: 'CHO_XAC_NHAN',
             DiaChiGiaoHang: diaChiGiaoHang,
             GhiChu: ghiChu

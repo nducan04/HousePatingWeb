@@ -39,6 +39,10 @@ export default function StatisticsDashboard() {
   const [activeTab, setActiveTab] = useState('SALES');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+  
+  // State for products filter in INVENTORY tab
+  const [products, setProducts] = useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<string>('ALL');
 
   useEffect(() => {
     fetchAllData();
@@ -48,13 +52,14 @@ export default function StatisticsDashboard() {
     setLoading(true);
     try {
       const query = `?period=${encodeURIComponent(selectedPeriod)}`;
-      const [statsRes, detailedRes, inventoryRes, productionRes, csRes, hrRes] = await Promise.all([
+      const [statsRes, detailedRes, inventoryRes, productionRes, csRes, hrRes, productsRes] = await Promise.all([
         api.get(`/dashboard/stats${query}`),
         api.get(`/dashboard/detailed-stats${query}`),
         api.get(`/dashboard/inventory-stats${query}`),
         api.get(`/dashboard/production-stats${query}`),
         api.get(`/dashboard/customer-service-stats${query}`),
-        api.get(`/dashboard/hr-legal-stats${query}`)
+        api.get(`/dashboard/hr-legal-stats${query}`),
+        api.get('/san-pham-son')
       ]);
 
       setData({
@@ -65,6 +70,10 @@ export default function StatisticsDashboard() {
         customerService: csRes.data?.success ? csRes.data.data : null,
         hrLegal: hrRes.data?.success ? hrRes.data.data : null
       });
+
+      if (productsRes.data?.success) {
+        setProducts(productsRes.data.data);
+      }
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -85,7 +94,13 @@ export default function StatisticsDashboard() {
       } else if (activeTab === 'INVENTORY') {
         const res = await api.get(`/dashboard/inventory-report`);
         if (res.data?.success) {
-          await exportInventoryReportExcel(data, res.data.data, selectedPeriod);
+          let filteredInventory = res.data.data;
+          if (selectedProduct !== 'ALL') {
+            filteredInventory = res.data.data.filter((item: any) =>
+              item.sku.startsWith(selectedProduct)
+            );
+          }
+          await exportInventoryReportExcel(data, filteredInventory, selectedPeriod);
         }
       } else if (activeTab === 'PRODUCTION') {
         const res = await api.get(`/dashboard/production-report?period=${encodeURIComponent(selectedPeriod)}`);
@@ -162,6 +177,20 @@ export default function StatisticsDashboard() {
               </button>
             ))}
           </div>
+          {activeTab === 'INVENTORY' && (
+            <select
+              className="bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-4 py-2.5 outline-none shadow-sm cursor-pointer hover:border-blue-300 transition-colors"
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+            >
+              <option value="ALL">Tất cả sản phẩm</option>
+              {products.map((p: any) => (
+                <option key={p.MaSanPham} value={p.MaSanPham}>
+                  {p.TenDongSon} ({p.MaSanPham})
+                </option>
+              ))}
+            </select>
+          )}
           <select
             className="bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-4 py-2.5 outline-none shadow-sm cursor-pointer hover:border-blue-300 transition-colors"
             value={selectedPeriod}

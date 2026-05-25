@@ -165,10 +165,11 @@ exports.createContract = async (req, res) => {
       details = JSON.parse(chiTietHopDong);
     }
 
-    // Auto-tính tổng giá trị từ chi tiết
-    const value = Array.isArray(details)
+    // Auto-tính tổng giá trị từ chi tiết (có thêm thuế 8% nếu >= 5,000,000đ)
+    const subtotal = Array.isArray(details)
       ? details.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
       : 0;
+    const value = subtotal >= 5000000 ? subtotal * 1.08 : subtotal;
 
     // Parse terms nếu cần
     let parsedTerms = terms;
@@ -587,6 +588,8 @@ exports.updateStatus = async (req, res) => {
       const sampleNV = await NhanVien.findOne();
       const defaultNvId = contract.EmployeeID || (sampleNV ? sampleNV._id : null);
 
+      // Auto-tính subtotal để ghi nhận thuế
+      const subtotalForTaxCalculation = contract.ChiTietHopDong.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
       // Tạo đơn hàng
       const newOrder = await DonHang.create({
         MaDonHang: `DH-${contract.MaHopDong}`,
@@ -600,6 +603,7 @@ exports.updateStatus = async (req, res) => {
           DonGia: item.unitPrice,
           ThanhTien: item.quantity * item.unitPrice
         })),
+        TienThue: contract.TongGiaTri > subtotalForTaxCalculation ? contract.TongGiaTri - subtotalForTaxCalculation : 0,
         TongTien: contract.TongGiaTri,
         TrangThai: 'DANG_XU_LY',
         PhuongThucThanhToan: 'CHUYEN_KHOAN',

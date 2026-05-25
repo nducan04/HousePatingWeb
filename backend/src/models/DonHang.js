@@ -43,6 +43,10 @@ const donHangSchema = new mongoose.Schema({
       required: true
     }
   }],
+  TienThue: {
+    type: Number,
+    default: 0
+  },
   TongTien: {
     type: Number,
     required: true
