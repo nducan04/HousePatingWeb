@@ -23,21 +23,85 @@ import { saveAs } from 'file-saver';
 
 // ==================== HÀM HỖ TRỢ ====================
 const numberToVietnameseWords = (num: number): string => {
-    if (num === 0) return "không đồng chẵn";
+    if (num === 0) return "Không đồng chẵn";
 
     const units = ["", "nghìn", "triệu", "tỷ"];
-    let words = "";
-    let i = 0;
+    const digits = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
 
-    while (num > 0) {
-        const chunk = num % 1000;
-        if (chunk > 0) {
-            words = `${chunk.toLocaleString('vi-VN')} ${units[i]} ` + words;
+    const readThreeDigits = (n: number, isFirst: boolean): string => {
+        let temp = n;
+        const hundred = Math.floor(temp / 100);
+        temp %= 100;
+        const ten = Math.floor(temp / 10);
+        const unit = temp % 10;
+
+        let res = "";
+
+        if (hundred > 0 || !isFirst) {
+            res += digits[hundred] + " trăm ";
         }
-        num = Math.floor(num / 1000);
-        i++;
+
+        if (ten > 0) {
+            if (ten === 1) {
+                res += "mười ";
+            } else {
+                res += digits[ten] + " mươi ";
+            }
+        } else if (hundred > 0 && unit > 0) {
+            res += "lẻ ";
+        }
+
+        if (unit > 0) {
+            if (unit === 1 && ten > 1) {
+                res += "mốt";
+            } else if (unit === 5 && ten > 0) {
+                res += "lăm";
+            } else if (unit === 5 && ten === 0) {
+                res += "năm";
+            } else {
+                res += digits[unit];
+            }
+        }
+
+        return res.trim();
+    };
+
+    let result = "";
+    let tempNum = num;
+    const groups: number[] = [];
+
+    while (tempNum > 0) {
+        groups.push(tempNum % 1000);
+        tempNum = Math.floor(tempNum / 1000);
     }
-    return words.trim() + " đồng chẵn";
+
+    for (let idx = groups.length - 1; idx >= 0; idx--) {
+        const groupVal = groups[idx];
+        if (groupVal > 0) {
+            const isFirst = idx === groups.length - 1;
+            const groupText = readThreeDigits(groupVal, isFirst);
+            
+            let unitName = "";
+            if (idx === 1) unitName = "nghìn";
+            else if (idx === 2) unitName = "triệu";
+            else if (idx >= 3) {
+                const billionGroup = idx % 3;
+                const billionPower = Math.floor(idx / 3);
+                let suffix = "tỷ".repeat(billionPower);
+                if (billionGroup === 1) unitName = "nghìn " + suffix;
+                else if (billionGroup === 2) unitName = "triệu " + suffix;
+                else unitName = suffix;
+            }
+            
+            result += groupText + " " + unitName + " ";
+        }
+    }
+
+    result = result.trim().replace(/\s+/g, ' ');
+    if (result.length > 0) {
+        result = result.charAt(0).toUpperCase() + result.slice(1);
+    }
+    return result + " đồng chẵn";
 };
 const API_DON_HANG = '/don-hang';
 
@@ -280,12 +344,19 @@ export default function OrderManagementPage() {
         const createdDate = new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN');
         const customerName = selectedOrder.KhachHang?.TenKhachHang || 'Khách lẻ';
         const phoneNumber = selectedOrder.KhachHang?.SDT || 'Chưa cập nhật';
-        const productName = selectedOrder.Items?.[0]?.TenSanPham || 'Sản phẩm sơn';
-        const colorCode = selectedOrder.Items?.[0]?.MaMau || 'N/A';
+        
+        const itemsContent = selectedOrder.Items && selectedOrder.Items.length > 0
+            ? selectedOrder.Items.map(item => `"${item.TenSanPham} (${item.SoLuong} thùng)"`).join(', ')
+            : '"Sản phẩm sơn"';
+        const colorCodes = selectedOrder.Items && selectedOrder.Items.length > 0
+            ? Array.from(new Set(selectedOrder.Items.map(item => item.MaMau))).join(', ')
+            : 'N/A';
+            
         const powderType = selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon';
         const totalAmount = selectedOrder.TongTien || 0;
         const depositAmount = selectedOrder.DaCoc || 0;
         const remainingAmount = totalAmount - depositAmount;
+        const depositPercent = totalAmount > 0 ? Math.round((depositAmount / totalAmount) * 100) : 0;
 
         const fileName = `Phieu_Coc_${orderId.replace('#', '')}.docx`;
 
@@ -321,6 +392,7 @@ export default function OrderManagementPage() {
                     // === HEADER ===
                     new Table({
                         width: { type: WidthType.PERCENTAGE, size: 100 },
+                        borders: noBorder,
                         rows: [
                             new TableRow({
                                 children: [
@@ -329,9 +401,15 @@ export default function OrderManagementPage() {
                                         borders: noBorder,
                                         children: [
                                             new Paragraph({
-                                                children: [new TextRun({ text: "CÔNG TY CP TMDV VOSCO (VTSC)", bold: true, font: "Times New Roman", size: 24 })],
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "CÔNG TY CP TMDV VOSCO", bold: true, font: "Times New Roman", size: 24 })],
                                             }),
                                             new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "(VTSC)", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
                                                 children: [new TextRun({ text: "Hệ thống PaintPro", font: "Times New Roman", size: 22 })],
                                             }),
                                         ],
@@ -341,11 +419,15 @@ export default function OrderManagementPage() {
                                         borders: noBorder,
                                         children: [
                                             new Paragraph({
-                                                alignment: AlignmentType.RIGHT,
-                                                children: [new TextRun({ text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", bold: true, font: "Times New Roman", size: 24 })],
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT", bold: true, font: "Times New Roman", size: 24 })],
                                             }),
                                             new Paragraph({
-                                                alignment: AlignmentType.RIGHT,
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "NAM", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
                                                 children: [new TextRun({ text: "Độc lập - Tự do - Hạnh phúc", bold: true, underline: { type: "single" }, font: "Times New Roman", size: 24 })],
                                             }),
                                         ],
@@ -356,8 +438,7 @@ export default function OrderManagementPage() {
                     }),
 
                     new Paragraph({
-                        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000", space: 1 } },
-                        spacing: { before: 100, after: 200 },
+                        spacing: { before: 200, after: 200 },
                         children: [new TextRun("")]
                     }),
 
@@ -393,7 +474,7 @@ export default function OrderManagementPage() {
                         children: [
                             new TextRun({ text: "Nội dung đặt cọc: ", bold: true, font: "Times New Roman", size: 24 }),
                             new TextRun({
-                                text: `Đặt cọc thi công/mua sơn tĩnh điện sản phẩm "${productName}", Mã màu: ${colorCode}, Loại bột: ${powderType}.`,
+                                text: `Đặt cọc thi công/mua sơn tĩnh điện sản phẩm ${itemsContent}, Mã màu: ${colorCodes}, Loại bột: ${powderType}.`,
                                 font: "Times New Roman", size: 24
                             }),
                         ],
@@ -409,7 +490,7 @@ export default function OrderManagementPage() {
                     new Paragraph({
                         spacing: { after: 80 },
                         children: [
-                            new TextRun({ text: "Số tiền đã đặt cọc (50%): ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: `Số tiền đã đặt cọc (${depositPercent}%): `, bold: true, font: "Times New Roman", size: 24 }),
                             new TextRun({ text: formatCurrency(depositAmount), font: "Times New Roman", size: 24 }),
                         ],
                     }),
@@ -435,6 +516,7 @@ export default function OrderManagementPage() {
                     new Paragraph({ spacing: { before: 300 }, children: [new TextRun("")] }),
                     new Table({
                         width: { type: WidthType.PERCENTAGE, size: 100 },
+                        borders: noBorder,
                         rows: [
                             new TableRow({
                                 children: [

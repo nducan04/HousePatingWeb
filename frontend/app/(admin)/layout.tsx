@@ -351,7 +351,7 @@ export default function AdminLayout({
         : userRole === "NhanVien"
           ? "Nhân viên công ty"
           : user?.profile?.ChucVu ||
-            (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
+          (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
   const initials = displayName
     .split(" ")
     .map((w: string) => w[0])
@@ -377,7 +377,7 @@ export default function AdminLayout({
     if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
     if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
     if (pathname === "/import") return "📤 Nhập Dữ Liệu (Excel/CSV)";
-    return "📦 Quản lý nghiệp vụ";
+    return "Quản lý nghiệp vụ";
   };
 
   return (
@@ -438,11 +438,10 @@ export default function AdminLayout({
                           <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${
-                              isActive
+                            className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${isActive
                                 ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
                                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                            }`}
+                              }`}
                           >
                             <div
                               className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-blue-600" : "text-slate-400"}`}

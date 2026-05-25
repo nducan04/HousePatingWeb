@@ -1,6 +1,7 @@
 const TaiKhoan = require('../models/TaiKhoan');
 const NhanVien = require('../models/NhanVien');
 const KhachHang = require('../models/KhachHang');
+const NhaCungCap = require('../models/NhaCungCap');
 const jwt = require('jsonwebtoken');
 
 // Hàm tạo Access Token (chứa AccountID + Role trong payload)
@@ -20,11 +21,14 @@ const generateRefreshToken = (id) => {
 /**
  * Hàm tiện ích: Truy vấn profile nghiệp vụ từ AccountID
  * Admin/NhanVien → Collection NhanVien
+ * NhaCungCap → Collection NhaCungCap
  * KhachHangB2B/B2C → Collection KhachHang
  */
 const getProfileByAccount = async (accountId, role) => {
-  if (role === 'Admin' || role === 'NhanVien') {
+  if (role === 'Admin' || role === 'NhanVien' || role === 'Director') {
     return await NhanVien.findOne({ AccountID: accountId });
+  } else if (role === 'NhaCungCap') {
+    return await NhaCungCap.findOne({ AccountID: accountId });
   } else {
     return await KhachHang.findOne({ AccountID: accountId });
   }

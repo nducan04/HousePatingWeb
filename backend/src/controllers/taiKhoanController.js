@@ -36,7 +36,7 @@ exports.getAll = async (req, res) => {
 // @route   POST /api/tai-khoan
 exports.create = async (req, res) => {
   try {
-    const { TenDangNhap, Email, MatKhau, VaiTro, TrangThai } = req.body;
+    const { TenDangNhap, Email, MatKhau, VaiTro, TrangThai, HoTen } = req.body;
     
     // Mật khẩu mặc định nếu không truyền
     const passwordToUse = MatKhau || 'VTSC@123';
@@ -48,6 +48,42 @@ exports.create = async (req, res) => {
       VaiTro,
       TrangThai: TrangThai !== undefined ? TrangThai : true
     });
+
+    // Tạo hồ sơ cá nhân/doanh nghiệp tương ứng với VaiTro nếu có cung cấp HoTen
+    if (HoTen) {
+      if (VaiTro === 'Admin' || VaiTro === 'NhanVien' || VaiTro === 'Director') {
+        const NhanVien = require('../models/NhanVien');
+        const maNV = 'NV' + Date.now().toString().slice(-6);
+        await NhanVien.create({
+          AccountID: item._id,
+          MaNV: maNV,
+          HoTen: HoTen,
+          Email: Email,
+          BoPhan: 'Kinh doanh',
+          ChucVu: VaiTro === 'Admin' ? 'Quản trị viên' : 'Nhân viên'
+        });
+      } else if (VaiTro === 'KhachHangB2B' || VaiTro === 'KhachHangB2C') {
+        const KhachHang = require('../models/KhachHang');
+        const maKH = 'KH' + Date.now().toString().slice(-6);
+        await KhachHang.create({
+          AccountID: item._id,
+          MaKH: maKH,
+          PhanLoai: VaiTro === 'KhachHangB2B' ? 'B2B' : 'B2C',
+          TenKhachHang: HoTen,
+          Email: Email
+        });
+      } else if (VaiTro === 'NhaCungCap') {
+        const NhaCungCap = require('../models/NhaCungCap');
+        const maNCC = 'NCC' + Date.now().toString().slice(-6);
+        await NhaCungCap.create({
+          AccountID: item._id,
+          MaNCC: maNCC,
+          TenNCC: HoTen,
+          Email: Email,
+          SDT: 'Chưa cập nhật'
+        });
+      }
+    }
     
     res.status(201).json({ success: true, data: item });
   } catch (error) {
