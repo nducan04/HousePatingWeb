@@ -578,6 +578,9 @@ export default function HomePage() {
     )
       return "https://ui-avatars.com/api/?name=VTSC+Product&background=random";
     if (resolvedPath.startsWith("http")) return resolvedPath;
+    if (resolvedPath.startsWith("Qm") || resolvedPath.startsWith("bafy")) {
+      return `https://gateway.pinata.cloud/ipfs/${resolvedPath}`;
+    }
     return `${BACKEND_URL}${resolvedPath.startsWith("/") ? "" : "/"}${resolvedPath}`;
   };
 

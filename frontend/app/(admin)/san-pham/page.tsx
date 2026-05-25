@@ -25,6 +25,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
 import * as XLSX from "xlsx";
+import IPFSImage from "@/lib/components/IPFSImage";
 
 interface MaMau {
   _id?: string;
@@ -576,13 +577,10 @@ export default function SanPhamPage() {
                       >
                         {getImageArray(item.HinhAnh).length > 0 ? (
                           <>
-                            <img
-                              src={getAvatarUrl(getImageArray(item.HinhAnh)[0])}
+                            <IPFSImage
+                              cid={getImageArray(item.HinhAnh)[0]}
                               alt={item.TenDongSon}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.TenDongSon)}&background=f8fafc&color=94a3b8`;
-                              }}
+                              className="w-full h-full"
                             />
                             {getImageArray(item.HinhAnh).length > 1 && (
                               <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-600 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
@@ -740,10 +738,10 @@ export default function SanPhamPage() {
                   <div className="flex flex-wrap gap-3 mb-3">
                     {formData.HinhAnh.map((url: string, idx: number) => (
                       <div key={idx} className="relative group/img w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
-                        <img
-                          src={getAvatarUrl(url)}
+                        <IPFSImage
+                          cid={url}
                           alt={`Ảnh ${idx + 1}`}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full"
                         />
                         {/* Nút X xóa ảnh */}
                         <button
@@ -1013,10 +1011,10 @@ export default function SanPhamPage() {
                   <div className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center group">
                     {getImageArray(selectedProduct.HinhAnh).length > 0 ? (
                       <>
-                        <img
-                          src={getAvatarUrl(getImageArray(selectedProduct.HinhAnh)[currentImgIndex] || "")}
+                        <IPFSImage
+                          cid={getImageArray(selectedProduct.HinhAnh)[currentImgIndex] || ""}
                           alt={selectedProduct.TenDongSon}
-                          className="w-full h-full object-cover transition-all duration-300"
+                          className="w-full h-full"
                         />
                         {/* Nút prev/next */}
                         {getImageArray(selectedProduct.HinhAnh).length > 1 && (
@@ -1067,7 +1065,7 @@ export default function SanPhamPage() {
                             : "border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100"
                             }`}
                         >
-                          <img src={getAvatarUrl(url)} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" />
+                          <IPFSImage cid={url} alt={`Thumb ${i + 1}`} className="w-full h-full" />
                         </button>
                       ))}
                     </div>
