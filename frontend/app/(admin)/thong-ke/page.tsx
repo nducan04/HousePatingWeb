@@ -9,7 +9,8 @@ import {
   DollarSign, Package, TestTube, Users, Download, Loader2,
   TrendingUp, AlertTriangle, Boxes, Factory, ClipboardCheck,
   ArrowUpRight, ArrowDownRight, RefreshCw, Layers, History, Activity,
-  CheckCircle, Clock, Smile, FileText, Scale, ShieldCheck, Copy
+  CheckCircle, Clock, Smile, FileText, Scale, ShieldCheck, Copy,
+  Crown, Ticket
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { exportDashboardToExcel, exportBusinessReportExcel, exportInventoryReportExcel, exportProductionReportExcel, exportCustomerServiceReportExcel, exportHrLegalReportExcel } from '@/lib/utils/excelExport';
@@ -39,7 +40,7 @@ export default function StatisticsDashboard() {
   const [activeTab, setActiveTab] = useState('SALES');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
-  
+
   // State for products filter in INVENTORY tab
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>('ALL');
@@ -454,11 +455,26 @@ function CustomerServiceDashboard({ data }: { data: any }) {
     csatScore: 0
   };
 
+  const loyalty = csData.loyalty || {
+    activeVouchers: 0,
+    vipCustomers: 0,
+    churnAlerts: 0
+  };
+
   const supportTrends = csData.supportTrends || [];
   const pendingComplaints = csData.pendingComplaints || [];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Loyalty & Vouchers Stats */}
+      <h3 className="text-lg font-black text-slate-900 -mb-2 pb-2">Khuyến mãi & Khách hàng thân thiết</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <KpiCard title="Khách hàng VIP" value={loyalty.vipCustomers} icon={<Crown />} color="orange" />
+        <KpiCard title="Cảnh báo rời bỏ" value={loyalty.churnAlerts} icon={<AlertTriangle />} color="rose" isAlert={loyalty.churnAlerts > 0} />
+        <KpiCard title="Voucher đang kích hoạt" value={loyalty.activeVouchers} icon={<Ticket />} color="emerald" />
+      </div>
+
+      <h3 className="text-lg font-black text-slate-900 -mb-2 pb-2 mt-8 border-t border-slate-200 pt-6">Bảo hành, Đổi trả & Khiếu nại</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard title="Tổng ca bảo hành/đổi trả" value={kpi.totalReturns} icon={<AlertTriangle />} color="rose" />
         <KpiCard title="Tỷ lệ xử lý thành công" value={`${kpi.successRate}%`} icon={<CheckCircle />} color="emerald" />
@@ -469,7 +485,7 @@ function CustomerServiceDashboard({ data }: { data: any }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
           <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
-            <Activity className="text-blue-600" size={20} /> Xu hướng yêu cầu hỗ trợ theo tuần
+            <Activity className="text-blue-600" size={20} /> Xu hướng bảo hành/đổi trả theo tuần
           </h3>
           <div className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -492,7 +508,7 @@ function CustomerServiceDashboard({ data }: { data: any }) {
 
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
           <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
-            <AlertTriangle className="text-rose-600" size={20} /> Khiếu nại chưa xử lý
+            <AlertTriangle className="text-rose-600" size={20} /> Yêu cầu chưa xử lý
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
@@ -515,7 +531,7 @@ function CustomerServiceDashboard({ data }: { data: any }) {
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={3} className="py-4 text-center text-slate-400 text-xs font-medium">Không có khiếu nại nào</td></tr>
+                  <tr><td colSpan={3} className="py-4 text-center text-slate-400 text-xs font-medium">Không có yêu cầu nào</td></tr>
                 )}
               </tbody>
             </table>
@@ -558,7 +574,7 @@ function HrLegalDashboard({ data }: { data: any }) {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} cursor={{fill: 'transparent'}} />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} cursor={{ fill: 'transparent' }} />
                 <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
                 <Bar name="Tuyển mới" dataKey="newHires" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
                 <Bar name="Nghỉ việc" dataKey="resignations" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={20} />
