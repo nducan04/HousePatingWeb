@@ -35,6 +35,9 @@ const getImageUrl = (path: any) => {
     return '';
   }
   if (resolvedPath.startsWith('http')) return resolvedPath;
+  if (resolvedPath.startsWith("Qm") || resolvedPath.startsWith("bafy")) {
+    return `https://gateway.pinata.cloud/ipfs/${resolvedPath}`;
+  }
   return `${BACKEND_URL}${resolvedPath.startsWith('/') ? '' : '/'}${resolvedPath}`;
 };
 

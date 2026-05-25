@@ -146,12 +146,6 @@ const allNavItems = [
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
-        href: "/giohang",
-        label: "Quản lý giỏ hàng",
-        icon: ShoppingCart,
-        roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
-      },
-      {
         href: "/thanh-toan",
         label: "Quản lý thanh toán",
         icon: QrCode,
