@@ -30,6 +30,7 @@ const STATUS_LABELS = [
 
 let provider = null;
 let contract = null;
+let systemWallet = null;
 
 /**
  * Initialize blockchain provider and contract instance.
@@ -46,28 +47,24 @@ function initBlockchain() {
     }
 
     provider = new ethers.JsonRpcProvider(rpcUrl);
-    contract = new ethers.Contract(contractAddress, VTSC_ESCROW_ABI, provider);
-    console.log(`[Blockchain] Connected to contract at ${contractAddress}`);
+
+    // Khởi tạo systemWallet từ SYSTEM_PRIVATE_KEY (ví hệ thống trả phí gas cho mọi giao dịch)
+    const privateKey = process.env.SYSTEM_PRIVATE_KEY;
+    if (privateKey) {
+      systemWallet = new ethers.Wallet(privateKey, provider);
+      // Kết nối Smart Contract với systemWallet thay vì một provider ẩn danh để có quyền ghi dữ liệu
+      contract = new ethers.Contract(contractAddress, VTSC_ESCROW_ABI, systemWallet);
+      console.log(`[Blockchain] Connected to contract at ${contractAddress} with system wallet`);
+    } else {
+      console.warn('[Blockchain] WARNING: SYSTEM_PRIVATE_KEY not set. Contract is read-only.');
+      contract = new ethers.Contract(contractAddress, VTSC_ESCROW_ABI, provider);
+    }
+
     return true;
   } catch (error) {
     console.error('[Blockchain] Init error:', error.message);
     return false;
   }
-}
-
-/**
- * Create a wallet signer for write operations (deploy, create contract, etc.)
- * @returns {ethers.Wallet} signer
- */
-function getSigner() {
-  if (!provider) {
-    throw new Error('Blockchain not initialized');
-  }
-  const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
-  if (!privateKey) {
-    throw new Error('DEPLOYER_PRIVATE_KEY not set in .env');
-  }
-  return new ethers.Wallet(privateKey, provider);
 }
 
 /**
@@ -138,8 +135,9 @@ async function createContractOnChain(contractId, clientAddress, valueVnd, slaTim
   }
 
   try {
-    const signer = getSigner();
-    const contractWithSigner = contract.connect(signer);
+    // contract đã được kết nối với systemWallet trong hàm initBlockchain()
+    // Do đó có thể gọi trực tiếp các hàm write
+    const contractWithSigner = contract;
 
     // Chuyển giá trị VNĐ sang Wei (1 VNĐ = 1 Wei cho mục đích ghi nhận)
     const valueWei = ethers.parseUnits(String(valueVnd), 0);
@@ -174,7 +172,6 @@ module.exports = {
   initBlockchain,
   getContractStatus,
   createContractOnChain,
-  getSigner,
   STATUS_LABELS,
   VTSC_ESCROW_ABI
 };
