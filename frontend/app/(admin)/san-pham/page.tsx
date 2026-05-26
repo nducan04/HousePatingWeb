@@ -83,8 +83,21 @@ const MOCK_DATA: SanPham[] = [
     MoTa: "Sơn bột tĩnh điện Epoxy có độ bóng cao, chịu va đập tốt, chuyên dùng cho nội thất gia đình và văn phòng.",
     DonViTinh: "Kg",
     TongTonKho: 1250,
-    HinhAnh: ["https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?auto=format&fit=crop&q=80&w=400&h=400", "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400&h=400"],
-    DanhSachMaMau: [{ MaMau: "WHT01", TenMau: "Trắng", HexCode: "#FFFFFF", TonKhoKhaDung: 500, TonKhoTamGiu: 0, NguongCanhBao: 100, TrangThai: true }]
+    HinhAnh: [
+      "https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?auto=format&fit=crop&q=80&w=400&h=400",
+      "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400&h=400",
+    ],
+    DanhSachMaMau: [
+      {
+        MaMau: "WHT01",
+        TenMau: "Trắng",
+        HexCode: "#FFFFFF",
+        TonKhoKhaDung: 500,
+        TonKhoTamGiu: 0,
+        NguongCanhBao: 100,
+        TrangThai: true,
+      },
+    ],
   },
   {
     _id: "2",
@@ -96,8 +109,10 @@ const MOCK_DATA: SanPham[] = [
     MoTa: "Sơn phủ Polyurethane chống hà, chống ăn mòn nước biển, độ bền màu cao dùng cho mạn tàu.",
     DonViTinh: "Lít",
     TongTonKho: 0, // Test case hết hàng
-    HinhAnh: ["https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400&h=400"],
-    DanhSachMaMau: []
+    HinhAnh: [
+      "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400&h=400",
+    ],
+    DanhSachMaMau: [],
   },
   {
     _id: "3",
@@ -109,8 +124,10 @@ const MOCK_DATA: SanPham[] = [
     MoTa: "Hệ sơn Alkyd khô nhanh, phù hợp sơn kết cấu thép mạ kẽm trong nhà xưởng.",
     DonViTinh: "Thùng",
     TongTonKho: 45,
-    HinhAnh: ["https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&q=80&w=400&h=400"],
-    DanhSachMaMau: []
+    HinhAnh: [
+      "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&q=80&w=400&h=400",
+    ],
+    DanhSachMaMau: [],
   },
   {
     _id: "4",
@@ -122,9 +139,11 @@ const MOCK_DATA: SanPham[] = [
     MoTa: "Kháng UV cực tốt, chống phai màu, chịu thời tiết khắc nghiệt. Phù hợp cho khung nhôm cửa kính.",
     DonViTinh: "Kg",
     TongTonKho: 320,
-    HinhAnh: ["https://images.unsplash.com/photo-1502325966718-85a90488dc29?auto=format&fit=crop&q=80&w=400&h=400"],
-    DanhSachMaMau: []
-  }
+    HinhAnh: [
+      "https://images.unsplash.com/photo-1502325966718-85a90488dc29?auto=format&fit=crop&q=80&w=400&h=400",
+    ],
+    DanhSachMaMau: [],
+  },
 ];
 
 // Helper: Tự động format đoạn text dài có chứa gạch đầu dòng, dấu sao hoặc chữ in hoa thành HTML dễ nhìn
@@ -132,20 +151,28 @@ const formatTextToHTML = (text: string) => {
   if (!text) return "";
   let formatted = text
     // Thêm xuống dòng trước các dấu gạch ngang, dấu sao, dấu cộng (nếu trước đó có dấu chấm hoặc khoảng trắng)
-    .replace(/(?:\.\s+|\s|^)([-–+*])\s/g, '\n$1 ')
-    .replace(/(?:\.\s+|\s|^)(\(\*\))\s/g, '\n$1 ')
+    .replace(/(?:\.\s+|\s|^)([-–+*])\s/g, "\n$1 ")
+    .replace(/(?:\.\s+|\s|^)(\(\*\))\s/g, "\n$1 ")
     // Thêm xuống dòng trước cụm từ IN HOA dài (vd: CÁCH THỨC THI CÔNG) nếu phía trước là dấu chấm
-    .replace(/\.\s+([A-ZÀ-Ỹ][A-ZÀ-Ỹ\s]{5,})/g, '\n$1');
+    .replace(/\.\s+([A-ZÀ-Ỹ][A-ZÀ-Ỹ\s]{5,})/g, "\n$1");
 
-  return formatted.split('\n').map((line, index) => {
+  return formatted.split("\n").map((line, index) => {
     if (!line.trim()) return <br key={index} />;
-    const isHeading = line.trim() === line.trim().toUpperCase() && line.trim().length > 8 && !line.includes('–') && !line.includes('-');
-    const isListItem = line.trim().startsWith('-') || line.trim().startsWith('–') || line.trim().startsWith('(*)') || line.trim().startsWith('+');
+    const isHeading =
+      line.trim() === line.trim().toUpperCase() &&
+      line.trim().length > 8 &&
+      !line.includes("–") &&
+      !line.includes("-");
+    const isListItem =
+      line.trim().startsWith("-") ||
+      line.trim().startsWith("–") ||
+      line.trim().startsWith("(*)") ||
+      line.trim().startsWith("+");
 
     return (
       <span
         key={index}
-        className={`block ${isHeading ? 'font-bold text-slate-800 mt-3 mb-1 text-[13px]' : 'mb-1'} ${isListItem ? 'pl-3 relative before:content-[""] before:absolute before:left-0 before:top-2 before:w-1 before:h-1 before:bg-slate-400 before:rounded-full' : ''}`}
+        className={`block ${isHeading ? "font-bold text-slate-800 mt-3 mb-1 text-[13px]" : "mb-1"} ${isListItem ? 'pl-3 relative before:content-[""] before:absolute before:left-0 before:top-2 before:w-1 before:h-1 before:bg-slate-400 before:rounded-full' : ""}`}
       >
         {line}
       </span>
@@ -329,13 +356,21 @@ export default function SanPhamPage() {
         DonGiaCoSo: item.DonGiaCoSo,
         MoTa: item.MoTa || "",
         DonViTinh: item.DonViTinh || "Kg",
-        HinhAnh: Array.isArray(item.HinhAnh) ? item.HinhAnh : (item.HinhAnh ? [item.HinhAnh] : []),
+        HinhAnh: Array.isArray(item.HinhAnh)
+          ? item.HinhAnh
+          : item.HinhAnh
+            ? [item.HinhAnh]
+            : [],
         MoTaSanPham: item.MoTaSanPham || "",
         DanhSachMaMau: item.DanhSachMaMau || [],
         TruyXuatNguonGoc: {
           HoaDonMuaSon: item.TruyXuatNguonGoc?.HoaDonMuaSon || "",
           QuyTrinhSanXuat: item.TruyXuatNguonGoc?.QuyTrinhSanXuat || "",
-          NgaySanXuat: item.TruyXuatNguonGoc?.NgaySanXuat ? new Date(item.TruyXuatNguonGoc.NgaySanXuat).toISOString().split('T')[0] : "",
+          NgaySanXuat: item.TruyXuatNguonGoc?.NgaySanXuat
+            ? new Date(item.TruyXuatNguonGoc.NgaySanXuat)
+                .toISOString()
+                .split("T")[0]
+            : "",
           HanSuDung: item.TruyXuatNguonGoc?.HanSuDung || "",
         },
       });
@@ -431,15 +466,21 @@ export default function SanPhamPage() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "San-Pham");
     XLSX.writeFile(
       workbook,
-      `VTSC_Danh_Sach_San_Pham_${new Date().toLocaleDateString().replace(/\//g, "_")}.xlsx`
+      `VTSC_Danh_Sach_San_Pham_${new Date().toLocaleDateString().replace(/\//g, "_")}.xlsx`,
     );
   };
 
   const STATS = {
     total: allSanPhams.length || sanPhams.length,
-    tinhDien: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn tĩnh điện").length,
-    tauBien: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn tàu biển").length,
-    congNghiep: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn công nghiệp").length,
+    tinhDien: (allSanPhams.length ? allSanPhams : sanPhams).filter(
+      (t) => t.PhanLoai === "Sơn tĩnh điện",
+    ).length,
+    tauBien: (allSanPhams.length ? allSanPhams : sanPhams).filter(
+      (t) => t.PhanLoai === "Sơn tàu biển",
+    ).length,
+    congNghiep: (allSanPhams.length ? allSanPhams : sanPhams).filter(
+      (t) => t.PhanLoai === "Sơn công nghiệp",
+    ).length,
   };
 
   const getAvatarUrl = (path: string) => {
@@ -451,17 +492,46 @@ export default function SanPhamPage() {
       {/* 1. KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Tổng sản phẩm", value: STATS.total, icon: Package, color: "blue" },
-          { label: "Sơn tĩnh điện", value: STATS.tinhDien, icon: Layers, color: "emerald" },
-          { label: "Sơn tàu biển", value: STATS.tauBien, icon: Droplet, color: "violet" },
-          { label: "Sơn công nghiệp", value: STATS.congNghiep, icon: Box, color: "amber" },
+          {
+            label: "Tổng sản phẩm",
+            value: STATS.total,
+            icon: Package,
+            color: "blue",
+          },
+          {
+            label: "Sơn tĩnh điện",
+            value: STATS.tinhDien,
+            icon: Layers,
+            color: "emerald",
+          },
+          {
+            label: "Sơn tàu biển",
+            value: STATS.tauBien,
+            icon: Droplet,
+            color: "violet",
+          },
+          {
+            label: "Sơn công nghiệp",
+            value: STATS.congNghiep,
+            icon: Box,
+            color: "amber",
+          },
         ].map((item, i) => (
-          <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
+          <div
+            key={i}
+            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between"
+          >
             <div>
-              <p className="text-sm font-medium text-slate-500 mb-1">{item.label}</p>
-              <h3 className="text-2xl font-bold text-slate-900">{item.value}</h3>
+              <p className="text-sm font-medium text-slate-500 mb-1">
+                {item.label}
+              </p>
+              <h3 className="text-2xl font-bold text-slate-900">
+                {item.value}
+              </h3>
             </div>
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-${item.color}-50 text-${item.color}-600`}>
+            <div
+              className={`w-10 h-10 rounded-lg flex items-center justify-center bg-${item.color}-50 text-${item.color}-600`}
+            >
               <item.icon strokeWidth={1.5} size={20} />
             </div>
           </div>
@@ -472,7 +542,11 @@ export default function SanPhamPage() {
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         {/* Left: Search */}
         <div className="relative w-full lg:w-72">
-          <Search strokeWidth={1.5} size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search
+            strokeWidth={1.5}
+            size={18}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
           <input
             type="text"
             className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow shadow-sm"
@@ -493,10 +567,11 @@ export default function SanPhamPage() {
             <button
               key={f.id}
               onClick={() => setFilterType(f.id)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${filterType === f.id
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-                }`}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                filterType === f.id
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+              }`}
             >
               {f.label}
             </button>
@@ -528,31 +603,54 @@ export default function SanPhamPage() {
           <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider w-16 text-center">Ảnh</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Mã SP</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider w-1/3">Dòng sản phẩm</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Thương hiệu / Loại</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Đơn giá</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Tồn kho</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Thao tác</th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider w-16 text-center">
+                  Ảnh
+                </th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Mã SP
+                </th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider w-1/3">
+                  Dòng sản phẩm
+                </th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Thương hiệu / Loại
+                </th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">
+                  Đơn giá
+                </th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">
+                  Tồn kho
+                </th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">
+                  Thao tác
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-sm text-slate-500">
+                  <td
+                    colSpan={7}
+                    className="text-center py-12 text-sm text-slate-500"
+                  >
                     Đang tải dữ liệu...
                   </td>
                 </tr>
               ) : sanPhams.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-sm text-slate-500">
+                  <td
+                    colSpan={7}
+                    className="text-center py-12 text-sm text-slate-500"
+                  >
                     Không tìm thấy sản phẩm.
                   </td>
                 </tr>
               ) : (
                 sanPhams.map((item) => (
-                  <tr key={item._id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr
+                    key={item._id}
+                    className="hover:bg-slate-50/50 transition-colors"
+                  >
                     {/* Ảnh (hiển thị ảnh đầu tiên) — Click để xem */}
                     <td className="px-6 py-3 text-center">
                       <div
@@ -574,7 +672,11 @@ export default function SanPhamPage() {
                             )}
                           </>
                         ) : (
-                          <ImageIcon strokeWidth={1.5} size={20} className="text-slate-400" />
+                          <ImageIcon
+                            strokeWidth={1.5}
+                            size={20}
+                            className="text-slate-400"
+                          />
                         )}
                       </div>
                     </td>
@@ -595,7 +697,10 @@ export default function SanPhamPage() {
                         >
                           {item.TenDongSon}
                         </p>
-                        <p className="truncate max-w-[280px] text-xs text-slate-500 mt-0.5" title={item.MoTa}>
+                        <p
+                          className="truncate max-w-[280px] text-xs text-slate-500 mt-0.5"
+                          title={item.MoTa}
+                        >
                           {item.MoTa || "Không có mô tả"}
                         </p>
                       </div>
@@ -671,7 +776,9 @@ export default function SanPhamPage() {
         {/* Phân trang (Pagination) */}
         <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex items-center justify-between">
           <p className="text-sm text-slate-500 font-medium">
-            Trang <span className="text-slate-900 font-semibold">{currentPage}</span> / {totalPages}
+            Trang{" "}
+            <span className="text-slate-900 font-semibold">{currentPage}</span>{" "}
+            / {totalPages}
           </p>
           <div className="flex items-center gap-1">
             <button
@@ -698,7 +805,7 @@ export default function SanPhamPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">
-                {formData._id ? "Chỉnh sửa Sản phẩm" : "Thêm Sản phẩm mới"}
+                {formData._id ? "Chỉnh sửa Sản phẩm" : "Thêm sản phẩm mới"}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -715,14 +822,19 @@ export default function SanPhamPage() {
                   <label className="block text-xs font-semibold text-slate-500 uppercase mb-2">
                     Ảnh sản phẩm
                     {formData.HinhAnh.length > 0 && (
-                      <span className="ml-2 text-blue-600">({formData.HinhAnh.length} ảnh)</span>
+                      <span className="ml-2 text-blue-600">
+                        ({formData.HinhAnh.length} ảnh)
+                      </span>
                     )}
                   </label>
 
                   {/* Grid hiển thị các ảnh đã upload */}
                   <div className="flex flex-wrap gap-3 mb-3">
                     {formData.HinhAnh.map((url: string, idx: number) => (
-                      <div key={idx} className="relative group/img w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
+                      <div
+                        key={idx}
+                        className="relative group/img w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50"
+                      >
                         <IPFSImage
                           cid={url}
                           alt={`Ảnh ${idx + 1}`}
@@ -756,41 +868,61 @@ export default function SanPhamPage() {
                         <div className="w-5 h-5 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
                       ) : (
                         <>
-                          <Upload size={18} className="text-slate-400" strokeWidth={1.5} />
-                          <span className="text-[10px] font-semibold text-slate-400">Thêm ảnh</span>
+                          <Upload
+                            size={18}
+                            className="text-slate-400"
+                            strokeWidth={1.5}
+                          />
+                          <span className="text-[10px] font-semibold text-slate-400">
+                            Thêm ảnh
+                          </span>
                         </>
                       )}
                     </label>
                   </div>
 
-                  <p className="text-[11px] text-slate-400">Nhấn vào ô "+" để thêm ảnh. Di chuột vào ảnh để xóa.</p>
+                  <p className="text-[11px] text-slate-400">
+                    Nhấn vào ô "+" để thêm ảnh. Di chuột vào ảnh để xóa.
+                  </p>
                 </div>
 
                 {/* Form Fields */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Mã sản phẩm</label>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">
+                    Mã sản phẩm
+                  </label>
                   <input
                     type="text"
                     className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.MaSanPham}
-                    onChange={(e) => setFormData({ ...formData, MaSanPham: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, MaSanPham: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Tên dòng sơn</label>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">
+                    Tên dòng sơn
+                  </label>
                   <input
                     type="text"
                     className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.TenDongSon}
-                    onChange={(e) => setFormData({ ...formData, TenDongSon: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, TenDongSon: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Phân loại</label>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">
+                    Phân loại
+                  </label>
                   <select
                     className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.PhanLoai}
-                    onChange={(e) => setFormData({ ...formData, PhanLoai: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, PhanLoai: e.target.value })
+                    }
                   >
                     <option value="Sơn tĩnh điện">Sơn tĩnh điện</option>
                     <option value="Sơn tàu biển">Sơn tàu biển</option>
@@ -799,29 +931,44 @@ export default function SanPhamPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Thương hiệu</label>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">
+                    Thương hiệu
+                  </label>
                   <input
                     type="text"
                     className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.ThuongHieu}
-                    onChange={(e) => setFormData({ ...formData, ThuongHieu: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, ThuongHieu: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Đơn giá cơ sở</label>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">
+                    Đơn giá cơ sở
+                  </label>
                   <input
                     type="number"
                     className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.DonGiaCoSo}
-                    onChange={(e) => setFormData({ ...formData, DonGiaCoSo: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        DonGiaCoSo: Number(e.target.value),
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Đơn vị tính</label>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">
+                    Đơn vị tính
+                  </label>
                   <select
                     className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     value={formData.DonViTinh}
-                    onChange={(e) => setFormData({ ...formData, DonViTinh: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, DonViTinh: e.target.value })
+                    }
                   >
                     <option value="Thùng">Thùng</option>
                     <option value="Kg">Kg</option>
@@ -829,12 +976,16 @@ export default function SanPhamPage() {
                   </select>
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Mô tả chi tiết</label>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">
+                    Mô tả chi tiết
+                  </label>
                   <textarea
                     rows={3}
                     className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
                     value={formData.MoTa}
-                    onChange={(e) => setFormData({ ...formData, MoTa: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, MoTa: e.target.value })
+                    }
                   ></textarea>
                 </div>
 
@@ -842,7 +993,8 @@ export default function SanPhamPage() {
                 <div className="col-span-1 md:col-span-2 mt-4 pt-4 border-t border-slate-100">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                      <Layers size={18} className="text-blue-500" /> Danh sách Biến thể Màu sắc (SKU)
+                      <Layers size={18} className="text-blue-500" /> Danh sách
+                      Biến thể Màu sắc (SKU)
                     </h3>
                     <button
                       type="button"
@@ -855,37 +1007,64 @@ export default function SanPhamPage() {
 
                   <div className="space-y-3">
                     {formData.DanhSachMaMau.map((mau, index) => (
-                      <div key={index} className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl relative group animate-in fade-in zoom-in-95 duration-200">
+                      <div
+                        key={index}
+                        className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl relative group animate-in fade-in zoom-in-95 duration-200"
+                      >
                         {/* Cột 1: Chọn màu (Hex) */}
                         <div className="flex flex-col items-center gap-1">
                           <input
                             type="color"
                             value={mau.HexCode}
-                            onChange={(e) => handleColorChange(index, "HexCode", e.target.value)}
+                            onChange={(e) =>
+                              handleColorChange(
+                                index,
+                                "HexCode",
+                                e.target.value,
+                              )
+                            }
                             className="w-10 h-10 p-0 border-0 rounded overflow-hidden cursor-pointer"
                           />
-                          <span className="text-[10px] font-mono text-slate-500 uppercase">{mau.HexCode}</span>
+                          <span className="text-[10px] font-mono text-slate-500 uppercase">
+                            {mau.HexCode}
+                          </span>
                         </div>
 
                         {/* Cột 2 & 3: Mã và Tên */}
                         <div className="flex-1 grid grid-cols-2 gap-3">
                           <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Mã màu</label>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">
+                              Mã màu
+                            </label>
                             <input
                               type="text"
                               placeholder="VD: WHT01"
                               value={mau.MaMau}
-                              onChange={(e) => handleColorChange(index, "MaMau", e.target.value)}
+                              onChange={(e) =>
+                                handleColorChange(
+                                  index,
+                                  "MaMau",
+                                  e.target.value,
+                                )
+                              }
                               className="w-full mt-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Tên màu</label>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">
+                              Tên màu
+                            </label>
                             <input
                               type="text"
                               placeholder="VD: Trắng Sứ"
                               value={mau.TenMau}
-                              onChange={(e) => handleColorChange(index, "TenMau", e.target.value)}
+                              onChange={(e) =>
+                                handleColorChange(
+                                  index,
+                                  "TenMau",
+                                  e.target.value,
+                                )
+                              }
                               className="w-full mt-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
                             />
                           </div>
@@ -902,7 +1081,10 @@ export default function SanPhamPage() {
                       </div>
                     ))}
                     {formData.DanhSachMaMau.length === 0 && (
-                      <p className="text-sm text-slate-500 italic text-center py-4">Chưa có mã màu nào. Vui lòng thêm màu để khách hàng có thể đặt mua!</p>
+                      <p className="text-sm text-slate-500 italic text-center py-4">
+                        Chưa có mã màu nào. Vui lòng thêm màu để khách hàng có
+                        thể đặt mua!
+                      </p>
                     )}
                   </div>
                 </div>
@@ -910,46 +1092,87 @@ export default function SanPhamPage() {
                 {/* Phần thông tin Truy Xuất Nguồn Gốc (QR Code) */}
                 <div className="col-span-1 md:col-span-2 mt-2 pt-4 border-t border-slate-100">
                   <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <QrCode size={18} className="text-blue-500" /> Thông tin Truy xuất Nguồn gốc (QR)
+                    <QrCode size={18} className="text-blue-500" /> Thông tin
+                    Truy xuất Nguồn gốc (QR)
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-500 uppercase">Ngày sản xuất</label>
+                      <label className="text-xs font-semibold text-slate-500 uppercase">
+                        Ngày sản xuất
+                      </label>
                       <input
                         type="date"
                         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
                         value={formData.TruyXuatNguonGoc.NgaySanXuat}
-                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, NgaySanXuat: e.target.value } })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            TruyXuatNguonGoc: {
+                              ...formData.TruyXuatNguonGoc,
+                              NgaySanXuat: e.target.value,
+                            },
+                          })
+                        }
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-500 uppercase">Hạn sử dụng</label>
+                      <label className="text-xs font-semibold text-slate-500 uppercase">
+                        Hạn sử dụng
+                      </label>
                       <input
                         type="text"
                         placeholder="Vd: 24 tháng"
                         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
                         value={formData.TruyXuatNguonGoc.HanSuDung}
-                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, HanSuDung: e.target.value } })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            TruyXuatNguonGoc: {
+                              ...formData.TruyXuatNguonGoc,
+                              HanSuDung: e.target.value,
+                            },
+                          })
+                        }
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-500 uppercase">Hóa đơn mua hàng (URL)</label>
+                      <label className="text-xs font-semibold text-slate-500 uppercase">
+                        Hóa đơn mua hàng (URL)
+                      </label>
                       <input
                         type="text"
                         placeholder="Link ảnh/PDF hóa đơn"
                         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
                         value={formData.TruyXuatNguonGoc.HoaDonMuaSon}
-                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, HoaDonMuaSon: e.target.value } })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            TruyXuatNguonGoc: {
+                              ...formData.TruyXuatNguonGoc,
+                              HoaDonMuaSon: e.target.value,
+                            },
+                          })
+                        }
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-500 uppercase">Quy trình sản xuất</label>
+                      <label className="text-xs font-semibold text-slate-500 uppercase">
+                        Quy trình sản xuất
+                      </label>
                       <input
                         type="text"
                         placeholder="Mô tả quy trình..."
                         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
                         value={formData.TruyXuatNguonGoc.QuyTrinhSanXuat}
-                        onChange={(e) => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, QuyTrinhSanXuat: e.target.value } })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            TruyXuatNguonGoc: {
+                              ...formData.TruyXuatNguonGoc,
+                              QuyTrinhSanXuat: e.target.value,
+                            },
+                          })
+                        }
                       />
                     </div>
                   </div>
@@ -980,7 +1203,9 @@ export default function SanPhamPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">Chi tiết sản phẩm</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Chi tiết sản phẩm
+              </h2>
               <button
                 onClick={() => setIsViewOpen(false)}
                 className="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors"
@@ -997,7 +1222,11 @@ export default function SanPhamPage() {
                     {getImageArray(selectedProduct.HinhAnh).length > 0 ? (
                       <>
                         <IPFSImage
-                          cid={getImageArray(selectedProduct.HinhAnh)[currentImgIndex] || ""}
+                          cid={
+                            getImageArray(selectedProduct.HinhAnh)[
+                              currentImgIndex
+                            ] || ""
+                          }
                           alt={selectedProduct.TenDongSon}
                           className="w-full h-full"
                         />
@@ -1006,28 +1235,46 @@ export default function SanPhamPage() {
                           <>
                             <button
                               type="button"
-                              onClick={() => setCurrentImgIndex((prev) => (prev <= 0 ? getImageArray(selectedProduct.HinhAnh).length - 1 : prev - 1))}
+                              onClick={() =>
+                                setCurrentImgIndex((prev) =>
+                                  prev <= 0
+                                    ? getImageArray(selectedProduct.HinhAnh)
+                                        .length - 1
+                                    : prev - 1,
+                                )
+                              }
                               className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                               <ChevronLeft size={16} />
                             </button>
                             <button
                               type="button"
-                              onClick={() => setCurrentImgIndex((prev) => (prev >= getImageArray(selectedProduct.HinhAnh).length - 1 ? 0 : prev + 1))}
+                              onClick={() =>
+                                setCurrentImgIndex((prev) =>
+                                  prev >=
+                                  getImageArray(selectedProduct.HinhAnh)
+                                    .length -
+                                    1
+                                    ? 0
+                                    : prev + 1,
+                                )
+                              }
                               className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                               <ChevronRight size={16} />
                             </button>
                             {/* Indicator dots */}
                             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-                              {getImageArray(selectedProduct.HinhAnh).map((_: string, i: number) => (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  onClick={() => setCurrentImgIndex(i)}
-                                  className={`w-2 h-2 rounded-full transition-all ${i === currentImgIndex ? "bg-white scale-125 shadow" : "bg-white/50 hover:bg-white/80"}`}
-                                />
-                              ))}
+                              {getImageArray(selectedProduct.HinhAnh).map(
+                                (_: string, i: number) => (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => setCurrentImgIndex(i)}
+                                    className={`w-2 h-2 rounded-full transition-all ${i === currentImgIndex ? "bg-white scale-125 shadow" : "bg-white/50 hover:bg-white/80"}`}
+                                  />
+                                ),
+                              )}
                             </div>
                           </>
                         )}
@@ -1040,19 +1287,26 @@ export default function SanPhamPage() {
                   {/* Thumbnail strip */}
                   {getImageArray(selectedProduct.HinhAnh).length > 1 && (
                     <div className="flex gap-2 overflow-x-auto pb-1">
-                      {getImageArray(selectedProduct.HinhAnh).map((url: string, i: number) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => setCurrentImgIndex(i)}
-                          className={`w-14 h-14 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${i === currentImgIndex
-                            ? "border-blue-500 ring-2 ring-blue-200 shadow-sm"
-                            : "border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100"
+                      {getImageArray(selectedProduct.HinhAnh).map(
+                        (url: string, i: number) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setCurrentImgIndex(i)}
+                            className={`w-14 h-14 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${
+                              i === currentImgIndex
+                                ? "border-blue-500 ring-2 ring-blue-200 shadow-sm"
+                                : "border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100"
                             }`}
-                        >
-                          <IPFSImage cid={url} alt={`Thumb ${i + 1}`} className="w-full h-full" />
-                        </button>
-                      ))}
+                          >
+                            <IPFSImage
+                              cid={url}
+                              alt={`Thumb ${i + 1}`}
+                              className="w-full h-full"
+                            />
+                          </button>
+                        ),
+                      )}
                     </div>
                   )}
                 </div>
@@ -1062,30 +1316,47 @@ export default function SanPhamPage() {
                     <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md mb-2">
                       {selectedProduct.MaSanPham}
                     </span>
-                    <h1 className="text-2xl font-bold text-slate-900">{selectedProduct.TenDongSon}</h1>
-                    <p className="text-sm font-medium text-slate-500 mt-1">{selectedProduct.ThuongHieu} • {selectedProduct.PhanLoai}</p>
+                    <h1 className="text-2xl font-bold text-slate-900">
+                      {selectedProduct.TenDongSon}
+                    </h1>
+                    <p className="text-sm font-medium text-slate-500 mt-1">
+                      {selectedProduct.ThuongHieu} • {selectedProduct.PhanLoai}
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 uppercase">Đơn giá cơ sở</p>
+                      <p className="text-xs font-semibold text-slate-500 uppercase">
+                        Đơn giá cơ sở
+                      </p>
                       <p className="text-xl font-semibold text-slate-900 mt-1">
-                        {selectedProduct.DonGiaCoSo?.toLocaleString()} ₫ <span className="text-sm font-normal text-slate-500">/ {selectedProduct.DonViTinh}</span>
+                        {selectedProduct.DonGiaCoSo?.toLocaleString()} ₫{" "}
+                        <span className="text-sm font-normal text-slate-500">
+                          / {selectedProduct.DonViTinh}
+                        </span>
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 uppercase">Tồn kho</p>
+                      <p className="text-xs font-semibold text-slate-500 uppercase">
+                        Tồn kho
+                      </p>
                       <p className="text-xl font-semibold text-slate-900 mt-1">
-                        {selectedProduct.TongTonKho || 0} <span className="text-sm font-normal text-slate-500">{selectedProduct.DonViTinh}</span>
+                        {selectedProduct.TongTonKho || 0}{" "}
+                        <span className="text-sm font-normal text-slate-500">
+                          {selectedProduct.DonViTinh}
+                        </span>
                       </p>
                     </div>
                   </div>
 
                   {/* BẢNG MÀU LỰA CHỌN */}
                   <div>
-                    <p className="text-sm font-semibold text-slate-900 mb-2">Bảng màu lựa chọn (SKU)</p>
+                    <p className="text-sm font-semibold text-slate-900 mb-2">
+                      Bảng màu lựa chọn (SKU)
+                    </p>
                     <div className="flex flex-wrap gap-2.5">
-                      {selectedProduct.DanhSachMaMau && selectedProduct.DanhSachMaMau.length > 0 ? (
+                      {selectedProduct.DanhSachMaMau &&
+                      selectedProduct.DanhSachMaMau.length > 0 ? (
                         selectedProduct.DanhSachMaMau.map((mau, idx) => (
                           <div
                             key={idx}
@@ -1093,24 +1364,39 @@ export default function SanPhamPage() {
                           >
                             <span
                               className="w-5 h-5 rounded-full border border-slate-200 block"
-                              style={{ backgroundColor: mau.HexCode || "#cccccc" }}
+                              style={{
+                                backgroundColor: mau.HexCode || "#cccccc",
+                              }}
                             />
                             <div className="text-left">
-                              <p className="text-xs font-bold text-slate-800 leading-none">{mau.TenMau}</p>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">{mau.MaMau} {mau.TonKhoKhaDung > 0 ? `(Còn ${mau.TonKhoKhaDung})` : '(Hết hàng)'}</p>
+                              <p className="text-xs font-bold text-slate-800 leading-none">
+                                {mau.TenMau}
+                              </p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">
+                                {mau.MaMau}{" "}
+                                {mau.TonKhoKhaDung > 0
+                                  ? `(Còn ${mau.TonKhoKhaDung})`
+                                  : "(Hết hàng)"}
+                              </p>
                             </div>
                           </div>
                         ))
                       ) : (
-                        <p className="text-xs text-slate-400 italic">Không có biến thể màu nào.</p>
+                        <p className="text-xs text-slate-400 italic">
+                          Không có biến thể màu nào.
+                        </p>
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-sm font-semibold text-slate-900 mb-2">Mô tả chi tiết</p>
+                    <p className="text-sm font-semibold text-slate-900 mb-2">
+                      Mô tả chi tiết
+                    </p>
                     <div className="text-sm text-slate-600 leading-relaxed max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                      {selectedProduct.MoTa ? formatTextToHTML(selectedProduct.MoTa) : "Chưa có mô tả."}
+                      {selectedProduct.MoTa
+                        ? formatTextToHTML(selectedProduct.MoTa)
+                        : "Chưa có mô tả."}
                     </div>
                   </div>
 
@@ -1118,7 +1404,7 @@ export default function SanPhamPage() {
                   <div className="mt-4 pt-4 border-t border-slate-100 flex items-start gap-4">
                     <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm shrink-0">
                       <QRCodeCanvas
-                        value={`${typeof window !== 'undefined' ? window.location.origin : ''}/truy-xuat/${selectedProduct._id}`}
+                        value={`${typeof window !== "undefined" ? window.location.origin : ""}/truy-xuat/${selectedProduct._id}`}
                         size={80}
                         bgColor={"#ffffff"}
                         fgColor={"#0f172a"}
@@ -1131,7 +1417,8 @@ export default function SanPhamPage() {
                         Truy xuất nguồn gốc
                       </h4>
                       <p className="text-xs text-slate-500 leading-relaxed max-w-sm mb-2">
-                        Khách hàng có thể quét mã QR này để xem thông tin hóa đơn, ngày sản xuất, hạn sử dụng và quy trình.
+                        Khách hàng có thể quét mã QR này để xem thông tin hóa
+                        đơn, ngày sản xuất, hạn sử dụng và quy trình.
                       </p>
                       <a
                         href={`/truy-xuat/${selectedProduct._id}`}

@@ -18,7 +18,7 @@ interface Permission {
 const mockPermissions: Permission[] = [
   {
     id: "1",
-    module: "Quản lý Hệ thống & Tài khoản",
+    module: "Quản lý hệ thống & tài khoản",
     description: "Toàn quyền cấu hình người dùng, profile và cấp phát vai trò",
     roles: {
       Admin: true,
@@ -40,7 +40,7 @@ const mockPermissions: Permission[] = [
   },
   {
     id: "3",
-    module: "Quản lý Kho & Sản phẩm",
+    module: "Quản lý kho & sản phẩm",
     description:
       "Điều chỉnh danh mục, giá thành, và logic nghiệp vụ Nhập/Xuất kho",
     roles: {
@@ -74,7 +74,7 @@ const mockPermissions: Permission[] = [
   },
   {
     id: "6",
-    module: "Tra cứu Mục lục Sơn (B2C)",
+    module: "Tra cứu mục lục sơn (B2C)",
     description: "Tự do tra cứu thẻ màu, giá thành tham chiếu",
     roles: {
       Admin: true,

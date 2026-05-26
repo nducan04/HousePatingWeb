@@ -13,7 +13,16 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Package, Award, Calendar, Loader2, Target, X, Factory, BarChart3 } from "lucide-react";
+import {
+  Package,
+  Award,
+  Calendar,
+  Loader2,
+  Target,
+  X,
+  Factory,
+  BarChart3,
+} from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 
 // Tooltip cho chế độ 1 năm
@@ -22,29 +31,54 @@ const SingleYearTooltip = ({ active, payload, label }: any) => {
     const data = payload[0].payload;
     const thucTe = data.prodActual ?? 0;
     const keHoach = data.prodPlan ?? 0;
-    const phanTram = keHoach > 0 ? ((thucTe / keHoach) * 100).toFixed(1) : "0.0";
+    const phanTram =
+      keHoach > 0 ? ((thucTe / keHoach) * 100).toFixed(1) : "0.0";
     const chenh = thucTe - keHoach;
     return (
       <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-xl z-[100] min-w-[200px]">
         <p className="text-slate-900 font-extrabold text-sm mb-3 flex items-center gap-1.5 border-b border-slate-100 pb-2">
-          <Calendar size={13} className="text-purple-400" />{label}
+          <Calendar size={13} className="text-purple-400" />
+          {label}
         </p>
         <div className="space-y-2">
           <div className="flex justify-between gap-6">
-            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold"><span className="w-2.5 h-2.5 rounded-full bg-purple-500" />Thực tế</span>
-            <span className="text-xs font-black text-purple-600">{thucTe.toLocaleString("vi-VN")} KG</span>
+            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+              <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+              Thực tế
+            </span>
+            <span className="text-xs font-black text-purple-600">
+              {thucTe.toLocaleString("vi-VN")} KG
+            </span>
           </div>
           <div className="flex justify-between gap-6">
-            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold"><span className="w-2.5 h-2.5 rounded-full bg-amber-400" />Kế hoạch</span>
-            <span className="text-xs font-black text-amber-500">{keHoach.toLocaleString("vi-VN")} KG</span>
+            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+              Kế hoạch
+            </span>
+            <span className="text-xs font-black text-amber-500">
+              {keHoach.toLocaleString("vi-VN")} KG
+            </span>
           </div>
           <div className="flex justify-between gap-6 pt-1 border-t border-slate-100">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Hoàn thành</span>
-            <span className={`text-xs font-black ${parseFloat(phanTram) >= 100 ? "text-emerald-600" : "text-amber-500"}`}>{phanTram}%</span>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+              Hoàn thành
+            </span>
+            <span
+              className={`text-xs font-black ${parseFloat(phanTram) >= 100 ? "text-emerald-600" : "text-amber-500"}`}
+            >
+              {phanTram}%
+            </span>
           </div>
           <div className="flex justify-between gap-6">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Chênh lệch</span>
-            <span className={`text-xs font-black ${chenh >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{chenh >= 0 ? "+" : ""}{chenh.toLocaleString("vi-VN")} KG</span>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+              Chênh lệch
+            </span>
+            <span
+              className={`text-xs font-black ${chenh >= 0 ? "text-emerald-600" : "text-rose-500"}`}
+            >
+              {chenh >= 0 ? "+" : ""}
+              {chenh.toLocaleString("vi-VN")} KG
+            </span>
           </div>
         </div>
       </div>
@@ -59,15 +93,22 @@ const MultiYearTooltip = ({ active, payload, label }: any) => {
     return (
       <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-xl z-[100] min-w-[220px]">
         <p className="text-slate-900 font-extrabold text-sm mb-3 flex items-center gap-1.5 border-b border-slate-100 pb-2">
-          <BarChart3 size={13} className="text-purple-400" />So sánh: Năm {label}
+          <BarChart3 size={13} className="text-purple-400" />
+          So sánh: Năm {label}
         </p>
         <div className="space-y-2">
           {payload.map((p: any, i: number) => (
             <div key={i} className="flex justify-between gap-6">
               <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />{p.name}
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ background: p.color }}
+                />
+                {p.name}
               </span>
-              <span className="text-xs font-black" style={{ color: p.color }}>{Number(p.value).toLocaleString("vi-VN")} KG</span>
+              <span className="text-xs font-black" style={{ color: p.color }}>
+                {Number(p.value).toLocaleString("vi-VN")} KG
+              </span>
             </div>
           ))}
         </div>
@@ -81,9 +122,15 @@ interface ProductionPlanChartProps {
   year?: "2026" | "2025" | "2024";
 }
 
-export default function ProductionPlanChart({ year }: ProductionPlanChartProps) {
-  const [selectedYear, setSelectedYear] = useState<"2026" | "2025" | "2024">(year || "2026");
-  const [selectedFilter, setSelectedFilter] = useState<"month" | "quarter" | "year">("month");
+export default function ProductionPlanChart({
+  year,
+}: ProductionPlanChartProps) {
+  const [selectedYear, setSelectedYear] = useState<"2026" | "2025" | "2024">(
+    year || "2026",
+  );
+  const [selectedFilter, setSelectedFilter] = useState<
+    "month" | "quarter" | "year"
+  >("month");
 
   useEffect(() => {
     if (year) {
@@ -96,7 +143,9 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
   const [loading, setLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [targetType, setTargetType] = useState<"month" | "quarter" | "year">("month");
+  const [targetType, setTargetType] = useState<"month" | "quarter" | "year">(
+    "month",
+  );
   const [targetYear, setTargetYear] = useState("2026");
   const [targetMonth, setTargetMonth] = useState("1");
   const [targetQuarter, setTargetQuarter] = useState("1");
@@ -115,7 +164,11 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
       setLoading(true);
       if (selectedFilter === "year") {
         const results = await Promise.all(
-          YEARS_LIST.map(y => api.get("/reports/production", { params: { year: y, filter: "year" } }))
+          YEARS_LIST.map((y) =>
+            api.get("/reports/production", {
+              params: { year: y, filter: "year" },
+            }),
+          ),
         );
         const grouped = YEARS_LIST.map((y, i) => ({
           name: y,
@@ -124,7 +177,9 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
         }));
         setMultiYearData(grouped);
       } else {
-        const res = await api.get("/reports/production", { params: { year: selectedYear, filter: selectedFilter } });
+        const res = await api.get("/reports/production", {
+          params: { year: selectedYear, filter: selectedFilter },
+        });
         if (res.data.success) setChartData(res.data.data);
       }
     } catch (error) {
@@ -134,10 +189,16 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
     }
   };
 
-  useEffect(() => { fetchProductionData(); }, [selectedYear, selectedFilter]);
+  useEffect(() => {
+    fetchProductionData();
+  }, [selectedYear, selectedFilter]);
 
   const handleSaveTarget = async () => {
-    if (!targetAmount || isNaN(Number(targetAmount)) || Number(targetAmount) < 0) {
+    if (
+      !targetAmount ||
+      isNaN(Number(targetAmount)) ||
+      Number(targetAmount) < 0
+    ) {
       alert("Vui lòng nhập số lượng hợp lệ!");
       return;
     }
@@ -167,9 +228,16 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
   };
 
   // Dynamic calculations
-  const totalThucTe = chartData.reduce((sum, item) => sum + (item.prodActual || 0), 0);
-  const totalKeHoach = chartData.reduce((sum, item) => sum + (item.prodPlan || 0), 0);
-  const totalRate = totalKeHoach > 0 ? ((totalThucTe / totalKeHoach) * 100).toFixed(1) : "0.0";
+  const totalThucTe = chartData.reduce(
+    (sum, item) => sum + (item.prodActual || 0),
+    0,
+  );
+  const totalKeHoach = chartData.reduce(
+    (sum, item) => sum + (item.prodPlan || 0),
+    0,
+  );
+  const totalRate =
+    totalKeHoach > 0 ? ((totalThucTe / totalKeHoach) * 100).toFixed(1) : "0.0";
 
   return (
     <>
@@ -182,10 +250,14 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
               </div>
               <div>
                 <h3 className="text-[18px] font-black text-slate-900 tracking-tight">
-                  {selectedFilter === "year" ? "So sánh Sản lượng các Năm" : `Sản lượng Thực tế vs Kế hoạch ${selectedYear}`}
+                  {selectedFilter === "year"
+                    ? "So sánh Sản lượng các Năm"
+                    : `Sản lượng thực tế vs kế hoạch ${selectedYear}`}
                 </h3>
                 <p className="text-xs font-semibold text-slate-400 mt-0.5">
-                  {selectedFilter === "year" ? "Đơn vị: Kilogram (KG)" : "Đơn vị: Kilogram (KG)"}
+                  {selectedFilter === "year"
+                    ? "Đơn vị: Kilogram (KG)"
+                    : "Đơn vị: Kilogram (KG)"}
                 </p>
               </div>
             </div>
@@ -213,13 +285,17 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
 
             <select
               value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value as "month" | "quarter" | "year")}
+              onChange={(e) =>
+                setSelectedFilter(
+                  e.target.value as "month" | "quarter" | "year",
+                )
+              }
               className="px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all cursor-pointer shadow-sm"
               disabled={loading}
             >
-              <option value="month">Theo Tháng</option>
-              <option value="quarter">Theo Quý</option>
-              <option value="year">Cả Năm</option>
+              <option value="month">Theo tháng</option>
+              <option value="quarter">Theo quý</option>
+              <option value="year">Cả năm</option>
             </select>
 
             <select
@@ -239,67 +315,185 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
           {loading ? (
             <div className="w-full h-full flex flex-col items-center justify-center gap-3">
               <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
-              <p className="text-sm font-semibold text-slate-400 animate-pulse">Đang đồng bộ dữ liệu sản lượng...</p>
+              <p className="text-sm font-semibold text-slate-400 animate-pulse">
+                Đang đồng bộ dữ liệu sản lượng...
+              </p>
             </div>
           ) : selectedFilter === "year" ? (
             // ── CHẾ ĐỘ SO SÁNH ĐA NĂM ──
             <ResponsiveContainer width="100%" height={380}>
-              <BarChart data={multiYearData} margin={{ top: 30, right: 20, left: 20, bottom: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <BarChart
+                data={multiYearData}
+                margin={{ top: 30, right: 20, left: 20, bottom: 40 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
                 <XAxis
-                  dataKey="name" axisLine={false} tickLine={false}
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fill: "#64748b", fontSize: 12, fontWeight: 700 }}
                   dy={8}
-                  label={{ value: "Doanh thu các năm", position: "insideBottom", offset: -20, fill: "#94a3b8", fontSize: 14, fontWeight: 800 }}
+                  label={{
+                    value: "Doanh thu các năm",
+                    position: "insideBottom",
+                    offset: -20,
+                    fill: "#94a3b8",
+                    fontSize: 14,
+                    fontWeight: 800,
+                  }}
                 />
                 <YAxis
-                  axisLine={false} tickLine={false}
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
                   tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
-                  label={{ value: "Sản lượng (KG)", dy: 50, angle: -90, position: "insideLeft", offset: 10, fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
+                  label={{
+                    value: "Sản lượng (KG)",
+                    dy: 50,
+                    angle: -90,
+                    position: "insideLeft",
+                    offset: 10,
+                    fill: "#94a3b8",
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
                 />
-                <Tooltip content={<MultiYearTooltip />} cursor={{ fill: "rgba(139,92,246,0.05)" }} />
-                <Legend verticalAlign="top" align="right" iconType="circle" iconSize={10}
-                  wrapperStyle={{ paddingBottom: 16, fontSize: 12, fontWeight: 700, color: "#64748b" }}
+                <Tooltip
+                  content={<MultiYearTooltip />}
+                  cursor={{ fill: "rgba(139,92,246,0.05)" }}
                 />
-                <Bar dataKey="prodActual" name="Sản lượng thực tế" fill="#ff0000ff" radius={[4, 4, 0, 0]} barSize={44} />
-                <Bar dataKey="prodPlan" name="Kế hoạch" fill="#0065fcff" radius={[4, 4, 0, 0]} barSize={44} />
+                <Legend
+                  verticalAlign="top"
+                  align="right"
+                  iconType="circle"
+                  iconSize={10}
+                  wrapperStyle={{
+                    paddingBottom: 16,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#64748b",
+                  }}
+                />
+                <Bar
+                  dataKey="prodActual"
+                  name="Sản lượng thực tế"
+                  fill="#ff0000ff"
+                  radius={[4, 4, 0, 0]}
+                  barSize={44}
+                />
+                <Bar
+                  dataKey="prodPlan"
+                  name="Kế hoạch"
+                  fill="#0065fcff"
+                  radius={[4, 4, 0, 0]}
+                  barSize={44}
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             // ── CHẾ ĐỘ 1 NĂM (THÁNG / QUÝ) ──
             <ResponsiveContainer width="100%" height={380}>
-              <ComposedChart data={chartData} margin={{ top: 30, right: 20, left: 20, bottom: 40 }}>
+              <ComposedChart
+                data={chartData}
+                margin={{ top: 30, right: 20, left: 20, bottom: 40 }}
+              >
                 <defs>
-                  <linearGradient id="colorProdActual" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient
+                    id="colorProdActual"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
                     <stop offset="0%" stopColor="#8b5cf6" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#7c3aed" stopOpacity={0.85} />
+                    <stop
+                      offset="100%"
+                      stopColor="#7c3aed"
+                      stopOpacity={0.85}
+                    />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
                 <XAxis
-                  dataKey="name" axisLine={false} tickLine={false}
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 700 }}
                   dy={8}
-                  label={{ value: selectedFilter === "month" ? "Tháng" : "Quý", position: "insideBottom", offset: -20, fill: "#94a3b8", fontSize: 18, fontWeight: 600 }}
+                  label={{
+                    value: selectedFilter === "month" ? "Tháng" : "Quý",
+                    position: "insideBottom",
+                    offset: -20,
+                    fill: "#94a3b8",
+                    fontSize: 18,
+                    fontWeight: 600,
+                  }}
                 />
                 <YAxis
-                  axisLine={false} tickLine={false}
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 700 }}
                   tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
-                  label={{ value: "Sản lượng (KG)", angle: -90, position: "insideLeft", offset: 10, fill: "#94a3b8", fontSize: 18, fontWeight: 600 }}
+                  label={{
+                    value: "Sản lượng (KG)",
+                    angle: -90,
+                    position: "insideLeft",
+                    offset: 10,
+                    fill: "#94a3b8",
+                    fontSize: 18,
+                    fontWeight: 600,
+                  }}
                 />
-                <Tooltip content={<SingleYearTooltip />} cursor={{ fill: "rgba(139,92,246,0.05)" }} />
-                <Legend verticalAlign="top" align="right" iconType="circle" iconSize={10}
-                  wrapperStyle={{ paddingBottom: 16, fontSize: 12, fontWeight: 700, color: "#64748b" }}
+                <Tooltip
+                  content={<SingleYearTooltip />}
+                  cursor={{ fill: "rgba(139,92,246,0.05)" }}
                 />
-                <Bar dataKey="prodActual" name="Sản lượng thực tế" fill="url(#colorProdActual)"
-                  radius={[6, 6, 0, 0]} barSize={selectedFilter === "quarter" ? 40 : 24}
+                <Legend
+                  verticalAlign="top"
+                  align="right"
+                  iconType="circle"
+                  iconSize={10}
+                  wrapperStyle={{
+                    paddingBottom: 16,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#64748b",
+                  }}
                 />
-                <Line type="monotone" dataKey="prodPlan" name="Kế hoạch đề ra"
-                  stroke="#f59e0b" strokeWidth={2.5} strokeDasharray="5 5"
-                  dot={{ r: 4, fill: "#fff", stroke: "#f59e0b", strokeWidth: 2 }}
-                  activeDot={{ r: 6, fill: "#f59e0b", stroke: "#fff", strokeWidth: 2 }}
+                <Bar
+                  dataKey="prodActual"
+                  name="Sản lượng thực tế"
+                  fill="url(#colorProdActual)"
+                  radius={[6, 6, 0, 0]}
+                  barSize={selectedFilter === "quarter" ? 40 : 24}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="prodPlan"
+                  name="Kế hoạch đề ra"
+                  stroke="#f59e0b"
+                  strokeWidth={2.5}
+                  strokeDasharray="5 5"
+                  dot={{
+                    r: 4,
+                    fill: "#fff",
+                    stroke: "#f59e0b",
+                    strokeWidth: 2,
+                  }}
+                  activeDot={{
+                    r: 6,
+                    fill: "#f59e0b",
+                    stroke: "#fff",
+                    strokeWidth: 2,
+                  }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -410,7 +604,9 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
                   </div>
                 </div>
                 <p className="text-[11px] font-medium text-slate-400 mt-2 flex items-center gap-1">
-                  💡 Nhập số thực tế. Ví dụ: nhập <strong className="text-slate-600">5000</strong> tương đương 5 tấn sơn.
+                  💡 Nhập số thực tế. Ví dụ: nhập{" "}
+                  <strong className="text-slate-600">5000</strong> tương đương 5
+                  tấn sơn.
                 </p>
               </div>
             </div>
