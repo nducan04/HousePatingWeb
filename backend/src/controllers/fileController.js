@@ -4,8 +4,6 @@ const fs = require('fs');
 const KhachHang = require('../models/KhachHang');
 const SanPhamSon = require('../models/SanPhamSon');
 const SalesTarget = require('../models/SalesTarget');
-const NguyenVatLieu = require('../models/NguyenVatLieu');
-const NhanVien = require('../models/NhanVien');
 
 const importFile = async (req, res) => {
   try {
@@ -14,7 +12,7 @@ const importFile = async (req, res) => {
     }
 
     const { collection } = req.body;
-    if (!['customers', 'products', 'targets', 'materials', 'staff'].includes(collection)) {
+    if (!['customers', 'products', 'targets'].includes(collection)) {
        if (req.file) fs.unlinkSync(req.file.path);
        return res.status(400).json({ success: false, error: 'Collection không hợp lệ.' });
     }
@@ -77,58 +75,10 @@ const importFile = async (req, res) => {
             TenDongSon: row['Tên Dòng Sơn'] || row.TenDongSon || 'Chưa cập nhật',
             ThuongHieu: row['Thương Hiệu'] || row.ThuongHieu || 'AkzoNobel',
             PhanLoai: row['Phân Loại'] || row.PhanLoai || 'Sơn tĩnh điện',
-            DonGiaCoSo: Number(row['Đơn Giá'] || row.DonGiaCoSo) || 0,
-            TonKho: Number(row['Tồn Kho'] || row.TonKho) || 0,
-            DonViTinh: row['Đơn Vị Tính'] || row.DonViTinh || 'Thùng'
+            DonGiaCoSo: Number(row['Đơn Giá'] || row.DonGiaCoSo) || 0
           };
 
           await SanPhamSon.findOneAndUpdate({ MaSanPham: maSP }, spData, { upsert: true });
-          insertedCount++;
-        } catch (err) { errors.push(`Dòng ${i+2}: ${err.message}`); }
-      }
-    }
-    // Xử lý Import Nguyên Vật Liệu (Kho)
-    else if (collection === 'materials') {
-      for (let i = 0; i < rawData.length; i++) {
-        try {
-          const row = rawData[i];
-          const maNVL = row['Mã NVL'] || row.MaNVL;
-          if (!maNVL) { errors.push(`Dòng ${i+2}: Thiếu Mã NVL`); continue; }
-
-          const nvlData = {
-            MaNVL: maNVL,
-            TenNguyenVatLieu: row['Tên NVL'] || row['Tên Nguyên Vật Liệu'] || row.TenNguyenVatLieu || 'Chưa cập nhật',
-            PhanLoai: row['Phân Loại'] || row.PhanLoai || 'Khác',
-            TonKho: Number(row['Tồn Kho'] || row.TonKho) || 0,
-            DonViTinh: row['Đơn Vị Tính'] || row.DonViTinh || 'Kg',
-            DonGia: Number(row['Đơn Giá'] || row.DonGia) || 0,
-            GhiChu: row['Ghi Chú'] || row.GhiChu || ''
-          };
-
-          await NguyenVatLieu.findOneAndUpdate({ MaNVL: maNVL }, nvlData, { upsert: true });
-          insertedCount++;
-        } catch (err) { errors.push(`Dòng ${i+2}: ${err.message}`); }
-      }
-    }
-    // Xử lý Import Nhân Viên
-    else if (collection === 'staff') {
-      for (let i = 0; i < rawData.length; i++) {
-        try {
-          const row = rawData[i];
-          const maNV = row['Mã NV'] || row.MaNV;
-          if (!maNV) { errors.push(`Dòng ${i+2}: Thiếu Mã NV`); continue; }
-
-          const nvData = {
-            MaNV: maNV,
-            HoTen: row['Họ Tên'] || row.HoTen || 'Chưa cập nhật',
-            BoPhan: row['Bộ Phận'] || row.BoPhan || 'Khác',
-            ChucVu: row['Chức Vụ'] || row.ChucVu || '',
-            Email: row['Email'] || '',
-            SDT: row['SĐT'] || row.SDT || '',
-            TrangThai: row['Trạng Thái'] || row.TrangThai || 'Đang làm'
-          };
-
-          await NhanVien.findOneAndUpdate({ MaNV: maNV }, nvData, { upsert: true });
           insertedCount++;
         } catch (err) { errors.push(`Dòng ${i+2}: ${err.message}`); }
       }
@@ -174,12 +124,4 @@ const importFile = async (req, res) => {
   }
 };
 
-const uploadImage = (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ success: false, error: 'Không tìm thấy file ảnh.' });
-  }
-  const imageUrl = `/uploads/${req.file.filename}`;
-  res.status(200).json({ success: true, url: imageUrl });
-};
-
-module.exports = { importFile, uploadImage };
+module.exports = { importFile };

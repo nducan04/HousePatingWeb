@@ -1,6 +1,4 @@
 const KhachHang = require('../models/KhachHang');
-const HopDong = require('../models/HopDong');
-const DonHang = require('../models/DonHang');
 
 // @desc    Lấy danh sách khách hàng (phân trang + lọc)
 // @route   GET /api/khach-hang
@@ -19,21 +17,11 @@ exports.getAll = async (req, res) => {
     if (phanLoai) filter.PhanLoai = phanLoai;
 
     const total = await KhachHang.countDocuments(filter);
-    const rawData = await KhachHang.find(filter)
+    const data = await KhachHang.find(filter)
       .populate('AccountID', 'TenDangNhap VaiTro TrangThai')
       .sort(sort)
       .skip((parseInt(page) - 1) * parseInt(limit))
-      .limit(parseInt(limit))
-      .lean();
-
-    // Tính số đơn hàng cho mỗi khách (bao gồm cả Hợp đồng B2B và Đơn hàng E-commerce)
-    const data = await Promise.all(rawData.map(async (kh) => {
-      const [countContracts, countOrders] = await Promise.all([
-        HopDong.countDocuments({ CustomerID: kh._id }),
-        DonHang.countDocuments({ KhachHang: kh._id })
-      ]);
-      return { ...kh, SoDonHang: countContracts + countOrders };
-    }));
+      .limit(parseInt(limit));
 
     res.status(200).json({
       success: true, count: data.length, total,
@@ -61,23 +49,6 @@ exports.getById = async (req, res) => {
 // @route   POST /api/khach-hang
 exports.create = async (req, res) => {
   try {
-    let maKH = req.body.MaKH;
-    if (!maKH) {
-      // Auto-generate VTSC-KH-xxx
-      const lastKhachHang = await KhachHang.findOne({ MaKH: /^VTSC-KH-/ }).sort({ MaKH: -1 });
-      let nextId = 1;
-      if (lastKhachHang && lastKhachHang.MaKH) {
-        const parts = lastKhachHang.MaKH.split('-');
-        if (parts.length >= 3) {
-          const currentId = parseInt(parts[2], 10);
-          if (!isNaN(currentId)) {
-            nextId = currentId + 1;
-          }
-        }
-      }
-      req.body.MaKH = `VTSC-KH-${String(nextId).padStart(3, '0')}`;
-    }
-
     const item = await KhachHang.create(req.body);
     res.status(201).json({ success: true, data: item });
   } catch (error) {

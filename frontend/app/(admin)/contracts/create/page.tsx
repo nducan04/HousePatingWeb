@@ -163,8 +163,6 @@ export default function CreateContractPage() {
               <label className="form-label">Khách hàng B2B *</label>
               <select className="form-select w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={customerId} onChange={e => setCustomerId(e.target.value)}>
                 <option value="">— Chọn khách hàng —</option>
-                <option value="internal-vtsc">VTSC (Nội bộ)</option>
-                <option disabled>— Khách hàng B2B —</option>
                 {customers.filter((c: any) => c.segment?.includes('B2B')).map((c: any) => (
                   <option key={c._id} value={c._id}>{c.code} — {c.name}</option>
                 ))}
