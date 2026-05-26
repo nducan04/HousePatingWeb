@@ -64,9 +64,23 @@ export default function CustomerOrderModal({ order, onClose }: { order: any, onC
                                     <span className="text-slate-400">Diện tích tham khảo:</span>
                                     <span className="font-bold text-amber-600">{order.TongDienTichSon || 0} m2</span>
                                 </div>
-                                <div className="flex justify-between">
-                                    <span className="text-slate-400">Ngày đặt:</span>
-                                    <span className="text-slate-800">{new Date(order.createdAt).toLocaleDateString()}</span>
+                                <div className="flex flex-col gap-1 mt-3 pt-3 border-t border-slate-100">
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-400">Ngày giờ đặt hàng:</span>
+                                        <span className="text-slate-800 font-bold">{new Date(order.createdAt).toLocaleString('vi-VN')}</span>
+                                    </div>
+                                    {(() => {
+                                        const diffTime = Math.abs(new Date().getTime() - new Date(order.createdAt).getTime());
+                                        const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30.44);
+                                        if (diffMonths > 24) {
+                                            return (
+                                                <div className="mt-2 text-xs text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-100 flex flex-col gap-1">
+                                                    <span className="font-bold">⚠️ Không đủ điều kiện:</span> Đơn hàng / Hợp đồng đã mua sau 2 năm sẽ không được áp dụng chính sách bảo hành, đổi trả.
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </div>
                             </div>
                         </div>

@@ -17,7 +17,9 @@ interface Contract {
     productName: string;
     colorCode?: string;
     quantity: number;
+    unitPrice?: number;
   }[];
+  type?: 'ORDER' | 'CONTRACT';
 }
 interface Staff {
   _id: string;
@@ -45,6 +47,8 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rdLogs, setRdLogs] = useState<any[]>([]);
+  const [isLoadingRd, setIsLoadingRd] = useState(false);
 
   const handleClose = () => {
     setSelectedCustomer(''); setSelectedContract(''); setSelectedStaff('');
@@ -88,13 +92,38 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
 
     const fetchContracts = async () => {
       try {
-        const res = await api.get(`/contracts?customer=${selectedCustomer}`);
-        const data = res.data;
-        const contracts = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
-        setContractList(contracts);
+        const [contractsRes, ordersRes] = await Promise.all([
+          api.get(`/contracts?customer=${selectedCustomer}`).catch(() => ({ data: { data: [] } })),
+          api.get(`/don-hang?customer=${selectedCustomer}`).catch(() => ({ data: { data: [] } }))
+        ]);
+        
+        const contractsData = Array.isArray(contractsRes.data.data) ? contractsRes.data.data : [];
+        const ordersData = Array.isArray(ordersRes.data.data) ? ordersRes.data.data : [];
 
-        if (contracts.length > 0) {
-          const sorted = [...contracts].sort((a, b) => {
+        // Map orders to contract-like structure
+        const mappedOrders = ordersData.map((order: any) => ({
+          _id: order._id,
+          MaHopDong: order.MaDonHang,
+          title: 'Đơn hàng Bán lẻ',
+          NgayLap: order.createdAt,
+          createdAt: order.createdAt,
+          type: 'ORDER',
+          ChiTietHopDong: (order.Items || []).map((item: any) => ({
+            productName: item.TenSanPham || 'Sản phẩm',
+            colorCode: item.MaMau,
+            quantity: item.SoLuong,
+            unitPrice: item.DonGia
+          }))
+        }));
+
+        // Tag contracts
+        const mappedContracts = contractsData.map((c: any) => ({ ...c, type: 'CONTRACT' }));
+
+        const combined = [...mappedContracts, ...mappedOrders];
+        setContractList(combined);
+
+        if (combined.length > 0) {
+          const sorted = combined.sort((a, b) => {
             const dateA = new Date(a.NgayLap || a.createdAt || 0).getTime();
             const dateB = new Date(b.NgayLap || b.createdAt || 0).getTime();
             return dateB - dateA;
@@ -102,7 +131,7 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
           setSelectedContract(sorted[0]._id);
         }
       } catch (err) {
-        console.error('Lỗi khi lấy danh sách hợp đồng', err);
+        console.error('Lỗi khi lấy danh sách hợp đồng/đơn hàng', err);
       }
     };
     fetchContracts();
@@ -130,6 +159,28 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
   useEffect(() => {
     setSelectedStaff('');
   }, [ticketType]);
+
+  // Fetch R&D logs when a contract is selected
+  useEffect(() => {
+    if (!selectedContract) {
+      setRdLogs([]);
+      return;
+    }
+    const fetchRdLogs = async () => {
+      setIsLoadingRd(true);
+      try {
+        const res = await api.get(`/rd-tracking?contractId=${selectedContract}`);
+        if (res.data.success) {
+          setRdLogs(res.data.data);
+        }
+      } catch (err) {
+        console.error('Lỗi fetch R&D Logs:', err);
+      } finally {
+        setIsLoadingRd(false);
+      }
+    };
+    fetchRdLogs();
+  }, [selectedContract]);
 
   const selectedContractData = useMemo(() => {
     return contractList.find(c => c._id === selectedContract);
@@ -176,17 +227,41 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
     setError(null);
 
     try {
-      const payload = {
-        KhachHang: selectedCustomer,
-        DonHang: selectedContract || null,
-        LoaiYeuCau: ticketType,
-        LyDo: description,
-        DuKienDenHang: deadline || null,
-        GiaTriTru: 0,
-        MaDoiTra: `RET-${Date.now().toString().slice(-4)}`
-      };
+      let endpoint = '/doi-tra';
+      let payload: any = {};
+      const isOrder = selectedContractData?.type === 'ORDER';
 
-      const res = await api.post('/doi-tra', payload);
+      if (ticketType === 'Bảo hành') {
+        endpoint = '/bao-hanh';
+        const spNames = selectedContractData?.ChiTietHopDong?.map(c => c.productName).join(', ') || 'Sản phẩm từ HĐ';
+        payload = {
+          MaBaoHanh: `BH-${Date.now().toString().slice(-4)}`,
+          KhachHang: selectedCustomer,
+          HopDong: !isOrder ? selectedContract : null,
+          DonHang: isOrder ? selectedContract : null, // If backend supports it
+          SanPham: spNames,
+          NoiDungLoi: description,
+          KyThuatKCS: selectedStaff || null,
+          HanBaoHanh: deadline || new Date(Date.now() + 7 * 86400000), // Default 7 days
+          NgayMua: selectedContractData?.NgayLap || selectedContractData?.createdAt || new Date(),
+          TrangThai: 'Mở'
+        };
+      } else {
+        endpoint = '/doi-tra';
+        payload = {
+          KhachHang: selectedCustomer,
+          DonHang: isOrder ? selectedContract : selectedContract, // Fallback if required
+          HopDong: !isOrder ? selectedContract : null,
+          LoaiYeuCau: ticketType,
+          LyDo: description,
+          DuKienDenHang: deadline || null,
+          NhanVienPhuTrach: selectedStaff || null,
+          GiaTriTru: 0,
+          MaDoiTra: `${ticketType === 'Khiếu nại' ? 'KN' : 'RET'}-${Date.now().toString().slice(-4)}`
+        };
+      }
+
+      const res = await api.post(endpoint, payload);
 
       if (res.status !== 201 && res.status !== 200) throw new Error('Tạo Ticket thất bại, vui lòng kiểm tra lại server.');
 
@@ -244,12 +319,12 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-700">Hợp đồng / Đơn hàng mới nhất</label>
+                  <label className="block text-sm font-medium text-slate-700">Lịch sử Đơn hàng / Hợp đồng của khách</label>
                   <select
                     value={selectedContract}
                     onChange={(e) => setSelectedContract(e.target.value)}
-                    disabled={true}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-900 shadow-sm focus:outline-none disabled:text-slate-500 disabled:cursor-not-allowed transition-all"
+                    disabled={!selectedCustomer || contractList.length === 0}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 shadow-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed transition-all"
                   >
                     <option value="" disabled>
                       {!selectedCustomer ? '-- Vui lòng chọn KH trước --' : (!contractList?.length ? '-- KH không có hợp đồng/đơn hàng --' : '-- Chọn hợp đồng liên quan --')}
@@ -298,6 +373,44 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
                     ) : (
                       <div className="text-slate-400 italic mt-2">Chưa cập nhật chi tiết sản phẩm.</div>
                     )}
+
+                    {/* R&D Tracking Section */}
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Dữ liệu R&D Gốc (Pha chế)</span>
+                        {isLoadingRd && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+                      </div>
+                      {rdLogs.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3 mt-2">
+                          {rdLogs.map((log: any) => {
+                            const versions = log.LichSuPhienBan || [];
+                            const totalTests = versions.length;
+                            const passes = versions.filter((v: any) => v.result === 'pass').length;
+                            const passRate = totalTests > 0 ? Math.round((passes / totalTests) * 100) : 0;
+                            
+                            return (
+                              <div key={log._id} className="bg-white p-3 rounded-lg border border-slate-200 text-xs shadow-sm">
+                                <div className="font-semibold text-slate-800 mb-1">Mã màu: <span className="text-indigo-600">{log.MaMauYeuCau}</span></div>
+                                <div className="flex justify-between text-slate-600 mb-1">
+                                  <span>Trạng thái R&D:</span>
+                                  <span className={`font-medium ${log.TrangThai === 'approved' || log.TrangThai === 'completed' ? 'text-emerald-600' : 'text-amber-600'}`}>{log.TrangThai}</span>
+                                </div>
+                                <div className="flex justify-between text-slate-600 mb-1">
+                                  <span>Số lần test mẫu:</span>
+                                  <span className="font-medium">{totalTests} lần</span>
+                                </div>
+                                <div className="flex justify-between text-slate-600 mb-1">
+                                  <span>Tỷ lệ Pass (Đúng màu):</span>
+                                  <span className={`font-bold ${passRate >= 80 ? 'text-emerald-600' : passRate >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>{passRate}%</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        !isLoadingRd && <div className="text-xs text-slate-400 italic">Chưa có dữ liệu R&D Tracking cho đơn hàng này.</div>
+                      )}
+                    </div>
 
                     {isExpired && (
                       <div className="mt-4 p-3 bg-red-50 text-red-600 font-medium rounded-lg border border-red-100 text-sm flex items-start">

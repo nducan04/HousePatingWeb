@@ -20,6 +20,10 @@ exports.getRDLogs = async (req, res) => {
       }
     }
 
+    if (req.query.contractId) {
+      query.ContractID = req.query.contractId;
+    }
+
     const logs = await NhatKyTestMau.find(query)
       .populate('ContractID', 'MaHopDong title')
       .sort({ updatedAt: -1 });

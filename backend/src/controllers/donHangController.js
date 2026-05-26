@@ -80,7 +80,7 @@ exports.checkoutFromCart = async (req, res) => {
         const finalSubtotal = subtotal - discountAmount;
         const taxAmount = finalSubtotal >= 5000000 ? finalSubtotal * 0.08 : 0;
         const totalAmount = finalSubtotal + taxAmount;
-        
+
         const donHang = new DonHang({
             MaDonHang: maDonHang,
             KhachHang: realKhachHangId,
@@ -113,8 +113,12 @@ exports.checkoutFromCart = async (req, res) => {
 // Get all orders with filtering
 exports.getOrders = async (req, res) => {
     try {
-        const { status } = req.query;
+        const { status, customer } = req.query;
         let query = {};
+
+        if (customer) {
+            query.KhachHang = customer;
+        }
 
         // RBAC: Khách hàng chỉ thấy đơn của mình
         if (req.user && (req.user.VaiTro === 'KhachHangB2C' || req.user.VaiTro === 'KhachHangB2B')) {
@@ -394,6 +398,73 @@ exports.updateOrderInfo = async (req, res) => {
 
         await order.save();
         res.status(200).json({ success: true, message: 'Đã cập nhật thông tin nhận hàng thành công', data: order });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Customer cancel order
+exports.cancelOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const order = await DonHang.findById(id);
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+        }
+
+        if (req.user.VaiTro === 'KhachHangB2B' || req.user.VaiTro === 'KhachHangB2C') {
+            const KhachHang = require('../models/KhachHang');
+            const khProfile = await KhachHang.findOne({ AccountID: req.user._id });
+            if (!khProfile || order.KhachHang.toString() !== khProfile._id.toString()) {
+                return res.status(403).json({ success: false, message: 'Bạn không có quyền hủy đơn hàng này' });
+            }
+        }
+
+        if (order.TrangThai !== 'CHO_XAC_NHAN') {
+            return res.status(400).json({ success: false, message: 'Chỉ có thể hủy đơn hàng khi đang ở trạng thái Chờ xác nhận' });
+        }
+
+        order.TrangThai = 'DA_HUY';
+        await order.save();
+
+        res.status(200).json({ success: true, message: 'Hủy đơn hàng thành công', data: order });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Customer rate order
+exports.rateOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { ChatLuongSanPham, ChatLuongDichVu, BinhLuan } = req.body;
+        const order = await DonHang.findById(id);
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+        }
+
+        // Only allow rating once
+        if (order.DanhGia && order.DanhGia.NgayDanhGia) {
+            return res.status(400).json({ success: false, message: 'Đơn hàng này đã được đánh giá' });
+        }
+
+        // Must be DA_GIAO
+        if (order.TrangThai !== 'DA_GIAO') {
+            return res.status(400).json({ success: false, message: 'Chỉ có thể đánh giá đơn hàng đã giao thành công' });
+        }
+
+        order.DanhGia = {
+            ChatLuongSanPham: ChatLuongSanPham,
+            ChatLuongDichVu: ChatLuongDichVu,
+            BinhLuan: BinhLuan,
+            NgayDanhGia: new Date()
+        };
+
+        await order.save();
+
+        res.status(200).json({ success: true, message: 'Đánh giá đơn hàng thành công', data: order });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
