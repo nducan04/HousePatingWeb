@@ -33,14 +33,18 @@ api.interceptors.response.use(
         // Gửi request lấy token mới thông qua Refresh Token Cookie ngầm
         const res = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
         
-        const newAccessToken = res.data.accessToken;
+        if (res.data.success) {
+          const newAccessToken = res.data.accessToken;
 
-        // Cập nhật lại Zustand Store 
-        useAuthStore.getState().setAccessToken(newAccessToken);
+          // Cập nhật lại Zustand Store 
+          useAuthStore.getState().setAccessToken(newAccessToken);
 
-        // Gắn token mới và thực hiện lại Request ban đầu bị Fail
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return api(originalRequest);
+          // Gắn token mới và thực hiện lại Request ban đầu bị Fail
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return api(originalRequest);
+        } else {
+          throw new Error(res.data.error || 'Refresh token expired or invalid');
+        }
       } catch (err) {
         // Nếu refresh fail (VD: Refresh Token hết hạn) => Xóa State, bắt đăng nhập lại
         useAuthStore.getState().logoutState();
