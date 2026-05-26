@@ -15,6 +15,7 @@ import {
   Package,
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
+import { toast } from "@/lib/utils/notification";
 import Link from "next/link";
 import { paintColors } from "@/lib/data/colors-data";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -136,7 +137,7 @@ export default function RDTrackingPage() {
 
   const handleCreateLog = async () => {
     if (!selectedContract || !selectedColor) {
-      alert("Vui lòng chọn hợp đồng và mã màu!");
+      toast.warning("Vui lòng chọn hợp đồng và mã màu!");
       return;
     }
     try {
@@ -148,10 +149,10 @@ export default function RDTrackingPage() {
       if (res.data.success) {
         setIsModalOpen(false);
         fetchLogs();
-        alert("Đã tạo Log R&D mới thành công!");
+        toast.success("Đã tạo Log R&D mới thành công!");
       }
     } catch (err) {
-      alert("Lỗi khi tạo log mới");
+      toast.error("Lỗi khi tạo log mới");
     } finally {
       setCreating(false);
     }

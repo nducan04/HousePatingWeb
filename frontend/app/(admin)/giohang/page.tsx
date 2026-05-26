@@ -8,6 +8,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { useCartStore, CartItem } from '@/lib/store/cartStore';
 import Link from 'next/link';
 import { resolveImageUrl } from '@/lib/utils/imageUrl';
+import { toast, confirm } from '@/lib/utils/notification';
 
 
 interface KhachHang {
@@ -31,6 +32,7 @@ export default function GioHangPage() {
   const [discountInfo, setDiscountInfo] = useState<any>(null);
   const [applyingDiscount, setApplyingDiscount] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'MOMO'>('COD');
 
   const sessionId = useMemo(() => user?.id || 'GUEST_SESSION', [user]);
   const isAdminOrEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
@@ -96,7 +98,7 @@ export default function GioHangPage() {
     try {
       const sp = products.find(p => p._id === sanPhamId);
       if (sp && soLuong > sp.TonKho) {
-        alert(`Số lượng yêu cầu (${soLuong}) vượt quá tồn kho (${sp.TonKho})`);
+        toast.warning(`Số lượng yêu cầu (${soLuong}) vượt quá tồn kho (${sp.TonKho})`);
         return;
       }
 
@@ -107,7 +109,7 @@ export default function GioHangPage() {
   };
 
   const handleRemoveItem = async (sanPhamId: string) => {
-    if (!confirm('Xóa sản phẩm này khỏi giỏ hàng?')) return;
+    if (!await confirm('Xóa sản phẩm này khỏi giỏ hàng?')) return;
     try {
       await updateQuantityStore(sessionId, sanPhamId, 0);
     } catch (err) {
@@ -116,21 +118,21 @@ export default function GioHangPage() {
   };
 
   const clearCart = async () => {
-    if (!confirm('Bạn có muốn xóa toàn bộ giỏ hàng?')) return;
+    if (!await confirm('Bạn có muốn xóa toàn bộ giỏ hàng?')) return;
     try {
       await clearCartStore(sessionId);
       setDiscountCode('');
       setDiscountInfo(null);
-      alert('Đã xóa giỏ hàng');
+      toast.success('Đã xóa giỏ hàng');
     } catch (err) {
       console.error(err);
     }
   };
 
   const handleCheckout = async () => {
-    if (cartItems.length === 0) return alert('Giỏ hàng trống');
-    if (!selectedCustomerId) return alert('Vui lòng chọn khách hàng');
-    if (!shippingAddress) return alert('Vui lòng nhập địa chỉ giao hàng');
+    if (cartItems.length === 0) return toast.warning('Giỏ hàng trống');
+    if (!selectedCustomerId) return toast.warning('Vui lòng chọn khách hàng');
+    if (!shippingAddress) return toast.warning('Vui lòng nhập địa chỉ giao hàng');
 
     setIsSubmitting(true);
     try {
@@ -139,15 +141,35 @@ export default function GioHangPage() {
         khachHangId: selectedCustomerId,
         diaChiGiaoHang: shippingAddress,
         discountCode: discountInfo?.MaVoucher,
+        phuongThucThanhToan: paymentMethod === 'MOMO' ? 'MOMO' : 'COD',
         ghiChu: `Đơn hàng từ giỏ hàng hệ thống - Người đặt: ${user?.username}`
       });
 
       if (res.data.success) {
-        alert(`Đặt hàng thành công! Mã đơn hàng: ${res.data.data.MaDonHang}. Kho đã được cập nhật.`);
+        if (paymentMethod === 'MOMO') {
+          try {
+            const momoRes = await api.post('/thanh-toan/momo/create', {
+              type: 'ORDER',
+              id: res.data.data._id,
+              amount: res.data.data.TongTien
+            });
+            if (momoRes.data.success && momoRes.data.payUrl) {
+              window.location.href = momoRes.data.payUrl;
+              return;
+            } else {
+              toast.error('Lỗi tạo link thanh toán MoMo. Đơn hàng đã được tạo thành công.');
+            }
+          } catch (momoErr) {
+            console.error(momoErr);
+            toast.error('Lỗi kết nối cổng thanh toán MoMo. Đơn hàng đã được tạo thành công.');
+          }
+        } else {
+          toast.success(`Đặt hàng thành công! Mã đơn hàng: ${res.data.data.MaDonHang}. Kho đã được cập nhật.`);
+        }
         router.push(isAdminOrEmployee ? '/don-hang' : '/my-orders');
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Lỗi khi đặt hàng');
+      toast.error(error.response?.data?.message || 'Lỗi khi đặt hàng');
     } finally {
       setIsSubmitting(false);
     }
@@ -160,10 +182,10 @@ export default function GioHangPage() {
       const res = await api.post('/khuyen-mai/validate', { code: discountCode, cartTotal });
       if (res.data.success) {
         setDiscountInfo(res.data.data);
-        alert('Áp dụng mã giảm giá thành công!');
+        toast.success('Áp dụng mã giảm giá thành công!');
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Lỗi áp dụng voucher');
+      toast.error(error.response?.data?.message || 'Lỗi áp dụng voucher');
       setDiscountInfo(null);
     } finally {
       setApplyingDiscount(false);
@@ -423,6 +445,37 @@ export default function GioHangPage() {
               {((cartTotal - (discountInfo?.DiscountAmount || 0)) >= 5000000 ? (cartTotal - (discountInfo?.DiscountAmount || 0)) * 0.08 : 0).toLocaleString()} ₫
             </span>
           </div>
+
+          <div className="mt-4 mb-4">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Phương thức thanh toán</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('COD')}
+                className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all cursor-pointer ${
+                  paymentMethod === 'COD'
+                    ? 'border-blue-600 bg-blue-50/50 text-blue-700 font-extrabold shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-500 hover:border-blue-300 hover:bg-slate-50/50 font-bold'
+                }`}
+              >
+                <Truck className="mb-1" size={20} />
+                <span className="text-xs">COD (Nhận hàng)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('MOMO')}
+                className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all cursor-pointer ${
+                  paymentMethod === 'MOMO'
+                    ? 'border-[#A50064] bg-[#A50064]/5 text-[#A50064] font-extrabold shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-500 hover:border-[#A50064]/40 hover:bg-slate-50/50 font-bold'
+                }`}
+              >
+                <div className="w-5 h-5 rounded bg-[#A50064] flex items-center justify-center text-[10px] font-black text-white mb-1">M</div>
+                <span className="text-xs">Ví MoMo Sandbox</span>
+              </button>
+            </div>
+          </div>
+
           <div className="flex justify-between items-center mt-4 mb-6">
             <span className="text-sm font-black text-slate-500 uppercase tracking-widest">TỔNG CỘNG:</span>
             <span className="text-2xl font-black text-blue-600">

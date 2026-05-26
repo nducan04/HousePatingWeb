@@ -5,6 +5,7 @@ import {
   Crown, Ticket, AlertTriangle, Gift, Phone, Plus, X,
   Users, TrendingUp, Check, MessageCircle, User
 } from 'lucide-react';
+import { toast } from '@/lib/utils/notification';
 
 // --- Types ---
 export interface CustomerData {
@@ -118,8 +119,7 @@ export default function LoyaltyPromotionHub() {
     });
   };
 
-  // Toast
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
 
   useEffect(() => {
     // Khởi tạo mock data
@@ -208,7 +208,7 @@ export default function LoyaltyPromotionHub() {
 
   const handleCreateCampaign = () => {
     if (!formData.name || !formData.code) {
-      alert("Vui lòng nhập tên chiến dịch và mã voucher");
+      toast.error("Vui lòng nhập tên chiến dịch và mã voucher");
       return;
     }
 
@@ -235,7 +235,7 @@ export default function LoyaltyPromotionHub() {
       name: '', code: '', type: 'percent', value: 0,
       targetTier: 'all', minOrder: 0, startDate: '', endDate: ''
     });
-    showToast("Đã tạo chiến dịch thành công!");
+    toast.success("Đã tạo chiến dịch thành công!");
   };
 
   // --- Logic Tặng Voucher ---
@@ -246,7 +246,7 @@ export default function LoyaltyPromotionHub() {
 
   const handleGiftVoucher = () => {
     if (!giftData.customerId || !giftData.voucherId) {
-      alert("Vui lòng chọn khách hàng và voucher.");
+      toast.error("Vui lòng chọn khách hàng và voucher.");
       return;
     }
 
@@ -258,13 +258,8 @@ export default function LoyaltyPromotionHub() {
       console.log(`Tặng ${voucher.code} cho ${customer.name}`);
       setIsGiftModalOpen(false);
       setGiftData({ customerId: '', voucherId: '' });
-      showToast(`Đã tặng thành công voucher ${voucher.code} cho ${customer.name}!`);
+      toast.success(`Đã tặng thành công voucher ${voucher.code} cho ${customer.name}!`);
     }
-  };
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
   };
 
   // --- Logic Gọi điện & Chat chăm sóc Hậu mãi ---
@@ -874,14 +869,6 @@ export default function LoyaltyPromotionHub() {
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Toast */}
-      {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-[100] animate-in slide-in-from-bottom-5">
-          <Gift className="w-5 h-5 text-emerald-400" />
-          <span className="font-medium text-sm">{toastMessage}</span>
         </div>
       )}
     </div>

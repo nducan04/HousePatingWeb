@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthNav from "@/lib/components/AuthNav";
+import { toast } from "@/lib/utils/notification";
 import {
   Search,
   QrCode,
@@ -442,7 +443,7 @@ export default function HomePage() {
           cartTotal: 0,
         });
 
-        alert("Đặt hàng thành công!");
+        toast.success("Đặt hàng thành công!");
         if (user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C") {
           router.push("/my-orders");
         } else {
@@ -451,7 +452,7 @@ export default function HomePage() {
       }
     } catch (err: any) {
       console.error(err);
-      alert(err.response?.data?.message || "Đặt hàng thất bại");
+      toast.error(err.response?.data?.message || "Đặt hàng thất bại");
     } finally {
       setIsCheckingOut(false);
     }
