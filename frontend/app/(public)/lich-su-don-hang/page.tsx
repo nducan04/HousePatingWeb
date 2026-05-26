@@ -1,0 +1,269 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Package, Truck, CheckCircle2, Clock, XCircle, ChevronRight, ArrowLeft, MapPin, RefreshCw, ShoppingBag, Circle } from 'lucide-react';
+import api from '@/lib/utils/axiosAuth';
+import { useAuthStore } from '@/lib/store/authStore';
+import CustomerOrderModal from '@/components/CustomerOrderModal';
+
+const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  CHO_XAC_NHAN: { label: 'Chờ xác nhận', color: 'bg-amber-50 text-amber-700 border border-amber-200', icon: <Clock size={13} /> },
+  DANG_XU_LY: { label: 'Đang xử lý', color: 'bg-blue-50 text-blue-700 border border-blue-200', icon: <Package size={13} /> },
+  DANG_GIAO: { label: 'Đang giao', color: 'bg-violet-50 text-violet-700 border border-violet-200', icon: <Truck size={13} /> },
+  DA_GIAO: { label: 'Đã giao', color: 'bg-emerald-50 text-emerald-700 border border-emerald-200', icon: <CheckCircle2 size={13} /> },
+  DA_HUY: { label: 'Đã hủy', color: 'bg-red-50 text-red-600 border border-red-200', icon: <XCircle size={13} /> },
+};
+
+export default function CustomerOrderPage() {
+  const router = useRouter();
+  const { isAuthenticated, user } = useAuthStore();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('ALL');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
+  const [trackingInfo, setTrackingInfo] = useState<any>(null);
+  const [loadingTracking, setLoadingTracking] = useState(false);
+
+  const handleExpand = async (order: any) => {
+    if (expandedId === order._id) {
+      setExpandedId(null);
+      setTrackingInfo(null);
+    } else {
+      setExpandedId(order._id);
+      setTrackingInfo(null);
+      if (['DANG_XU_LY', 'DANG_GIAO', 'DA_GIAO'].includes(order.TrangThai)) {
+        setLoadingTracking(true);
+        try {
+          const res = await api.get(`/van-chuyen/order/${order._id}`);
+          if (res.data.success) {
+            setTrackingInfo(res.data.data);
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setLoadingTracking(false);
+        }
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/');
+      return;
+    }
+    fetchOrders();
+  }, [isAuthenticated]);
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/don-hang');
+      if (res.data.success) setOrders(res.data.data);
+    } catch (e) {
+      console.error('Error fetching orders:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filtered = filter === 'ALL' ? orders : orders.filter(o => o.TrangThai === filter);
+
+  const tabs = [
+    { key: 'ALL', label: 'Tất cả' },
+    { key: 'CHO_XAC_NHAN', label: 'Chờ xác nhận' },
+    { key: 'DANG_XU_LY', label: 'Đang xử lý' },
+    { key: 'DANG_GIAO', label: 'Đang giao' },
+    { key: 'DA_GIAO', label: 'Đã giao' },
+    { key: 'DA_HUY', label: 'Đã hủy' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-100 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
+          <button onClick={() => router.push('/')} className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 cursor-pointer">
+            <ArrowLeft size={18} className="text-slate-600" />
+          </button>
+          <div>
+            <h1 className="text-base font-black text-slate-900">Đơn hàng của tôi</h1>
+            <p className="text-[11px] text-slate-400 font-medium">{user?.username || ''}</p>
+          </div>
+          <button onClick={fetchOrders} className="ml-auto w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 cursor-pointer">
+            <RefreshCw size={16} className="text-slate-500" />
+          </button>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="max-w-3xl mx-auto px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-none">
+          {tabs.map(t => (
+            <button key={t.key} onClick={() => setFilter(t.key)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${filter === t.key
+                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'
+                }`}>
+              {t.label}
+              {t.key !== 'ALL' && orders.filter(o => o.TrangThai === t.key).length > 0 && (
+                <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] ${filter === t.key ? 'bg-white/20' : 'bg-slate-100'}`}>
+                  {orders.filter(o => o.TrangThai === t.key).length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-10 h-10 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" />
+            <p className="text-sm font-bold text-slate-400">Đang tải đơn hàng...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center">
+              <ShoppingBag size={28} className="text-slate-300" />
+            </div>
+            <p className="font-black text-slate-400 text-base">Chưa có đơn hàng</p>
+            <Link href="/" className="px-6 py-2.5 rounded-2xl bg-blue-600 text-white text-sm font-bold no-underline">
+              Mua sắm ngay
+            </Link>
+          </div>
+        ) : filtered.map(order => {
+          const st = STATUS_MAP[order.TrangThai] || { label: order.TrangThai, color: 'bg-slate-50 text-slate-600 border border-slate-200', icon: <Package size={13} /> };
+          const isExpanded = expandedId === order._id;
+          const isShipping = order.TrangThai === 'DANG_GIAO';
+
+          return (
+            <div key={order._id} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+              {/* Order Header */}
+              <div className="px-5 pt-5 pb-3 flex items-start justify-between gap-3">
+                <div>
+                  <button 
+                    onClick={() => setSelectedOrderDetails(order)}
+                    className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider border-none cursor-pointer hover:bg-blue-100 transition-colors"
+                  >
+                    #{order.MaDonHang}
+                  </button>
+                  <p className="text-[11px] text-slate-400 font-medium mt-1.5">
+                    {new Date(order.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                </div>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${st.color}`}>
+                  {st.icon} {st.label}
+                </span>
+              </div>
+
+              {/* Items preview */}
+              <div className="px-5 py-3 border-t border-slate-50 space-y-2">
+                {order.Items?.slice(0, isExpanded ? undefined : 2).map((item: any, i: number) => (
+                  <div key={i} className="flex justify-between items-center text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center shrink-0">
+                        <Package size={14} className="text-slate-400" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-800 text-[13px]">{item.TenSanPham || 'Sản phẩm'}</div>
+                        <div className="text-[11px] text-slate-400">SL: {item.SoLuong} × {item.DonGia?.toLocaleString('vi-VN')}đ</div>
+                      </div>
+                    </div>
+                    <span className="font-black text-slate-800 text-[13px]">{item.ThanhTien?.toLocaleString('vi-VN')}đ</span>
+                  </div>
+                ))}
+                {!isExpanded && order.Items?.length > 2 && (
+                  <p className="text-[11px] text-slate-400 font-bold">+{order.Items.length - 2} sản phẩm khác</p>
+                )}
+              </div>
+
+              {/* Expanded address */}
+              {isExpanded && (order.DiaChiGiaoHang || user?.profile?.DiaChi) && (
+                <div className="px-5 py-3 border-t border-slate-50 flex items-start gap-2 text-xs text-slate-500">
+                  <MapPin size={13} className="text-rose-400 mt-0.5 shrink-0" />
+                  <span className="font-medium">{order.DiaChiGiaoHang === "Địa chỉ mặc định" ? (user?.profile?.DiaChi || "Chưa cập nhật") : (order.DiaChiGiaoHang || user?.profile?.DiaChi || "Chưa cập nhật")}</span>
+                </div>
+              )}
+
+              {/* In-line Tracking Timeline */}
+              {isExpanded && trackingInfo && (
+                <div className="px-5 py-5 bg-slate-50/80 border-t border-slate-100">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Truck size={13} className="text-blue-500" /> Tiến độ giao hàng
+                  </h4>
+                  <div className="space-y-5 pl-1">
+                    {trackingInfo.LoTrinh?.map((log: any, idx: number) => {
+                      const isComplete = log.Status === "COMPLETE";
+                      const isProcessing = log.Status === "PROCESSING";
+                      return (
+                        <div key={idx} className="flex items-start gap-4 relative">
+                          {/* Vertical Line */}
+                          {idx < trackingInfo.LoTrinh.length - 1 && (
+                            <div className="absolute left-2 top-5 bottom-[-24px] w-[2px] bg-slate-200"></div>
+                          )}
+                          {/* Dot */}
+                          <div className="relative z-10 bg-slate-50 mt-0.5">
+                            {isComplete
+                              ? <CheckCircle2 size={16} className="text-emerald-500 bg-white rounded-full" />
+                              : isProcessing
+                                ? <div className="w-4 h-4 rounded-full bg-blue-600 border-[3px] border-blue-100"></div>
+                                : <Circle size={16} className="text-slate-300 bg-white rounded-full" />
+                            }
+                          </div>
+                          <div className="-mt-0.5">
+                            <p className={`text-[13px] leading-tight mb-1 ${isComplete || isProcessing ? 'font-bold text-slate-800' : 'font-medium text-slate-500'}`}>{log.NoiDung}</p>
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              {log.ThoiGian ? new Date(log.ThoiGian).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+              {isExpanded && loadingTracking && (
+                <div className="px-5 py-6 flex items-center justify-center gap-2 text-[11px] font-bold text-slate-400 border-t border-slate-50 bg-slate-50/50">
+                  <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-200 border-t-slate-400 animate-spin" />
+                  Đang tải thông tin lộ trình...
+                </div>
+              )}
+              {/* Footer */}
+              <div className="px-5 py-4 border-t border-slate-50 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] text-slate-400 font-medium">Tổng tiền</p>
+                  <p className="font-black text-lg text-slate-900">{order.TongTien?.toLocaleString('vi-VN')}đ</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleExpand(order)}
+                    className="px-4 py-2 rounded-2xl text-xs font-bold border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
+                  >
+                    {isExpanded ? 'Thu gọn' : 'Chi tiết'}
+                  </button>
+                  {isShipping && (
+                    <Link
+                      href={`/tracking?orderId=${order._id}`}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-bold bg-blue-600 text-white no-underline hover:bg-blue-700 transition-all"
+                    >
+                      <Truck size={13} /> Theo dõi
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {selectedOrderDetails && (
+        <CustomerOrderModal 
+          order={selectedOrderDetails} 
+          onClose={() => setSelectedOrderDetails(null)} 
+        />
+      )}
+    </div>
+  );
+}

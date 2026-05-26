@@ -63,10 +63,38 @@ exports.create = async (req, res) => {
 // @route   PUT /api/khach-hang/:id
 exports.update = async (req, res) => {
   try {
-    const item = await KhachHang.findByIdAndUpdate(req.params.id, req.body, {
+    let item = await KhachHang.findById(req.params.id);
+    if (!item) return res.status(404).json({ success: false, error: 'Không tìm thấy khách hàng' });
+
+    // Customer can only update their own profile
+    if (req.user.VaiTro === 'KhachHangB2B' || req.user.VaiTro === 'KhachHangB2C') {
+      if (item.AccountID.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ success: false, error: 'Bạn không có quyền sửa thông tin người khác' });
+      }
+    }
+
+    item = await KhachHang.findByIdAndUpdate(req.params.id, req.body, {
       new: true, runValidators: true,
     });
-    if (!item) return res.status(404).json({ success: false, error: 'Không tìm thấy khách hàng' });
+
+    // Tự động đồng bộ tên, SĐT, Địa chỉ mới sang các đơn hàng đang chờ hoặc đang xử lý
+    // để chuẩn bị cho quá trình vận chuyển
+    if (item && (req.body.TenKhachHang || req.body.SDT || req.body.DiaChi)) {
+      const DonHang = require('../models/DonHang');
+      const updateFields = {};
+      if (req.body.TenKhachHang) updateFields.TenNguoiNhan = req.body.TenKhachHang;
+      if (req.body.SDT) updateFields.SDTNguoiNhan = req.body.SDT;
+      if (req.body.DiaChi) updateFields.DiaChiGiaoHang = req.body.DiaChi;
+
+      await DonHang.updateMany(
+        {
+          KhachHang: item._id,
+          TrangThai: { $in: ['CHO_XAC_NHAN', 'DANG_XU_LY'] }
+        },
+        { $set: updateFields }
+      );
+    }
+
     res.status(200).json({ success: true, data: item });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });

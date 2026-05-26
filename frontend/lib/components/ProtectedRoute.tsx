@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('Admin' | 'NhanVien' | 'KhachHangB2B' | 'KhachHangB2C')[];
+  allowedRoles?: ('Admin' | 'Director' | 'NhanVien' | 'KhachHangB2B' | 'KhachHangB2C' | 'NhaCungCap')[];
 }
 
 export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
@@ -19,7 +19,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     if (isLoading) return;
 
     if (!isAuthenticated || !user) {
-      router.push('/login');
+      router.push('/');
     } else if (allowedRoles && !allowedRoles.includes(user.role)) {
       // Phân quyền bị từ chối
       // Thông thường đá về dashboard mặc định

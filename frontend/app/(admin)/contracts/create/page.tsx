@@ -104,13 +104,13 @@ export default function CreateContractPage() {
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto' }}>
-      <Link href="/contracts" className="btn btn-ghost btn-sm" style={{ marginBottom: 'var(--spacing-lg)' }}>
+      <Link href="/contracts" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ marginBottom: '1.75rem' }}>
         <ArrowLeft size={16} /> Quay lại danh sách
       </Link>
 
       {/* Progress Steps */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--spacing-2xl)' }}>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '3.5rem' }}>
           {[
             { num: 1, label: 'Thông tin chung', icon: ClipboardList },
             { num: 2, label: 'Chi tiết sản phẩm', icon: Package },
@@ -121,21 +121,21 @@ export default function CreateContractPage() {
               cursor: step > num ? 'pointer' : 'default'
             }} onClick={() => step > num && setStep(num)}>
               <div style={{
-                width: 36, height: 36, borderRadius: 'var(--radius-full)',
+                width: 36, height: 36, borderRadius: '9999px',
                 background: step === num
-                  ? 'linear-gradient(135deg, var(--accent-cyan), #0099cc)'
-                  : step > num ? 'var(--accent-emerald)' : 'var(--bg-elevated)',
+                  ? 'linear-gradient(135deg, #2563eb, #0099cc)'
+                  : step > num ? '#059669' : '#ffffff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 700, fontSize: 'var(--font-sm)', color: '#fff',
-                transition: 'all var(--transition-base)'
+                fontWeight: 700, fontSize: '1rem', color: '#fff',
+                transition: 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)'
               }}>
                 {step > num ? <CheckCircle2 size={16} /> : <Icon size={16} />}
               </div>
               <div>
-                <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div style={{ fontSize: '0.875rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Bước {num}
                 </div>
-                <div style={{ fontSize: 'var(--font-sm)', fontWeight: 600 }}>{label}</div>
+                <div style={{ fontSize: '1rem', fontWeight: 600 }}>{label}</div>
               </div>
             </div>
           ))}
@@ -144,24 +144,24 @@ export default function CreateContractPage() {
 
       {/* Step 1: Basic Info */}
       {step === 1 && (
-        <div className="glass-card" style={{ padding: 'var(--spacing-xl)' }}>
-          <h3 style={{ fontWeight: 700, marginBottom: 'var(--spacing-lg)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ClipboardList size={20} style={{ color: 'var(--accent-cyan)' }} />
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '2.25rem' }}>
+          <h3 style={{ fontWeight: 700, marginBottom: '1.75rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ClipboardList size={20} style={{ color: '#2563eb' }} />
             Thông tin Hợp đồng Nguyên tắc
           </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.75rem' }}>
             <div className="form-group">
               <label className="form-label">Mã Hợp đồng *</label>
-              <input className="form-input" value={contractId} onChange={e => setContractId(e.target.value)} placeholder="CTR-2024-001" />
+              <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={contractId} onChange={e => setContractId(e.target.value)} placeholder="CTR-2024-001" />
             </div>
             <div className="form-group">
               <label className="form-label">Tiêu đề *</label>
-              <input className="form-input" value={title} onChange={e => setTitle(e.target.value)} placeholder="Hợp đồng Phân phối Sơn Interpon..." />
+              <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={title} onChange={e => setTitle(e.target.value)} placeholder="Hợp đồng Phân phối Sơn Interpon..." />
             </div>
             <div className="form-group">
               <label className="form-label">Khách hàng B2B *</label>
-              <select className="form-select form-input" value={customerId} onChange={e => setCustomerId(e.target.value)}>
+              <select className="form-select w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={customerId} onChange={e => setCustomerId(e.target.value)}>
                 <option value="">— Chọn khách hàng —</option>
                 {customers.filter((c: any) => c.segment?.includes('B2B')).map((c: any) => (
                   <option key={c._id} value={c._id}>{c.code} — {c.name}</option>
@@ -173,19 +173,19 @@ export default function CreateContractPage() {
             </div>
             <div className="form-group">
               <label className="form-label">Địa chỉ ví MetaMask (Khách hàng)</label>
-              <input className="form-input" value={clientAddress} onChange={e => setClientAddress(e.target.value)} placeholder="0x..." />
+              <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={clientAddress} onChange={e => setClientAddress(e.target.value)} placeholder="0x..." />
             </div>
             <div className="form-group">
               <label className="form-label">Hạn SLA giao hàng</label>
-              <input className="form-input" type="date" value={slaDeadline} onChange={e => setSlaDeadline(e.target.value)} />
+              <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" type="date" value={slaDeadline} onChange={e => setSlaDeadline(e.target.value)} />
             </div>
             <div className="form-group">
               <label className="form-label">Thời hạn hợp đồng</label>
-              <input className="form-input" value={termsDuration} onChange={e => setTermsDuration(e.target.value)} placeholder="12 tháng (01/2024 — 12/2024)" />
+              <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={termsDuration} onChange={e => setTermsDuration(e.target.value)} placeholder="12 tháng (01/2024 — 12/2024)" />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)', marginTop: 'var(--spacing-lg)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.75rem', marginTop: '1.75rem' }}>
             <div className="form-group">
               <label className="form-label">Điều khoản SLA</label>
               <textarea className="form-textarea" value={termsSla} onChange={e => setTermsSla(e.target.value)} placeholder="Giao hàng trong 7 ngày làm việc..." style={{ minHeight: 70 }} />
@@ -196,8 +196,8 @@ export default function CreateContractPage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--spacing-xl)' }}>
-            <button className="btn btn-primary" disabled={!canProceedStep1} onClick={() => setStep(2)}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2.25rem' }}>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" disabled={!canProceedStep1} onClick={() => setStep(2)}>
               Tiếp theo <ArrowRight size={16} />
             </button>
           </div>
@@ -206,19 +206,19 @@ export default function CreateContractPage() {
 
       {/* Step 2: Product Details */}
       {step === 2 && (
-        <div className="glass-card" style={{ padding: 'var(--spacing-xl)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-lg)' }}>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '2.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
             <h3 style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Package size={20} style={{ color: 'var(--accent-purple)' }} />
+              <Package size={20} style={{ color: '#7c3aed' }} />
               Chi tiết Sản phẩm Hợp đồng
             </h3>
-            <button className="btn btn-secondary btn-sm" onClick={addDetailRow}>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs" onClick={addDetailRow}>
               <Plus size={14} /> Thêm dòng
             </button>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
+            <table className="w-full text-left text-sm">
               <thead>
                 <tr>
                   <th>#</th>
@@ -236,36 +236,36 @@ export default function CreateContractPage() {
                   <tr key={i}>
                     <td style={{ fontWeight: 600 }}>{i + 1}</td>
                     <td>
-                      <input className="form-input" style={{ minWidth: 160, padding: '6px 10px', fontSize: 'var(--font-xs)' }}
+                      <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ minWidth: 160, padding: '6px 10px', fontSize: '0.875rem' }}
                         value={d.productName} onChange={e => updateDetail(i, 'productName', e.target.value)}
                         placeholder="Interpon D1000" />
                     </td>
                     <td>
-                      <input className="form-input" style={{ width: 100, padding: '6px 10px', fontSize: 'var(--font-xs)' }}
+                      <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: 100, padding: '6px 10px', fontSize: '0.875rem' }}
                         value={d.colorCode} onChange={e => updateDetail(i, 'colorCode', e.target.value)}
                         placeholder="RAL 9016" />
                     </td>
                     <td>
-                      <input className="form-input" type="number" style={{ width: 100, padding: '6px 10px', fontSize: 'var(--font-xs)' }}
+                      <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" type="number" style={{ width: 100, padding: '6px 10px', fontSize: '0.875rem' }}
                         value={d.quantity || ''} onChange={e => updateDetail(i, 'quantity', Number(e.target.value))}
                         min={0} />
                     </td>
                     <td>
-                      <input className="form-input" type="number" style={{ width: 120, padding: '6px 10px', fontSize: 'var(--font-xs)' }}
+                      <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" type="number" style={{ width: 120, padding: '6px 10px', fontSize: '0.875rem' }}
                         value={d.unitPrice || ''} onChange={e => updateDetail(i, 'unitPrice', Number(e.target.value))}
                         min={0} />
                     </td>
-                    <td style={{ fontWeight: 600, color: 'var(--accent-amber)', whiteSpace: 'nowrap' }}>
+                    <td style={{ fontWeight: 600, color: '#d97706', whiteSpace: 'nowrap' }}>
                       {(d.quantity * d.unitPrice).toLocaleString('vi-VN')}
                     </td>
                     <td>
-                      <input className="form-input" style={{ minWidth: 120, padding: '6px 10px', fontSize: 'var(--font-xs)' }}
+                      <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ minWidth: 120, padding: '6px 10px', fontSize: '0.875rem' }}
                         value={d.technicalReqs} onChange={e => updateDetail(i, 'technicalReqs', e.target.value)}
                         placeholder="Bóng 80%" />
                     </td>
                     <td>
-                      <button className="btn btn-ghost btn-sm" onClick={() => removeDetailRow(i)}
-                        disabled={details.length <= 1} style={{ color: 'var(--accent-rose)', padding: 4 }}>
+                      <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" onClick={() => removeDetailRow(i)}
+                        disabled={details.length <= 1} style={{ color: '#e11d48', padding: 4 }}>
                         <Trash2 size={14} />
                       </button>
                     </td>
@@ -277,21 +277,21 @@ export default function CreateContractPage() {
 
           {/* Total */}
           <div style={{
-            marginTop: 'var(--spacing-lg)', padding: 'var(--spacing-md) var(--spacing-lg)',
-            background: 'var(--bg-input)', borderRadius: 'var(--radius-md)',
-            display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 'var(--spacing-md)'
+            marginTop: '1.75rem', padding: '1.125rem 1.75rem',
+            background: '#f1f5f9', borderRadius: '10px',
+            display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1.125rem'
           }}>
-            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>TỔNG GIÁ TRỊ HỢP ĐỒNG:</span>
-            <span style={{ fontSize: 'var(--font-xl)', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+            <span style={{ color: '#475569', fontWeight: 600 }}>TỔNG GIÁ TRỊ HỢP ĐỒNG:</span>
+            <span style={{ fontSize: '1.625rem', fontWeight: 800, color: '#2563eb' }}>
               {totalValue.toLocaleString('vi-VN')} VNĐ
             </span>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--spacing-xl)' }}>
-            <button className="btn btn-secondary" onClick={() => setStep(1)}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2.25rem' }}>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200" onClick={() => setStep(1)}>
               <ArrowLeft size={16} /> Quay lại
             </button>
-            <button className="btn btn-primary" disabled={!canProceedStep2} onClick={() => setStep(3)}>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" disabled={!canProceedStep2} onClick={() => setStep(3)}>
               Tiếp theo <ArrowRight size={16} />
             </button>
           </div>
@@ -300,46 +300,46 @@ export default function CreateContractPage() {
 
       {/* Step 3: Review & Submit */}
       {step === 3 && (
-        <div className="glass-card" style={{ padding: 'var(--spacing-xl)' }}>
-          <h3 style={{ fontWeight: 700, marginBottom: 'var(--spacing-lg)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Eye size={20} style={{ color: 'var(--accent-emerald)' }} />
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '2.25rem' }}>
+          <h3 style={{ fontWeight: 700, marginBottom: '1.75rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Eye size={20} style={{ color: '#059669' }} />
             Xem trước & Xác nhận
           </h3>
 
           {/* Summary */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
-            <div style={{ background: 'var(--bg-input)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-md)' }}>
-              <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mã HĐ</div>
-              <div style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{contractId}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.75rem', marginBottom: '1.75rem' }}>
+            <div style={{ background: '#f1f5f9', borderRadius: '10px', padding: '1.125rem' }}>
+              <div style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mã HĐ</div>
+              <div style={{ fontWeight: 700, color: '#2563eb' }}>{contractId}</div>
             </div>
-            <div style={{ background: 'var(--bg-input)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-md)' }}>
-              <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tiêu đề</div>
+            <div style={{ background: '#f1f5f9', borderRadius: '10px', padding: '1.125rem' }}>
+              <div style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tiêu đề</div>
               <div style={{ fontWeight: 600 }}>{title}</div>
             </div>
-            <div style={{ background: 'var(--bg-input)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-md)' }}>
-              <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Khách hàng</div>
+            <div style={{ background: '#f1f5f9', borderRadius: '10px', padding: '1.125rem' }}>
+              <div style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Khách hàng</div>
               <div style={{ fontWeight: 600 }}>{selectedCustomer ? `${selectedCustomer.code} — ${selectedCustomer.name}` : 'N/A'}</div>
             </div>
-            <div style={{ background: 'var(--bg-input)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-md)' }}>
-              <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tổng giá trị</div>
-              <div style={{ fontWeight: 800, color: 'var(--accent-amber)', fontSize: 'var(--font-lg)' }}>{totalValue.toLocaleString('vi-VN')} VNĐ</div>
+            <div style={{ background: '#f1f5f9', borderRadius: '10px', padding: '1.125rem' }}>
+              <div style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tổng giá trị</div>
+              <div style={{ fontWeight: 800, color: '#d97706', fontSize: '1.375rem' }}>{totalValue.toLocaleString('vi-VN')} VNĐ</div>
             </div>
           </div>
 
           {/* Detail Table Preview */}
-          <div style={{ background: 'var(--bg-input)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
-            <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div style={{ background: '#f1f5f9', borderRadius: '10px', padding: '1.125rem', marginBottom: '1.75rem' }}>
+            <div style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Chi tiết sản phẩm ({details.length} mục)
             </div>
             {details.map((d, i) => (
               <div key={i} style={{
                 display: 'flex', justifyContent: 'space-between', padding: '6px 0',
-                borderBottom: i < details.length - 1 ? '1px solid var(--border-color)' : 'none',
-                fontSize: 'var(--font-sm)'
+                borderBottom: i < details.length - 1 ? '1px solid #e2e8f0' : 'none',
+                fontSize: '1rem'
               }}>
                 <span>{d.productName} {d.colorCode ? `(${d.colorCode})` : ''}</span>
-                <span style={{ color: 'var(--text-secondary)' }}>
-                  {d.quantity.toLocaleString('vi-VN')} Kg × {d.unitPrice.toLocaleString('vi-VN')} = <strong style={{ color: 'var(--accent-amber)' }}>{(d.quantity * d.unitPrice).toLocaleString('vi-VN')}</strong>
+                <span style={{ color: '#475569' }}>
+                  {d.quantity.toLocaleString('vi-VN')} Kg × {d.unitPrice.toLocaleString('vi-VN')} = <strong style={{ color: '#d97706' }}>{(d.quantity * d.unitPrice).toLocaleString('vi-VN')}</strong>
                 </span>
               </div>
             ))}
@@ -347,8 +347,8 @@ export default function CreateContractPage() {
 
           {/* Terms Preview */}
           {(termsSla || termsPenalty || termsDuration) && (
-            <div style={{ background: 'var(--bg-input)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)', fontSize: 'var(--font-sm)', color: 'var(--text-secondary)' }}>
-              <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Điều khoản</div>
+            <div style={{ background: '#f1f5f9', borderRadius: '10px', padding: '1.125rem', marginBottom: '1.75rem', fontSize: '1rem', color: '#475569' }}>
+              <div style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Điều khoản</div>
               {termsSla && <div>• SLA: {termsSla}</div>}
               {termsPenalty && <div>• Phạt: {termsPenalty}</div>}
               {termsDuration && <div>• Thời hạn: {termsDuration}</div>}
@@ -357,18 +357,18 @@ export default function CreateContractPage() {
           )}
 
           <div style={{
-            padding: 'var(--spacing-md)', borderRadius: 'var(--radius-md)',
-            background: 'var(--accent-cyan-soft)', border: '1px solid rgba(0,212,255,0.2)',
-            fontSize: 'var(--font-sm)', color: 'var(--accent-cyan)', marginBottom: 'var(--spacing-lg)'
+            padding: '1.125rem', borderRadius: '10px',
+            background: 'rgba(37, 99, 235, 0.08)', border: '1px solid rgba(0,212,255,0.2)',
+            fontSize: '1rem', color: '#2563eb', marginBottom: '1.75rem'
           }}>
             <strong>📋 Quy trình tiếp theo:</strong> Sau khi tạo, hệ thống sẽ sinh PDF chuẩn → Tính Hash → Upload IPFS → Ghi Blockchain → Khách hàng ký MetaMask.
           </div>
 
           {submitError && (
             <div style={{
-              padding: 'var(--spacing-md)', borderRadius: 'var(--radius-md)',
-              background: 'var(--accent-rose-soft)', color: 'var(--accent-rose)',
-              marginBottom: 'var(--spacing-md)', fontSize: 'var(--font-sm)'
+              padding: '1.125rem', borderRadius: '10px',
+              background: 'rgba(225, 29, 72, 0.08)', color: '#e11d48',
+              marginBottom: '1.125rem', fontSize: '1rem'
             }}>
               ❌ {submitError}
             </div>
@@ -376,19 +376,19 @@ export default function CreateContractPage() {
 
           {submitSuccess && (
             <div style={{
-              padding: 'var(--spacing-md)', borderRadius: 'var(--radius-md)',
-              background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald)',
-              marginBottom: 'var(--spacing-md)', fontSize: 'var(--font-sm)', fontWeight: 600
+              padding: '1.125rem', borderRadius: '10px',
+              background: 'rgba(5, 150, 105, 0.08)', color: '#059669',
+              marginBottom: '1.125rem', fontSize: '1rem', fontWeight: 600
             }}>
               ✅ Tạo hợp đồng thành công! Đang chuyển hướng...
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--spacing-xl)' }}>
-            <button className="btn btn-secondary" onClick={() => setStep(2)}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2.25rem' }}>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200" onClick={() => setStep(2)}>
               <ArrowLeft size={16} /> Quay lại
             </button>
-            <button className="btn btn-success" onClick={handleSubmit} disabled={loading || submitSuccess}>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-emerald-600 text-white hover:bg-emerald-700" onClick={handleSubmit} disabled={loading || submitSuccess}>
               <FileText size={16} />
               {loading ? 'Đang tạo...' : 'Tạo Hợp đồng'}
             </button>

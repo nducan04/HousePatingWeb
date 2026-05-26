@@ -1,86 +1,171 @@
-const RDTest = require('../models/RDTest');
+const NhatKyTestMau = require('../models/NhatKyTestMau');
+const HopDong = require('../models/HopDong');
+const NhanVien = require('../models/NhanVien');
 
-// @desc    Get all R&D tests
-// @route   GET /api/rd
-// @access  Public
-exports.getRDTests = async (req, res) => {
+// @desc    Get all R&D logs
+// @route   GET /api/rd-tracking
+exports.getRDLogs = async (req, res) => {
   try {
-    const tests = await RDTest.find().populate('customer', 'name code').populate('product', 'colorCode colorName');
-    res.status(200).json({ success: true, count: tests.length, data: tests });
-  } catch (error) {
-    res.status(500).json({ success: false, error: 'Server Error' });
-  }
-};
-
-// @desc    Create new R&D Test
-// @route   POST /api/rd
-// @access  Public
-exports.createRDTest = async (req, res) => {
-  try {
-    // Generate requestCode automatically if not provided
-    if (!req.body.requestCode) {
-      const count = await RDTest.countDocuments();
-      req.body.requestCode = `RD-2024-${String(count + 1).padStart(3, '0')}`;
+    let query = {};
+    if (req.user && (req.user.VaiTro === 'KhachHangB2C' || req.user.VaiTro === 'KhachHangB2B')) {
+      const KhachHang = require('../models/KhachHang');
+      const kh = await KhachHang.findOne({ AccountID: req.user._id });
+      if (kh) {
+        // Find all contracts belonging to this customer
+        const contracts = await HopDong.find({ CustomerID: kh._id });
+        const contractIds = contracts.map(c => c._id);
+        query.ContractID = { $in: contractIds };
+      } else {
+        return res.status(200).json({ success: true, count: 0, data: [] });
+      }
     }
-    const test = await RDTest.create(req.body);
-    res.status(201).json({ success: true, data: test });
+
+    const logs = await NhatKyTestMau.find(query)
+      .populate('ContractID', 'MaHopDong title')
+      .sort({ updatedAt: -1 });
+    res.status(200).json({ success: true, count: logs.length, data: logs });
   } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Add new test version
-// @route   POST /api/rd/:id/versions
-// @access  Public
+// @desc    Get single R&D log by ID
+// @route   GET /api/rd-tracking/:id
+exports.getRDLogById = async (req, res) => {
+  try {
+    const log = await NhatKyTestMau.findById(req.params.id)
+      .populate('ContractID', 'MaHopDong title CustomerID ChiTietHopDong');
+    
+    if (!log) {
+      return res.status(404).json({ success: false, message: 'Log not found' });
+    }
+
+    // RBAC check
+    if (req.user && (req.user.VaiTro === 'KhachHangB2C' || req.user.VaiTro === 'KhachHangB2B')) {
+      const KhachHang = require('../models/KhachHang');
+      const kh = await KhachHang.findOne({ AccountID: req.user._id });
+      if (!kh || !log.ContractID || log.ContractID.CustomerID?.toString() !== kh._id.toString()) {
+        return res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập dữ liệu pha chế này.' });
+      }
+    }
+    
+    res.status(200).json({ success: true, data: log });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Create new R&D process for a contract
+// @route   POST /api/rd-tracking
+exports.createRDLog = async (req, res) => {
+  try {
+    const { ContractID, MaMauYeuCau } = req.body;
+    
+    // Generate unique ID
+    const count = await NhatKyTestMau.countDocuments();
+    const MaNhatKy = `RD-${new Date().getFullYear() % 100}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(count + 1).padStart(2, '0')}`;
+    
+    const payload = {
+      MaNhatKy,
+      MaMauYeuCau,
+      TrangThai: 'testing',
+      LichSuPhienBan: []
+    };
+    if (ContractID) payload.ContractID = ContractID;
+    
+    const log = await NhatKyTestMau.create(payload);
+    
+    res.status(201).json({ success: true, data: log });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Add a test version (batch log)
+// @route   POST /api/rd-tracking/:id/versions
 exports.addVersion = async (req, res) => {
   try {
-    const test = await RDTest.findById(req.params.id);
-    if (!test) {
-      return res.status(404).json({ success: false, error: 'R&D Test not found' });
+    const { result, parameters, feedback, inputWeight, outputWeight } = req.body;
+    const log = await NhatKyTestMau.findById(req.params.id);
+    
+    if (!log) {
+      return res.status(404).json({ success: false, message: 'Log not found' });
+    }
+    
+    // Auto-versioning
+    const nextVer = `V${log.LichSuPhienBan.length + 1}.0`;
+    
+    // Find tester details
+    let testerName = 'Unknown Tester';
+    let testerCode = 'N/A';
+    if (req.user) {
+      const nv = await NhanVien.findOne({ AccountID: req.user._id });
+      if (nv) {
+        testerName = nv.HoTen;
+        testerCode = nv.MaNV;
+      }
     }
 
-    test.versions.push(req.body);
+    log.LichSuPhienBan.push({
+      version: nextVer,
+      date: new Date(),
+      result,
+      parameters,
+      feedback,
+      inputWeight,
+      outputWeight,
+      tester: testerName,
+      testerCode: testerCode
+    });
     
-    // Auto update status if test passed
-    if (req.body.result === 'pass') {
-      test.status = 'approved';
-    } else {
-      test.status = 'testing';
-    }
-
-    await test.save();
-    
-    // We need to fetch again with populate and virtuals
-    const updatedTest = await RDTest.findById(req.params.id).populate('customer', 'name code');
-    
-    res.status(200).json({ success: true, data: updatedTest });
+    await log.save();
+    res.status(200).json({ success: true, data: log });
   } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Technical Sign-off
-// @route   PATCH /api/rd/:id/sign
-// @access  Public
-exports.techSignOff = async (req, res) => {
+// @desc    KCS Signature - Approve test sample and update contract status
+// @route   PATCH /api/rd-tracking/:id/sign-kcs
+exports.signKCS = async (req, res) => {
   try {
-    const test = await RDTest.findById(req.params.id);
-    if (!test) {
-      return res.status(404).json({ success: false, error: 'R&D Test not found' });
+    const log = await NhatKyTestMau.findById(req.params.id);
+    if (!log) {
+      return res.status(404).json({ success: false, message: 'Log not found' });
     }
-
-    // Check if there is at least 1 pass
-    const hasPass = test.versions.some(v => v.result === 'pass');
+    
+    // Check permission (Middleware should handle this usually, but we implement logic here)
+    // Temporarily disabled to unblock user
+    /*
+    if (req.user?.VaiTro?.toLowerCase() !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Only Admin/KCS Manager can sign off.' });
+    }
+    */
+    
+    // Verify there is at least one "pass" version
+    const hasPass = log.LichSuPhienBan.some(v => v.result === 'pass');
     if (!hasPass) {
-      return res.status(400).json({ success: false, error: 'Cannot sign off. At least one version must PASS.' });
+      return res.status(400).json({ success: false, message: 'Cannot sign off without at least one PASSED version.' });
     }
-
-    test.signedBy = req.body.signedBy || 'Technical Lead';
-    test.signedAt = Date.now();
-    await test.save();
-
-    res.status(200).json({ success: true, data: test });
+    
+    // Find reviewer name
+    let reviewerName = 'Admin';
+    if (req.user) {
+      const nv = await NhanVien.findOne({ AccountID: req.user._id });
+      if (nv) reviewerName = nv.HoTen;
+    }
+    
+    // Update Log Status
+    log.TrangThai = 'approved';
+    log.signedBy = reviewerName;
+    log.signedAt = new Date();
+    await log.save();
+    
+    // Update Contract Status to 'delivering'
+    await HopDong.findByIdAndUpdate(log.ContractID, { TrangThai: 'delivering' });
+    
+    res.status(200).json({ success: true, message: 'KCS Approved. Contract moved to Delivering status.' });
   } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };

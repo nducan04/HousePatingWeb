@@ -5,7 +5,7 @@ node_modules/
 
 # Testing
 coverage/
-
+tsconfig.json
 # Next.js
 .next/
 out/
@@ -50,3 +50,6 @@ test.log
 
 # VS Code
 .vscode/
+frontend/tsconfig.tsbuildinfo
+frontend/tsconfig.tsbuildinfo
+tsconfig.ts

@@ -4,17 +4,16 @@ const { getAll, getById, create, update, remove } = require('../controllers/nhan
 
 const router = express.Router();
 
-// Chỉ Admin toàn quyền quản lý nhân viên
+// Chỉnh sửa RBAC cho nhân viên
 router.use(protect);
-router.use(authorize('Admin'));
 
 router.route('/')
-  .get(getAll)
-  .post(create);
+  .get(authorize('Admin'), getAll)
+  .post(authorize('Admin'), create);
 
 router.route('/:id')
-  .get(getById)
-  .put(update)
-  .delete(remove);
+  .get(authorize('Admin', 'NhanVien'), getById)
+  .put(authorize('Admin', 'NhanVien'), update)
+  .delete(authorize('Admin'), remove);
 
 module.exports = router;

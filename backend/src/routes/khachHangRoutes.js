@@ -12,7 +12,7 @@ router.route('/')
 
 router.route('/:id')
   .get(authorize('Admin', 'NhanVien', 'KhachHangB2B'), getById)
-  .put(authorize('Admin', 'NhanVien'), update)
+  .put(authorize('Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C'), update)
   .delete(authorize('Admin'), remove);
 
 module.exports = router;

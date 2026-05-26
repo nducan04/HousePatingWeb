@@ -54,8 +54,7 @@ const importFile = async (req, res) => {
             TenKhachHang: row['Tên KH'] || row.TenKhachHang || 'Chưa cập nhật',
             Email: row['Email'] || '',
             SDT: row['SĐT'] || row.SDT || '',
-            DiaChi: row['Địa chỉ'] || row.DiaChi || '',
-            WalletAddress: row['Ví Web3'] || row.WalletAddress || ''
+            DiaChi: row['Địa chỉ'] || row.DiaChi || ''
           };
 
           await KhachHang.findOneAndUpdate({ MaKH: maKH }, khData, { upsert: true });

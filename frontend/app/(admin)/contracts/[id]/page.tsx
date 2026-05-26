@@ -37,11 +37,11 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
 
   if (loading || !contract) {
     return (
-      <div style={{ textAlign: 'center', padding: 'var(--spacing-2xl)', color: 'var(--text-tertiary)' }}>
+      <div style={{ textAlign: 'center', padding: '3.5rem', color: '#94a3b8' }}>
         <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
         <div>{loading ? 'Đang tải hợp đồng...' : 'Không tìm thấy hợp đồng'}</div>
         {!loading && (
-          <Link href="/contracts" className="btn btn-primary btn-sm" style={{ marginTop: 'var(--spacing-md)' }}>
+          <Link href="/contracts" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg text-xs" style={{ marginTop: '1.125rem' }}>
             Quay lại
           </Link>
         )}
@@ -156,28 +156,28 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto' }}>
-      <Link href="/contracts" className="btn btn-ghost btn-sm" style={{ marginBottom: 'var(--spacing-lg)' }}>
+      <Link href="/contracts" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ marginBottom: '1.75rem' }}>
         <ArrowLeft size={16} /> Quay lại
       </Link>
 
       {/* Contract Header */}
-      <div className="glass-card" style={{ padding: 'var(--spacing-xl)', marginBottom: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '2.25rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.125rem' }}>
           <div>
-            <h2 style={{ fontSize: 'var(--font-2xl)', fontWeight: 800, marginBottom: 8 }}>{contract.title}</h2>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              Mã HĐ: <strong style={{ color: 'var(--accent-cyan)' }}>{contract.contractId}</strong> —
+            <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 8 }}>{contract.title}</h2>
+            <p style={{ color: '#475569' }}>
+              Mã HĐ: <strong style={{ color: '#2563eb' }}>{contract.contractId}</strong> —
               Ngày tạo: {new Date(contract.createdAt).toLocaleDateString('vi-VN')}
             </p>
           </div>
           <span className={`badge ${contract.status === 'signed' ? 'signed' : contract.status === 'created' ? 'pending' : contract.status === 'completed' ? 'approved' : 'draft'}`}
-            style={{ fontSize: 'var(--font-sm)' }}>
+            style={{ fontSize: '1rem' }}>
             {STATUS_LABELS[contract.status] || contract.status}
           </span>
         </div>
 
         {/* Status Flow */}
-        <div className="tracking-timeline" style={{ margin: 'var(--spacing-lg) 0 0', padding: 'var(--spacing-lg) 0' }}>
+        <div className="tracking-timeline" style={{ margin: '1.75rem 0 0', padding: '1.75rem 0' }}>
           {statusSteps.map((step, i) => (
             <div key={i} className={`tracking-step ${step.done ? 'completed' : i === statusSteps.findIndex(s => !s.done) ? 'current' : ''}`}>
               <div className="step-dot">
@@ -192,53 +192,53 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
       {/* Error Banner */}
       {actionError && (
         <div style={{
-          padding: 'var(--spacing-md)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-lg)',
-          background: 'var(--accent-rose-soft)', color: 'var(--accent-rose)',
-          display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--font-sm)'
+          padding: '1.125rem', borderRadius: '10px', marginBottom: '1.75rem',
+          background: 'rgba(225, 29, 72, 0.08)', color: '#e11d48',
+          display: 'flex', alignItems: 'center', gap: 8, fontSize: '1rem'
         }}>
           <AlertTriangle size={16} /> {actionError}
         </div>
       )}
 
-      <div className="grid-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Left Column: Contract Details & ChiTietHopDong */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
           {/* Contract Terms */}
-          <div className="glass-card" style={{ padding: 'var(--spacing-lg)' }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Shield size={18} style={{ color: 'var(--accent-cyan)' }} /> Điều khoản Hợp đồng
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+            <h3 style={{ fontWeight: 700, marginBottom: '1.125rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Shield size={18} style={{ color: '#2563eb' }} /> Điều khoản Hợp đồng
             </h3>
-            <div className="contract-terms">
-              <div className="term-row">
-                <span className="term-label">Đối tác</span>
-                <span className="term-value">{contract.customer?.name || 'N/A'}</span>
+            <div className="bg-slate-50 rounded-xl p-5">
+              <div className="flex justify-between py-2.5 border-b border-slate-200 last:border-b-0">
+                <span className="text-sm text-slate-500 font-medium">Đối tác</span>
+                <span className="text-sm text-slate-800 font-semibold">{contract.customer?.name || 'N/A'}</span>
               </div>
-              <div className="term-row">
-                <span className="term-label">Giá trị</span>
-                <span className="term-value" style={{ color: 'var(--accent-amber)' }}>{contract.value?.toLocaleString('vi-VN')} VNĐ</span>
+              <div className="flex justify-between py-2.5 border-b border-slate-200 last:border-b-0">
+                <span className="text-sm text-slate-500 font-medium">Giá trị</span>
+                <span className="text-sm text-slate-800 font-semibold" style={{ color: '#d97706' }}>{contract.value?.toLocaleString('vi-VN')} VNĐ</span>
               </div>
               {contract.terms?.sla && (
-                <div className="term-row">
-                  <span className="term-label">SLA Giao hàng</span>
-                  <span className="term-value">{contract.terms.sla}</span>
+                <div className="flex justify-between py-2.5 border-b border-slate-200 last:border-b-0">
+                  <span className="text-sm text-slate-500 font-medium">SLA Giao hàng</span>
+                  <span className="text-sm text-slate-800 font-semibold">{contract.terms.sla}</span>
                 </div>
               )}
               {contract.terms?.penalty && (
-                <div className="term-row">
-                  <span className="term-label">Phạt vi phạm</span>
-                  <span className="term-value" style={{ color: 'var(--accent-rose)' }}>{contract.terms.penalty}</span>
+                <div className="flex justify-between py-2.5 border-b border-slate-200 last:border-b-0">
+                  <span className="text-sm text-slate-500 font-medium">Phạt vi phạm</span>
+                  <span className="text-sm text-slate-800 font-semibold" style={{ color: '#e11d48' }}>{contract.terms.penalty}</span>
                 </div>
               )}
               {contract.terms?.duration && (
-                <div className="term-row">
-                  <span className="term-label">Thời hạn</span>
-                  <span className="term-value">{contract.terms.duration}</span>
+                <div className="flex justify-between py-2.5 border-b border-slate-200 last:border-b-0">
+                  <span className="text-sm text-slate-500 font-medium">Thời hạn</span>
+                  <span className="text-sm text-slate-800 font-semibold">{contract.terms.duration}</span>
                 </div>
               )}
               {contract.slaDeadline && (
-                <div className="term-row">
-                  <span className="term-label">Hạn SLA</span>
-                  <span className="term-value">{new Date(contract.slaDeadline).toLocaleDateString('vi-VN')}</span>
+                <div className="flex justify-between py-2.5 border-b border-slate-200 last:border-b-0">
+                  <span className="text-sm text-slate-500 font-medium">Hạn SLA</span>
+                  <span className="text-sm text-slate-800 font-semibold">{new Date(contract.slaDeadline).toLocaleDateString('vi-VN')}</span>
                 </div>
               )}
             </div>
@@ -246,11 +246,11 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
 
           {/* Chi tiết sản phẩm */}
           {contract.chiTietHopDong && contract.chiTietHopDong.length > 0 && (
-            <div className="glass-card" style={{ padding: 'var(--spacing-lg)' }}>
-              <h3 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Package size={18} style={{ color: 'var(--accent-purple)' }} /> Chi tiết Sản phẩm
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+              <h3 style={{ fontWeight: 700, marginBottom: '1.125rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Package size={18} style={{ color: '#7c3aed' }} /> Chi tiết Sản phẩm
               </h3>
-              <table className="data-table">
+              <table className="w-full text-left text-sm">
                 <thead>
                   <tr>
                     <th>Sản phẩm</th>
@@ -263,11 +263,11 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
                 <tbody>
                   {contract.chiTietHopDong.map((item: any, i: number) => (
                     <tr key={i}>
-                      <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.productName}</td>
+                      <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.productName}</td>
                       <td>{item.colorCode || '—'}</td>
                       <td>{item.quantity?.toLocaleString('vi-VN')} Kg</td>
                       <td>{item.unitPrice?.toLocaleString('vi-VN')}</td>
-                      <td style={{ fontWeight: 600, color: 'var(--accent-amber)' }}>
+                      <td style={{ fontWeight: 600, color: '#d97706' }}>
                         {(item.quantity * item.unitPrice).toLocaleString('vi-VN')}
                       </td>
                     </tr>
@@ -279,35 +279,35 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
         </div>
 
         {/* Right Column: Web3 Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
           {/* Step 1: Generate PDF + IPFS */}
-          <div className="glass-card" style={{ padding: 'var(--spacing-lg)' }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FileText size={18} style={{ color: 'var(--accent-amber)' }} /> 1. Sinh PDF & Upload IPFS
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+            <h3 style={{ fontWeight: 700, marginBottom: '1.125rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <FileText size={18} style={{ color: '#d97706' }} /> 1. Sinh PDF & Upload IPFS
             </h3>
 
             {contract.ipfsCid ? (
               <div>
                 <div style={{
-                  padding: 'var(--spacing-sm) var(--spacing-md)', background: 'var(--accent-emerald-soft)',
-                  borderRadius: 'var(--radius-md)', color: 'var(--accent-emerald)',
-                  fontSize: 'var(--font-sm)', fontWeight: 600, marginBottom: 'var(--spacing-md)'
+                  padding: '0.625rem 1.125rem', background: 'rgba(5, 150, 105, 0.08)',
+                  borderRadius: '10px', color: '#059669',
+                  fontSize: '1rem', fontWeight: 600, marginBottom: '1.125rem'
                 }}>
                   ✅ PDF đã upload lên IPFS
                 </div>
-                <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', wordBreak: 'break-all', marginBottom: 8 }}>
+                <div style={{ fontSize: '0.875rem', color: '#94a3b8', wordBreak: 'break-all', marginBottom: 8 }}>
                   <strong>CID:</strong> {contract.ipfsCid}
                 </div>
-                <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', wordBreak: 'break-all', marginBottom: 'var(--spacing-md)' }}>
+                <div style={{ fontSize: '0.875rem', color: '#94a3b8', wordBreak: 'break-all', marginBottom: '1.125rem' }}>
                   <strong>Hash:</strong> {contract.documentHash}
                 </div>
                 <a href={`https://gateway.pinata.cloud/ipfs/${contract.ipfsCid}`} target="_blank" rel="noopener noreferrer"
-                  className="btn btn-secondary btn-sm" style={{ width: '100%', justifyContent: 'center' }}>
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs" style={{ width: '100%', justifyContent: 'center' }}>
                   <ExternalLink size={14} /> Xem PDF trên IPFS
                 </a>
                 {/* PDF Preview iframe */}
                 {(pdfUrl || contract.ipfsCid) && (
-                  <div style={{ marginTop: 'var(--spacing-md)', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                  <div style={{ marginTop: '1.125rem', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                     <iframe
                       src={pdfUrl || `https://gateway.pinata.cloud/ipfs/${contract.ipfsCid}`}
                       style={{ width: '100%', height: 300, border: 'none', background: '#fff' }}
@@ -317,72 +317,67 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
                 )}
               </div>
             ) : (
-              <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleGeneratePDF} disabled={isGenerating}>
+              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ width: '100%' }} onClick={handleGeneratePDF} disabled={isGenerating}>
                 {isGenerating ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Đang sinh PDF...</> : <><Upload size={16} /> Sinh PDF → Hash → IPFS</>}
               </button>
             )}
           </div>
 
           {/* Step 2: Deploy On-Chain */}
-          <div className="glass-card" style={{ padding: 'var(--spacing-lg)' }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Shield size={18} style={{ color: 'var(--accent-cyan)' }} /> 2. Ghi lên Blockchain
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+            <h3 style={{ fontWeight: 700, marginBottom: '1.125rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Shield size={18} style={{ color: '#2563eb' }} /> 2. Ghi lên Blockchain
             </h3>
 
             {['created', 'signed', 'delivering', 'completed'].includes(contract.status) ? (
               <div>
                 <div style={{
-                  padding: 'var(--spacing-sm) var(--spacing-md)', background: 'var(--accent-emerald-soft)',
-                  borderRadius: 'var(--radius-md)', color: 'var(--accent-emerald)',
-                  fontSize: 'var(--font-sm)', fontWeight: 600, marginBottom: 'var(--spacing-md)'
+                  padding: '0.625rem 1.125rem', background: 'rgba(5, 150, 105, 0.08)',
+                  borderRadius: '10px', color: '#059669',
+                  fontSize: '1rem', fontWeight: 600, marginBottom: '1.125rem'
                 }}>
                   ✅ Đã ghi lên Sepolia Testnet
                 </div>
                 {effectiveTxHash && (
                   <a href={`https://sepolia.etherscan.io/tx/${effectiveTxHash}`} target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: 'var(--font-xs)', display: 'flex', alignItems: 'center', gap: 4, wordBreak: 'break-all' }}>
+                    style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: 4, wordBreak: 'break-all' }}>
                     TX: {effectiveTxHash.substring(0, 20)}...
                     <ExternalLink size={12} />
                   </a>
                 )}
               </div>
             ) : (
-              <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleDeploy}
-                disabled={isDeploying || !contract.ipfsCid || !contract.clientAddress}>
+              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ width: '100%' }} onClick={handleDeploy}
+                disabled={isDeploying || !contract.ipfsCid}>
                 {isDeploying
                   ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Đang ghi Blockchain...</>
                   : <><Shield size={16} /> Deploy On-Chain (Sepolia)</>}
               </button>
             )}
-            {!contract.clientAddress && contract.status === 'draft' && (
-              <p style={{ fontSize: 'var(--font-xs)', color: 'var(--accent-amber)', marginTop: 8 }}>
-                ⚠️ Cần cập nhật địa chỉ ví khách hàng B2B trước khi deploy.
-              </p>
-            )}
           </div>
 
           {/* Step 3: MetaMask Signing */}
-          <div className="glass-card" style={{ padding: 'var(--spacing-lg)' }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Wallet size={18} style={{ color: 'var(--accent-purple)' }} /> 3. Ký số MetaMask
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+            <h3 style={{ fontWeight: 700, marginBottom: '1.125rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Wallet size={18} style={{ color: '#7c3aed' }} /> 3. Ký số MetaMask
             </h3>
 
             {contract.status === 'signed' || signTxHash ? (
               <div style={{ animation: 'slideUp 300ms ease' }}>
                 <div style={{
-                  padding: 'var(--spacing-md)', background: 'var(--accent-emerald-soft)',
-                  borderRadius: 'var(--radius-md)', color: 'var(--accent-emerald)',
-                  fontSize: 'var(--font-sm)', fontWeight: 700, textAlign: 'center', marginBottom: 'var(--spacing-md)'
+                  padding: '1.125rem', background: 'rgba(5, 150, 105, 0.08)',
+                  borderRadius: '10px', color: '#059669',
+                  fontSize: '1rem', fontWeight: 700, textAlign: 'center', marginBottom: '1.125rem'
                 }}>
                   ✅ Hợp đồng đã được ký thành công!
                 </div>
                 {(signTxHash || contract.txHash) && (
-                  <div style={{ padding: 'var(--spacing-md)', background: 'var(--bg-input)', borderRadius: 'var(--radius-md)' }}>
-                    <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', marginBottom: 4 }}>
+                  <div style={{ padding: '1.125rem', background: '#f1f5f9', borderRadius: '10px' }}>
+                    <div style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: 4 }}>
                       <strong>TX Hash (Bằng chứng pháp lý):</strong>
                     </div>
                     <a href={`https://sepolia.etherscan.io/tx/${signTxHash || contract.txHash}`} target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: 'var(--font-xs)', display: 'flex', alignItems: 'center', gap: 4, wordBreak: 'break-all' }}>
+                      style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: 4, wordBreak: 'break-all' }}>
                       {(signTxHash || contract.txHash || '').substring(0, 30)}...
                       <ExternalLink size={12} />
                     </a>
@@ -392,14 +387,14 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
             ) : (
               <div>
                 {/* Wallet Connection */}
-                <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                <div style={{ marginBottom: '1.125rem' }}>
                   {walletAddress ? (
                     <div className="wallet-badge">
                       <span className="wallet-dot" />
                       {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
                     </div>
                   ) : (
-                    <button className="btn btn-secondary" style={{ width: '100%' }} onClick={connectWallet} disabled={isConnecting}>
+                    <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200" style={{ width: '100%' }} onClick={connectWallet} disabled={isConnecting}>
                       <Wallet size={16} />
                       {isConnecting ? 'Đang kết nối...' : 'Kết nối MetaMask'}
                     </button>
@@ -409,11 +404,11 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
                 {/* Sign Button */}
                 {walletAddress && contract.status === 'created' && (
                   <div>
-                    <p style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>
+                    <p style={{ fontSize: '0.875rem', color: '#475569', marginBottom: '1.125rem' }}>
                       Ký xác nhận hợp đồng bằng giao dịch on-chain. Gas fee sẽ được tính, Value = 0 ETH.
                       TX Hash sinh ra là bằng chứng pháp lý bất biến trên Sepolia.
                     </p>
-                    <button className="btn btn-success" style={{ width: '100%' }} onClick={handleSignDocument} disabled={isSigning}>
+                    <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-emerald-600 text-white hover:bg-emerald-700" style={{ width: '100%' }} onClick={handleSignDocument} disabled={isSigning}>
                       <PenTool size={16} />
                       {isSigning ? 'Đang ký on-chain...' : 'Ký Hợp đồng (signDocument)'}
                     </button>
@@ -421,7 +416,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
                 )}
 
                 {contract.status === 'draft' && (
-                  <p style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8', textAlign: 'center' }}>
                     Hoàn tất Bước 1 & 2 trước khi ký.
                   </p>
                 )}
@@ -429,17 +424,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
             )}
           </div>
 
-          {/* Wallet Addresses */}
-          <div className="glass-card" style={{ padding: 'var(--spacing-lg)' }}>
-            <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)', marginBottom: 8 }}>
-              <strong>Ví VTSC:</strong><br />
-              <span style={{ wordBreak: 'break-all' }}>{contract.vtscAddress || '—'}</span>
-            </div>
-            <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-tertiary)' }}>
-              <strong>Ví Đối tác:</strong><br />
-              <span style={{ wordBreak: 'break-all' }}>{contract.clientAddress || 'Chưa liên kết'}</span>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>

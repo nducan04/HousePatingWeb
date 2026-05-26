@@ -3,7 +3,7 @@ import { create } from 'zustand';
 export interface User {
   id: string;
   username: string;
-  role: 'Admin' | 'NhanVien' | 'KhachHangB2B' | 'KhachHangB2C';
+  role: 'Admin' | 'Director' | 'NhanVien' | 'KhachHangB2B' | 'KhachHangB2C' | 'NhaCungCap';
   profile?: any;
 }
 
