@@ -71,6 +71,24 @@ exports.create = async (req, res) => {
   }
 };
 
+// @desc    Cập nhật giá sản phẩm độc lập
+// @route   PUT /api/san-pham-son/:id/price
+exports.updatePrice = async (req, res) => {
+  try {
+    const { DonGiaCoSo } = req.body;
+    if (DonGiaCoSo === undefined || DonGiaCoSo < 0) {
+      return res.status(400).json({ success: false, error: 'Giá sản phẩm không hợp lệ' });
+    }
+    const item = await SanPhamSon.findByIdAndUpdate(req.params.id, { DonGiaCoSo }, {
+      new: true, runValidators: true,
+    });
+    if (!item) return res.status(404).json({ success: false, error: 'Không tìm thấy sản phẩm' });
+    res.status(200).json({ success: true, data: item });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
 // @desc    Cập nhật sản phẩm
 // @route   PUT /api/san-pham-son/:id
 exports.update = async (req, res) => {
