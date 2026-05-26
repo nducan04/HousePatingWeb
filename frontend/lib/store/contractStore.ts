@@ -46,8 +46,9 @@ interface ContractState {
   fetchContractById: (id: string) => Promise<void>;
   createContract: (data: any) => Promise<ContractData | null>;
   generatePreview: (id: string) => Promise<{ documentHash: string; ipfsCid: string; pdfUrl: string } | null>;
-  deployOnChain: (id: string) => Promise<{ txHash: string } | null>;
+  deployOnChain: (id: string, clientAddress?: string) => Promise<{ txHash: string } | null>;
   signContract: (id: string, party: string, signature: string, txHash: string) => Promise<void>;
+  signContractByServer: (id: string) => Promise<any>;
 }
 
 export const useContractStore = create<ContractState>((set, get) => ({
@@ -108,14 +109,15 @@ export const useContractStore = create<ContractState>((set, get) => ({
       }
       return res.data.data;
     } catch (err: any) {
-      set({ error: err.response?.data?.error || 'Lỗi sinh PDF' });
-      return null;
+      const errMsg = err.response?.data?.error || 'Lỗi sinh PDF';
+      set({ error: errMsg });
+      throw new Error(errMsg);
     }
   },
 
-  deployOnChain: async (id: string) => {
+  deployOnChain: async (id: string, clientAddress?: string) => {
     try {
-      const res = await api.post(`/contracts/${id}/deploy`);
+      const res = await api.post(`/contracts/${id}/deploy`, { clientAddress });
       const current = get().currentContract;
       if (current && current._id === id) {
         set({
@@ -129,8 +131,9 @@ export const useContractStore = create<ContractState>((set, get) => ({
       }
       return res.data.data;
     } catch (err: any) {
-      set({ error: err.response?.data?.error || 'Lỗi ghi Blockchain' });
-      return null;
+      const errMsg = err.response?.data?.error || 'Lỗi ghi Blockchain';
+      set({ error: errMsg });
+      throw new Error(errMsg);
     }
   },
 
@@ -154,6 +157,29 @@ export const useContractStore = create<ContractState>((set, get) => ({
       }
     } catch (err: any) {
       set({ error: err.response?.data?.error || 'Lỗi ký hợp đồng' });
+    }
+  },
+
+  signContractByServer: async (id: string) => {
+    try {
+      const res = await api.post(`/contracts/${id}/sign-by-server`);
+      const current = get().currentContract;
+      if (current && current._id === id) {
+        set({
+          currentContract: {
+            ...current,
+            ...res.data.data,
+            customer: res.data.data.customer || current.customer,
+            employee: res.data.data.employee || current.employee,
+            terms: res.data.data.terms || current.terms,
+            chiTietHopDong: res.data.data.chiTietHopDong || current.chiTietHopDong,
+          }
+        });
+      }
+      return res.data.data;
+    } catch (err: any) {
+      set({ error: err.response?.data?.error || 'Lỗi ký hợp đồng bằng server' });
+      throw err;
     }
   }
 }));

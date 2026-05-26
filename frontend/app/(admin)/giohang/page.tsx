@@ -7,6 +7,7 @@ import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useCartStore, CartItem } from '@/lib/store/cartStore';
 import Link from 'next/link';
+import { resolveImageUrl } from '@/lib/utils/imageUrl';
 
 
 interface KhachHang {
@@ -35,18 +36,7 @@ export default function GioHangPage() {
   const isAdminOrEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
 
   const getImageUrl = (path: any) => {
-    let resolvedPath = path;
-    if (Array.isArray(path)) {
-      resolvedPath = path[0];
-    }
-    if (!resolvedPath || typeof resolvedPath !== "string" || resolvedPath === "undefined" || resolvedPath === "null") return "";
-    if (resolvedPath.startsWith("http")) return resolvedPath;
-    const cleanPath = resolvedPath.startsWith("/") ? resolvedPath : `/${resolvedPath}`;
-    const origin =
-      typeof window !== "undefined"
-        ? `${window.location.protocol}//${window.location.hostname}:5000`
-        : "http://localhost:5000";
-    return `${origin}${cleanPath}`;
+    return resolveImageUrl(path);
   };
 
   useEffect(() => {

@@ -4,20 +4,10 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { CheckCircle2, Factory, Calendar, FileText, AlertCircle, Package } from "lucide-react";
 import axios from "axios";
+import { resolveImageUrl } from "@/lib/utils/imageUrl";
 
 const getAvatarUrl = (path: any) => {
-  let resolvedPath = path;
-  if (Array.isArray(path)) {
-    resolvedPath = path[0];
-  }
-  if (!resolvedPath || typeof resolvedPath !== "string" || resolvedPath === "undefined" || resolvedPath === "null") return "";
-  if (resolvedPath.startsWith("http")) return resolvedPath;
-  if (resolvedPath.startsWith("Qm") || resolvedPath.startsWith("bafy")) {
-    return `https://gateway.pinata.cloud/ipfs/${resolvedPath}`;
-  }
-  const cleanPath = resolvedPath.startsWith("/") ? resolvedPath : `/${resolvedPath}`;
-  const origin = typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:5000` : "http://localhost:5000";
-  return `${origin}${cleanPath}`;
+  return resolveImageUrl(path);
 };
 
 // Helper: Tự động format đoạn text dài có chứa gạch đầu dòng, dấu sao hoặc chữ in hoa thành HTML dễ nhìn

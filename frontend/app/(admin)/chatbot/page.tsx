@@ -95,7 +95,8 @@ export default function ChatbotPage() {
     setSessionId(sid);
 
     // History Load
-    fetch(`http://localhost:5000/api/chatbot/history/${sid}`)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    fetch(`${apiUrl}/chatbot/history/${sid}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data.length > 0) {
@@ -464,7 +465,8 @@ export default function ChatbotPage() {
     setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: userMessage, timestamp: new Date() }]);
     setIsChatLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/chatbot/message', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/chatbot/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, message: userMessage }),

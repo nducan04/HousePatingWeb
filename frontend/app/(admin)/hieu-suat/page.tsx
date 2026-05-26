@@ -44,6 +44,7 @@ const TABS = [
 ];
 
 import api from '@/lib/utils/axiosAuth';
+import { resolveImageUrl } from '@/lib/utils/imageUrl';
 
 // Chart colors for top sales
 const CHART_COLORS = ['#2563eb', '#7c3aed', '#d97706', '#e11d48', '#059669'];
@@ -55,18 +56,7 @@ export default function PerformanceDashboard() {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<any>(null);
     const getAvatarUrl = (path: any) => {
-        let resolvedPath = path;
-        if (Array.isArray(path)) {
-            resolvedPath = path[0];
-        }
-        if (!resolvedPath || typeof resolvedPath !== 'string' || resolvedPath === 'undefined' || resolvedPath === 'null') return '';
-        if (resolvedPath.startsWith('http')) return resolvedPath;
-        if (resolvedPath.startsWith("Qm") || resolvedPath.startsWith("bafy")) {
-            return `https://gateway.pinata.cloud/ipfs/${resolvedPath}`;
-        }
-        const cleanPath = resolvedPath.startsWith('/') ? resolvedPath : `/${resolvedPath}`;
-        const origin = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:5000` : 'http://localhost:5000';
-        return `${origin}${cleanPath}`;
+        return resolveImageUrl(path);
     };
 
     useEffect(() => {

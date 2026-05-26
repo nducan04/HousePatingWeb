@@ -319,23 +319,39 @@ exports.generatePreviewPDF = async (req, res) => {
       doc.moveDown(1.5);
 
       // ========== BÊN A (VTSC) ==========
-      doc.font(fontBold).fontSize(12).text('BÊN A (Bên bán): CÔNG TY VTSC');
+      doc.font(fontBold).fontSize(12).text('BÊN BÁN / BÊN CUNG CẤP (BÊN A)');
       doc.font(font).fontSize(10)
-        .text(`Đại diện: Phí Bình Minh — Trưởng phòng Kinh doanh Sơn`)
-        .text(`Địa chỉ ví Blockchain: ${contract.vtscAddress || 'Chưa cập nhật'}`);
+        .text('Tên tổ chức: CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)')
+        .text('Địa chỉ: Số 215 phố Lạch Tray, Quận Ngô Quyền, TP. Hải Phòng')
+        .text('Mã số thuế: 0201137068')
+        .text('Đại diện: Phí Bình Minh — Chức vụ: Trưởng phòng kinh doanh sơn')
+        .text(`Địa chỉ ví Blockchain đại diện: ${contract.vtscAddress || '0x0201020304050607080910111213141516171819'}`);
       doc.moveDown(0.8);
 
       // ========== BÊN B (Khách hàng) ==========
-      doc.font(fontBold).fontSize(12)
-        .text(`BÊN B (Bên mua): ${customerName}`);
+      const repName = contract.partyBRepresentative || customerName;
+      doc.font(fontBold).fontSize(12).text('BÊN MUA (BÊN B)');
       doc.font(font).fontSize(10)
-        .text(`Mã khách hàng: ${customerCode}`)
-        .text(`Địa chỉ ví Blockchain: ${contract.clientAddress || 'Chưa liên kết'}`);
+        .text(`Tên khách hàng: ${repName}`)
+        .text(`Điện thoại: ${contract.partyBPhoneNumber || '................................'}`)
+        .text(`Địa chỉ: ${contract.partyBAddress || '................................'}`)
+        .text(`Đại diện: ${repName} — Chức vụ: ${contract.partyBPosition || '................................'}`);
+      if (contract.partyBBankAccount) {
+        doc.text(`Tài khoản: ${contract.partyBBankAccount} tại ${contract.partyBBankName || '................'}`);
+      }
       doc.moveDown(1.2);
 
-      // ========== ĐIỀU 1: NỘI DUNG HỢP ĐỒNG ==========
-      doc.font(fontBold).fontSize(12).text('ĐIỀU 1: NỘI DUNG HỢP ĐỒNG');
+      doc.font(fontBold).fontSize(10).text('Hai bên cùng thống nhất ký kết các điều khoản mua bán sau đây:');
       doc.moveDown(0.5);
+
+      // ========== ĐIỀU 1: Hàng hóa và Giá cả ==========
+      doc.font(fontBold).fontSize(12).text('Điều 1: Hàng hóa và Giá cả');
+      doc.moveDown(0.3);
+      doc.font(font).fontSize(10);
+      if (contract.articles && contract.articles.article1) {
+        doc.text(contract.articles.article1);
+        doc.moveDown(0.5);
+      }
 
       if (contract.ChiTietHopDong && contract.ChiTietHopDong.length > 0) {
         // Table header
@@ -356,42 +372,41 @@ exports.generatePreviewPDF = async (req, res) => {
 
         contract.ChiTietHopDong.forEach((item) => {
           const lineTotal = item.quantity * item.unitPrice;
-          doc.text(item.productName, col1, y, { width: 125 });
-          doc.text(item.colorCode || '—', col2, y);
-          doc.text(item.quantity.toLocaleString('vi-VN'), col3, y);
-          doc.text(item.unitPrice.toLocaleString('vi-VN'), col4, y);
-          doc.text(lineTotal.toLocaleString('vi-VN'), col5, y);
-          y += 18;
+          // Calculate max height for this row (in case productName is long)
+          const nameHeight = doc.heightOfString(item.productName || '', { width: 125, align: 'left' });
+          const rowHeight = Math.max(nameHeight, 18);
+
+          doc.text(item.productName, col1, y, { width: 125, align: 'left' });
+          doc.text(item.colorCode || '—', col2, y, { width: 90, align: 'center' });
+          doc.text(item.quantity.toLocaleString('vi-VN'), col3, y, { width: 80, align: 'center' });
+          doc.text(item.unitPrice.toLocaleString('vi-VN'), col4, y, { width: 80, align: 'right' });
+          doc.text(lineTotal.toLocaleString('vi-VN'), col5, y, { width: 85, align: 'right' });
+          
+          y += rowHeight + 5;
         });
 
         doc.moveTo(50, y).lineTo(545, y).stroke();
-        y += 5;
+        y += 10;
         doc.font(fontBold).fontSize(10);
-        doc.text(`TỔNG GIÁ TRỊ HỢP ĐỒNG: ${contract.TongGiaTri.toLocaleString('vi-VN')} VNĐ`, col3, y);
-        doc.moveDown(2);
+        doc.text(`TỔNG GIÁ TRỊ HỢP ĐỒNG: ${contract.TongGiaTri.toLocaleString('vi-VN')} VNĐ`, col3, y, { width: 265, align: 'right' });
+        
+        // Reset tọa độ X về lề trái và cập nhật tọa độ Y xuống dưới bảng
+        doc.x = 50;
+        doc.y = y + 25;
+        doc.moveDown(1);
       }
 
-      // ========== ĐIỀU 2: ĐIỀU KHOẢN ==========
-      doc.font(fontBold).fontSize(12).text('ĐIỀU 2: ĐIỀU KHOẢN THỎA THUẬN');
-      doc.moveDown(0.3);
-      doc.font(font).fontSize(10);
-      if (contract.terms) {
-        if (contract.terms.sla) doc.text(`— Điều khoản SLA giao hàng: ${contract.terms.sla}`);
-        if (contract.terms.penalty) doc.text(`— Phạt vi phạm hợp đồng: ${contract.terms.penalty}`);
-        if (contract.terms.duration) doc.text(`— Thời hạn hiệu lực: ${contract.terms.duration}`);
+      // ========== Các Điều khoản khác (2 - 11) ==========
+      if (contract.articles) {
+        for (let num = 2; num <= 11; num++) {
+          if (contract.articles[`article${num}`]) {
+            doc.font(fontBold).fontSize(12).text(`Điều ${num}:`);
+            doc.moveDown(0.2);
+            doc.font(font).fontSize(10).text(contract.articles[`article${num}`]);
+            doc.moveDown(0.8);
+          }
+        }
       }
-      if (contract.slaDeadline) {
-        doc.text(`— Hạn SLA giao hàng: ${new Date(contract.slaDeadline).toLocaleDateString('vi-VN')}`);
-      }
-      doc.moveDown(1.5);
-
-      // ========== ĐIỀU 3: PHƯƠNG THỨC THANH TOÁN ==========
-      doc.font(fontBold).fontSize(12).text('ĐIỀU 3: PHƯƠNG THỨC THANH TOÁN');
-      doc.moveDown(0.3);
-      doc.font(font).fontSize(10)
-        .text('Hai bên thỏa thuận thanh toán bằng phương thức chuyển khoản ngân hàng theo cơ chế công nợ truyền thống.')
-        .text('Hệ thống Blockchain chỉ ghi nhận bằng chứng ký kết, KHÔNG xử lý chuyển tiền điện tử.');
-      doc.moveDown(1.5);
 
       // ========== CHỮ KÝ ==========
       doc.font(fontBold).fontSize(11);
@@ -462,7 +477,14 @@ exports.deployOnChain = async (req, res) => {
     }
 
     if (!contract.clientAddress) {
-      return res.status(400).json({ success: false, error: 'Hợp đồng chưa có địa chỉ ví khách hàng B2B' });
+      if (req.body.clientAddress) {
+        contract.clientAddress = req.body.clientAddress;
+        if (!/^0x[a-fA-F0-9]{40}$/.test(contract.clientAddress)) {
+          return res.status(400).json({ success: false, error: 'Địa chỉ ví MetaMask không hợp lệ' });
+        }
+      } else {
+        return res.status(400).json({ success: false, error: 'Hợp đồng chưa có địa chỉ ví khách hàng B2B' });
+      }
     }
 
     if (contract.TrangThai !== 'draft') {
@@ -675,5 +697,65 @@ exports.verifyOnChain = async (req, res) => {
   } catch (error) {
     console.error('On-chain verification error:', error.message);
     res.status(500).json({ success: false, error: 'Failed to verify on-chain status' });
+  }
+};
+
+// @desc    Client signs contract via Server (Backend dùng ví hệ thống ký)
+// @route   POST /api/contracts/:id/sign-by-server
+// @access  Private (Admin, KhachHangB2B)
+exports.signContractByServer = async (req, res) => {
+  try {
+    // Bước 1: Tìm thông tin hợp đồng trong MongoDB theo ID.
+    const contractDoc = await HopDong.findById(req.params.id);
+    if (!contractDoc) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy hợp đồng' });
+    }
+
+    // if (contractDoc.TrangThai !== 'created') {
+    //   return res.status(400).json({ success: false, error: 'Hợp đồng phải ở trạng thái "Chờ ký" để thực hiện ký số' });
+    // }
+
+    if (!contractDoc.DocumentHash || !contractDoc.IPFSCID) {
+      return res.status(400).json({ success: false, error: 'Hợp đồng thiếu DocumentHash hoặc IPFSCID' });
+    }
+
+    // Bước 2: Sử dụng instance của Smart Contract đã được liên kết với systemWallet ở file blockchain.js
+    const { contract } = require('../utils/blockchain');
+    if (!contract) {
+       return res.status(500).json({ success: false, error: 'Chưa kết nối Blockchain' });
+    }
+
+    // Gọi hàm thực thi trên chuỗi: Hàm signDocument()
+    // Do contract đã connect(systemWallet) nên giao dịch sẽ được ký ngầm bằng ví hệ thống.
+    const tx = await contract.signDocument(
+      contractDoc.MaHopDong, 
+      contractDoc.DocumentHash, 
+      contractDoc.IPFSCID
+    );
+
+    // Bước 3: Chờ giao dịch hoàn tất trên mạng lưới
+    const receipt = await tx.wait();
+
+    // Bước 4: Lấy mã giao dịch tx.hash, cập nhật trạng thái hợp đồng thành "signed"
+    contractDoc.TransactionHash = receipt.hash;
+    contractDoc.TrangThai = 'signed';
+    contractDoc.clientSignature = receipt.hash; // Đánh dấu Client đã ký bằng Server
+
+    await contractDoc.save();
+
+    // Bước 5: Trả về phản hồi JSON thành công cho Frontend kèm theo mã txHash
+    res.status(200).json({
+      success: true,
+      data: {
+        _id: contractDoc._id,
+        contractId: contractDoc.MaHopDong,
+        status: contractDoc.TrangThai,
+        txHash: receipt.hash,
+        clientSignature: contractDoc.clientSignature
+      }
+    });
+  } catch (error) {
+    console.error('signContractByServer error:', error);
+    res.status(500).json({ success: false, error: 'Lỗi ký hợp đồng: ' + error.message });
   }
 };

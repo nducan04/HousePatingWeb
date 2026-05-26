@@ -107,7 +107,7 @@ exports.refresh = async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
-      return res.status(401).json({ success: false, error: 'Không tìm thấy refresh token trong cookie' });
+      return res.status(200).json({ success: false, error: 'Không tìm thấy refresh token trong cookie' });
     }
 
     // Giải mã và xác minh Refresh Token
@@ -116,7 +116,7 @@ exports.refresh = async (req, res) => {
     // Kiểm tra tài khoản còn tồn tại và hoạt động
     const taiKhoan = await TaiKhoan.findById(decoded.id);
     if (!taiKhoan || !taiKhoan.TrangThai) {
-      return res.status(401).json({ success: false, error: 'Tài khoản không tồn tại hoặc đã bị khóa' });
+      return res.status(200).json({ success: false, error: 'Tài khoản không tồn tại hoặc đã bị khóa' });
     }
 
     // Cấp Access Token mới
@@ -128,9 +128,9 @@ exports.refresh = async (req, res) => {
     });
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-       return res.status(403).json({ success: false, error: 'Refresh token đã hết hạn, vui lòng đăng nhập lại' });
+       return res.status(200).json({ success: false, error: 'Refresh token đã hết hạn, vui lòng đăng nhập lại' });
     }
-    res.status(403).json({ success: false, error: 'Refresh token không hợp lệ' });
+    res.status(200).json({ success: false, error: 'Refresh token không hợp lệ' });
   }
 };
 

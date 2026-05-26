@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Users, Briefcase, Award, CheckCircle2, Download } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import * as XLSX from 'xlsx';
+import { resolveImageUrl } from '@/lib/utils/imageUrl';
 
 const API_URL = '/nhan-vien';
 
@@ -35,20 +36,7 @@ export default function NhanVienPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const getAvatarUrl = (path: string) => {
-    if (!path || path === 'undefined' || path === 'null') return '';
-    
-    // IPFS support
-    if (path.startsWith("ipfs://")) {
-      return path.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
-    }
-    if (path.startsWith("Qm") || path.startsWith("bafy")) {
-      return `https://gateway.pinata.cloud/ipfs/${path}`;
-    }
-
-    if (path.startsWith('http')) return path;
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    const origin = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:5000` : 'http://localhost:5000';
-    return `${origin}${cleanPath}`;
+    return resolveImageUrl(path);
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);

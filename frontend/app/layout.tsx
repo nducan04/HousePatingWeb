@@ -1,6 +1,12 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import AuthProvider from '@/lib/components/AuthProvider';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({
+  subsets: ['latin', 'vietnamese'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'VTSC PaintPro | Quản lý Sơn Tĩnh Điện',
@@ -14,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi">
+    <html lang="vi" className={inter.className}>
       <body>
         <AuthProvider>
           {children}
