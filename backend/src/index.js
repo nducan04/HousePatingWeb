@@ -18,16 +18,27 @@ const allowedOrigins = [
   'http://localhost:3002',
   'http://127.0.0.1:3000',
   'http://127.0.0.1:3001',
-  'http://127.0.0.1:3002'
+  'http://127.0.0.1:3002',
+  'https://house-pating-web.vercel.app'
 ];
+
+if (process.env.FRONTEND_URL) {
+  const envOrigins = process.env.FRONTEND_URL.split(',').map(url => url.trim());
+  envOrigins.forEach(origin => {
+    if (origin && !allowedOrigins.includes(origin)) {
+      allowedOrigins.push(origin);
+    }
+  });
+}
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    // Allow any localhost or 127.0.0.1 origins for development
+    // Allow any localhost, 127.0.0.1, configured origins, or vercel.app domains
     if (
       allowedOrigins.includes(origin) || 
-      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+      /\.vercel\.app$/.test(origin)
     ) {
       return callback(null, true);
     }
