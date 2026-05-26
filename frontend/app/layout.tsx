@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: 'VTSC PaintPro | Quản lý Sơn Tĩnh Điện',
   description: 'Hệ thống quản lý kinh doanh sơn tĩnh điện VTSC — Dashboard, R&D Tracking, Smart Contract & B2C Portal',
   keywords: ['VTSC', 'sơn tĩnh điện', 'Akzonobel', 'Interpon', 'paint management'],
+  icons: {
+    icon: '/vtsc.png',
+  },
 };
 
 export default function RootLayout({
