@@ -12,6 +12,9 @@ const path = require('path');
 exports.getContracts = async (req, res) => {
   try {
     let filter = {};
+    if (req.query.customer) {
+      filter.CustomerID = req.query.customer;
+    }
 
     // RBAC: Khách hàng chỉ thấy hợp đồng của mình
     if (req.user && (req.user.VaiTro === 'KhachHangB2B' || req.user.VaiTro === 'KhachHangB2C')) {

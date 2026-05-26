@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Package, Truck, CheckCircle2, Clock, XCircle, ChevronRight, ArrowLeft, MapPin, RefreshCw, ShoppingBag, Circle } from 'lucide-react';
+import { Package, Truck, CheckCircle2, Clock, XCircle, ChevronRight, ArrowLeft, MapPin, RefreshCw, ShoppingBag, Circle, LifeBuoy, Star } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
 import CustomerOrderModal from '@/components/CustomerOrderModal';
+import CustomerCreateTicketModal from '@/components/CustomerCreateTicketModal';
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   CHO_XAC_NHAN: { label: 'Chờ xác nhận', color: 'bg-amber-50 text-amber-700 border border-amber-200', icon: <Clock size={13} /> },
@@ -20,12 +21,28 @@ export default function CustomerOrderPage() {
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const [orders, setOrders] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
   const [trackingInfo, setTrackingInfo] = useState<any>(null);
   const [loadingTracking, setLoadingTracking] = useState(false);
+  const [creatingTicketFor, setCreatingTicketFor] = useState<any>(null);
+  const [orderRatings, setOrderRatings] = useState<Record<string, { sp: number, dv: number }>>({});
+
+  const handleRateTicket = async (ticketId: string, type: string, rating: number) => {
+    try {
+      const endpoint = type === 'WARRANTY' ? `/bao-hanh/${ticketId}/status` : `/doi-tra/${ticketId}/status`;
+      await api.patch(endpoint, {
+        KhachHangDanhGia: rating
+      });
+      fetchOrders(); // Refresh to show the rating
+    } catch (e) {
+      console.error('Lỗi khi đánh giá:', e);
+      alert('Không thể gửi đánh giá. Vui lòng thử lại.');
+    }
+  };
 
   const handleExpand = async (order: any) => {
     if (expandedId === order._id) {
@@ -50,6 +67,23 @@ export default function CustomerOrderPage() {
     }
   };
 
+  const handleRateOrderSubmit = async (orderId: string) => {
+    const rating = orderRatings[orderId];
+    if (!rating || !rating.sp || !rating.dv) {
+      alert("Vui lòng đánh giá cả Chất lượng sản phẩm và Chất lượng dịch vụ!");
+      return;
+    }
+    try {
+      const res = await api.patch(`/don-hang/${orderId}/rate`, { ChatLuongSanPham: rating.sp, ChatLuongDichVu: rating.dv });
+      if (res.data.success) {
+        alert("Đã đánh giá đơn hàng thành công!");
+        fetchOrders();
+      }
+    } catch (e: any) {
+      alert("Đánh giá thất bại: " + (e.response?.data?.message || e.message));
+    }
+  };
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/');
@@ -61,8 +95,22 @@ export default function CustomerOrderPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/don-hang');
-      if (res.data.success) setOrders(res.data.data);
+      const [ordersRes, returnsRes, warrantyRes] = await Promise.all([
+        api.get('/don-hang'),
+        api.get('/doi-tra'),
+        api.get('/bao-hanh')
+      ]);
+      
+      if (ordersRes.data.success) setOrders(ordersRes.data.data);
+      
+      const allTickets = [];
+      if (returnsRes.data.success) {
+        allTickets.push(...returnsRes.data.data.map((t: any) => ({ ...t, _ticketType: 'RETURN' })));
+      }
+      if (warrantyRes.data.success) {
+        allTickets.push(...warrantyRes.data.data.map((t: any) => ({ ...t, _ticketType: 'WARRANTY' })));
+      }
+      setTickets(allTickets);
     } catch (e) {
       console.error('Error fetching orders:', e);
     } finally {
@@ -230,6 +278,137 @@ export default function CustomerOrderPage() {
                   Đang tải thông tin lộ trình...
                 </div>
               )}
+              {/* Customer Tickets Section */}
+              {isExpanded && (
+                <div className="px-5 py-5 border-t border-slate-100 bg-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <LifeBuoy size={13} className="text-orange-500" /> Hỗ trợ & Hậu mãi
+                    </h4>
+                    {!(order.DanhGia && order.DanhGia.NgayDanhGia) && (
+                      <button
+                        onClick={() => setCreatingTicketFor(order)}
+                        className="px-3 py-1.5 text-[10px] font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Yêu cầu hỗ trợ
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {tickets.filter(t => t.DonHang?._id === order._id || t.DonHang === order._id).map((ticket, idx) => {
+                      const isWarranty = ticket._ticketType === 'WARRANTY';
+                      const title = isWarranty ? `Bảo hành ${ticket.SanPham || ''}` : `${ticket.LoaiYeuCau} hàng`;
+                      const isCompleted = ['Đã hoàn tất', 'Đã hoàn tiền', 'Đã khắc phục', 'Đóng'].includes(ticket.TrangThai);
+                      
+                      return (
+                        <div key={idx} className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="font-bold text-xs text-slate-800">{title}</div>
+                            <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                              {ticket.TrangThai}
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-slate-500 font-medium mb-2">Lý do: {ticket.LyDo || ticket.NoiDungLoi}</p>
+                          
+                          {ticket.PhuongAnGiaiQuyet && (
+                            <div className="p-2 bg-blue-50/50 rounded-lg border border-blue-100 text-[11px] text-slate-700 mt-2">
+                              <span className="font-bold text-blue-600">Phản hồi từ Admin:</span> {ticket.PhuongAnGiaiQuyet}
+                            </div>
+                          )}
+
+                          {isCompleted && (
+                            <div className="mt-3 pt-3 border-t border-slate-200/50 flex flex-col items-center">
+                              {ticket.KhachHangDanhGia ? (
+                                <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                                  Đã đánh giá: {Array.from({length: ticket.KhachHangDanhGia}).map((_, i) => <Star key={i} size={12} className="text-amber-400 fill-amber-400" />)}
+                                  <span className="ml-1 text-emerald-600 font-bold">(Đã kết thúc)</span>
+                                </div>
+                              ) : (
+                                <>
+                                  <span className="text-[10px] font-bold text-slate-400 mb-1">Đánh giá 5★ để đóng yêu cầu:</span>
+                                  <div className="flex gap-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <button 
+                                        key={star}
+                                        onClick={() => handleRateTicket(ticket._id, ticket._ticketType, star)}
+                                        className="text-slate-300 hover:text-amber-400 transition-colors"
+                                      >
+                                        <Star size={16} className={star === 5 ? 'hover:fill-amber-400' : ''} />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {tickets.filter(t => t.DonHang?._id === order._id || t.DonHang === order._id).length === 0 && (
+                      <div className="text-[11px] text-slate-400 italic py-2 text-center">
+                        Bạn chưa có yêu cầu hỗ trợ nào cho đơn hàng này.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Rating Section */}
+              {isExpanded && order.TrangThai === 'DA_GIAO' && (
+                <div className="px-5 py-5 border-t border-slate-100 bg-emerald-50/30">
+                  <h4 className="text-[11px] font-bold text-emerald-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Star size={14} className="text-emerald-500 fill-emerald-500" /> Đánh giá đơn hàng
+                  </h4>
+                  {order.DanhGia && order.DanhGia.NgayDanhGia ? (
+                    <div className="bg-white p-4 rounded-xl border border-emerald-100 shadow-sm flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-medium text-slate-600">Chất lượng sản phẩm</span>
+                        <div className="flex gap-1">
+                          {Array.from({length: 5}).map((_, i) => <Star key={i} size={14} className={i < order.DanhGia.ChatLuongSanPham ? 'text-amber-400 fill-amber-400' : 'text-slate-200'} />)}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-medium text-slate-600">Chất lượng dịch vụ</span>
+                        <div className="flex gap-1">
+                          {Array.from({length: 5}).map((_, i) => <Star key={i} size={14} className={i < order.DanhGia.ChatLuongDichVu ? 'text-amber-400 fill-amber-400' : 'text-slate-200'} />)}
+                        </div>
+                      </div>
+                      <p className="text-[10px] italic text-slate-400 mt-2 text-center">Cảm ơn bạn đã đánh giá! (Yêu cầu hỗ trợ đã bị khóa)</p>
+                    </div>
+                  ) : (
+                    <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-medium text-slate-700">Chất lượng sản phẩm:</span>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <button key={star} onClick={() => setOrderRatings(prev => ({...prev, [order._id]: {...prev[order._id], sp: star}}))} className="text-slate-300 hover:text-amber-400 transition-colors">
+                              <Star size={18} className={(orderRatings[order._id]?.sp || 0) >= star ? 'text-amber-400 fill-amber-400' : ''} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-medium text-slate-700">Chất lượng dịch vụ (Giao hàng, CSKH):</span>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <button key={star} onClick={() => setOrderRatings(prev => ({...prev, [order._id]: {...prev[order._id], dv: star}}))} className="text-slate-300 hover:text-amber-400 transition-colors">
+                              <Star size={18} className={(orderRatings[order._id]?.dv || 0) >= star ? 'text-amber-400 fill-amber-400' : ''} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleRateOrderSubmit(order._id)}
+                        className="mt-2 w-full py-2 bg-emerald-600 text-white text-[11px] font-bold rounded-lg hover:bg-emerald-700 transition-colors"
+                      >
+                        Gửi Đánh Giá
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Footer */}
               <div className="px-5 py-4 border-t border-slate-50 flex items-center justify-between">
                 <div>
@@ -262,6 +441,16 @@ export default function CustomerOrderPage() {
         <CustomerOrderModal 
           order={selectedOrderDetails} 
           onClose={() => setSelectedOrderDetails(null)} 
+        />
+      )}
+
+      {creatingTicketFor && (
+        <CustomerCreateTicketModal
+          order={creatingTicketFor}
+          onClose={() => setCreatingTicketFor(null)}
+          onSuccess={() => {
+            fetchOrders();
+          }}
         />
       )}
     </div>

@@ -164,12 +164,6 @@ const allNavItems = [
         roles: ["Admin", "Director"],
       },
       {
-        href: "/doi-tra",
-        label: "Trung Tâm Giải Quyết Khiếu Nại",
-        icon: ReceiptRussianRuble,
-        roles: ["Admin", "NhanVien"],
-      },
-      {
         href: "/khuyen-mai",
         label: "Quản lý khuyến mãi",
         icon: PanelsRightBottom,
@@ -433,8 +427,8 @@ export default function AdminLayout({
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${isActive
-                                ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
-                                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
+                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                               }`}
                           >
                             <div

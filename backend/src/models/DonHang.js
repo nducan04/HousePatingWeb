@@ -94,6 +94,12 @@ const donHangSchema = new mongoose.Schema({
     LoaiBot: { type: String, default: 'AkzoNobel Interpon' },
     NhietDoSay: { type: String, default: '195°C / 15 phút' },
     DoDayLopPhu: { type: String, default: '75 µm' }
+  },
+  DanhGia: {
+    ChatLuongSanPham: { type: Number, min: 1, max: 5 },
+    ChatLuongDichVu: { type: Number, min: 1, max: 5 },
+    BinhLuan: String,
+    NgayDanhGia: Date
   }
 }, {
   timestamps: true

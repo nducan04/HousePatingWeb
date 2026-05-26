@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Package, Truck, CheckCircle2, Clock, XCircle, ChevronRight, ArrowLeft, MapPin, RefreshCw, ShoppingBag, Circle } from 'lucide-react';
+import { Package, Truck, CheckCircle2, Clock, XCircle, ChevronRight, ArrowLeft, MapPin, RefreshCw, ShoppingBag, Circle, Plus, X } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
 import CustomerOrderModal from '@/components/CustomerOrderModal';
@@ -31,6 +31,11 @@ export default function CustomerOrderPage() {
 
   const [trackingInfo, setTrackingInfo] = useState<any>(null);
   const [loadingTracking, setLoadingTracking] = useState(false);
+
+  const [requestModalOrder, setRequestModalOrder] = useState<any>(null);
+  const [requestForm, setRequestForm] = useState<{LoaiYeuCau: string, LyDo: string, HinhAnh: string[]}>({ LoaiYeuCau: 'Đổi trả', LyDo: '', HinhAnh: [] });
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const handleExpand = async (order: any) => {
     if (expandedId === order._id) {
@@ -90,6 +95,68 @@ export default function CustomerOrderPage() {
       alert(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật!');
     } finally {
       setSavingInfo(false);
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) return;
+    try {
+      const res = await api.patch(`/don-hang/${orderId}/cancel`);
+      if (res.data.success) {
+        setOrders(prev => prev.map(o => o._id === orderId ? { ...o, TrangThai: 'DA_HUY' } : o));
+        alert('Hủy đơn hàng thành công!');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Có lỗi xảy ra khi hủy đơn hàng!');
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    setIsUploadingImage(true);
+    try {
+      const res = await api.post('/files/upload-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success && res.data.url) {
+        setRequestForm(prev => ({ ...prev, HinhAnh: [...prev.HinhAnh, res.data.url] }));
+      }
+    } catch (err) {
+      console.error('Lỗi upload ảnh:', err);
+      alert('Không thể tải ảnh lên. Vui lòng thử lại sau.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleSubmitRequest = async () => {
+    if (!requestForm.LyDo) {
+      alert('Vui lòng nhập lý do');
+      return;
+    }
+    setIsSubmittingRequest(true);
+    try {
+      const res = await api.post('/doi-tra', {
+        DonHang: requestModalOrder._id,
+        KhachHang: requestModalOrder.KhachHang?._id || requestModalOrder.KhachHang || user?.profile?._id,
+        LyDo: requestForm.LyDo,
+        LoaiYeuCau: requestForm.LoaiYeuCau,
+        HinhAnh: requestForm.HinhAnh
+      });
+      if (res.data.success) {
+        alert('Gửi yêu cầu thành công! Yêu cầu của bạn đã được chuyển đến bộ phận CSKH.');
+        setRequestModalOrder(null);
+        setRequestForm({ LoaiYeuCau: 'Đổi trả', LyDo: '', HinhAnh: [] });
+      }
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Có lỗi xảy ra');
+    } finally {
+      setIsSubmittingRequest(false);
     }
   };
 
@@ -316,6 +383,22 @@ export default function CustomerOrderPage() {
                   <p className="font-black text-lg text-slate-900">{order.TongTien?.toLocaleString('vi-VN')}đ</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {order.TrangThai === 'CHO_XAC_NHAN' && (
+                    <button
+                      onClick={() => handleCancelOrder(order._id)}
+                      className="px-4 py-2 rounded-2xl text-xs font-bold border border-rose-200 text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all cursor-pointer"
+                    >
+                      Hủy đơn hàng
+                    </button>
+                  )}
+                  {order.TrangThai === 'DA_GIAO' && (
+                    <button
+                      onClick={() => setRequestModalOrder(order)}
+                      className="px-4 py-2 rounded-2xl text-xs font-bold border border-amber-200 text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-all cursor-pointer"
+                    >
+                      Yêu cầu hỗ trợ (Đổi trả/Bảo hành)
+                    </button>
+                  )}
                   <button
                     onClick={() => handleExpand(order)}
                     className="px-4 py-2 rounded-2xl text-xs font-bold border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
@@ -342,6 +425,78 @@ export default function CustomerOrderPage() {
           order={selectedOrderDetails} 
           onClose={() => setSelectedOrderDetails(null)} 
         />
+      )}
+
+      {requestModalOrder && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 p-6">
+            <h3 className="text-lg font-black text-slate-900 mb-4">Yêu cầu hỗ trợ đơn hàng #{requestModalOrder.MaDonHang}</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Loại yêu cầu</label>
+                <select 
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  value={requestForm.LoaiYeuCau}
+                  onChange={e => setRequestForm({...requestForm, LoaiYeuCau: e.target.value})}
+                >
+                  <option value="Đổi trả">Đổi trả sản phẩm</option>
+                  <option value="Bảo hành">Bảo hành</option>
+                  <option value="Khiếu nại">Khiếu nại</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Nội dung / Lý do</label>
+                <textarea 
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  rows={4}
+                  placeholder="Vui lòng mô tả chi tiết vấn đề bạn gặp phải..."
+                  value={requestForm.LyDo}
+                  onChange={e => setRequestForm({...requestForm, LyDo: e.target.value})}
+                ></textarea>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Hình ảnh thực tế (Lỗi/Hỏng/Sai màu)</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {requestForm.HinhAnh.map((url, idx) => (
+                    <div key={idx} className="relative w-16 h-16 rounded-xl border border-slate-200 overflow-hidden bg-slate-50">
+                      <img src={`https://gateway.pinata.cloud/ipfs/${url}`} alt={`Hình ${idx + 1}`} className="w-full h-full object-cover" />
+                      <button 
+                        onClick={() => setRequestForm(prev => ({...prev, HinhAnh: prev.HinhAnh.filter((_, i) => i !== idx)}))}
+                        className="absolute top-0.5 right-0.5 bg-black/50 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]"
+                      >
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-blue-400 hover:text-blue-500 transition-colors cursor-pointer bg-slate-50 relative">
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isUploadingImage} />
+                    {isUploadingImage ? <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div> : <Plus size={18} />}
+                    <span className="text-[9px] font-bold mt-1 uppercase">Thêm</span>
+                  </label>
+                </div>
+                <p className="text-[11px] text-slate-500">Giúp chúng tôi xử lý nhanh hơn bằng cách cung cấp hình ảnh rõ nét về tình trạng sản phẩm.</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button 
+                onClick={() => setRequestModalOrder(null)} 
+                className="px-5 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer border-none"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                onClick={handleSubmitRequest} 
+                disabled={isSubmittingRequest}
+                className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer border-none"
+              >
+                {isSubmittingRequest ? 'Đang gửi...' : 'Gửi yêu cầu'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
