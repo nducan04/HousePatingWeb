@@ -42,7 +42,7 @@ import { useAuthStore } from "@/lib/store/authStore";
 import { useCartStore } from "@/lib/store/cartStore";
 import { paintColors } from "@/lib/data/colors-data";
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+import { resolveImageUrl } from '@/lib/utils/imageUrl';
 
 export default function HomePage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -566,22 +566,7 @@ export default function HomePage() {
   };
 
   const getImageUrl = (path: any) => {
-    let resolvedPath = path;
-    if (Array.isArray(path)) {
-      resolvedPath = path[0];
-    }
-    if (
-      !resolvedPath ||
-      typeof resolvedPath !== "string" ||
-      resolvedPath === "undefined" ||
-      resolvedPath === "null"
-    )
-      return "https://ui-avatars.com/api/?name=VTSC+Product&background=random";
-    if (resolvedPath.startsWith("http")) return resolvedPath;
-    if (resolvedPath.startsWith("Qm") || resolvedPath.startsWith("bafy")) {
-      return `https://gateway.pinata.cloud/ipfs/${resolvedPath}`;
-    }
-    return `${BACKEND_URL}${resolvedPath.startsWith("/") ? "" : "/"}${resolvedPath}`;
+    return resolveImageUrl(path, 'https://ui-avatars.com/api/?name=VTSC+Product&background=random');
   };
 
   return (

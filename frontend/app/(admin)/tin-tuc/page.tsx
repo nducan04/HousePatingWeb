@@ -7,7 +7,7 @@ import html2canvas from 'html2canvas';
 import api from '@/lib/utils/axiosAuth';
 
 const API_PATH = '/tin-tuc';
-const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+import { resolveImageUrl, BACKEND_URL } from '@/lib/utils/imageUrl';
 
 interface TinTuc {
   _id?: string;
@@ -27,18 +27,7 @@ interface TinTuc {
 }
 
 const getImageUrl = (path: any) => {
-  let resolvedPath = path;
-  if (Array.isArray(path)) {
-    resolvedPath = path[0];
-  }
-  if (!resolvedPath || typeof resolvedPath !== 'string' || resolvedPath === 'undefined' || resolvedPath === 'null') {
-    return '';
-  }
-  if (resolvedPath.startsWith('http')) return resolvedPath;
-  if (resolvedPath.startsWith("Qm") || resolvedPath.startsWith("bafy")) {
-    return `https://gateway.pinata.cloud/ipfs/${resolvedPath}`;
-  }
-  return `${BACKEND_URL}${resolvedPath.startsWith('/') ? '' : '/'}${resolvedPath}`;
+  return resolveImageUrl(path);
 };
 
 export default function TinTucPage() {

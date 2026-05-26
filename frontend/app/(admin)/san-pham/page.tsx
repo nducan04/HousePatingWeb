@@ -26,6 +26,7 @@ import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
 import * as XLSX from "xlsx";
 import IPFSImage from "@/lib/components/IPFSImage";
+import { resolveImageUrl } from "@/lib/utils/imageUrl";
 
 interface MaMau {
   _id?: string;
@@ -442,20 +443,7 @@ export default function SanPhamPage() {
   };
 
   const getAvatarUrl = (path: string) => {
-    if (!path || path === "undefined" || path === "null") return "";
-    
-    // IPFS support
-    if (path.startsWith("ipfs://")) {
-      return path.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
-    }
-    if (path.startsWith("Qm") || path.startsWith("bafy")) {
-      return `https://gateway.pinata.cloud/ipfs/${path}`;
-    }
-
-    if (path.startsWith("http")) return path;
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    const backendUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
-    return `${backendUrl}${cleanPath}`;
+    return resolveImageUrl(path);
   };
 
   return (

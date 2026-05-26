@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import { resolveImageUrl } from '@/lib/utils/imageUrl';
 import RouteMap from './RouteMap';
 import {
   Truck,
@@ -158,12 +159,6 @@ const LocationInput = ({ value, onChange, placeholder, icon: Icon, iconColor, ri
   );
 };
 
-const getMediaUrl = (url: string) => {
-  if (!url) return '';
-  if (url.startsWith('http')) return url;
-  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
-  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
-};
 
 export default function VanChuyenPage() {
   const { user } = useAuthStore();
@@ -572,7 +567,7 @@ export default function VanChuyenPage() {
                 <span className="text-slate-400 font-medium">Biên bản bàn giao</span>
                 <div className="flex items-center gap-2">
                   {selectedTracking.LoHang.BienBanFile || (selectedTracking as any).BienBanFile ? (
-                    <a href={getMediaUrl(selectedTracking.LoHang.BienBanFile || (selectedTracking as any).BienBanFile)} target="_blank" rel="noreferrer"
+                    <a href={resolveImageUrl(selectedTracking.LoHang.BienBanFile || (selectedTracking as any).BienBanFile)} target="_blank" rel="noreferrer"
                       className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:underline">
                       <FileText size={14} /> Xem File
                     </a>
@@ -668,8 +663,8 @@ export default function VanChuyenPage() {
               <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">📸 Hình ảnh minh chứng giao hàng</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {selectedTracking.HinhAnhGiaoHang.map((url, i) => (
-                  <div key={i} onClick={() => window.open(getMediaUrl(url), '_blank')} className="rounded-xl overflow-hidden h-36 bg-slate-50 hover:scale-105 transition-transform cursor-pointer">
-                    <img src={getMediaUrl(url)} alt={`Evidence ${i}`} className="w-full h-full object-cover" />
+                  <div key={i} onClick={() => window.open(resolveImageUrl(url), '_blank')} className="rounded-xl overflow-hidden h-36 bg-slate-50 hover:scale-105 transition-transform cursor-pointer">
+                    <img src={resolveImageUrl(url)} alt={`Evidence ${i}`} className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>
