@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/authStore";
+import { toast } from "@/lib/utils/notification";
 import { paintColors } from "@/lib/data/colors-data";
 
 // ─── IPFS Gateway công khai ──────────────────────────────
@@ -376,7 +377,7 @@ function NewRDRequestPage() {
       localStorage.setItem("sampleRequests", JSON.stringify(requests));
     }
 
-    alert("✅ Yêu cầu R&D đã được tạo thành công! (Version 1.0)");
+    toast.success("✅ Yêu cầu R&D đã được tạo thành công! (Version 1.0)");
     router.push(isCustomer ? "/tracking?tab=samples" : "/rd-tracking");
   };
 

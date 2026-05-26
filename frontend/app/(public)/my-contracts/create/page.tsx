@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import { toast } from '@/lib/utils/notification';
 import { paintColors } from '@/lib/data/colors-data';
 
 interface ContractDetail {
@@ -202,7 +203,7 @@ function CustomerCreateContractPage() {
       const res = await api.post('/contracts', data);
       if (res.data.success) {
         setSubmitSuccess(true);
-        alert('🎉 Hợp đồng nguyên tắc của bạn đã được gửi thành công đến Admin VTSC để đối soát và điền thông tin Bên bán A!');
+        toast.success('🎉 Hợp đồng nguyên tắc của bạn đã được gửi thành công đến Admin VTSC để đối soát và điền thông tin Bên bán A!');
         setTimeout(() => {
           router.push('/my-contracts');
         }, 1500);

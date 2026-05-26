@@ -1,21 +1,11 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import {
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Lock,
-  Unlock,
-  Users,
-  UserCheck,
-  ShieldCheck,
-  UserX,
-} from "lucide-react";
-import api from "@/lib/utils/axiosAuth";
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Edit, Trash2, Lock, Unlock, Users, UserCheck, ShieldCheck, UserX } from 'lucide-react';
+import api from '@/lib/utils/axiosAuth';
+import { toast, confirm } from '@/lib/utils/notification';
 
-const API_URL = "/tai-khoan";
+const API_URL = '/tai-khoan';
 
 interface TaiKhoan {
   _id: string;
@@ -30,21 +20,20 @@ interface TaiKhoan {
 
 export default function QuanLyTaiKhoanPage() {
   const [taiKhoans, setTaiKhoans] = useState<TaiKhoan[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterRole, setFilterRole] = useState("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRole, setFilterRole] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<TaiKhoan>>({
-    TenDangNhap: "",
-    Email: "",
-    VaiTro: "NhanVien",
+    TenDangNhap: '',
+    Email: '',
+    VaiTro: 'NhanVien',
     TrangThai: true,
-    HoTen: "",
+    HoTen: ''
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isEmployeeDetailsOpen, setIsEmployeeDetailsOpen] = useState(false);
   const [employeeDetails, setEmployeeDetails] = useState<any>(null);
-  const [isEmployeeDetailsLoading, setIsEmployeeDetailsLoading] =
-    useState(false);
+  const [isEmployeeDetailsLoading, setIsEmployeeDetailsLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -58,8 +47,8 @@ export default function QuanLyTaiKhoanPage() {
         setTaiKhoans(res.data.data);
       }
     } catch (error) {
-      console.error("Lỗi tải dữ liệu tài khoản:", error);
-      alert("Không thể tải danh sách tài khoản");
+      console.error('Lỗi tải dữ liệu tài khoản:', error);
+      toast.error('Không thể tải danh sách tài khoản');
     } finally {
       setIsLoading(false);
     }
@@ -67,20 +56,18 @@ export default function QuanLyTaiKhoanPage() {
 
   const STATS = {
     total: taiKhoans.length,
-    active: taiKhoans.filter((t) => t.TrangThai).length,
-    admin: taiKhoans.filter((t) => t.VaiTro === "Admin").length,
-    locked: taiKhoans.filter((t) => !t.TrangThai).length,
+    active: taiKhoans.filter(t => t.TrangThai).length,
+    admin: taiKhoans.filter(t => t.VaiTro === 'Admin').length,
+    locked: taiKhoans.filter(t => !t.TrangThai).length,
   };
 
-  const filteredData = taiKhoans.filter((tk) => {
-    const matchSearch =
-      tk.TenDangNhap.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredData = taiKhoans.filter(tk => {
+    const matchSearch = tk.TenDangNhap.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (tk.Email && tk.Email.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchRole =
-      filterRole === "all" ||
-      (filterRole === "admin" && tk.VaiTro === "Admin") ||
-      (filterRole === "nhanvien" && tk.VaiTro === "NhanVien") ||
-      (filterRole === "khachhang" && tk.VaiTro.includes("KhachHang"));
+    const matchRole = filterRole === 'all' ||
+      (filterRole === 'admin' && tk.VaiTro === 'Admin') ||
+      (filterRole === 'nhanvien' && tk.VaiTro === 'NhanVien') ||
+      (filterRole === 'khachhang' && tk.VaiTro.includes('KhachHang'));
     return matchSearch && matchRole;
   });
 
@@ -89,34 +76,26 @@ export default function QuanLyTaiKhoanPage() {
       await api.put(`${API_URL}/${id}`, { TrangThai: !currentStatus });
       fetchData(); // reload data
     } catch (error) {
-      console.error("Lỗi cập nhật trạng thái:", error);
-      alert("Không thể cập nhật trạng thái");
+      console.error('Lỗi cập nhật trạng thái:', error);
+      toast.error('Không thể cập nhật trạng thái');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Bạn có chắc chắn muốn xóa tài khoản này?")) {
+    if (await confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
       try {
         await api.delete(`${API_URL}/${id}`);
         fetchData();
       } catch (error) {
-        console.error("Lỗi xóa:", error);
-        alert("Không thể xóa tài khoản");
+        console.error('Lỗi xóa:', error);
+        toast.error('Không thể xóa tài khoản');
       }
     }
   };
 
   const openForm = (tk?: TaiKhoan) => {
-    if (tk) setFormData({ ...tk, MatKhau: "", HoTen: "" });
-    else
-      setFormData({
-        TenDangNhap: "",
-        Email: "",
-        MatKhau: "",
-        VaiTro: "NhanVien",
-        TrangThai: true,
-        HoTen: "",
-      });
+    if (tk) setFormData({ ...tk, MatKhau: '', HoTen: '' });
+    else setFormData({ TenDangNhap: '', Email: '', MatKhau: '', VaiTro: 'NhanVien', TrangThai: true, HoTen: '' });
     setIsModalOpen(true);
   };
 
@@ -130,8 +109,8 @@ export default function QuanLyTaiKhoanPage() {
       setIsModalOpen(false);
       fetchData();
     } catch (error: any) {
-      console.error("Lỗi lưu tài khoản:", error);
-      alert(error.response?.data?.error || "Lỗi khi lưu tài khoản");
+      console.error('Lỗi lưu tài khoản:', error);
+      toast.error(error.response?.data?.error || 'Lỗi khi lưu tài khoản');
     }
   };
 
@@ -145,7 +124,7 @@ export default function QuanLyTaiKhoanPage() {
         setEmployeeDetails(res.data.data);
       }
     } catch (error: any) {
-      console.error("Lỗi lấy thông tin nhân viên:", error);
+      console.error('Lỗi lấy thông tin nhân viên:', error);
       if (error.response?.status === 404) {
         setEmployeeDetails({ notFound: true });
       }
@@ -154,17 +133,15 @@ export default function QuanLyTaiKhoanPage() {
     }
   };
 
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            Quản lý tài khoản
-          </h1>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Quản lý Tài Khoản</h1>
           <p className="text-sm text-slate-400 font-medium mt-1">
-            Cấp mới, phân quyền và giám sát trạng thái tài khoản của nhân sự,
-            khách hàng và đối tác.
+            Cấp mới, phân quyền và giám sát trạng thái tài khoản của nhân sự, khách hàng và đối tác.
           </p>
         </div>
       </div>
@@ -175,23 +152,18 @@ export default function QuanLyTaiKhoanPage() {
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
           <div
             className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"
-            style={{ backgroundColor: "#2563eb12" }}
+            style={{ backgroundColor: '#2563eb12' }}
           ></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Tổng Tài Khoản
-              </p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tổng Tài Khoản</p>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                {STATS.total}{" "}
-                <span className="text-xs font-bold text-slate-400 ml-1">
-                  user
-                </span>
+                {STATS.total} <span className="text-xs font-bold text-slate-400 ml-1">user</span>
               </h3>
             </div>
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm"
-              style={{ backgroundColor: "#2563eb15", color: "#2563eb" }}
+              style={{ backgroundColor: '#2563eb15', color: '#2563eb' }}
             >
               <Users size={22} />
             </div>
@@ -202,23 +174,18 @@ export default function QuanLyTaiKhoanPage() {
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
           <div
             className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"
-            style={{ backgroundColor: "#05966912" }}
+            style={{ backgroundColor: '#05966912' }}
           ></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Đang hoạt động
-              </p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Đang hoạt động</p>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                {STATS.active}{" "}
-                <span className="text-xs font-bold text-slate-400 ml-1">
-                  user
-                </span>
+                {STATS.active} <span className="text-xs font-bold text-slate-400 ml-1">user</span>
               </h3>
             </div>
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm"
-              style={{ backgroundColor: "#05966915", color: "#059669" }}
+              style={{ backgroundColor: '#05966915', color: '#059669' }}
             >
               <UserCheck size={22} />
             </div>
@@ -229,23 +196,18 @@ export default function QuanLyTaiKhoanPage() {
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
           <div
             className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"
-            style={{ backgroundColor: "#7c3aed12" }}
+            style={{ backgroundColor: '#7c3aed12' }}
           ></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Quản trị Admin
-              </p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Quản trị Admin</p>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                {STATS.admin}{" "}
-                <span className="text-xs font-bold text-slate-400 ml-1">
-                  user
-                </span>
+                {STATS.admin} <span className="text-xs font-bold text-slate-400 ml-1">user</span>
               </h3>
             </div>
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm"
-              style={{ backgroundColor: "#7c3aed15", color: "#7c3aed" }}
+              style={{ backgroundColor: '#7c3aed15', color: '#7c3aed' }}
             >
               <ShieldCheck size={22} />
             </div>
@@ -256,23 +218,18 @@ export default function QuanLyTaiKhoanPage() {
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
           <div
             className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"
-            style={{ backgroundColor: "#e11d4812" }}
+            style={{ backgroundColor: '#e11d4812' }}
           ></div>
           <div className="relative z-10 flex items-start justify-between">
             <div>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Bị khóa
-              </p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Bị khóa</p>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                {STATS.locked}{" "}
-                <span className="text-xs font-bold text-slate-400 ml-1">
-                  user
-                </span>
+                {STATS.locked} <span className="text-xs font-bold text-slate-400 ml-1">user</span>
               </h3>
             </div>
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm"
-              style={{ backgroundColor: "#e11d4815", color: "#e11d48" }}
+              style={{ backgroundColor: '#e11d4815', color: '#e11d48' }}
             >
               <UserX size={22} />
             </div>
@@ -286,22 +243,19 @@ export default function QuanLyTaiKhoanPage() {
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
             {/* Search Input */}
             <div className="relative w-full md:w-80 group">
-              <Search
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors"
-              />
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
               <input
                 type="text"
                 className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                 placeholder="Tìm user, email..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
 
             {/* Filter Tabs */}
             <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl overflow-x-auto max-w-full">
-              {["all", "admin", "nhanvien", "khachhang"].map((f) => (
+              {['all', 'admin', 'nhanvien', 'khachhang'].map(f => (
                 <button
                   key={f}
                   className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer border-none ${
@@ -311,13 +265,7 @@ export default function QuanLyTaiKhoanPage() {
                   }`}
                   onClick={() => setFilterRole(f)}
                 >
-                  {f === "all"
-                    ? "Tất cả"
-                    : f === "admin"
-                      ? "Admin"
-                      : f === "nhanvien"
-                        ? "Nhân viên"
-                        : "Khách hàng"}
+                  {f === 'all' ? 'Tất cả' : f === 'admin' ? 'Admin' : f === 'nhanvien' ? 'Nhân viên' : 'Khách hàng'}
                 </button>
               ))}
             </div>
@@ -328,7 +276,7 @@ export default function QuanLyTaiKhoanPage() {
               onClick={() => openForm()}
               className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer border-none"
             >
-              <Plus size={18} /> Cấp mới tài khoản
+              <Plus size={18} /> Cấp mới Tài khoản
             </button>
           </div>
         </div>
@@ -340,51 +288,30 @@ export default function QuanLyTaiKhoanPage() {
           <table className="w-full border-collapse text-sm min-w-[900px]">
             <thead>
               <tr className="border-b border-slate-50">
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                  Tên Đăng Nhập
-                </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                  Email
-                </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                  Vai trò
-                </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                  Trạng thái
-                </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                  Ngày Tạo
-                </th>
-                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest w-40 whitespace-nowrap">
-                  Thao tác
-                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Tên Đăng Nhập</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Email</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Vai trò</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Trạng thái</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Ngày Tạo</th>
+                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest w-40 whitespace-nowrap">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {isLoading ? (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="text-center py-20 text-blue-600 font-bold"
-                  >
+                  <td colSpan={6} className="text-center py-20 text-blue-600 font-bold">
                     Đang tải dữ liệu...
                   </td>
                 </tr>
               ) : filteredData.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="text-center py-20 text-slate-400 font-medium italic"
-                  >
+                  <td colSpan={6} className="text-center py-20 text-slate-400 font-medium italic">
                     Không tìm thấy tài khoản nào.
                   </td>
                 </tr>
               ) : (
-                filteredData.map((tk) => (
-                  <tr
-                    key={tk._id}
-                    className="hover:bg-slate-50/50 transition-colors group"
-                  >
+                filteredData.map(tk => (
+                  <tr key={tk._id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <span
                         className="font-bold text-blue-600 hover:text-blue-700 cursor-pointer underline text-[14px]"
@@ -395,26 +322,20 @@ export default function QuanLyTaiKhoanPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-800 text-[14px]">
-                        {tk.Email}
-                      </div>
+                      <div className="font-semibold text-slate-800 text-[14px]">{tk.Email}</div>
                     </td>
                     <td className="px-6 py-4 text-slate-600 font-medium text-[14px]">
-                      {tk.VaiTro === "KhachHangB2B"
-                        ? "Doanh nghiệp B2B"
-                        : tk.VaiTro === "KhachHangB2C"
-                          ? "Cá nhân B2C"
-                          : tk.VaiTro}
+                      {tk.VaiTro === 'KhachHangB2B' ? 'Doanh nghiệp B2B' : tk.VaiTro === 'KhachHangB2C' ? 'Cá nhân B2C' : tk.VaiTro}
                     </td>
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black border uppercase tracking-wider ${
                           tk.TrangThai
-                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                            : "bg-rose-50 text-rose-600 border-rose-100"
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                            : 'bg-rose-50 text-rose-600 border-rose-100'
                         }`}
                       >
-                        {tk.TrangThai ? "Hoạt động" : "Đang khóa"}
+                        {tk.TrangThai ? 'Hoạt động' : 'Đang khóa'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-slate-400 text-[13px] font-semibold">
@@ -425,17 +346,9 @@ export default function QuanLyTaiKhoanPage() {
                         <button
                           onClick={() => handleToggleLock(tk._id, tk.TrangThai)}
                           className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-50 text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors cursor-pointer border-none"
-                          title={
-                            tk.TrangThai
-                              ? "Khóa tài khoản"
-                              : "Mở khóa tài khoản"
-                          }
+                          title={tk.TrangThai ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                         >
-                          {tk.TrangThai ? (
-                            <Lock size={15} />
-                          ) : (
-                            <Unlock size={15} />
-                          )}
+                          {tk.TrangThai ? <Lock size={15} /> : <Unlock size={15} />}
                         </button>
                         <button
                           onClick={() => openForm(tk)}
@@ -468,12 +381,8 @@ export default function QuanLyTaiKhoanPage() {
             {/* Header */}
             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
               <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
-                {formData._id ? (
-                  <Edit size={20} className="text-blue-600" />
-                ) : (
-                  <Plus size={20} className="text-blue-600" />
-                )}
-                {formData._id ? "Chỉnh sửa tài khoản" : "Cấp mới tài khoản"}
+                {formData._id ? <Edit size={20} className="text-blue-600" /> : <Plus size={20} className="text-blue-600" />}
+                {formData._id ? 'Chỉnh Sửa Tài Khoản' : 'Cấp Mới Tài Khoản'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -486,78 +395,57 @@ export default function QuanLyTaiKhoanPage() {
             {/* Body */}
             <div className="p-8 overflow-y-auto flex flex-col gap-5 custom-scrollbar">
               <div>
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                  Tên Đăng Nhập
-                </label>
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">Tên Đăng Nhập</label>
                 <input
                   type="text"
                   className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
-                  value={formData.TenDangNhap || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, TenDangNhap: e.target.value })
-                  }
+                  value={formData.TenDangNhap || ''}
+                  onChange={(e) => setFormData({ ...formData, TenDangNhap: e.target.value })}
                 />
               </div>
 
               {!formData._id && (
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                    Họ và tên đầy đủ / Tên doanh nghiệp
-                  </label>
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">Họ và tên đầy đủ / Tên doanh nghiệp</label>
                   <input
                     type="text"
                     className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                     placeholder="Nhập họ tên đầy đủ hoặc tên doanh nghiệp"
-                    value={formData.HoTen || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, HoTen: e.target.value })
-                    }
+                    value={formData.HoTen || ''}
+                    onChange={(e) => setFormData({ ...formData, HoTen: e.target.value })}
                   />
                 </div>
               )}
 
               <div>
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                  Email
-                </label>
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">Email</label>
                 <input
                   type="email"
                   className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
-                  value={formData.Email || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, Email: e.target.value })
-                  }
+                  value={formData.Email || ''}
+                  onChange={(e) => setFormData({ ...formData, Email: e.target.value })}
                 />
               </div>
 
               <div>
                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                  Mật khẩu{" "}
-                  {formData._id
-                    ? "(Bỏ trống nếu không đổi)"
-                    : "(Mặc định: VTSC@123)"}
+                  Mật khẩu {formData._id ? '(Bỏ trống nếu không đổi)' : '(Mặc định: VTSC@123)'}
                 </label>
                 <input
                   type="password"
                   placeholder={formData._id ? "Nhập mật khẩu mới" : "VTSC@123"}
                   className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
-                  value={formData.MatKhau || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, MatKhau: e.target.value })
-                  }
+                  value={formData.MatKhau || ''}
+                  onChange={(e) => setFormData({ ...formData, MatKhau: e.target.value })}
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                  Vai trò
-                </label>
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">Vai trò</label>
                 <select
                   className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
-                  value={formData.VaiTro || "NhanVien"}
-                  onChange={(e) =>
-                    setFormData({ ...formData, VaiTro: e.target.value })
-                  }
+                  value={formData.VaiTro || 'NhanVien'}
+                  onChange={(e) => setFormData({ ...formData, VaiTro: e.target.value })}
                 >
                   <option value="Admin">Admin</option>
                   <option value="NhanVien">Nhân viên</option>
@@ -594,8 +482,7 @@ export default function QuanLyTaiKhoanPage() {
             {/* Header */}
             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
               <h3 className="text-lg font-black text-slate-900 flex items-center gap-3 uppercase tracking-wider">
-                <ShieldCheck size={20} className="text-blue-600" /> Hồ Sơ Nhân
-                Sự Tài Khoản
+                <ShieldCheck size={20} className="text-blue-600" /> Hồ Sơ Nhân Sự Tài Khoản
               </h3>
               <button
                 onClick={() => setIsEmployeeDetailsOpen(false)}
@@ -608,9 +495,7 @@ export default function QuanLyTaiKhoanPage() {
             {/* Body */}
             <div className="p-8 overflow-y-auto custom-scrollbar">
               {isEmployeeDetailsLoading ? (
-                <div className="text-center py-10 text-blue-600 font-bold">
-                  Đang tải thông tin...
-                </div>
+                <div className="text-center py-10 text-blue-600 font-bold">Đang tải thông tin...</div>
               ) : employeeDetails?.notFound ? (
                 <div className="text-center py-10 text-rose-500 font-bold">
                   Tài khoản này chưa được liên kết với hồ sơ nhân sự nào.
@@ -620,68 +505,36 @@ export default function QuanLyTaiKhoanPage() {
                   <table className="w-full text-sm">
                     <tbody className="divide-y divide-slate-100">
                       <tr>
-                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider w-1/3">
-                          Họ và tên:
-                        </td>
-                        <td className="py-3.5 font-bold text-slate-800">
-                          {employeeDetails.HoTen}
-                        </td>
+                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider w-1/3">Họ và tên:</td>
+                        <td className="py-3.5 font-bold text-slate-800">{employeeDetails.HoTen}</td>
                       </tr>
                       <tr>
-                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">
-                          Giới tính:
-                        </td>
-                        <td className="py-3.5 font-semibold text-slate-700">
-                          {employeeDetails.GioiTinh || "Chưa cập nhật"}
-                        </td>
+                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">Giới tính:</td>
+                        <td className="py-3.5 font-semibold text-slate-700">{employeeDetails.GioiTinh || 'Chưa cập nhật'}</td>
                       </tr>
                       <tr>
-                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">
-                          Số điện thoại:
-                        </td>
-                        <td className="py-3.5 font-semibold text-slate-700">
-                          {employeeDetails.SDT || "Chưa cập nhật"}
-                        </td>
+                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">Số điện thoại:</td>
+                        <td className="py-3.5 font-semibold text-slate-700">{employeeDetails.SDT || 'Chưa cập nhật'}</td>
                       </tr>
                       <tr>
-                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">
-                          Email liên hệ:
-                        </td>
-                        <td className="py-3.5 font-semibold text-slate-700">
-                          {employeeDetails.Email || "Chưa cập nhật"}
-                        </td>
+                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">Email liên hệ:</td>
+                        <td className="py-3.5 font-semibold text-slate-700">{employeeDetails.Email || 'Chưa cập nhật'}</td>
                       </tr>
                       <tr>
-                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">
-                          Địa chỉ thường trú:
-                        </td>
-                        <td className="py-3.5 font-semibold text-slate-700">
-                          {employeeDetails.DiaChi || "Chưa cập nhật"}
-                        </td>
+                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">Địa chỉ thường trú:</td>
+                        <td className="py-3.5 font-semibold text-slate-700">{employeeDetails.DiaChi || 'Chưa cập nhật'}</td>
                       </tr>
                       <tr>
-                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">
-                          Phòng ban - Bộ phận:
-                        </td>
-                        <td className="py-3.5 font-bold text-blue-600">
-                          {employeeDetails.BoPhan}
-                        </td>
+                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">Phòng ban - Bộ phận:</td>
+                        <td className="py-3.5 font-bold text-blue-600">{employeeDetails.BoPhan}</td>
                       </tr>
                       <tr>
-                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">
-                          Chức vụ:
-                        </td>
-                        <td className="py-3.5 font-bold text-slate-800">
-                          {employeeDetails.ChucVu}
-                        </td>
+                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider">Chức vụ:</td>
+                        <td className="py-3.5 font-bold text-slate-800">{employeeDetails.ChucVu}</td>
                       </tr>
                       <tr>
-                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider vertical-align-top">
-                          Mô tả công việc:
-                        </td>
-                        <td className="py-3.5 text-slate-600 font-medium leading-relaxed">
-                          {employeeDetails.MoTaCongViec || "Chưa cập nhật"}
-                        </td>
+                        <td className="py-3.5 font-bold text-slate-400 text-[11px] uppercase tracking-wider vertical-align-top">Mô tả công việc:</td>
+                        <td className="py-3.5 text-slate-600 font-medium leading-relaxed">{employeeDetails.MoTaCongViec || 'Chưa cập nhật'}</td>
                       </tr>
                     </tbody>
                   </table>

@@ -14,6 +14,7 @@ import * as XLSX from 'xlsx';
 import { useAuthStore } from '@/lib/store/authStore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast, confirm } from '@/lib/utils/notification';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import {
     Document, Packer, Paragraph, TextRun, AlignmentType,
@@ -572,7 +573,7 @@ export default function OrderManagementPage() {
             saveAs(blob, fileName);
         } catch (error) {
             console.error("Lỗi tạo file Word:", error);
-            alert("Có lỗi xảy ra khi tạo phiếu cọc!");
+            toast.error("Có lỗi xảy ra khi tạo phiếu cọc!");
         }
     };
 
@@ -879,7 +880,7 @@ export default function OrderManagementPage() {
             saveAs(blob, fileName);
         } catch (error) {
             console.error("Lỗi tạo hóa đơn GTGT:", error);
-            alert("Có lỗi xảy ra khi tạo hóa đơn GTGT!");
+            toast.error("Có lỗi xảy ra khi tạo hóa đơn GTGT!");
         }
     };
 
@@ -1009,9 +1010,9 @@ export default function OrderManagementPage() {
         const sp = allProducts.find(p => p._id === selectedProductId);
         if (!sp) return;
         const stockAvailable = Math.max(sp.TongTonKho || 0, sp.TonKho || 0);
-        if (stockAvailable <= 0) { alert('Sản phẩm hết hàng'); return; }
+        if (stockAvailable <= 0) { toast.warning('Sản phẩm hết hàng'); return; }
 
-        if (!selectedColorCode) return alert('Vui lòng chọn mã màu sơn');
+        if (!selectedColorCode) return toast.warning('Vui lòng chọn mã màu sơn');
 
         const color = paintColors.find(c => c.code === selectedColorCode);
         const chosenMaMau = color?.code || selectedColorCode;
@@ -1020,7 +1021,7 @@ export default function OrderManagementPage() {
 
         const uniqueKey = `${sp._id}_${chosenMaMau}`;
         if (orderItems.find(i => `${i.sanPhamId}_${i.maMau}` === uniqueKey)) {
-            alert('Sản phẩm với mã màu này đã có trong danh sách');
+            toast.warning('Sản phẩm với mã màu này đã có trong danh sách');
             return;
         }
 
@@ -1051,7 +1052,7 @@ export default function OrderManagementPage() {
     const handleItemQtyChange = (idx: number, qty: number) => {
         if (qty < 1) return;
         const item = orderItems[idx];
-        if (qty > item.tonKho) { alert(`Tối đa ${item.tonKho} thùng`); return; }
+        if (qty > item.tonKho) { toast.warning(`Tối đa ${item.tonKho} thùng`); return; }
         const updated = [...orderItems];
         updated[idx] = { ...item, soLuong: qty };
         setOrderItems(updated);
@@ -1088,10 +1089,10 @@ export default function OrderManagementPage() {
     }, [selectedPromotionId, orderSubtotal, promotions]);
 
     const handleCreateOrder = async () => {
-        if (!selectedCustomerId) return alert('Vui lòng chọn khách hàng');
-        if (orderItems.length === 0) return alert('Vui lòng thêm ít nhất 1 sản phẩm');
-        if (!diaChiGiaoHang) return alert('Vui lòng nhập địa chỉ giao hàng');
-        if (!sdtNguoiNhan) return alert('Vui lòng nhập số điện thoại người nhận');
+        if (!selectedCustomerId) return toast.warning('Vui lòng chọn khách hàng');
+        if (orderItems.length === 0) return toast.warning('Vui lòng thêm ít nhất 1 sản phẩm');
+        if (!diaChiGiaoHang) return toast.warning('Vui lòng nhập địa chỉ giao hàng');
+        if (!sdtNguoiNhan) return toast.warning('Vui lòng nhập số điện thoại người nhận');
 
         setIsSubmittingOrder(true);
         try {
@@ -1130,12 +1131,12 @@ export default function OrderManagementPage() {
             });
 
             if (res.data.success) {
-                alert(`Tạo đơn hàng thành công! Mã đơn: ${maDH}`);
+                toast.success(`Tạo đơn hàng thành công! Mã đơn: ${maDH}`);
                 setIsCreateModalOpen(false);
                 fetchOrders();
             }
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Lỗi tạo đơn hàng');
+            toast.error(error.response?.data?.message || 'Lỗi tạo đơn hàng');
         } finally {
             setIsSubmittingOrder(false);
         }
@@ -1149,7 +1150,7 @@ export default function OrderManagementPage() {
             return;
         }
 
-        if (!confirm(`Bạn có chắc chắn muốn chuyển đơn hàng sang trạng thái ${status}?`)) return;
+        if (!await confirm(`Bạn có chắc chắn muốn chuyển đơn hàng sang trạng thái ${status}?`)) return;
 
         try {
             const payload: any = { status };
@@ -1161,7 +1162,7 @@ export default function OrderManagementPage() {
 
             const res = await api.patch(`${API_DON_HANG}/${id}/status`, payload);
             if (res.data.success) {
-                alert('Cập nhật trạng thái thành công!');
+                toast.success('Cập nhật trạng thái thành công!');
                 fetchOrders();
                 setIsDriverModalOpen(false);
                 setSelectedDriverId('');
@@ -1172,7 +1173,7 @@ export default function OrderManagementPage() {
             }
         } catch (error: any) {
             console.error('Update status error:', error);
-            alert(error.response?.data?.message || 'Lỗi cập nhật trạng thái');
+            toast.error(error.response?.data?.message || 'Lỗi cập nhật trạng thái');
         }
     };
 
@@ -1181,22 +1182,22 @@ export default function OrderManagementPage() {
         try {
             const res = await api.patch(`${API_DON_HANG}/${selectedOrder._id}/deposit`, { amount: depositAmount });
             if (res.data.success) {
-                alert('Cập nhật tiền cọc thành công!');
+                toast.success('Cập nhật tiền cọc thành công!');
                 setIsPaymentModalOpen(false);
                 fetchOrders();
                 // Update local selectedOrder to reflect changes if modal is open
                 setSelectedOrder({ ...selectedOrder, DaCoc: depositAmount });
             }
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Lỗi cập nhật tiền cọc');
+            toast.error(error.response?.data?.message || 'Lỗi cập nhật tiền cọc');
         }
     };
 
     const handleDeleteOrder = async (id: string) => {
-        if (!confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
+        if (!await confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
         try {
             await api.delete(`${API_DON_HANG}/${id}`);
-            alert('Đã xóa đơn hàng');
+            toast.success('Đã xóa đơn hàng');
             fetchOrders();
         } catch (error) {
             console.error('Error deleting order:', error);
@@ -2144,7 +2145,7 @@ export default function OrderManagementPage() {
                                             <button
                                                 onClick={() => {
                                                     if ((selectedOrder.DaCoc || 0) <= 0) {
-                                                        alert('Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.');
+                                                        toast.warning('Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.');
                                                         return;
                                                     }
                                                     handleUpdateStatus(selectedOrder._id, 'DANG_XU_LY');

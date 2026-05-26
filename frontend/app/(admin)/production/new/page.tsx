@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/lib/utils/notification';
 import Link from 'next/link';
 
 export default function NewProductionOrder() {
@@ -78,11 +79,11 @@ export default function NewProductionOrder() {
     try {
       const res = await api.post('/production', formData);
       if (res.data.success) {
-        alert('✅ Khởi tạo lệnh sản xuất thành công!');
+        toast.success('✅ Khởi tạo lệnh sản xuất thành công!');
         router.push('/production');
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi khi tạo lệnh sản xuất');
+      toast.error(err.response?.data?.message || 'Lỗi khi tạo lệnh sản xuất');
     }
   };
 

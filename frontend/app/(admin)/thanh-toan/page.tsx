@@ -6,6 +6,7 @@ import {
   CheckCircle2, XCircle, Clock, ArrowRight, User, Package
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
+import { toast, confirm, prompt } from '@/lib/utils/notification';
 
 const API_THANH_TOAN = '/thanh-toan/all';
 const API_ORDER = '/don-hang';
@@ -57,24 +58,27 @@ export default function ThanhToanPage() {
     if (record.type === 'ORDER') {
       const newStatus = record.status === 'DA_THANH_TOAN' ? 'CHUA_THANH_TOAN' : 'DA_THANH_TOAN';
       const statusText = newStatus === 'DA_THANH_TOAN' ? 'ĐÃ THANH TOÁN' : 'CHƯA THANH TOÁN';
-      if (!confirm(`Xác nhận chuyển đơn hàng #${record.code} sang: ${statusText}?`)) return;
+      if (!await confirm(`Xác nhận chuyển đơn hàng #${record.code} sang: ${statusText}?`)) return;
       try {
         await api.patch(`${API_ORDER}/${record._id}/payment`, { paymentStatus: newStatus });
         fetchRecords();
       } catch (error: any) {
-        alert(error.response?.data?.message || 'Lỗi cập nhật thanh toán');
+        toast.error(error.response?.data?.message || 'Lỗi cập nhật thanh toán');
       }
     } else {
-      const amount = prompt(`Nhập số tiền đã thanh toán cho hợp đồng ${record.code} (Tổng: ${record.totalAmount.toLocaleString()} đ):`, record.paidAmount.toString());
+      const amount = await prompt(`Nhập số tiền đã thanh toán cho hợp đồng ${record.code} (Tổng: ${record.totalAmount.toLocaleString()} đ):`, record.paidAmount.toString());
       if (amount === null) return;
       const cleanAmount = amount.replace(/[,.]/g, '');
       const val = parseInt(cleanAmount);
-      if (isNaN(val)) return alert('Số tiền không hợp lệ');
+      if (isNaN(val)) {
+        toast.error('Số tiền không hợp lệ');
+        return;
+      }
       try {
         await api.patch(`${API_CONTRACT}/${record._id}`, { paidAmount: val });
         fetchRecords();
       } catch (error: any) {
-        alert(error.response?.data?.message || 'Lỗi cập nhật công nợ');
+        toast.error(error.response?.data?.message || 'Lỗi cập nhật công nợ');
       }
     }
   };
