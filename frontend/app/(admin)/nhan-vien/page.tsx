@@ -266,7 +266,7 @@ export default function NhanVienPage() {
             <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 ring-4 ring-blue-500/10">
               <Users size={24} />
             </div>
-            Quản lý đội ngũ nhân sự
+            Quản lý nhân viên
           </h1>
           <p className="text-slate-350 font-medium mt-2 max-w-xl">
             Hệ thống phân quyền, theo dõi chỉ số hoạt động và tối ưu hóa hiệu
