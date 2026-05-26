@@ -16,8 +16,8 @@ const getAvatarUrl = (path: any) => {
     return `https://gateway.pinata.cloud/ipfs/${resolvedPath}`;
   }
   const cleanPath = resolvedPath.startsWith("/") ? resolvedPath : `/${resolvedPath}`;
-  const origin = typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:5000` : "http://localhost:5000";
-  return `${origin}${cleanPath}`;
+  const backendUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+  return `${backendUrl}${cleanPath}`;
 };
 
 // Helper: Tự động format đoạn text dài có chứa gạch đầu dòng, dấu sao hoặc chữ in hoa thành HTML dễ nhìn

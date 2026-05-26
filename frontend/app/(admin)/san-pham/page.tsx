@@ -454,11 +454,8 @@ export default function SanPhamPage() {
 
     if (path.startsWith("http")) return path;
     const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    const origin =
-      typeof window !== "undefined"
-        ? `${window.location.protocol}//${window.location.hostname}:5000`
-        : "http://localhost:5000";
-    return `${origin}${cleanPath}`;
+    const backendUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+    return `${backendUrl}${cleanPath}`;
   };
 
   return (

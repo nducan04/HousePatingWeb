@@ -64,9 +64,8 @@ export default function PerformanceDashboard() {
         if (resolvedPath.startsWith("Qm") || resolvedPath.startsWith("bafy")) {
             return `https://gateway.pinata.cloud/ipfs/${resolvedPath}`;
         }
-        const cleanPath = resolvedPath.startsWith('/') ? resolvedPath : `/${resolvedPath}`;
-        const origin = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:5000` : 'http://localhost:5000';
-        return `${origin}${cleanPath}`;
+        const backendUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+        return `${backendUrl}${cleanPath}`;
     };
 
     useEffect(() => {

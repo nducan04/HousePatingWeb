@@ -7,7 +7,7 @@ import html2canvas from 'html2canvas';
 import api from '@/lib/utils/axiosAuth';
 
 const API_PATH = '/tin-tuc';
-const BACKEND_URL = 'http://localhost:5000'; // Match the pattern in other pages
+const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
 
 interface TinTuc {
   _id?: string;
