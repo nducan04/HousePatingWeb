@@ -50,6 +50,13 @@ exports.getContracts = async (req, res) => {
       status: c.TrangThai,
       vtscAddress: c.vtscAddress,
       clientAddress: c.clientAddress,
+      partyBAddress: c.partyBAddress,
+      partyBTaxCode: c.partyBTaxCode,
+      partyBBankAccount: c.partyBBankAccount,
+      partyBBankName: c.partyBBankName,
+      partyBRepresentative: c.partyBRepresentative,
+      partyBPosition: c.partyBPosition,
+      articles: c.articles,
       slaDeadline: c.slaDeadline,
       terms: c.terms,
       chiTietHopDong: c.ChiTietHopDong,
@@ -111,6 +118,13 @@ exports.getContractById = async (req, res) => {
       status: contract.TrangThai,
       vtscAddress: contract.vtscAddress,
       clientAddress: contract.clientAddress,
+      partyBAddress: contract.partyBAddress,
+      partyBTaxCode: contract.partyBTaxCode,
+      partyBBankAccount: contract.partyBBankAccount,
+      partyBBankName: contract.partyBBankName,
+      partyBRepresentative: contract.partyBRepresentative,
+      partyBPosition: contract.partyBPosition,
+      articles: contract.articles,
       slaDeadline: contract.slaDeadline,
       terms: contract.terms,
       chiTietHopDong: contract.ChiTietHopDong,
@@ -132,11 +146,16 @@ exports.getContractById = async (req, res) => {
 // @access  Private (Admin, NhanVien)
 exports.createContract = async (req, res) => {
   try {
-    const { contractId, title, customer, clientAddress,
-            chiTietHopDong, slaDeadline, terms } = req.body;
+    const { 
+      contractId, title, customer, clientAddress,
+      chiTietHopDong, slaDeadline, terms,
+      partyBAddress, partyBTaxCode, partyBBankAccount, partyBBankName,
+      partyBRepresentative, partyBPosition, articles
+    } = req.body;
 
-    // Validate Ethereum address format
-    if (clientAddress && !/^0x[a-fA-F0-9]{40}$/.test(clientAddress)) {
+    // Validate Ethereum address format (Optional)
+    const trimmedClientAddress = typeof clientAddress === 'string' ? clientAddress.trim() : '';
+    if (trimmedClientAddress && !/^0x[a-fA-F0-9]{40}$/.test(trimmedClientAddress)) {
       return res.status(400).json({ success: false, error: 'Địa chỉ ví MetaMask không hợp lệ (phải bắt đầu bằng 0x và có 42 ký tự)' });
     }
 
@@ -182,12 +201,19 @@ exports.createContract = async (req, res) => {
       EmployeeID: employeeId,
       TongGiaTri: value,
       vtscAddress: process.env.VTSC_WALLET || '0x0000000000000000000000000000000000000000',
-      clientAddress: clientAddress || '',
+      clientAddress: trimmedClientAddress || '',
       slaDeadline: slaDeadline ? new Date(slaDeadline) : undefined,
       terms: parsedTerms || {},
       ChiTietHopDong: details || [],
       TrangThai: 'draft',
       SmartContractAddress: process.env.CONTRACT_ADDRESS || '',
+      partyBAddress,
+      partyBTaxCode,
+      partyBBankAccount,
+      partyBBankName,
+      partyBRepresentative,
+      partyBPosition,
+      articles: articles || {}
     };
 
     const contract = await HopDong.create(contractData);
