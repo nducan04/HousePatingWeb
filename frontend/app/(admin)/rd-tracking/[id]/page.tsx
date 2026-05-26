@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import { toast } from '@/lib/utils/notification';
 import { paintColors } from '@/lib/data/colors-data';
 
 export default function RDDetailPage({ params }: { params: { id: string } }) {
@@ -161,7 +162,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         }
 
         if (outOfStockList.length > 0) {
-          alert(`❌ Hiện không còn đủ hàng trong kho vui lòng nhập thêm!\nHệ thống sẽ tự động chuyển hướng bạn sang trang Nhập Kho để lập phiếu nhập.`);
+          toast.error(`❌ Hiện không còn đủ hàng trong kho vui lòng nhập thêm!\nHệ thống sẽ tự động chuyển hướng bạn sang trang Nhập Kho để lập phiếu nhập.`);
           const prefill = outOfStockList.join(",");
           router.push(`/kho?tab=nhapxuat&openNX=true&prefillMaterials=${prefill}`);
           return;
@@ -227,7 +228,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
               setShowAddVersion(false);
               setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }] });
-              alert('✅ Đã cập nhật phiên bản test mới và trừ tồn kho!');
+              toast.success('✅ Đã cập nhật phiên bản test mới và trừ tồn kho!');
               return;
             }
           }
@@ -257,12 +258,12 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           setRequest(res.data.data);
           setShowAddVersion(false);
           setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }] });
-          alert('✅ Đã cập nhật phiên bản test mới!');
+          toast.success('✅ Đã cập nhật phiên bản test mới!');
         }
       }
     } catch (err) {
       console.error('Failed to add version:', err);
-      alert('❌ Lỗi khi thêm phiên bản mới');
+      toast.error('❌ Lỗi khi thêm phiên bản mới');
     }
   };
 
@@ -292,7 +293,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 signedAt: req.signedAt
               });
 
-              alert('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
+              toast.success('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
               return;
             }
           }
@@ -301,13 +302,13 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         const res = await api.patch(`/rd-tracking/${id}/sign-kcs`);
         if (res.data.success) {
           setIsSigned(true);
-          alert('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
+          toast.success('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
           fetchData(); // Refresh UI
         }
       }
     } catch (err: any) {
       console.error('Failed to sign KCS:', err);
-      alert(err.response?.data?.message || '❌ Lỗi khi ký duyệt KCS');
+      toast.error(err.response?.data?.message || '❌ Lỗi khi ký duyệt KCS');
     }
   };
 

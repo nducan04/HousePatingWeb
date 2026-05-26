@@ -24,6 +24,7 @@ import {
 import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
+import { toast, confirm } from "@/lib/utils/notification";
 import * as XLSX from "xlsx";
 import IPFSImage from "@/lib/components/IPFSImage";
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
@@ -273,18 +274,18 @@ export default function SanPhamPage() {
       fetchStatsData();
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.error || "Có lỗi xảy ra khi lưu!");
+      toast.error(error.response?.data?.error || "Có lỗi xảy ra khi lưu!");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc muốn xóa dòng sơn này?")) return;
+    if (!await confirm("Bạn có chắc muốn xóa dòng sơn này?")) return;
     try {
       await api.delete(`/san-pham-son/${id}`);
       fetchSanPhams();
       fetchStatsData();
     } catch (error) {
-      alert("Không thể xóa sản phẩm!");
+      toast.error("Không thể xóa sản phẩm!");
     }
   };
 
@@ -385,7 +386,7 @@ export default function SanPhamPage() {
       }
     } catch (error) {
       console.error("Lỗi upload ảnh:", error);
-      alert("Không thể upload ảnh, vui lòng thử lại.");
+      toast.error("Không thể upload ảnh, vui lòng thử lại.");
     } finally {
       setIsUploading(false);
       // Reset input để cho phép chọn lại cùng file

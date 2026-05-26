@@ -12,7 +12,7 @@ exports.checkoutFromCart = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, ghiChu } = req.body;
+        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, phuongThucThanhToan, ghiChu } = req.body;
 
         // 1. Lấy giỏ hàng
         const cart = await GioHang.findOne({ SessionId: sessionId }).populate('Items.SanPham');
@@ -90,6 +90,7 @@ exports.checkoutFromCart = async (req, res) => {
             TienThue: taxAmount,
             TongTien: totalAmount,
             TrangThai: 'CHO_XAC_NHAN',
+            PhuongThucThanhToan: phuongThucThanhToan || 'TIEN_MAT',
             DiaChiGiaoHang: diaChiGiaoHang,
             GhiChu: ghiChu
         });

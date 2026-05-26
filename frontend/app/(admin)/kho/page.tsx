@@ -25,6 +25,7 @@ import api from "@/lib/utils/axiosAuth";
 import * as XLSX from "xlsx";
 import { paintColors } from "@/lib/data/colors-data";
 import { useAuthStore } from "@/lib/store/authStore";
+import { toast, confirm, prompt } from "@/lib/utils/notification";
 
 const API_KHO = "/kho";
 
@@ -288,13 +289,13 @@ const handleSubmitKiemKho = async () => {
   try {
     const validItems = kiemKhoItems.filter((i) => i.Sanpham !== "");
     if (validItems.length === 0)
-      return alert("Vui lòng chọn sản phẩm để kiểm kê");
+      return toast.error("Vui lòng chọn sản phẩm để kiểm kê");
 
     await api.post(`${API_KHO}/kiem-kho`, {
       ChiTiet: validItems,
       MaPhieu: "PKK" + Date.now().toString().slice(-4),
     });
-    alert(
+    toast.success(
       "Kiểm kê thành công! Vui lòng vào Danh sách Phiếu để xem và chốt số lượng.",
     );
     setIsKiemKhoModal(false);
@@ -302,24 +303,24 @@ const handleSubmitKiemKho = async () => {
     setMaNVKiemKe("");
     fetchPhieuKiemKho();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi tạo phiếu kiểm kê");
+    toast.error(error.response?.data?.message || "Lỗi tạo phiếu kiểm kê");
   }
 };
 
 const hoanThanhPhiếu = async (maPhieu: string) => {
   if (
-    !confirm(
+    !await confirm(
       "Xác nhận Cân bằng Kho theo biên bản này? Thao tác này sẽ áp số lượng thực tế trực tiếp lên tồn kho hiện hành.",
     )
   )
     return;
   try {
     await api.post(`${API_KHO}/kiem-kho/${maPhieu}/hoan-thanh`);
-    alert("Đã cập nhật tồn kho thành công!");
+    toast.success("Đã cập nhật tồn kho thành công!");
     fetchTonKho();
     fetchPhieuKiemKho();
   } catch (err: any) {
-    alert(err.response?.data?.message || "Lỗi chốt phiếu");
+    toast.error(err.response?.data?.message || "Lỗi chốt phiếu");
   }
 };
 
@@ -353,26 +354,26 @@ const openEditNVL = (item: NguyenVatLieu) => {
 };
 
 const handleDeleteNVL = async (id: string) => {
-  if (!confirm("Bạn có chắc muốn xóa nguyên vật liệu này?")) return;
+  if (!await confirm("Bạn có chắc muốn xóa nguyên vật liệu này?")) return;
   try {
     await api.delete(`${API_KHO}/nguyen-vat-lieu/${id}`);
-    alert("Đã xóa nguyên vật liệu!");
+    toast.success("Đã xóa nguyên vật liệu!");
     fetchNguyenVatLieu();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi xóa NVL");
+    toast.error(error.response?.data?.message || "Lỗi xóa NVL");
   }
 };
 
 const handleSubmitNVL = async () => {
   try {
     if (!nvlForm.MaNVL || !nvlForm.TenNguyenVatLieu)
-      return alert("Vui lòng nhập mã và tên nguyên vật liệu");
+      return toast.error("Vui lòng nhập mã và tên nguyên vật liệu");
     if (editingNVLId) {
       await api.put(`${API_KHO}/nguyen-vat-lieu/${editingNVLId}`, nvlForm);
-      alert("Cập nhật nguyên vật liệu thành công!");
+      toast.success("Cập nhật nguyên vật liệu thành công!");
     } else {
       await api.post(`${API_KHO}/nguyen-vat-lieu`, nvlForm);
-      alert("Thêm nguyên vật liệu thành công!");
+      toast.success("Thêm nguyên vật liệu thành công!");
     }
     setIsNVLModal(false);
     setEditingNVLId(null);
@@ -387,7 +388,7 @@ const handleSubmitNVL = async () => {
     });
     fetchNguyenVatLieu();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi lưu NVL");
+    toast.error(error.response?.data?.message || "Lỗi lưu NVL");
   }
 };
 
@@ -422,51 +423,51 @@ const openEditNXModal = (item: any) => {
 
 const handleDeleteNX = async (id: string) => {
   if (
-    !confirm(
+    !await confirm(
       "XÁC NHẬN: Bạn có chắc chắn muốn xóa phiếu này? (Chỉ phiếu đang chờ duyệt mới được xóa)",
     )
   )
     return;
   try {
     await api.delete(`${API_KHO}/nhap-xuat/${id}`);
-    alert("Đã xóa phiếu thành công!");
+    toast.success("Đã xóa phiếu thành công!");
     fetchPhieuNhapXuat();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi xóa phiếu");
+    toast.error(error.response?.data?.message || "Lỗi xóa phiếu");
   }
 };
 
 // ★ DUYỆT PHIẾU
 const handleDuyetPhieu = async (id: string) => {
   if (
-    !confirm(
+    !await confirm(
       "Xác nhận DUYỆT phiếu này? Tồn kho sẽ được cập nhật ngay lập tức.",
     )
   )
     return;
   try {
     const res = await api.post(`${API_KHO}/nhap-xuat/${id}/duyet`);
-    alert(res.data.message || "Đã duyệt phiếu thành công!");
+    toast.success(res.data.message || "Đã duyệt phiếu thành công!");
     fetchPhieuNhapXuat();
     fetchTonKho();
     fetchNguyenVatLieu();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi duyệt phiếu");
+    toast.error(error.response?.data?.message || "Lỗi duyệt phiếu");
   }
 };
 
 // ★ TỪ CHỐI PHIẾU
 const handleTuChoiPhieu = async (id: string) => {
-  const lyDo = prompt("Nhập lý do từ chối:");
+  const lyDo = await prompt("Nhập lý do từ chối:");
   if (!lyDo) return;
   try {
     const res = await api.post(`${API_KHO}/nhap-xuat/${id}/tu-choi`, {
       lyDo,
     });
-    alert(res.data.message || "Đã từ chối phiếu!");
+    toast.success(res.data.message || "Đã từ chối phiếu!");
     fetchPhieuNhapXuat();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi từ chối phiếu");
+    toast.error(error.response?.data?.message || "Lỗi từ chối phiếu");
   }
 };
 
@@ -526,12 +527,12 @@ const handleSubmitPhieuNX = async () => {
   try {
     const validItems = nxItems.filter((i) => i.ItemId !== "");
     if (validItems.length === 0)
-      return alert("Vui lòng chọn ít nhất 1 hàng hóa");
+      return toast.error("Vui lòng chọn ít nhất 1 hàng hóa");
 
     if (nxForm.LoaiHang === "SAN_PHAM") {
       const missingColor = validItems.find((i) => !i.MaMau);
       if (missingColor) {
-        return alert(`Sản phẩm "${missingColor.TenItem}" chưa chọn mã màu.`);
+        return toast.error(`Sản phẩm "${missingColor.TenItem}" chưa chọn mã màu.`);
       }
     }
 
@@ -543,13 +544,13 @@ const handleSubmitPhieuNX = async () => {
         TongTien: tongTien,
         ChiTiet: validItems,
       });
-      alert("Đã cập nhật phiếu và điều chỉnh tồn kho!");
+      toast.success("Đã cập nhật phiếu và điều chỉnh tồn kho!");
     } else {
       await api.post(`${API_KHO}/nhap-xuat`, {
         ...nxForm,
         ChiTiet: validItems,
       });
-      alert(
+      toast.success(
         `Đã lập Phiếu ${nxForm.LoaiPhieu} thành công! Phiếu đang chờ Admin duyệt.`,
       );
     }
@@ -560,7 +561,7 @@ const handleSubmitPhieuNX = async () => {
     fetchTonKho();
     fetchNguyenVatLieu();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi lưu phiếu");
+    toast.error(error.response?.data?.message || "Lỗi lưu phiếu");
   }
 };
 
@@ -609,7 +610,7 @@ const exportToExcel = () => {
     fileName = "Lich_Su_Nhap_Xuat_Kho";
   }
 
-  if (dataToExport.length === 0) return alert("Không có dữ liệu để xuất!");
+  if (dataToExport.length === 0) return toast.warning("Không có dữ liệu để xuất!");
 
   const worksheet = XLSX.utils.json_to_sheet(dataToExport);
   const workbook = XLSX.utils.book_new();

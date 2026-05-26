@@ -5,6 +5,7 @@ import { Plus, Search, Edit, Trash2, Megaphone, FileText, Send, Users, FileCheck
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import api from '@/lib/utils/axiosAuth';
+import { toast, confirm } from '@/lib/utils/notification';
 
 const API_PATH = '/tin-tuc';
 import { resolveImageUrl, BACKEND_URL } from '@/lib/utils/imageUrl';
@@ -75,10 +76,10 @@ export default function TinTucPage() {
       });
       if (res.data.success) {
         setFormData(prev => ({ ...prev, HinhAnh: res.data.url }));
-        alert('Tải ảnh lên thành công!');
+        toast.success('Tải ảnh lên thành công!');
       }
     } catch (err) {
-      alert('Lỗi khi tải ảnh lên');
+      toast.error('Lỗi khi tải ảnh lên');
       console.error(err);
     } finally {
       setUploading(false);
@@ -111,7 +112,7 @@ export default function TinTucPage() {
         pdf.save(`VTSC_TinTuc_${item.MaTinTuc}.pdf`);
       } catch (error) {
         console.error('PDF Export Error:', error);
-        alert('Lỗi khi xuất PDF. Vui lòng thử lại.');
+        toast.error('Lỗi khi xuất PDF. Vui lòng thử lại.');
       } finally {
         setExporting(false);
       }
@@ -142,12 +143,12 @@ export default function TinTucPage() {
       setIsModalOpen(false);
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Lỗi thao tác');
+      toast.error(err.response?.data?.error || 'Lỗi thao tác');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Chắc chắn xóa bài viết này?')) return;
+    if (!await confirm('Chắc chắn xóa bài viết này?')) return;
     try {
       await api.delete(`${API_PATH}/${id}`);
       fetchData();

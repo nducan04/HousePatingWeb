@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ShieldAlert, Save, Info, CheckCircle2, Circle } from "lucide-react";
+import { toast } from "@/lib/utils/notification";
 
 interface Permission {
   id: string;
@@ -159,7 +160,7 @@ export default function PhanQuyenPage() {
   };
 
   const handleSave = () => {
-    alert("Đã lưu cấu hình phân quyền mới xuống hệ thống thành công!");
+    toast.success("Đã lưu cấu hình phân quyền mới xuống hệ thống thành công!");
     setHasChanges(false);
   };
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Lock, Unlock, Users, UserCheck, ShieldCheck, UserX } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
+import { toast, confirm } from '@/lib/utils/notification';
 
 const API_URL = '/tai-khoan';
 
@@ -47,7 +48,7 @@ export default function QuanLyTaiKhoanPage() {
       }
     } catch (error) {
       console.error('Lỗi tải dữ liệu tài khoản:', error);
-      alert('Không thể tải danh sách tài khoản');
+      toast.error('Không thể tải danh sách tài khoản');
     } finally {
       setIsLoading(false);
     }
@@ -76,18 +77,18 @@ export default function QuanLyTaiKhoanPage() {
       fetchData(); // reload data
     } catch (error) {
       console.error('Lỗi cập nhật trạng thái:', error);
-      alert('Không thể cập nhật trạng thái');
+      toast.error('Không thể cập nhật trạng thái');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
+    if (await confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
       try {
         await api.delete(`${API_URL}/${id}`);
         fetchData();
       } catch (error) {
         console.error('Lỗi xóa:', error);
-        alert('Không thể xóa tài khoản');
+        toast.error('Không thể xóa tài khoản');
       }
     }
   };
@@ -109,7 +110,7 @@ export default function QuanLyTaiKhoanPage() {
       fetchData();
     } catch (error: any) {
       console.error('Lỗi lưu tài khoản:', error);
-      alert(error.response?.data?.error || 'Lỗi khi lưu tài khoản');
+      toast.error(error.response?.data?.error || 'Lỗi khi lưu tài khoản');
     }
   };
 

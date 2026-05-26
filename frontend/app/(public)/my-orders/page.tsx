@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Package, Truck, CheckCircle2, Clock, XCircle, ChevronRight, ArrowLeft, MapPin, RefreshCw, ShoppingBag, Circle } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import { toast } from '@/lib/utils/notification';
 import CustomerOrderModal from '@/components/CustomerOrderModal';
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -31,6 +32,24 @@ export default function CustomerOrderPage() {
 
   const [trackingInfo, setTrackingInfo] = useState<any>(null);
   const [loadingTracking, setLoadingTracking] = useState(false);
+
+  const handlePayWithMomo = async (order: any) => {
+    try {
+      const res = await api.post('/thanh-toan/momo/create', {
+        type: 'ORDER',
+        id: order._id,
+        amount: order.TongTien,
+      });
+      if (res.data.success && res.data.payUrl) {
+        window.location.href = res.data.payUrl;
+      } else {
+        toast.error('Lỗi tạo link thanh toán MoMo: ' + (res.data.message || 'Không xác định'));
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi tạo thanh toán MoMo');
+    }
+  };
 
   const handleExpand = async (order: any) => {
     if (expandedId === order._id) {
@@ -84,10 +103,10 @@ export default function CustomerOrderPage() {
       if (res.data.success) {
         setOrders(prev => prev.map(o => o._id === orderId ? { ...o, ...editForm } : o));
         setEditingInfoId(null);
-        alert('Cập nhật thông tin thành công!');
+        toast.success('Cập nhật thông tin thành công!');
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật!');
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật!');
     } finally {
       setSavingInfo(false);
     }
@@ -176,9 +195,24 @@ export default function CustomerOrderPage() {
                     {new Date(order.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                 </div>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${st.color}`}>
-                  {st.icon} {st.label}
-                </span>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${st.color}`}>
+                    {st.icon} {st.label}
+                  </span>
+                  <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
+                    order.TrangThaiThanhToan === 'DA_THANH_TOAN'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : order.TrangThaiThanhToan === 'THANH_TOAN_MOT_PHAN'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                  }`}>
+                    {order.TrangThaiThanhToan === 'DA_THANH_TOAN'
+                      ? 'Đã thanh toán'
+                      : order.TrangThaiThanhToan === 'THANH_TOAN_MOT_PHAN'
+                        ? 'Thanh toán một phần'
+                        : 'Chưa thanh toán'}
+                  </span>
+                </div>
               </div>
 
               {/* Items preview */}
@@ -316,6 +350,15 @@ export default function CustomerOrderPage() {
                   <p className="font-black text-lg text-slate-900">{order.TongTien?.toLocaleString('vi-VN')}đ</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {order.TrangThai !== 'DA_HUY' && order.TrangThaiThanhToan === 'CHUA_THANH_TOAN' && (
+                    <button
+                      onClick={() => handlePayWithMomo(order)}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-black bg-[#A50064] text-white hover:bg-[#850050] transition-all cursor-pointer border-none shadow-sm shadow-[#A50064]/20"
+                    >
+                      <div className="w-4 h-4 rounded bg-white flex items-center justify-center text-[8px] font-black text-[#A50064]">M</div>
+                      Thanh toán MoMo
+                    </button>
+                  )}
                   <button
                     onClick={() => handleExpand(order)}
                     className="px-4 py-2 rounded-2xl text-xs font-bold border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"

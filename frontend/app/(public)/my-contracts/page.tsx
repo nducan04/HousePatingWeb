@@ -5,6 +5,7 @@ import { FileText, Eye, CheckCircle2, Clock, XCircle, Search, Building, ArrowLef
 import Link from 'next/link';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import { toast } from '@/lib/utils/notification';
 
 export default function MyContractsPage() {
   const { user } = useAuthStore();
@@ -26,6 +27,30 @@ export default function MyContractsPage() {
     };
     fetchContracts();
   }, []);
+
+  const handlePayContractMomo = async (contract: any) => {
+    const remaining = contract.value - (contract.daThanhToan || 0);
+    if (remaining <= 0) {
+      toast.warning('Hợp đồng đã được thanh toán đầy đủ');
+      return;
+    }
+
+    try {
+      const res = await api.post('/thanh-toan/momo/create', {
+        type: 'CONTRACT',
+        id: contract._id,
+        amount: remaining,
+      });
+      if (res.data.success && res.data.payUrl) {
+        window.location.href = res.data.payUrl;
+      } else {
+        toast.error('Lỗi tạo link thanh toán MoMo: ' + (res.data.message || 'Không xác định'));
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi tạo thanh toán MoMo');
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -103,16 +128,39 @@ export default function MyContractsPage() {
                       <td className="py-4 px-4 text-sm font-bold text-slate-600">
                         {new Date(contract.createdAt).toLocaleDateString('vi-VN')}
                       </td>
-                      <td className="py-4 px-4 text-right text-sm font-black text-blue-600">
-                        {contract.value.toLocaleString('vi-VN')} đ
+                      <td className="py-4 px-4 text-right text-sm">
+                        <div className="font-black text-blue-600">
+                          {contract.value.toLocaleString('vi-VN')} đ
+                        </div>
+                        {contract.daThanhToan > 0 && (
+                          <div className="text-[11px] font-bold text-emerald-600 mt-1">
+                            Đã trả: {contract.daThanhToan.toLocaleString('vi-VN')} đ
+                          </div>
+                        )}
+                        {(contract.value - (contract.daThanhToan || 0)) > 0 && (
+                          <div className="text-[10px] font-bold text-slate-400 mt-0.5">
+                            Còn lại: {(contract.value - (contract.daThanhToan || 0)).toLocaleString('vi-VN')} đ
+                          </div>
+                        )}
                       </td>
                       <td className="py-4 px-4 text-center flex justify-center">
                         {getStatusBadge(contract.status)}
                       </td>
                       <td className="py-4 px-4 text-center">
-                        <button className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer bg-slate-50 hover:bg-blue-50 px-3 py-2 rounded-xl" onClick={() => alert('Chi tiết hợp đồng (Tính năng đang cập nhật)')}>
-                          <Eye size={14} /> Xem
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer bg-slate-50 hover:bg-blue-50 px-3 py-2 rounded-xl" onClick={() => toast.info('Chi tiết hợp đồng (Tính năng đang cập nhật)')}>
+                            <Eye size={14} /> Xem
+                          </button>
+                          {['signed', 'delivering'].includes(contract.status) && (contract.value - (contract.daThanhToan || 0)) > 0 && (
+                            <button
+                              onClick={() => handlePayContractMomo(contract)}
+                              className="inline-flex items-center gap-1 text-xs font-black bg-[#A50064] text-white hover:bg-[#850050] transition-colors cursor-pointer px-3 py-2 rounded-xl border-none shadow-sm shadow-[#A50064]/10"
+                            >
+                              <div className="w-3.5 h-3.5 rounded bg-white flex items-center justify-center text-[7px] font-black text-[#A50064]">M</div>
+                              Thanh toán
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

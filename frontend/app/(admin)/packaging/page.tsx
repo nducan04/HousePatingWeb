@@ -6,6 +6,7 @@ import {
   ArrowRight, Plus, Printer, Eye, Truck, BarChart3, Trash2, Layers, Filter
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
+import { toast } from '@/lib/utils/notification';
 import Link from 'next/link';
 
 export default function PackagingPage() {
@@ -58,7 +59,7 @@ export default function PackagingPage() {
       }));
 
     if (finalSpecs.length === 0) {
-      alert('Vui lòng nhập ít nhất một loại quy cách đóng gói!');
+      toast.warning('Vui lòng nhập ít nhất một loại quy cách đóng gói!');
       return;
     }
 
@@ -73,7 +74,7 @@ export default function PackagingPage() {
       });
 
       if (res.data.success) {
-        alert('✅ Đóng gói thành công! Tồn kho đã được cập nhật.');
+        toast.success('✅ Đóng gói thành công! Tồn kho đã được cập nhật.');
         setShowModal(false);
         setSelectedRD(null);
         setPackagingData({
@@ -87,7 +88,7 @@ export default function PackagingPage() {
         fetchData();
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || '❌ Lỗi khi thực hiện đóng gói');
+      toast.error(err.response?.data?.message || '❌ Lỗi khi thực hiện đóng gói');
     }
   };
 

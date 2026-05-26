@@ -58,7 +58,7 @@ const donHangSchema = new mongoose.Schema({
   },
   PhuongThucThanhToan: {
     type: String,
-    enum: ['COD', 'BANK_TRANSFER', 'WEB3', 'TIEN_MAT', 'CHUYEN_KHOAN', 'GHI_NO'],
+    enum: ['COD', 'BANK_TRANSFER', 'WEB3', 'TIEN_MAT', 'CHUYEN_KHOAN', 'GHI_NO', 'MOMO'],
     default: 'TIEN_MAT'
   },
   TrangThaiThanhToan: {

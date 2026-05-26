@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/authStore';
+import { toast } from '@/lib/utils/notification';
 import api from '@/lib/utils/axiosAuth';
 import RouteMap from '@/app/(admin)/van-chuyen/RouteMap';
 
@@ -161,7 +162,7 @@ export default function TrackingPage() {
           const belongsToMe = itemCustomer.toLowerCase().includes(customerName.toLowerCase()) ||
             customerName.toLowerCase().includes(itemCustomer.toLowerCase());
           if (!belongsToMe) {
-            alert('Bạn không có quyền truy cập dữ liệu pha chế này.');
+            toast.error('Bạn không có quyền truy cập dữ liệu pha chế này.');
             setLoadingRD(false);
             return;
           }
@@ -180,11 +181,11 @@ export default function TrackingPage() {
         });
         setActiveTab('samples');
       } else {
-        alert('Không tìm thấy mã nhật ký R&D hoặc mã yêu cầu.');
+        toast.error('Không tìm thấy mã nhật ký R&D hoặc mã yêu cầu.');
       }
     } catch (e) {
       console.error('Failed to load R&D from DB:', e);
-      alert('Không tìm thấy mã nhật ký R&D. Thử: REQ-001 hoặc REQ-002');
+      toast.error('Không tìm thấy mã nhật ký R&D. Thử: REQ-001 hoặc REQ-002');
     } finally {
       setLoadingRD(false);
     }
@@ -356,7 +357,7 @@ export default function TrackingPage() {
           return;
         }
 
-        alert('Không tìm thấy mã tracking vận chuyển. Thử: VTSC-240601-001 hoặc VTSC-240610-002');
+        toast.error('Không tìm thấy mã tracking vận chuyển. Thử: VTSC-240601-001 hoặc VTSC-240610-002');
       }
     } else {
       // Searching under RD tab
@@ -373,7 +374,7 @@ export default function TrackingPage() {
       } else if (!trackingCode.toLowerCase().startsWith('req-')) {
         fetchDBRDRequest(trackingCode);
       } else {
-        alert('Không tìm thấy yêu cầu R&D. Thử: REQ-001 hoặc REQ-002');
+        toast.error('Không tìm thấy yêu cầu R&D. Thử: REQ-001 hoặc REQ-002');
       }
     }
   };

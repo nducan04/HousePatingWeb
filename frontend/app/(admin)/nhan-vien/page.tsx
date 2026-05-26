@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Users, Briefcase, Award, CheckCircle2, Download } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
+import { toast, confirm } from '@/lib/utils/notification';
 import * as XLSX from 'xlsx';
 import { resolveImageUrl } from '@/lib/utils/imageUrl';
 
@@ -196,7 +197,7 @@ export default function NhanVienPage() {
       }
     } catch (error) {
       console.error('Lỗi upload ảnh:', error);
-      alert('Không thể upload ảnh, vui lòng thử lại.');
+      toast.error('Không thể upload ảnh, vui lòng thử lại.');
     } finally {
       setIsUploading(false);
     }
@@ -213,17 +214,17 @@ export default function NhanVienPage() {
       fetchData();
     } catch (error: any) {
       console.error('Lỗi lưu nhân viên:', error);
-      alert(error.response?.data?.error || 'Lỗi lưu nhân viên');
+      toast.error(error.response?.data?.error || 'Lỗi lưu nhân viên');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Chắc chắn muốn xóa nhân viên này?')) {
+    if (await confirm('Chắc chắn muốn xóa nhân viên này?')) {
       try {
         await api.delete(`${API_URL}/${id}`);
         fetchData();
       } catch (error) {
-        alert('Lỗi xóa nhân viên');
+        toast.error('Lỗi xóa nhân viên');
       }
     }
   };

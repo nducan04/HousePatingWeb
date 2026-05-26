@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import { toast, confirm } from '@/lib/utils/notification';
 import { resolveImageUrl } from '@/lib/utils/imageUrl';
 import RouteMap from './RouteMap';
 import {
@@ -201,7 +202,7 @@ export default function VanChuyenPage() {
   const handleShareLocation = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url);
-    alert("Đã sao chép liên kết theo dõi vào bộ nhớ tạm!");
+    toast.success("Đã sao chép liên kết theo dõi vào bộ nhớ tạm!");
   };
 
   const handleCallDriver = () => {
@@ -211,13 +212,13 @@ export default function VanChuyenPage() {
     if (sdt) {
       window.location.href = `tel:${sdt}`;
     } else {
-      alert("Không tìm thấy số điện thoại tài xế");
+      toast.warning("Không tìm thấy số điện thoại tài xế");
     }
   };
 
   const handleUpdateGeneralStatus = async (newStatus: string) => {
     if (!selectedTracking) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn chuyển trạng thái đơn hàng thành "${newStatus}"?`)) return;
+    if (!await confirm(`Bạn có chắc chắn muốn chuyển trạng thái đơn hàng thành "${newStatus}"?`)) return;
 
     let icon = 'Truck';
     let statusLog = 'PROCESSING';
@@ -245,7 +246,7 @@ export default function VanChuyenPage() {
       const res = await api.patch(`/van-chuyen/${selectedTracking._id}`, updatePayload);
 
       if (res.data.success) {
-        alert('Đã cập nhật trạng thái thành công!');
+        toast.success('Đã cập nhật trạng thái thành công!');
         const updated = { ...selectedTracking, ...updatePayload } as VanChuyen;
         setSelectedTracking(updated);
         setData(prev => prev.map(t => t._id === updated._id ? updated : t));
@@ -254,14 +255,14 @@ export default function VanChuyenPage() {
       }
     } catch (error) {
       console.error('Lỗi khi cập nhật trạng thái:', error);
-      alert('Đã xảy ra lỗi khi kết nối với server. Vui lòng thử lại sau.');
+      toast.error('Đã xảy ra lỗi khi kết nối với server. Vui lòng thử lại sau.');
     }
   };
 
   const handleAddWaypoint = async () => {
     if (!newWaypoint || !selectedTracking) return;
 
-    if (!window.confirm(`Bạn có chắc chắn muốn thêm trạm trung chuyển/phân loại "${newWaypoint}" vào lộ trình?`)) return;
+    if (!await confirm(`Bạn có chắc chắn muốn thêm trạm trung chuyển/phân loại "${newWaypoint}" vào lộ trình?`)) return;
 
     const waypointName = newWaypoint;
     const newLog: TrackingLog = {
@@ -285,13 +286,13 @@ export default function VanChuyenPage() {
         const updated = { ...selectedTracking, ...updatePayload } as VanChuyen;
         setSelectedTracking(updated);
         setData(prev => prev.map(t => t._id === updated._id ? updated : t));
-        alert('Đã thêm trạm và cập nhật lịch sử lộ trình thành công!');
+        toast.success('Đã thêm trạm và cập nhật lịch sử lộ trình thành công!');
       } else {
         throw new Error('Cập nhật thất bại từ server');
       }
     } catch (error) {
       console.error('Lỗi khi thêm trạm trung chuyển:', error);
-      alert('Đã xảy ra lỗi khi kết nối với server. Vui lòng thử lại sau.');
+      toast.error('Đã xảy ra lỗi khi kết nối với server. Vui lòng thử lại sau.');
     }
   };
 

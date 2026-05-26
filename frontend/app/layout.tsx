@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import AuthProvider from '@/lib/components/AuthProvider';
+import NotificationContainer from '@/components/ui/NotificationContainer';
 
 export const metadata: Metadata = {
   title: 'VTSC PaintPro | Quản lý Sơn Tĩnh Điện',
@@ -18,6 +19,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           {children}
+          <NotificationContainer />
         </AuthProvider>
       </body>
     </html>

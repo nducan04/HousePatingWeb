@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import { toast } from '@/lib/utils/notification';
 
 interface HopDong {
   _id: string;
@@ -228,7 +229,7 @@ export default function ContractsPage() {
         // Approve existing contract
         const res = await api.patch(`/contracts/${formData._id}/status`, { status: 'signed' });
         if (res.data.success) {
-          alert('Đã XÁC NHẬN Hợp đồng thành công! Dữ liệu đã tự động tạo Đơn hàng và Vận chuyển để theo dõi.');
+          toast.success('Đã XÁC NHẬN Hợp đồng thành công! Dữ liệu đã tự động tạo Đơn hàng và Vận chuyển để theo dõi.');
           fetchData();
           setIsModalOpen(false);
         }
@@ -236,13 +237,13 @@ export default function ContractsPage() {
         // Create new contract
         const res = await api.post('/contracts', formData);
         if (res.data.success) {
-          alert('Tạo hợp đồng thành công!');
+          toast.success('Tạo hợp đồng thành công!');
           fetchData();
           setIsModalOpen(false);
         }
       }
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Lỗi khi thao tác hợp đồng');
+      toast.error(error.response?.data?.error || 'Lỗi khi thao tác hợp đồng');
     } finally {
       setIsSubmitting(false);
     }

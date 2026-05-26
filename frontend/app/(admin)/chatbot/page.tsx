@@ -9,6 +9,7 @@ import {
   UserCheck, ClipboardList, PenTool, Plus, UserPlus
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
+import { toast } from '@/lib/utils/notification';
 import SupportTicketModal from '../doi-tra/SupportTicketModal';
 import TicketProcessingDrawer from '../doi-tra/TicketProcessingDrawer';
 import type { Ticket, TicketStatus } from '../doi-tra/TicketProcessingDrawer';
@@ -352,12 +353,12 @@ export default function ChatbotPage() {
 
       const res = await api.patch(endpoint, payload);
       if (res.data.success) {
-        alert('Cập nhật trạng thái & phương án thành công!');
+        toast.success('Cập nhật trạng thái & phương án thành công!');
         fetchDashboardData();
         setIsActionOpen(false);
       }
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Lỗi cập nhật');
+      toast.error(error.response?.data?.error || 'Lỗi cập nhật');
     } finally {
       setIsUpdating(false);
     }
