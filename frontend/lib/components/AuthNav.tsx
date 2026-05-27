@@ -80,7 +80,7 @@ export default function AuthNav({ onOpenLogin }: AuthNavProps) {
 
               <div className="p-2 space-y-1">
                 <Link
-                  href="/thongtin"
+                  href="/profile"
                   onClick={() => setIsMenuOpen(false)}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-700 hover:bg-slate-50 transition-all font-bold text-[13px] no-underline cursor-pointer"
                 >
@@ -88,6 +88,28 @@ export default function AuthNav({ onOpenLogin }: AuthNavProps) {
                     <User size={16} />
                   </div>
                   Thông tin cá nhân
+                </Link>
+
+                <Link
+                  href="/my-vouchers"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-700 hover:bg-slate-50 transition-all font-bold text-[13px] no-underline cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 12H16c-.7 2-2 3-4 3s-3.3-1-4-3H2.5" /><path d="M5.5 5.1L2 12v6c0 1.1.9 2 2 2h16a2 2 0 002-2v-6l-3.5-6.9A2 2 0 0016.7 4H7.3a2 2 0 00-1.8 1.1z" /></svg>
+                  </div>
+                  Ví của tôi
+                </Link>
+
+                <Link
+                  href="/my-warranties"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-700 hover:bg-slate-50 transition-all font-bold text-[13px] no-underline cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <AlertCircle size={16} />
+                  </div>
+                  Bảo hành của tôi
                 </Link>
 
                 <button

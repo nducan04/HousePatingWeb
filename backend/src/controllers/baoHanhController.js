@@ -25,7 +25,7 @@ exports.getTickets = async (req, res) => {
 // @desc    Tạo log bảo hành mới
 exports.createTicket = async (req, res) => {
     try {
-        const { MaBaoHanh, KhachHang, SanPham, NoiDungLoi, KyThuatKCS, HanBaoHanh, NgayMua } = req.body;
+        const { MaBaoHanh, KhachHang, SanPham, NoiDungLoi, KyThuatKCS, HanBaoHanh, NgayMua, HinhAnh } = req.body;
 
         let ktvPhuTrach = KyThuatKCS;
         // Nếu không gửi KTV lên, thử tự gán nếu người đang login là KTV
@@ -43,7 +43,8 @@ exports.createTicket = async (req, res) => {
             HanBaoHanh: HanBaoHanh || new Date(Date.now() + 5 * 365 * 24 * 60 * 60 * 1000), // Mặc định 5 năm
             NgayMua,
             DonHang: req.body.DonHang,
-            HopDong: req.body.HopDong
+            HopDong: req.body.HopDong,
+            HinhAnh: HinhAnh || []
         });
 
         await newTicket.save();

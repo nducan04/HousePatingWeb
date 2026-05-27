@@ -198,8 +198,8 @@ export default function RDTrackingPage() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <span className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+          <h1 className="text-[28px] font-semibold text-slate-900 tracking-tight flex items-center gap-3">
+            <span className="w-10 h-10 bg-blue-600 rounded-md flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
               <FlaskConical size={22} />
             </span>
             Phân tích R&D
@@ -218,12 +218,12 @@ export default function RDTrackingPage() {
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                 Tổng Số Mẫu Phân Tích
               </p>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+              <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
                 {STATS.total}{" "}
                 <span className="text-sm font-bold text-slate-400">Lô</span>
               </h3>
             </div>
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
               <FlaskConical size={24} />
             </div>
           </div>
@@ -235,12 +235,12 @@ export default function RDTrackingPage() {
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                 Đang Test/Pha chế
               </p>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+              <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
                 {STATS.testing}{" "}
                 <span className="text-sm font-bold text-slate-400">Mẫu</span>
               </h3>
             </div>
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
               <Beaker size={24} />
             </div>
           </div>
@@ -252,12 +252,12 @@ export default function RDTrackingPage() {
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                 Đã Ký Duyệt KCS
               </p>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+              <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
                 {STATS.success}{" "}
                 <span className="text-sm font-bold text-slate-400">Mẫu</span>
               </h3>
             </div>
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
               <CheckCircle2 size={24} />
             </div>
           </div>
@@ -269,12 +269,12 @@ export default function RDTrackingPage() {
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                 Lô Mẫu Thất Bại
               </p>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+              <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
                 {STATS.fail}{" "}
                 <span className="text-sm font-bold text-slate-400">Mẫu</span>
               </h3>
             </div>
-            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
               <FlaskRound size={24} />
             </div>
           </div>
@@ -282,7 +282,7 @@ export default function RDTrackingPage() {
       </div>
 
       {/* Toolbar & Filter */}
-      <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-6">
+      <div className="bg-white p-6 rounded-lg border border-slate-100 shadow-sm space-y-6">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
             <div className="relative w-full md:w-80 group">
@@ -292,14 +292,14 @@ export default function RDTrackingPage() {
               />
               <input
                 type="text"
-                className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                className="w-full bg-slate-50 border-none rounded-lg px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                 placeholder="Tra cứu Trace Log Code Lab Model..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl">
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-lg">
               {[
                 { id: "all", label: "Tất cả" },
                 { id: "testing", label: "Processing" },
@@ -308,7 +308,7 @@ export default function RDTrackingPage() {
               ].map((f) => (
                 <button
                   key={f.id}
-                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
+                  className={`px-4 py-2 rounded-md text-[13px] font-bold transition-all duration-200 ${
                     filter === f.id
                       ? "bg-white text-blue-600 shadow-sm"
                       : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
@@ -324,25 +324,25 @@ export default function RDTrackingPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/rd-tracking/new"
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer no-underline"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer no-underline"
             >
               <Droplets size={18} className="text-purple-600" /> Yêu cầu mẫu thử
             </Link>
             <Link
               href="/rd-tracking/formulas"
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer no-underline"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer no-underline"
             >
               <FlaskConical size={18} className="text-emerald-600" /> Quản lý
               Công thức
             </Link>
             <Link
               href="/rd-tracking/materials"
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer no-underline"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-[14px] bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer no-underline"
             >
               <Package size={18} className="text-amber-600" /> Nguyên vật liệu
             </Link>
             <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
               onClick={() => setIsModalOpen(true)}
             >
               <Plus size={18} /> Tạo Log R&D Mới
@@ -354,9 +354,9 @@ export default function RDTrackingPage() {
       {/* Create Log Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300">
+          <div className="bg-white rounded-md shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300">
             <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+              <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
                   <Beaker size={18} />
                 </div>
@@ -364,7 +364,7 @@ export default function RDTrackingPage() {
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
+                className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
               >
                 <X size={20} />
               </button>
@@ -376,7 +376,7 @@ export default function RDTrackingPage() {
                   Chọn Hợp đồng Kinh doanh/Gia công
                 </label>
                 <select
-                  className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
+                  className="w-full bg-slate-50 border-none rounded-md px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
                   value={selectedContract}
                   onChange={(e) => handleContractChange(e.target.value)}
                 >
@@ -394,7 +394,7 @@ export default function RDTrackingPage() {
                   Mã màu yêu cầu pha chế
                 </label>
                 <select
-                  className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all disabled:opacity-50"
+                  className="w-full bg-slate-50 border-none rounded-md px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all disabled:opacity-50"
                   value={selectedColor}
                   onChange={(e) => setSelectedColor(e.target.value)}
                   disabled={!selectedContract}
@@ -417,9 +417,9 @@ export default function RDTrackingPage() {
                 )}
 
                 {selectedColor && (
-                  <div className="mt-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className="mt-4 p-4 rounded-lg bg-white border border-slate-100 shadow-sm flex items-center gap-4">
                     <div
-                      className="w-12 h-12 rounded-xl shadow-inner border border-slate-100"
+                      className="w-12 h-12 rounded-md shadow-inner border border-slate-100"
                       style={{
                         background:
                           paintColors.find((c) => c.code === selectedColor)
@@ -427,7 +427,7 @@ export default function RDTrackingPage() {
                       }}
                     />
                     <div>
-                      <div className="text-[14px] font-black text-slate-900">
+                      <div className="text-[14px] font-semibold text-slate-900">
                         {paintColors.find((c) => c.code === selectedColor)
                           ?.name || "Custom Color"}
                       </div>
@@ -446,14 +446,14 @@ export default function RDTrackingPage() {
               <button
                 onClick={() => setIsModalOpen(false)}
                 disabled={creating}
-                className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer"
+                className="px-6 py-3 bg-white text-slate-500 rounded-md font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer"
               >
                 Hủy
               </button>
               <button
                 onClick={handleCreateLog}
                 disabled={creating || !selectedContract || !selectedColor}
-                className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 bg-blue-600 text-white rounded-md font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {creating ? "Đang tạo..." : "Xác nhận Khởi tạo"}
               </button>
@@ -464,14 +464,14 @@ export default function RDTrackingPage() {
 
       {/* Sample Requests Table */}
       <div className="space-y-4">
-        <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+        <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
           <span className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
             <Droplets size={18} />
           </span>
           Yêu cầu mẫu thử
         </h2>
 
-        <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -524,7 +524,7 @@ export default function RDTrackingPage() {
                         className={`status-badge inline-flex items-center gap-1.5 ${req.status === "processing" ? "status-active" : "status-warning"}`}
                       >
                         <span
-                          className={`w-1.5 h-1.5 rounded-full ${req.status === "processing" ? "bg-emerald-500" : "bg-amber-500"}`}
+                          className={`w-1.5 h-1.5 rounded-md ${req.status === "processing" ? "bg-emerald-500" : "bg-amber-500"}`}
                         ></span>
                         {req.status.toUpperCase()}
                       </span>
@@ -536,7 +536,7 @@ export default function RDTrackingPage() {
                       <div className="flex items-center justify-end">
                         <Link
                           href={`/rd-tracking/${req.id}`}
-                          className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-600 transition-all cursor-pointer"
+                          className="w-10 h-10 flex items-center justify-center rounded-md bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-600 transition-all cursor-pointer"
                         >
                           <Eye size={18} />
                         </Link>
@@ -552,14 +552,14 @@ export default function RDTrackingPage() {
 
       {/* Existing Data Table with Title */}
       <div className="space-y-4 mt-8">
-        <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+        <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
           <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
             <FlaskConical size={18} />
           </span>
           Nhật ký Lab Định Biên
         </h2>
 
-        <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -675,12 +675,12 @@ export default function RDTrackingPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-[13px]">
+                          <span className="font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md text-[13px]">
                             {item.LichSuPhienBan?.length || 0}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="font-black text-amber-600 text-[14px]">
+                          <span className="font-semibold text-amber-600 text-[14px]">
                             {wastage}%
                           </span>
                         </td>
@@ -689,7 +689,7 @@ export default function RDTrackingPage() {
                             className={`status-badge inline-flex items-center gap-1.5 ${item.TrangThai === "approved" ? "status-active" : item.TrangThai === "rejected" ? "status-error" : "status-warning"}`}
                           >
                             <span
-                              className={`w-1.5 h-1.5 rounded-full ${item.TrangThai === "approved" ? "bg-emerald-500" : item.TrangThai === "rejected" ? "bg-rose-500" : "bg-amber-500"}`}
+                              className={`w-1.5 h-1.5 rounded-md ${item.TrangThai === "approved" ? "bg-emerald-500" : item.TrangThai === "rejected" ? "bg-rose-500" : "bg-amber-500"}`}
                             ></span>
                             {(item.TrangThai || "testing").toUpperCase()}
                           </span>
@@ -701,7 +701,7 @@ export default function RDTrackingPage() {
                           <div className="flex items-center justify-end">
                             <Link
                               href={`/rd-tracking/${item._id}`}
-                              className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer"
+                              className="w-10 h-10 flex items-center justify-center rounded-md bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer"
                             >
                               <Eye size={18} />
                             </Link>
