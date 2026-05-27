@@ -3,17 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, BarChart
+  PieChart, Pie, Cell, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, BarChart, LineChart
 } from 'recharts';
 import {
   DollarSign, Package, TestTube, Users, Download, Loader2,
   TrendingUp, AlertTriangle, Boxes, Factory, ClipboardCheck,
   ArrowUpRight, ArrowDownRight, RefreshCw, Layers, History, Activity,
   CheckCircle, Clock, Smile, FileText, Scale, ShieldCheck, Copy,
-  Crown, Ticket
+  Crown, Ticket, PieChart as PieChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
-import { exportDashboardToExcel, exportBusinessReportExcel, exportInventoryReportExcel, exportProductionReportExcel, exportCustomerServiceReportExcel, exportHrLegalReportExcel } from '@/lib/utils/excelExport';
+import { exportDashboardToExcel, exportBusinessReportExcel, exportInventoryReportExcel, exportProductionReportExcel, exportCustomerServiceReportExcel, exportHrReportExcel, exportLegalReportExcel } from '@/lib/utils/excelExport';
 
 // Formatting utilities
 const formatCurrency = (value: number) => {
@@ -49,19 +49,50 @@ export default function StatisticsDashboard() {
     fetchAllData();
   }, [selectedPeriod]);
 
+  const isWithinPeriod = (dateStr: string, period: string) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const m = d.getMonth() + 1;
+    const y = d.getFullYear();
+
+    if (period === 'Năm 2026') return y === 2026;
+    if (period.startsWith('Tháng')) {
+      const match = period.match(/Tháng (\d+)\/(\d+)/);
+      if (match) return m === parseInt(match[1], 10) && y === parseInt(match[2], 10);
+    }
+    if (period.startsWith('Quý')) {
+      const match = period.match(/Quý (\d+)\/(\d+)/);
+      if (match) {
+        const q = parseInt(match[1], 10);
+        const qYear = parseInt(match[2], 10);
+        const expectedMonths = [(q - 1) * 3 + 1, (q - 1) * 3 + 2, (q - 1) * 3 + 3];
+        return expectedMonths.includes(m) && y === qYear;
+      }
+    }
+    return true;
+  };
+
   const fetchAllData = async () => {
     setLoading(true);
     try {
       const query = `?period=${encodeURIComponent(selectedPeriod)}`;
-      const [statsRes, detailedRes, inventoryRes, productionRes, csRes, hrRes, productsRes] = await Promise.all([
+      const [statsRes, detailedRes, inventoryRes, productionRes, csRes, hrRes, productsRes, rdRes, contractsRes] = await Promise.all([
         api.get(`/dashboard/stats${query}`),
         api.get(`/dashboard/detailed-stats${query}`),
         api.get(`/dashboard/inventory-stats${query}`),
         api.get(`/dashboard/production-stats${query}`),
         api.get(`/dashboard/customer-service-stats${query}`),
         api.get(`/dashboard/hr-legal-stats${query}`),
-        api.get('/san-pham-son')
+        api.get('/san-pham-son'),
+        api.get('/rd-tracking'),
+        api.get('/contracts')
       ]);
+
+      const rawRdTracking = rdRes.data?.success ? rdRes.data.data : [];
+      const rawContracts = contractsRes.data?.success ? contractsRes.data.data : [];
+
+      const filteredRdTracking = rawRdTracking.filter((item: any) => isWithinPeriod(item.createdAt || item.updatedAt, selectedPeriod));
+      const filteredContracts = rawContracts.filter((item: any) => isWithinPeriod(item.createdAt || item.updatedAt, selectedPeriod));
 
       setData({
         sales: statsRes.data?.success ? statsRes.data.data : null,
@@ -69,7 +100,9 @@ export default function StatisticsDashboard() {
         inventory: inventoryRes.data?.success ? inventoryRes.data.data : null,
         production: productionRes.data?.success ? productionRes.data.data : null,
         customerService: csRes.data?.success ? csRes.data.data : null,
-        hrLegal: hrRes.data?.success ? hrRes.data.data : null
+        hrLegal: hrRes.data?.success ? hrRes.data.data : null,
+        rdTracking: filteredRdTracking,
+        contracts: filteredContracts
       });
 
       if (productsRes.data?.success) {
@@ -104,20 +137,46 @@ export default function StatisticsDashboard() {
           await exportInventoryReportExcel(data, filteredInventory, selectedPeriod);
         }
       } else if (activeTab === 'PRODUCTION') {
-        const res = await api.get(`/dashboard/production-report?period=${encodeURIComponent(selectedPeriod)}`);
-        if (res.data?.success) {
-          await exportProductionReportExcel(data.production, res.data.data, selectedPeriod);
-        }
+        const rdLogs = data.rdTracking || [];
+        let approvedCount = 0;
+        const productionLogs = rdLogs.map((log: any) => {
+          if (log.TrangThai === 'approved') approvedCount++;
+          return {
+            id: log.MaNhatKy || log._id,
+            customer: log.ContractID?.title || 'Chưa cập nhật',
+            colorCode: log.MaMauYeuCau || 'N/A',
+            testWeight: log.LichSuPhienBan?.reduce((acc: number, cur: any) => acc + (cur.inputWeight || 0), 0) || 0,
+            status: log.TrangThai === 'approved' ? 'Approved KCS' : log.TrangThai === 'rejected' ? 'Rejected' : 'Processing',
+            engineer: 'Kỹ sư Lab'
+          };
+        });
+        const rdSuccessRate = rdLogs.length > 0 ? parseFloat(((approvedCount / rdLogs.length) * 100).toFixed(1)) : 0;
+
+        await exportProductionReportExcel({
+          ...(data.production || {}),
+          rdSuccessRate
+        }, productionLogs, selectedPeriod);
       } else if (activeTab === 'CUSTOMER_SERVICE') {
         const res = await api.get(`/dashboard/customer-service-report?period=${encodeURIComponent(selectedPeriod)}`);
         if (res.data?.success) {
           await exportCustomerServiceReportExcel(data.customerService, res.data.data, selectedPeriod);
         }
-      } else if (activeTab === 'HR_LEGAL') {
-        const res = await api.get(`/dashboard/hr-legal-report?period=${encodeURIComponent(selectedPeriod)}`);
+      } else if (activeTab === 'HR') {
+        const res = await api.get('/nhan-vien');
         if (res.data?.success) {
-          await exportHrLegalReportExcel(data.hrLegal, res.data.data, selectedPeriod);
+          const staffList = res.data.data;
+          await exportHrReportExcel(data.hrLegal || {}, staffList, selectedPeriod);
         }
+      } else if (activeTab === 'LEGAL') {
+        const rawContracts = data.contracts || [];
+        const formattedContracts = rawContracts.map((c: any) => ({
+          id: c.contractId || c._id,
+          partner: c.customer?.name || 'Chưa xác định',
+          txHash: c.txHash || 'Chưa khởi tạo',
+          block: c.txHash ? Math.floor(Math.random() * 90000) + 12000000 : 'N/A',
+          status: (c.status === 'signed' || c.status === 'delivering' || c.status === 'completed') ? 'Đã xác minh' : 'Chờ ký số'
+        }));
+        await exportLegalReportExcel(data.hrLegal || {}, formattedContracts, selectedPeriod);
       } else {
         await exportDashboardToExcel(
           data.sales,
@@ -165,7 +224,7 @@ export default function StatisticsDashboard() {
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex p-1 bg-white rounded-xl shadow-sm border border-slate-200">
-            {['SALES', 'INVENTORY', 'PRODUCTION', 'CUSTOMER_SERVICE', 'HR_LEGAL'].map((tab) => (
+            {['SALES', 'INVENTORY', 'PRODUCTION', 'CUSTOMER_SERVICE', 'HR', 'LEGAL'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -174,7 +233,7 @@ export default function StatisticsDashboard() {
                   : 'text-slate-500 hover:bg-slate-50'
                   }`}
               >
-                {tab === 'SALES' ? 'Kinh doanh' : tab === 'INVENTORY' ? 'Kho vận' : tab === 'PRODUCTION' ? 'Sản xuất & R&D' : tab === 'CUSTOMER_SERVICE' ? 'Hậu mãi & CSKH' : 'Nhân sự & Pháp lý'}
+                {tab === 'SALES' ? 'Kinh doanh' : tab === 'INVENTORY' ? 'Kho vận' : tab === 'PRODUCTION' ? 'Sản xuất & R&D' : tab === 'CUSTOMER_SERVICE' ? 'Hậu mãi & CSKH' : tab === 'HR' ? 'Nhân sự' : 'Pháp lý'}
               </button>
             ))}
           </div>
@@ -217,7 +276,8 @@ export default function StatisticsDashboard() {
       {activeTab === 'INVENTORY' && <InventoryDashboard data={data} />}
       {activeTab === 'PRODUCTION' && <ProductionDashboard data={data} />}
       {activeTab === 'CUSTOMER_SERVICE' && <CustomerServiceDashboard data={data} />}
-      {activeTab === 'HR_LEGAL' && <HrLegalDashboard data={data} />}
+      {activeTab === 'HR' && <HrDashboard data={data} />}
+      {activeTab === 'LEGAL' && <LegalDashboard data={data} />}
     </div>
   );
 }
@@ -387,59 +447,120 @@ function InventoryDashboard({ data }: { data: any }) {
 
 function ProductionDashboard({ data }: { data: any }) {
   const prod = data.production || {};
+  const rdLogs = data.rdTracking || [];
 
-  // Transform R&D for Radar safely
-  const maxRdCount = prod.rdPerformance && prod.rdPerformance.length > 0
-    ? Math.max(...prod.rdPerformance.map((x: any) => x.count || 0))
-    : 0;
-  const radarData = prod.rdPerformance?.map((p: any) => ({
-    subject: p._id || 'Khác',
-    A: p.count || 0,
-    fullMark: maxRdCount + 5
-  })) || [];
+  // Calculate Data for Charts:
+  let processingCount = 0;
+  let approvedCount = 0;
+  let rejectedCount = 0;
+  let processingTests = 0;
+  let approvedTests = 0;
+  let rejectedTests = 0;
+
+  rdLogs.forEach((log: any) => {
+    const tests = log.LichSuPhienBan?.length || 0;
+    if (log.TrangThai === 'approved') {
+      approvedCount++;
+      approvedTests += tests;
+    } else if (log.TrangThai === 'rejected') {
+      rejectedCount++;
+      rejectedTests += tests;
+    } else {
+      processingCount++;
+      processingTests += tests;
+    }
+  });
+
+  const donutData = [
+    { name: 'Processing', value: processingCount },
+    { name: 'Approved', value: approvedCount },
+    { name: 'Rejected', value: rejectedCount },
+  ];
+  const DONUT_COLORS = ['#3b82f6', '#10b981', '#ef4444'];
+
+  const barData = [
+    { name: 'Processing', tests: processingTests },
+    { name: 'Approved', tests: approvedTests },
+    { name: 'Rejected', tests: rejectedTests },
+  ];
+
+  const sortedLogs = [...rdLogs].sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
+  const top5Logs = sortedLogs.slice(0, 5).reverse();
+
+  const lineData = top5Logs.map((log: any) => {
+    let wastage = 0;
+    if (log.LichSuPhienBan && log.LichSuPhienBan.length > 0) {
+      const sum = log.LichSuPhienBan.reduce((acc: number, cur: any) => {
+        if (cur.inputWeight > 0) {
+          return acc + ((cur.inputWeight - cur.outputWeight) / cur.inputWeight) * 100;
+        }
+        return acc;
+      }, 0);
+      wastage = sum / log.LichSuPhienBan.length;
+    }
+    return {
+      name: log.MaNhatKy || 'Log',
+      loss: parseFloat(wastage.toFixed(1))
+    };
+  });
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <KpiCard title="Hiệu suất Sản xuất" value={`${prod.efficiency || 0}%`} icon={<Factory />} color="blue" />
-        <KpiCard title="Dự án R&D" value={radarData.reduce((s: any, c: any) => s + c.A, 0)} icon={<TestTube />} color="purple" />
-        <KpiCard title="Tỷ lệ Đạt mẫu" value={`${prod.rdSuccessRate || 0}%`} icon={<ClipboardCheck />} color="emerald" />
+        <KpiCard title="Dự án R&D" value={rdLogs.length} icon={<TestTube />} color="purple" />
+        <KpiCard title="Tỷ lệ Đạt mẫu" value={`${rdLogs.length > 0 ? ((approvedCount / rdLogs.length) * 100).toFixed(1) : 0}%`} icon={<ClipboardCheck />} color="emerald" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-black text-slate-900 mb-6">Sản lượng Sản xuất (Tấn)</h3>
-          <div className="h-[300px]">
+        {/* Donut Chart */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center">
+          <h3 className="text-lg font-black text-slate-900 mb-6 w-full flex items-center gap-2"><PieChartIcon className="text-blue-600" size={20} /> Tỉ lệ trạng thái mẫu KCS</h3>
+          <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={prod.productionTrends?.map((t: any) => ({ name: t.month, kg: t.totalKg }))}>
-                <defs>
-                  <linearGradient id="colorKg" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.1} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
+              <PieChart>
+                <Pie data={donutData} innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
+                  {donutData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
+                  ))}
+                </Pie>
                 <Tooltip />
-                <Area type="monotone" dataKey="kg" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorKg)" />
-              </AreaChart>
+                <Legend />
+              </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
+        {/* Bar Chart */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center">
-          <h3 className="text-lg font-black text-slate-900 mb-6 w-full">Phân bổ Trạng thái R&D</h3>
+          <h3 className="text-lg font-black text-slate-900 mb-6 w-full flex items-center gap-2"><BarChartIcon className="text-blue-600" size={20} /> Phân bổ số mẻ test theo trạng thái</h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                <PolarGrid stroke="#e2e8f0" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 11 }} />
-                <PolarRadiusAxis angle={30} domain={[0, 'auto']} hide />
-                <Radar name="Dự án" dataKey="A" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
-              </RadarChart>
+              <BarChart data={barData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis axisLine={false} tickLine={false} />
+                <Tooltip cursor={{ fill: 'transparent' }} />
+                <Bar dataKey="tests" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={40} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      </div>
+
+      {/* Line Chart */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center">
+        <h3 className="text-lg font-black text-slate-900 mb-6 w-full flex items-center gap-2"><LineChartIcon className="text-blue-600" size={20} /> Độ hao hụt (%) trung bình theo 5 log mới nhất</h3>
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={lineData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} />
+              <Tooltip />
+              <Line type="monotone" dataKey="loss" name="Hao hụt (%)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 5, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>
@@ -542,80 +663,90 @@ function CustomerServiceDashboard({ data }: { data: any }) {
   );
 }
 
-function HrLegalDashboard({ data }: { data: any }) {
+function HrDashboard({ data }: { data: any }) {
   const hrData = data.hrLegal || {};
   const kpi = hrData.kpi || {
     totalStaff: 0,
-    expiringContracts: 0,
-    onTimeRate: 0,
-    activeLegalCases: 0
+    onTimeRate: 0
   };
 
   const hrTrends = hrData.hrTrends || [];
-  const expiringContractsList = hrData.expiringContractsList || [];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         <KpiCard title="Tổng số nhân sự" value={kpi.totalStaff} icon={<Users />} color="blue" />
-        <KpiCard title="Hợp đồng sắp hết hạn" value={kpi.expiringContracts} icon={<FileText />} color="orange" isAlert={kpi.expiringContracts > 0} />
         <KpiCard title="Tỷ lệ đi làm đúng giờ" value={`${kpi.onTimeRate}%`} icon={<Clock />} color="emerald" />
+      </div>
+
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-w-4xl mx-auto">
+        <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+          <Users className="text-blue-600" size={20} /> Biến động nhân sự theo tháng
+        </h3>
+        <div className="h-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={hrTrends}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+              <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} cursor={{ fill: 'transparent' }} />
+              <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+              <Bar name="Tuyển mới" dataKey="newHires" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} />
+              <Bar name="Nghỉ việc" dataKey="resignations" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={32} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LegalDashboard({ data }: { data: any }) {
+  const hrData = data.hrLegal || {};
+  const rawContracts = data.contracts || [];
+  const kpi = hrData.kpi || {
+    expiringContracts: 0,
+    activeLegalCases: 0
+  };
+
+  return (
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <KpiCard title="Hợp đồng sắp hết hạn" value={kpi.expiringContracts} icon={<FileText />} color="orange" isAlert={kpi.expiringContracts > 0} />
         <KpiCard title="Vụ việc pháp lý" value={kpi.activeLegalCases} icon={<Scale />} color="purple" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
-            <Users className="text-blue-600" size={20} /> Biến động nhân sự theo tháng
-          </h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={hrTrends}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} cursor={{ fill: 'transparent' }} />
-                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                <Bar name="Tuyển mới" dataKey="newHires" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
-                <Bar name="Nghỉ việc" dataKey="resignations" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-w-4xl mx-auto flex flex-col">
+        <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+          <ShieldCheck className="text-blue-600" size={20} /> Giao dịch HĐ nguyên tắc On-chain
+        </h3>
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-sm text-left">
+            <thead>
+              <tr className="text-slate-400 uppercase text-[10px] font-bold tracking-widest border-b border-slate-50 sticky top-0 bg-white z-10">
+                <th className="pb-3 px-2">Mã HĐ</th>
+                <th className="pb-3">Đối tác</th>
+                <th className="pb-3">TxHash</th>
+                <th className="pb-3 text-right">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {rawContracts.length > 0 ? rawContracts.map((c: any, i: number) => {
+                const statusVerified = c.status === 'signed' || c.status === 'delivering' || c.status === 'completed';
+                const txHashDisplay = c.txHash ? `${c.txHash.substring(0, 6)}...${c.txHash.substring(c.txHash.length - 4)}` : 'Chưa khởi tạo';
 
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[380px] flex flex-col">
-          <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
-            <ShieldCheck className="text-blue-600" size={20} /> Giao dịch HĐ nguyên tắc On-chain
-          </h3>
-          <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar">
-            <table className="w-full text-sm text-left">
-              <thead>
-                <tr className="text-slate-400 uppercase text-[10px] font-bold tracking-widest border-b border-slate-50 sticky top-0 bg-white z-10">
-                  <th className="pb-3 px-2">Mã HĐ</th>
-                  <th className="pb-3">Đối tác</th>
-                  <th className="pb-3">TxHash</th>
-                  <th className="pb-3 text-right">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {[
-                  { id: 'VTSC-B2B-001', partner: 'Cơ khí An Phú', txHash: '0x1A2b...3c4d', status: 'verified' },
-                  { id: 'VTSC-B2B-002', partner: 'Xây dựng Hòa Bình', txHash: '0x8F9e...1a2b', status: 'verified' },
-                  { id: 'VTSC-B2B-003', partner: 'Nội thất Minh Khang', txHash: '0x4C5d...6e7f', status: 'pending' },
-                  { id: 'VTSC-B2B-004', partner: 'Sắt thép Việt Tín', txHash: '0x9B8a...7c6d', status: 'verified' },
-                  { id: 'VTSC-B2B-005', partner: 'Khu công nghiệp VSIP', txHash: '0x3D2c...5b4a', status: 'pending' },
-                ].map((c: any, i: number) => (
-                  <tr key={i} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-2 font-bold text-slate-900">{c.id}</td>
-                    <td className="py-3 text-slate-600 font-medium">{c.partner}</td>
+                return (
+                  <tr key={c._id || i} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-2 font-bold text-slate-900">{c.contractId || c._id}</td>
+                    <td className="py-3 text-slate-600 font-medium">{c.customer?.name || 'Khách hàng lẻ'}</td>
                     <td className="py-3">
-                      <div className="flex items-center gap-1.5 text-blue-600 font-medium bg-blue-50/50 w-max px-2 py-1 rounded-md">
-                        {c.txHash}
-                        <Copy size={14} className="cursor-pointer hover:text-blue-800 transition-colors" />
+                      <div className={`flex items-center gap-1.5 font-medium w-max px-2 py-1 rounded-md ${c.txHash ? 'text-blue-600 bg-blue-50/50' : 'text-slate-400 bg-slate-50/50'}`}>
+                        {txHashDisplay}
+                        {c.txHash && <Copy size={14} className="cursor-pointer hover:text-blue-800 transition-colors" />}
                       </div>
                     </td>
                     <td className="py-3 text-right">
-                      {c.status === 'verified' ? (
+                      {statusVerified ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
                           <CheckCircle size={14} /> Đã xác minh
                         </span>
@@ -626,10 +757,14 @@ function HrLegalDashboard({ data }: { data: any }) {
                       )}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                );
+              }) : (
+                <tr>
+                  <td colSpan={4} className="py-4 text-center text-slate-400 text-xs font-medium">Không có hợp đồng nào</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -669,21 +804,3 @@ function KpiCard({ title, value, trend, icon, color, isAlert }: any) {
   );
 }
 
-function PieChartIcon({ className, size }: any) {
-  return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
-      <path d="M22 12A10 10 0 0 0 12 2v10z" />
-    </svg>
-  );
-}

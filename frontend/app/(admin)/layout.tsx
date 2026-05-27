@@ -389,6 +389,7 @@ export default function AdminLayout({
         {!isCustomer && (
           <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
             {/* Logo Area */}
+<<<<<<< Updated upstream
             <div className="px-8 py-7 flex items-center gap-4">
               <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10">
                 <img
@@ -400,6 +401,12 @@ export default function AdminLayout({
               <div>
                 <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
                   VTSC
+=======
+            <div className="px-8 py-7 flex items-center justify-center">
+              <Link href="/" className="block no-underline group">
+                <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-105 px-3">
+                  <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+>>>>>>> Stashed changes
                 </div>
                 <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
                   PaintPro

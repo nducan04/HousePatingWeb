@@ -589,9 +589,15 @@ export default function HomePage() {
       {/* ═══════ HEADER / NAVBAR ═══════ */}
       <header className="sticky top-0 z-[100] bg-white/70 backdrop-blur-xl border-b border-slate-200/40 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
         <div className="max-w-[1400px] mx-auto px-8 py-5 flex items-center justify-between">
+<<<<<<< Updated upstream
           <Link href="/" className="flex items-center gap-3 no-underline">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-blue-600/20">
               V
+=======
+          <Link href="/" className="flex items-center gap-3.5 no-underline group">
+            <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-110 px-3">
+              <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+>>>>>>> Stashed changes
             </div>
             <span className="font-bold text-xl text-slate-900 tracking-tight">
               VTSC PaintPro
@@ -1397,8 +1403,13 @@ export default function HomePage() {
             {/* Column 1: Company Info */}
             <div className="lg:col-span-5">
               <div className="flex items-center gap-4 mb-8">
+<<<<<<< Updated upstream
                 <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-2xl text-white shadow-lg shadow-blue-600/20">
                   V
+=======
+                <div className="w-[200px] h-[68px] flex-shrink-0 rounded-[16px] bg-white flex items-center justify-center shadow-lg shadow-black/20 overflow-hidden px-4">
+                  <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+>>>>>>> Stashed changes
                 </div>
                 <span className="font-bold text-xl tracking-tight uppercase text-white">
                   CÔNG TY CP TMDV VOSCO (VTSC)

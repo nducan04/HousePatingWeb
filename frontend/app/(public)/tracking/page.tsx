@@ -7,7 +7,7 @@ import {
   Search, Package, CheckCircle2, Clock, Truck, MapPin,
   Beaker, FlaskConical, AlertCircle, Eye, ArrowRight, ArrowLeft,
   ShieldCheck, User, Calendar, Layers, Scale, Lock,
-  MessageSquare, Image as ImageIcon, Sparkles, LogIn, ChevronRight, XCircle, Camera, Circle
+  MessageSquare, Image as ImageIcon, Sparkles, LogIn, ChevronRight, XCircle, Camera, Circle, QrCode
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -41,6 +41,9 @@ export default function TrackingPage() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrRequestId, setQrRequestId] = useState<string | null>(null);
 
   const mapDBTrackingToUI = (item: any) => {
     const donHang = item.DonHang || {};
@@ -785,10 +788,9 @@ export default function TrackingPage() {
             </div >
           ) : (
             /* ═══════ AUTHENTICATED R&D DASHBOARD ═══════ */
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-              {/* Left Column: Your Sample Requests List */}
-              <div className="lg:col-span-1 space-y-6">
-                <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-6">
+            <div className="max-w-5xl mx-auto space-y-6">
+              <div className="bg-white border border-slate-100 rounded-[28px] p-8 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
                       <span className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
@@ -798,9 +800,8 @@ export default function TrackingPage() {
                     </h3>
                     <p className="text-xs text-slate-400 font-medium mt-1">Danh sách mẫu pha chế bạn đã gửi</p>
                   </div>
-
                   {/* Quick Search */}
-                  <div className="relative group">
+                  <div className="relative group w-full sm:w-72 shrink-0">
                     <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
@@ -810,83 +811,58 @@ export default function TrackingPage() {
                       onChange={e => setSampleSearchTerm(e.target.value)}
                     />
                   </div>
-
-                  {/* List Container */}
-                  <div className="space-y-3 max-h-[450px] overflow-y-auto pr-1">
-                    {customerRequests.length === 0 ? (
-                      <div className="text-center py-10 text-slate-400 font-medium italic text-sm">
-                        Không tìm thấy yêu cầu pha chế nào.
-                      </div>
-                    ) : (
-                      customerRequests.map(req => {
-                        const isSelected = selectedSample?.id === req.id;
-                        return (
-                          <div
-                            key={req.id}
-                            className={`p-4 rounded-2xl border transition-all cursor-pointer ${isSelected
-                              ? 'bg-purple-50/50 border-purple-200'
-                              : 'bg-white border-slate-100 hover:bg-slate-50'
-                              }`}
-                            onClick={() => setSelectedSample(req)}
-                          >
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-[12px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
-                                {req.id}
-                              </span>
-                              <span className="text-[10px] font-bold text-slate-400">{req.date}</span>
-                            </div>
-                            <h4 className="font-extrabold text-slate-800 text-sm">{req.colorCode}</h4>
-                            <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-50">
-                              <span className="text-[11px] text-slate-400 font-medium">{req.surface}</span>
-                              <span className={`status-badge text-[10px] font-black px-2 py-0.5 rounded-md ${req.status === 'approved'
-                                ? 'bg-emerald-50 text-emerald-600'
-                                : req.status === 'processing'
-                                  ? 'bg-orange-50 text-orange-600 animate-pulse'
-                                  : 'bg-amber-50 text-amber-600'
-                                }`}>
-                                {req.status.toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
                 </div>
-              </div>
 
-              {/* Right Column: Visual R&D Process Timeline Roadmap */}
-              <div className="lg:col-span-2 space-y-6">
-                {selectedSample ? (
-                  <>
-                    {/* Header Detail Card */}
-                    <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-purple-600/5 rounded-full blur-2xl" />
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-black text-purple-600 bg-purple-50 px-3 py-1 rounded-lg">
-                              ID Yêu cầu: {selectedSample.id}
-                            </span>
-                            <span className={`status-badge text-xs font-black px-2.5 py-1 rounded-lg ${selectedSample.status === 'approved'
-                              ? 'bg-emerald-50 text-emerald-600'
-                              : selectedSample.status === 'processing'
-                                ? 'bg-orange-50 text-orange-600'
-                                : 'bg-amber-50 text-amber-600'
-                              }`}>
-                              {selectedSample.status === 'approved' ? 'APPROVED KCS' : selectedSample.status.toUpperCase()}
-                            </span>
-                          </div>
-                          <h2 className="text-2xl font-black text-slate-900 mt-3 mb-2">{selectedSample.colorCode}</h2>
-                          <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-400">
-                            <span className="flex items-center gap-1.5"><Calendar size={14} /> Ngày tạo: <span className="text-slate-800">{selectedSample.date}</span></span>
-                            {selectedSample.deadline && (
-                              <span className="flex items-center gap-1.5"><Clock size={14} /> Hạn R&D: <span className="text-rose-600 font-bold">{selectedSample.deadline}</span></span>
-                            )}
-                            <span className="flex items-center gap-1.5"><Layers size={14} /> Bề mặt: <span className="text-slate-800">{selectedSample.surface}</span></span>
-                          </div>
+                {/* List Container */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {customerRequests.length === 0 ? (
+                    <div className="col-span-full text-center py-10 text-slate-400 font-medium italic text-sm">
+                      Không tìm thấy yêu cầu pha chế nào.
+                    </div>
+                  ) : (
+                    customerRequests.map(req => (
+                      <div
+                        key={req.id}
+                        className="bg-white border border-slate-100 p-5 rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col group"
+                      >
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-[12px] font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-md border border-purple-100">
+                            {req.id}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5"><Calendar size={12}/> {req.date}</span>
+                        </div>
+                        <h4 className="font-extrabold text-slate-800 text-lg mb-1">{req.colorCode}</h4>
+                        <div className="flex items-center gap-2 mb-4">
+                          <Layers size={14} className="text-slate-400" />
+                          <span className="text-xs text-slate-500 font-medium">{req.surface}</span>
+                          <span className={`ml-auto status-badge text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider ${req.status === 'approved'
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                            : req.status === 'processing'
+                              ? 'bg-orange-50 text-orange-600 animate-pulse border border-orange-100'
+                              : 'bg-amber-50 text-amber-600 border border-amber-100'
+                            }`}>
+                            {req.status === 'approved' ? 'APPROVED' : req.status}
+                          </span>
+                        </div>
+                        <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                          <button
+                            onClick={() => {
+                              setQrRequestId(req.id);
+                              setShowQRModal(true);
+                            }}
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all cursor-pointer"
+                          >
+                            <QrCode size={16} /> QR Code
+                          </button>
+                          <Link
+                            href={`/tracking/rd/${req.id}`}
+                            className="flex-1 flex justify-center items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-600/20 hover:-translate-y-0.5 transition-all"
+                          >
+                            Xem chi tiết <ChevronRight size={16} />
+                          </Link>
                         </div>
                       </div>
+<<<<<<< Updated upstream
                     </div>
 
                     {/* interactive 5-Step Process Timeline */}
@@ -1011,9 +987,58 @@ export default function TrackingPage() {
                     <p className="text-sm text-slate-400 font-medium mt-1">Bấm vào một mẫu bên danh sách trái để theo dõi chi tiết</p>
                   </div>
                 )}
+=======
+                    ))
+                  )}
+                </div>
+>>>>>>> Stashed changes
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {showQRModal && qrRequestId && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setShowQRModal(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors cursor-pointer border-none bg-transparent"
+            >
+              <XCircle size={24} />
+            </button>
+            
+            <div className="text-center space-y-6">
+              <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto">
+                <QrCode size={32} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900">Mã QR Lộ Trình</h3>
+                <p className="text-sm text-slate-500 font-medium mt-2">Quét mã dưới đây bằng điện thoại để xem lộ trình R&D.</p>
+              </div>
+              
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center justify-center">
+                <QRCodeSVG 
+                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking/rd/${qrRequestId}`} 
+                  size={180} 
+                  bgColor="#f8fafc" 
+                  fgColor="#0f172a" 
+                  level="H"
+                />
+                <div className="mt-4 font-mono font-bold text-sm text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200 shadow-sm">
+                  {qrRequestId}
+                </div>
+              </div>
+              
+              <button 
+                onClick={() => setShowQRModal(false)}
+                className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-600/20 transition-all cursor-pointer border-none"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

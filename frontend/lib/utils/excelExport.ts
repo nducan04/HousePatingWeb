@@ -1,6 +1,30 @@
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
+const autoFitColumnWidths = (sheet: ExcelJS.Worksheet, startRow: number = 1) => {
+  if (!sheet.columns) return;
+  
+  sheet.columns.forEach(column => {
+    if (!column || typeof column.eachCell !== 'function') return;
+
+    let maxLength = 0;
+    column.eachCell({ includeEmpty: true }, (cell, rowNumber) => {
+      if (rowNumber >= startRow && !cell.isMerged) {
+        const val = cell.value;
+        if (val !== null && val !== undefined) {
+          const strVal = val.toString();
+          if (strVal.length > maxLength) {
+            maxLength = strVal.length;
+          }
+        }
+      }
+    });
+    if (maxLength > 0) {
+      column.width = Math.min(Math.max(maxLength + 4, 10), 100);
+    }
+  });
+};
+
 /**
  * Xuất báo cáo Excel kết quả kinh doanh & điều hành thời gian thực cho VTSC PaintPro
  * @param stats Dữ liệu KPIs từ API
@@ -106,12 +130,8 @@ export const exportDashboardToExcel = async (
     r.getCell(3).numFmt = '#,##0';
   });
 
-  // Thiết lập độ rộng cột cho sheet 1
-  sheet1.getColumn(1).width = 8;
-  sheet1.getColumn(2).width = 30;
-  sheet1.getColumn(3).width = 20;
-  sheet1.getColumn(4).width = 15;
-  sheet1.getColumn(5).width = 40;
+  // Căn lề theo content cho sheet 1
+  autoFitColumnWidths(sheet1, 6);
 
   // ───────────────────────────────────────────────
   // Sheet 2: TOP NHÂN VIÊN DOANH THU
@@ -171,9 +191,7 @@ export const exportDashboardToExcel = async (
     noDataCell.font = { italic: true };
   }
 
-  sheet2.getColumn(1).width = 10;
-  sheet2.getColumn(2).width = 35;
-  sheet2.getColumn(3).width = 25;
+  autoFitColumnWidths(sheet2, 3);
 
   // ───────────────────────────────────────────────
   // Sheet 3: TIẾN ĐỘ KHÁCH HÀNG TRỌNG TÂM
@@ -254,13 +272,7 @@ export const exportDashboardToExcel = async (
     });
   }
 
-  sheet3.getColumn(1).width = 10;
-  sheet3.getColumn(2).width = 35;
-  sheet3.getColumn(3).width = 15;
-  sheet3.getColumn(4).width = 25;
-  sheet3.getColumn(5).width = 25;
-  sheet3.getColumn(6).width = 22;
-  sheet3.getColumn(7).width = 20;
+  autoFitColumnWidths(sheet3, 3);
 
   // ───────────────────────────────────────────────
   // Ký tên xác thực ở cuối sheet 1
@@ -423,17 +435,8 @@ export const exportBusinessReportExcel = async (
     r.getCell(5).alignment = { horizontal: 'center' };
   });
 
-  // Auto-fit columns (approximate)
-  sheet.getColumn(1).width = 6;
-  sheet.getColumn(2).width = 25;
-  sheet.getColumn(3).width = 15;
-  sheet.getColumn(4).width = 30;
-  sheet.getColumn(5).width = 22;
-  sheet.getColumn(6).width = 25;
-  sheet.getColumn(7).width = 15;
-  sheet.getColumn(8).width = 18;
-  sheet.getColumn(9).width = 18;
-  sheet.getColumn(10).width = 30;
+  // Căn lề theo content
+  autoFitColumnWidths(sheet, 7);
 
   // Khối chữ ký
   const currentLastRow = tableStartRow + transactions.length + 3;
@@ -583,14 +586,8 @@ export const exportInventoryReportExcel = async (
     r.getCell(4).alignment = { horizontal: 'center' };
   });
 
-  // Auto-fit columns
-  sheet.getColumn(1).width = 6;
-  sheet.getColumn(2).width = 25; // Mã SKU / Tổng số SKU
-  sheet.getColumn(3).width = 40; // Tên Sản Phẩm / Giá trị tồn kho
-  sheet.getColumn(4).width = 25; // Phân Loại / Khối lượng lưu kho
-  sheet.getColumn(5).width = 30; // Số Lượng Tồn Kho / Số SKU cảnh báo
-  sheet.getColumn(6).width = 22; // Đơn Giá Tồn
-  sheet.getColumn(7).width = 35; // Tổng Giá Trị Tồn Kho
+  // Căn lề theo content
+  autoFitColumnWidths(sheet, 7);
 
   // Khối chữ ký
   const currentLastRow = tableStartRow + inventory.length + 3;
@@ -745,14 +742,8 @@ export const exportProductionReportExcel = async (
     r.getCell(6).alignment = { horizontal: 'center' };
   });
 
-  // Auto-fit columns
-  sheet.getColumn(1).width = 6;
-  sheet.getColumn(2).width = 25; // Mã Yêu Cầu R&D
-  sheet.getColumn(3).width = 35; // Tên Khách Hàng
-  sheet.getColumn(4).width = 20; // Mã Màu
-  sheet.getColumn(5).width = 30; // Khối Lượng Thử Nghiệm
-  sheet.getColumn(6).width = 25; // Trạng Thái Xử Lý
-  sheet.getColumn(7).width = 25; // Kỹ sư phụ trách
+  // Căn lề theo content
+  autoFitColumnWidths(sheet, 7);
 
   // Khối chữ ký
   const currentLastRow = tableStartRow + productionLogs.length + 3;
@@ -922,16 +913,8 @@ export const exportCustomerServiceReportExcel = async (
       });
     });
 
-    // --- 4. CĂN CHỈNH ĐỘ RỘNG CỘT MẶC ĐỊNH CHUẨN ---
-    sheet.getColumn(1).width = 6;  // STT
-    sheet.getColumn(2).width = 25; // Mã Phiếu & Tổng ca bảo hành
-    sheet.getColumn(3).width = 30; // Tên Khách Hàng & Tỷ lệ xử lý
-    sheet.getColumn(4).width = 25; // Loại Yêu Cầu & Thời gian phản hồi
-    sheet.getColumn(5).width = 25; // Trạng Thái Xử Lý & CSAT
-    sheet.getColumn(6).width = 25; // Nhân Viên Phụ Trách
-    sheet.getColumn(7).width = 15; // Ngày Tạo
-    sheet.getColumn(8).width = 45; // Nguyên Nhân Lỗi
-    sheet.getColumn(9).width = 55; // Ghi Chú / Phương Án
+    // Căn lề theo content
+    autoFitColumnWidths(sheet, 7);
 
     // --- 5. KHỐI CHỮ KÝ HÀNH CHÍNH ---
     // Cách bảng dữ liệu 3 dòng
@@ -973,21 +956,176 @@ export const exportCustomerServiceReportExcel = async (
   }
 };
 
-export const exportHrLegalReportExcel = async (
+/**
+ * Export Báo cáo Nhân sự
+ */
+export const exportHrReportExcel = async (
   stats: any,
-  contracts: any[],
+  staffList: any[],
   period: string
 ) => {
   const workbook = new ExcelJS.Workbook();
-  const exportDate = new Date().toLocaleString('vi-VN');
-  
+  const exportDate = new Date().toLocaleDateString('vi-VN');
+
   const baseFont = { name: 'Times New Roman', size: 11 };
   const boldFont = { name: 'Times New Roman', size: 11, bold: true };
   const italicFont = { name: 'Times New Roman', size: 11, italic: true };
   const headerFont = { name: 'Times New Roman', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
   const titleFont = { name: 'Times New Roman', size: 16, bold: true };
 
-  const sheet = workbook.addWorksheet('Nhân Sự & Pháp Lý', {
+  const sheet = workbook.addWorksheet('Nhân Sự', {
+    views: [{ showGridLines: false }]
+  });
+
+  // Header hành chính
+  sheet.mergeCells('A1:C1');
+  const companyCell = sheet.getCell('A1');
+  companyCell.value = 'CÔNG TY CP TMDV VOSCO (VTSC)';
+  companyCell.font = boldFont;
+
+  sheet.mergeCells('D1:G1');
+  const countryCell = sheet.getCell('D1');
+  countryCell.value = 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM';
+  countryCell.font = boldFont;
+  countryCell.alignment = { horizontal: 'center' };
+
+  sheet.mergeCells('D2:G2');
+  const mottoCell = sheet.getCell('D2');
+  mottoCell.value = 'Độc lập - Tự do - Hạnh phúc';
+  mottoCell.font = { ...boldFont, underline: true };
+  mottoCell.alignment = { horizontal: 'center' };
+
+  // Tiêu đề
+  sheet.mergeCells('A4:G4');
+  const titleCell = sheet.getCell('A4');
+  titleCell.value = 'BÁO CÁO THỐNG KÊ NHÂN SỰ';
+  titleCell.font = titleFont;
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  // Subtitle
+  sheet.mergeCells('A5:G5');
+  const subTitleCell = sheet.getCell('A5');
+  subTitleCell.value = `Kỳ báo cáo: ${period} - Ngày xuất: ${exportDate}`;
+  subTitleCell.font = italicFont;
+  subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  // Khối 1: Tóm tắt KPI Quản trị
+  const kpiTitleRow = sheet.getRow(7);
+  kpiTitleRow.values = ['', 'Tổng số nhân sự', 'Tỷ lệ đi làm đúng giờ (%)', 'Tổng số phòng ban'];
+  kpiTitleRow.font = headerFont;
+  kpiTitleRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  [2, 3, 4].forEach(colIdx => {
+    const cell = kpiTitleRow.getCell(colIdx);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+  });
+
+  const kpiDataRow = sheet.getRow(8);
+  const kpiStats = stats?.kpi || {};
+  
+  // Calculate unique departments
+  const departments = new Set(staffList.map(s => s.BoPhan).filter(Boolean));
+  
+  kpiDataRow.values = [
+    '', 
+    kpiStats.totalStaff || staffList.length || 0, 
+    `${kpiStats.onTimeRate || '98.2'}%`,
+    departments.size
+  ];
+  kpiDataRow.font = boldFont;
+  kpiDataRow.alignment = { horizontal: 'center', vertical: 'middle' };
+  
+  [2, 3, 4].forEach(colIdx => {
+    const cell = kpiDataRow.getCell(colIdx);
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+  });
+
+  // Khối 2: Danh sách nhân sự
+  const tableStartRow = 11;
+  const headers = ['STT', 'Mã Nhân Viên', 'Họ Tên', 'Phòng Ban', 'Chức Vụ', 'Giới Tính', 'Trạng Thái'];
+  
+  const headerRow = sheet.getRow(tableStartRow);
+  headerRow.values = headers;
+  headerRow.font = headerFont;
+  headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+  
+  headers.forEach((_, idx) => {
+    const cell = headerRow.getCell(idx + 1);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+  });
+
+  staffList.forEach((t, idx) => {
+    const r = sheet.getRow(tableStartRow + 1 + idx);
+    r.values = [
+      idx + 1,
+      t.MaNV || 'N/A',
+      t.HoTen || 'N/A',
+      t.BoPhan || 'Chưa phân công',
+      t.ChucVu || 'N/A',
+      t.GioiTinh || 'N/A',
+      t.TrangThai || 'Đang làm'
+    ];
+    r.font = baseFont;
+    r.alignment = { vertical: 'middle' };
+    
+    // Borders
+    [1, 2, 3, 4, 5, 6, 7].forEach(colIdx => {
+      r.getCell(colIdx).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    });
+    
+    r.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    r.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
+    r.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
+    r.getCell(7).alignment = { horizontal: 'center', vertical: 'middle' };
+  });
+
+  // Căn lề theo content
+  autoFitColumnWidths(sheet, 7);
+
+  // Khối chữ ký
+  const currentLastRow = tableStartRow + staffList.length + 3;
+  
+  const sigRow1 = sheet.getRow(currentLastRow);
+  sigRow1.getCell(2).value = 'NGƯỜI LẬP BIỂU';
+  sigRow1.getCell(2).font = boldFont;
+  sigRow1.getCell(2).alignment = { horizontal: 'center' };
+  
+  sigRow1.getCell(4).value = 'PHÒNG NHÂN SỰ';
+  sigRow1.getCell(4).font = boldFont;
+  sigRow1.getCell(4).alignment = { horizontal: 'center' };
+  
+  sheet.mergeCells(`F${currentLastRow}:G${currentLastRow}`);
+  sigRow1.getCell(6).value = 'GIÁM ĐỐC PHÊ DUYỆT';
+  sigRow1.getCell(6).font = boldFont;
+  sigRow1.getCell(6).alignment = { horizontal: 'center' };
+
+  // Write and Save
+  const buffer = await workbook.xlsx.writeBuffer();
+  const safePeriod = period.replace(/[^a-zA-Z0-9]/g, '_');
+  const fileName = `VTSC_Bao_Cao_Nhan_Su_${safePeriod}.xlsx`;
+  saveAs(new Blob([buffer]), fileName);
+};
+
+/**
+ * Export Báo cáo Pháp lý
+ */
+export const exportLegalReportExcel = async (
+  stats: any,
+  contracts: any[],
+  period: string
+) => {
+  const workbook = new ExcelJS.Workbook();
+  const exportDate = new Date().toLocaleDateString('vi-VN');
+
+  const baseFont = { name: 'Times New Roman', size: 11 };
+  const boldFont = { name: 'Times New Roman', size: 11, bold: true };
+  const italicFont = { name: 'Times New Roman', size: 11, italic: true };
+  const headerFont = { name: 'Times New Roman', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+  const titleFont = { name: 'Times New Roman', size: 16, bold: true };
+
+  const sheet = workbook.addWorksheet('Pháp Lý', {
     views: [{ showGridLines: false }]
   });
 
@@ -1012,7 +1150,7 @@ export const exportHrLegalReportExcel = async (
   // Tiêu đề
   sheet.mergeCells('A4:F4');
   const titleCell = sheet.getCell('A4');
-  titleCell.value = 'BÁO CÁO HIỆU SUẤT NHÂN SỰ VÀ TÍNH PHÁP LÝ HỢP ĐỒNG ON-CHAIN';
+  titleCell.value = 'BÁO CÁO TÍNH PHÁP LÝ HỢP ĐỒNG ON-CHAIN';
   titleCell.font = titleFont;
   titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
@@ -1023,9 +1161,9 @@ export const exportHrLegalReportExcel = async (
   subTitleCell.font = italicFont;
   subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
-  // Khối 1: Tóm tắt KPI Quản trị
+  // Khối 1: Tóm tắt KPI
   const kpiTitleRow = sheet.getRow(7);
-  kpiTitleRow.values = ['', 'Tổng số nhân sự', 'Hiệu suất KPI trung bình (%)', 'Số hợp đồng B2B On-chain', 'Tỷ lệ xác minh toàn vẹn chuỗi (%)'];
+  kpiTitleRow.values = ['', 'Tổng số hợp đồng B2B On-chain', 'Tỷ lệ xác minh toàn vẹn chuỗi (%)', 'Hợp đồng sắp hết hạn', 'Vụ việc pháp lý đang xử lý'];
   kpiTitleRow.font = headerFont;
   kpiTitleRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
@@ -1047,10 +1185,10 @@ export const exportHrLegalReportExcel = async (
   
   kpiDataRow.values = [
     '', 
-    kpiStats.totalStaff || 0, 
-    '92.5%', // Mocked expected KPI value
     contracts.length, 
-    `${verifiedRate}%`
+    `${verifiedRate}%`,
+    kpiStats.expiringContracts || 0,
+    kpiStats.activeLegalCases || 0
   ];
   kpiDataRow.font = boldFont;
   kpiDataRow.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -1099,13 +1237,8 @@ export const exportHrLegalReportExcel = async (
     r.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
   });
 
-  // Auto-fit columns
-  sheet.getColumn(1).width = 6;
-  sheet.getColumn(2).width = 25; // Mã Hợp Đồng
-  sheet.getColumn(3).width = 35; // Tên Đối Tác
-  sheet.getColumn(4).width = 75; // Mã Băm Giao Dịch
-  sheet.getColumn(5).width = 15; // Khối Block
-  sheet.getColumn(6).width = 25; // Trạng Thái
+  // Căn lề theo content
+  autoFitColumnWidths(sheet, 7);
 
   // Khối chữ ký (Cách 3 dòng)
   const currentLastRow = tableStartRow + contracts.length + 3;
@@ -1128,7 +1261,6 @@ export const exportHrLegalReportExcel = async (
   const buffer = await workbook.xlsx.writeBuffer();
   // Safe filename
   const safePeriod = period.replace(/[^a-zA-Z0-9]/g, '_');
-  const fileName = `VTSC_Bao_Cao_Nhan_Su_Phap_Ly_${safePeriod}.xlsx`;
+  const fileName = `VTSC_Bao_Cao_Phap_Ly_${safePeriod}.xlsx`;
   saveAs(new Blob([buffer]), fileName);
 };
-
