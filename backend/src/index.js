@@ -18,16 +18,27 @@ const allowedOrigins = [
   'http://localhost:3002',
   'http://127.0.0.1:3000',
   'http://127.0.0.1:3001',
-  'http://127.0.0.1:3002'
+  'http://127.0.0.1:3002',
+  'https://house-pating-web.vercel.app'
 ];
+
+if (process.env.FRONTEND_URL) {
+  const envOrigins = process.env.FRONTEND_URL.split(',').map(url => url.trim());
+  envOrigins.forEach(origin => {
+    if (origin && !allowedOrigins.includes(origin)) {
+      allowedOrigins.push(origin);
+    }
+  });
+}
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    // Allow any localhost or 127.0.0.1 origins for development
+    // Allow any localhost, 127.0.0.1, configured origins, or vercel.app domains
     if (
-      allowedOrigins.includes(origin) || 
-      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      allowedOrigins.includes(origin) ||
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+      /\.vercel\.app$/.test(origin)
     ) {
       return callback(null, true);
     }
@@ -35,7 +46,8 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
 // Serve static files from 'uploads' directory
@@ -51,26 +63,41 @@ app.use('/api/auth', require('./routes/authRoutes'));
 // Routes — Module 2: Danh mục & Hỗ trợ
 // ═══════════════════════════════════════
 app.use('/api/san-pham-son', require('./routes/sanPhamSonRoutes'));
+app.use('/api/products', require('./routes/sanPhamSonRoutes')); // Alias
 app.use('/api/kho', require('./routes/khoRoutes'));
+app.use('/api/inventory', require('./routes/khoRoutes')); // Alias
 app.use('/api/khach-hang', require('./routes/khachHangRoutes'));
+app.use('/api/customers', require('./routes/khachHangRoutes')); // Alias
 app.use('/api/nhan-vien', require('./routes/nhanVienRoutes'));
+app.use('/api/staff', require('./routes/nhanVienRoutes')); // Alias
 app.use('/api/nha-cung-cap', require('./routes/nhaCungCapRoutes'));
+app.use('/api/suppliers', require('./routes/nhaCungCapRoutes')); // Alias
 app.use('/api/chatbot', require('./routes/chatbotRoutes'));
 app.use('/api/tai-khoan', require('./routes/taiKhoanRoutes'));
+app.use('/api/accounts', require('./routes/taiKhoanRoutes')); // Alias
 
 // ═══════════════════════════════════════
 // Routes — Module 3: Kinh doanh & Hợp đồng
 // ═══════════════════════════════════════
 app.use('/api/contracts', require('./routes/contractRoutes'));
 app.use('/api/tin-tuc', require('./routes/tinTucRoutes'));
+app.use('/api/news', require('./routes/tinTucRoutes')); // Alias
 app.use('/api/don-hang', require('./routes/donHangRoutes'));
+app.use('/api/orders', require('./routes/donHangRoutes')); // Alias
 app.use('/api/khuyen-mai', require('./routes/khuyenMaiRoutes'));
+app.use('/api/promotions', require('./routes/khuyenMaiRoutes')); // Alias
 app.use('/api/gio-hang', require('./routes/gioHangRoutes'));
+app.use('/api/cart', require('./routes/gioHangRoutes')); // Alias
 app.use('/api/thanh-toan', require('./routes/paymentRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes')); // Alias
 app.use('/api/van-chuyen', require('./routes/vanChuyenRoutes'));
+app.use('/api/shipping', require('./routes/vanChuyenRoutes')); // Alias
 app.use('/api/hieu-suat', require('./routes/hieuSuatRoutes'));
+app.use('/api/performance', require('./routes/hieuSuatRoutes')); // Alias
 app.use('/api/doi-tra', require('./routes/doiTraRoutes'));
+app.use('/api/returns', require('./routes/doiTraRoutes')); // Alias
 app.use('/api/bao-hanh', require('./routes/baoHanhRoutes'));
+app.use('/api/warranties', require('./routes/baoHanhRoutes')); // Alias
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/rd-tracking', require('./routes/rdRoutes'));

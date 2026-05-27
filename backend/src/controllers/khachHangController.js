@@ -26,13 +26,32 @@ exports.getAll = async (req, res) => {
       .limit(parseInt(limit))
       .lean();
 
-    // Tính số đơn hàng cho mỗi khách (bao gồm cả Hợp đồng B2B và Đơn hàng E-commerce)
+    // Tính số đơn hàng và tổng chi tiêu cho mỗi khách (bao gồm cả Hợp đồng B2B và Đơn hàng E-commerce)
     const data = await Promise.all(rawData.map(async (kh) => {
-      const [countContracts, countOrders] = await Promise.all([
-        HopDong.countDocuments({ CustomerID: kh._id }),
-        DonHang.countDocuments({ KhachHang: kh._id })
+      const [contracts, orders] = await Promise.all([
+        HopDong.find({ CustomerID: kh._id }),
+        DonHang.find({ KhachHang: kh._id })
       ]);
-      return { ...kh, SoDonHang: countContracts + countOrders };
+      
+      let totalSpent = 0;
+      let lastOrderDate = kh.createdAt;
+
+      contracts.forEach(c => {
+        totalSpent += (c.TongGiaTri || 0);
+        if (c.createdAt > lastOrderDate) lastOrderDate = c.createdAt;
+      });
+
+      orders.forEach(o => {
+        totalSpent += (o.TongTien || 0);
+        if (o.createdAt > lastOrderDate) lastOrderDate = o.createdAt;
+      });
+
+      return { 
+        ...kh, 
+        SoDonHang: contracts.length + orders.length,
+        TongChiTieu: totalSpent,
+        NgayMuaGanNhat: lastOrderDate
+      };
     }));
 
     res.status(200).json({
@@ -137,6 +156,41 @@ exports.remove = async (req, res) => {
     const item = await KhachHang.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ success: false, error: 'Không tìm thấy khách hàng' });
     res.status(200).json({ success: true, data: {} });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Tặng voucher cho khách hàng
+// @route   POST /api/khach-hang/:id/gift-voucher
+exports.giftVoucher = async (req, res) => {
+  try {
+    const { VoucherCode, DiscountPercent, DiscountAmount, Description, ExpirationDate } = req.body;
+    
+    if (!VoucherCode) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp mã voucher' });
+    }
+
+    const item = await KhachHang.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: {
+          Vouchers: {
+            VoucherCode,
+            DiscountPercent: DiscountPercent || 0,
+            DiscountAmount: DiscountAmount || 0,
+            Description: Description || '',
+            ExpirationDate: ExpirationDate || new Date(new Date().setMonth(new Date().getMonth() + 1)), // default 1 month
+            IsUsed: false
+          }
+        }
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!item) return res.status(404).json({ success: false, error: 'Không tìm thấy khách hàng' });
+
+    res.status(200).json({ success: true, message: 'Đã tặng voucher thành công', data: item });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }

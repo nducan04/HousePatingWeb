@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { resolveImageUrl } from "@/lib/utils/imageUrl";
 
 interface IPFSImageProps {
   cid: string;
@@ -13,29 +14,7 @@ export default function IPFSImage({ cid, alt = "Image", className = "" }: IPFSIm
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  // Hàm xử lý URL thông minh: Tương thích ngược với dữ liệu cũ
-  const getFinalUrl = (path: string) => {
-    if (!path || path === "undefined" || path === "null") return "";
-    
-    // 1. Nếu là hash của IPFS mới tải lên (Qm... hoặc bafy...)
-    if (path.startsWith("Qm") || path.startsWith("bafy")) {
-      return `https://gateway.pinata.cloud/ipfs/${path}`;
-    }
-    
-    // 2. Nếu đã là link web chuẩn (http/https từ Unsplash, v.v...)
-    if (path.startsWith("http")) {
-      return path;
-    }
-    
-    // 3. Nếu là link local cũ (uploads/...)
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    const origin = typeof window !== "undefined"
-      ? `${window.location.protocol}//${window.location.hostname}:5000`
-      : "http://localhost:5000";
-    return `${origin}${cleanPath}`;
-  };
-
-  const finalUrl = getFinalUrl(cid);
+  const finalUrl = resolveImageUrl(cid);
 
   return (
     <div className={`relative overflow-hidden rounded-xl bg-slate-100 border border-slate-200/50 ${className}`}>

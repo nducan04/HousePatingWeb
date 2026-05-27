@@ -127,7 +127,7 @@ function CustomerCreateContractPage() {
       
       const html2pdf = (await import('html2pdf.js')).default;
       const opt = {
-        margin:       [10, 10, 15, 10], // top, left, bottom, right
+        margin:       [10, 10, 10, 10] as [number, number, number, number],
         filename:     `HopDong_NguyenTac_${contractId || 'VTSC'}.pdf`,
         image:        { type: 'jpeg' as const, quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, logging: false },

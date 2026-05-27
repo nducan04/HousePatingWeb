@@ -11,8 +11,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/authStore';
+import { toast } from '@/lib/utils/notification';
 import api from '@/lib/utils/axiosAuth';
-import RouteMap from '@/app/(admin)/van-chuyen/RouteMap';
+import RouteMap from '@/app/(admin)/shipping/RouteMap';
 
 export default function TrackingPage() {
   const router = useRouter();
@@ -92,7 +93,7 @@ export default function TrackingPage() {
 
   const fetchDBTracking = async () => {
     try {
-      const res = await api.get('/van-chuyen');
+      const res = await api.get('/shipping');
       if (res.data.success) {
         const mapped = res.data.data.map(mapDBTrackingToUI);
         setDbTrackingList(mapped);
@@ -164,7 +165,7 @@ export default function TrackingPage() {
           const belongsToMe = itemCustomer.toLowerCase().includes(customerName.toLowerCase()) ||
             customerName.toLowerCase().includes(itemCustomer.toLowerCase());
           if (!belongsToMe) {
-            alert('Bạn không có quyền truy cập dữ liệu pha chế này.');
+            toast.error('Bạn không có quyền truy cập dữ liệu pha chế này.');
             setLoadingRD(false);
             return;
           }
@@ -183,11 +184,11 @@ export default function TrackingPage() {
         });
         setActiveTab('samples');
       } else {
-        alert('Không tìm thấy mã nhật ký R&D hoặc mã yêu cầu.');
+        toast.error('Không tìm thấy mã nhật ký R&D hoặc mã yêu cầu.');
       }
     } catch (e) {
       console.error('Failed to load R&D from DB:', e);
-      alert('Không tìm thấy mã nhật ký R&D. Thử: REQ-001 hoặc REQ-002');
+      toast.error('Không tìm thấy mã nhật ký R&D. Thử: REQ-001 hoặc REQ-002');
     } finally {
       setLoadingRD(false);
     }
@@ -359,7 +360,7 @@ export default function TrackingPage() {
           return;
         }
 
-        alert('Không tìm thấy mã tracking vận chuyển. Thử: VTSC-240601-001 hoặc VTSC-240610-002');
+        toast.error('Không tìm thấy mã tracking vận chuyển. Thử: VTSC-240601-001 hoặc VTSC-240610-002');
       }
     } else {
       // Searching under RD tab
@@ -376,7 +377,7 @@ export default function TrackingPage() {
       } else if (!trackingCode.toLowerCase().startsWith('req-')) {
         fetchDBRDRequest(trackingCode);
       } else {
-        alert('Không tìm thấy yêu cầu R&D. Thử: REQ-001 hoặc REQ-002');
+        toast.error('Không tìm thấy yêu cầu R&D. Thử: REQ-001 hoặc REQ-002');
       }
     }
   };
@@ -861,6 +862,17 @@ export default function TrackingPage() {
                             Xem chi tiết <ChevronRight size={16} />
                           </Link>
                         </div>
+                        {selectedSample.imageUrl && (
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
+                            <img 
+                              src={selectedSample.imageUrl} 
+                              alt="Ảnh mẫu khách gửi" 
+                              className="w-16 h-16 object-cover rounded-lg shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform"
+                              onClick={() => window.open(selectedSample.imageUrl, '_blank')}
+                            />
+                          </div>
+                        )}
                       </div>
 <<<<<<< Updated upstream
                     </div>
@@ -923,6 +935,16 @@ export default function TrackingPage() {
                                         {v.feedback && (
                                           <div className="text-xs text-slate-600 font-medium bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
                                             <strong>Phản hồi kỹ thuật: </strong>{v.feedback}
+                                          </div>
+                                        )}
+                                        {v.imageUrl && (
+                                          <div className="mt-2">
+                                            <img 
+                                              src={v.imageUrl} 
+                                              alt={`Ảnh mẻ test ${v.version}`} 
+                                              className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:scale-105 transition-transform"
+                                              onClick={() => window.open(v.imageUrl, '_blank')}
+                                            />
                                           </div>
                                         )}
                                         <div className="flex flex-wrap gap-3 text-[10px] font-bold text-slate-400">

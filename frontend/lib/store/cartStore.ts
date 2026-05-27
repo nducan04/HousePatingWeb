@@ -13,6 +13,7 @@ export interface CartItem {
     ThuongHieu?: string;
     TonKho?: number;
   };
+  MaMau?: string;
   SoLuong: number;
 }
 
@@ -22,9 +23,9 @@ interface CartState {
   cartTotal: number;
   isLoading: boolean;
   fetchCart: (sessionId: string) => Promise<void>;
-  addToCart: (sessionId: string, sanPhamId: string, soLuong: number) => Promise<void>;
-  updateQuantity: (sessionId: string, sanPhamId: string, soLuong: number) => Promise<void>;
-  removeFromCart: (sessionId: string, sanPhamId: string) => Promise<void>;
+  addToCart: (sessionId: string, sanPhamId: string, soLuong: number, maMau?: string) => Promise<void>;
+  updateQuantity: (sessionId: string, sanPhamId: string, soLuong: number, maMau?: string) => Promise<void>;
+  removeFromCart: (sessionId: string, sanPhamId: string, maMau?: string) => Promise<void>;
   clearCart: (sessionId: string) => Promise<void>;
 }
 
@@ -56,11 +57,12 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  addToCart: async (sessionId: string, sanPhamId: string, soLuong: number) => {
+  addToCart: async (sessionId: string, sanPhamId: string, soLuong: number, maMau?: string) => {
     try {
       const res = await api.post(`/gio-hang/${sessionId}`, {
         SanPhamId: sanPhamId,
         SoLuong: soLuong,
+        MaMau: maMau || 'N/A'
       });
       if (res.data.success) {
         const items = res.data.data.Items || res.data.data.items || [];
@@ -78,11 +80,12 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  updateQuantity: async (sessionId: string, sanPhamId: string, soLuong: number) => {
+  updateQuantity: async (sessionId: string, sanPhamId: string, soLuong: number, maMau?: string) => {
     try {
       const res = await api.post(`/gio-hang/${sessionId}`, {
         SanPhamId: sanPhamId,
         SoLuong: soLuong,
+        MaMau: maMau || 'N/A'
       });
       if (res.data.success) {
         const items = res.data.data.Items || res.data.data.items || [];
@@ -100,11 +103,12 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  removeFromCart: async (sessionId: string, sanPhamId: string) => {
+  removeFromCart: async (sessionId: string, sanPhamId: string, maMau?: string) => {
     try {
       const res = await api.post(`/gio-hang/${sessionId}`, {
         SanPhamId: sanPhamId,
-        SoLuong: 0
+        SoLuong: 0,
+        MaMau: maMau || 'N/A'
       });
       if (res.data.success) {
         const items = res.data.data.Items || res.data.data.items || [];

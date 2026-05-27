@@ -11,12 +11,11 @@ const {
 
 // Validate is accessible to all logged in users (for cart)
 router.post('/validate', protect, validateVoucher);
+router.get('/', getAllVouchers); // Allow anyone to get vouchers (or protect it if needed, but not authorize)
 
 // Management routes restricted to Admin/NhanVien
 router.use(protect);
 router.use(authorize('Admin', 'NhanVien'));
-
-router.get('/', getAllVouchers);
 router.post('/', createVoucher);
 router.put('/:id', updateVoucher);
 router.delete('/:id', deleteVoucher);

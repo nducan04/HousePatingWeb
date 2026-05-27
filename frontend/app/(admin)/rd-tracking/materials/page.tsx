@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, FlaskConical, ArrowLeft, Plus, Beaker, Clipboard, Settings, Package, Droplet, X, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/utils/axiosAuth';
+import { toast, confirm } from '@/lib/utils/notification';
 
 export default function MaterialsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,7 +31,7 @@ export default function MaterialsPage() {
 
   const fetchSuppliers = async () => {
     try {
-      const res = await api.get('/nha-cung-cap');
+      const res = await api.get('/suppliers');
       if (res.data.success) {
         setSuppliers(res.data.data);
       }
@@ -42,7 +43,7 @@ export default function MaterialsPage() {
   const fetchMaterials = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/kho/nguyen-vat-lieu');
+      const res = await api.get('/inventory/nguyen-vat-lieu');
       if (res.data.success && res.data.data.length > 0) {
         const mapped = res.data.data.map((item: any) => ({
           id: item.MaNVL || `MAT-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
@@ -72,7 +73,7 @@ export default function MaterialsPage() {
       } else {
         // Try to fetch from inventory API
         try {
-          const res = await api.get('/kho/nguyen-vat-lieu');
+          const res = await api.get('/inventory/nguyen-vat-lieu');
           if (res.data.success && res.data.data.length > 0) {
             const mapped = res.data.data.map((item: any) => ({
               id: item.MaNVL || `MAT-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
@@ -150,15 +151,15 @@ export default function MaterialsPage() {
     setMaterials(updated);
     localStorage.setItem('rdMaterials', JSON.stringify(updated));
     setIsModalOpen(false);
-    alert('✅ Đã lưu nguyên vật liệu!');
+    toast.success('✅ Đã lưu nguyên vật liệu!');
   };
 
-  const handleDelete = (id: string) => {
-    if (!confirm('Bạn có chắc muốn xóa nguyên liệu này?')) return;
+  const handleDelete = async (id: string) => {
+    if (!await confirm('Bạn có chắc muốn xóa nguyên liệu này?')) return;
     const updated = materials.filter(m => m.id !== id);
     setMaterials(updated);
     localStorage.setItem('rdMaterials', JSON.stringify(updated));
-    alert('✅ Đã xóa nguyên liệu!');
+    toast.success('✅ Đã xóa nguyên liệu!');
   };
 
   const filteredMaterials = materials.filter(m =>

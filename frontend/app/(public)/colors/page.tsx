@@ -111,7 +111,7 @@ export default function ColorsPage() {
         if (role === "Admin" || role === "Director") {
           router.push("/dashboard");
         } else if (role === "NhanVien") {
-          router.push("/san-pham");
+          router.push("/products");
         } else {
           router.push("/");
         }

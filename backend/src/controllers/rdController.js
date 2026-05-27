@@ -20,6 +20,10 @@ exports.getRDLogs = async (req, res) => {
       }
     }
 
+    if (req.query.contractId) {
+      query.ContractID = req.query.contractId;
+    }
+
     const logs = await NhatKyTestMau.find(query)
       .populate('ContractID', 'MaHopDong title')
       .sort({ updatedAt: -1 });
@@ -85,7 +89,7 @@ exports.createRDLog = async (req, res) => {
 // @route   POST /api/rd-tracking/:id/versions
 exports.addVersion = async (req, res) => {
   try {
-    const { result, parameters, feedback, inputWeight, outputWeight } = req.body;
+    const { result, parameters, feedback, inputWeight, outputWeight, imageUrl } = req.body;
     const log = await NhatKyTestMau.findById(req.params.id);
     
     if (!log) {
@@ -114,6 +118,7 @@ exports.addVersion = async (req, res) => {
       feedback,
       inputWeight,
       outputWeight,
+      imageUrl,
       tester: testerName,
       testerCode: testerCode
     });
@@ -161,8 +166,23 @@ exports.signKCS = async (req, res) => {
     log.signedAt = new Date();
     await log.save();
     
-    // Update Contract Status to 'delivering'
-    await HopDong.findByIdAndUpdate(log.ContractID, { TrangThai: 'delivering' });
+    // Check if ALL logs for this contract are approved
+    const allLogs = await NhatKyTestMau.find({ ContractID: log.ContractID });
+    const allApproved = allLogs.every(l => l.TrangThai === 'approved');
+
+    if (allApproved) {
+      // Update Contract Status to 'delivering'
+      await HopDong.findByIdAndUpdate(log.ContractID, { TrangThai: 'delivering' });
+      
+      const DonHang = require('../models/DonHang');
+      const contract = await HopDong.findById(log.ContractID);
+      if (contract) {
+         await DonHang.findOneAndUpdate(
+             { GhiChu: { $regex: contract.MaHopDong, $options: 'i' } },
+             { TrangThai: 'DA_XU_LY_XONG' }
+         );
+      }
+    }
     
     res.status(200).json({ success: true, message: 'KCS Approved. Contract moved to Delivering status.' });
   } catch (error) {
