@@ -369,7 +369,7 @@ export default function TicketProcessingDrawer({
         return;
       }
       // If fails, try fetching as order
-      res = await api.get(`/don-hang/${contractId}`).catch(() => null);
+      res = await api.get(`/orders/${contractId}`).catch(() => null);
       if (res?.data?.success) {
         setContractData({ type: 'order', ...res.data.data });
       }
@@ -459,7 +459,7 @@ export default function TicketProcessingDrawer({
         ChiTiet: validChiTiet
       };
 
-      const res = await api.post('/kho/nhap-xuat', payload);
+      const res = await api.post('/inventory/nhap-xuat', payload);
       if (res.data.success) {
         triggerToast(action === 'import'
           ? `📦 Đã tạo Phiếu Nhập Kho (${res.data.data.MaPhieu}) — Thu hồi hàng lỗi (Chờ duyệt)`
@@ -549,11 +549,14 @@ export default function TicketProcessingDrawer({
                 <div className="mt-3">
                   <p className="text-xs text-slate-500 mb-2">Hình ảnh đính kèm:</p>
                   <div className="flex flex-wrap gap-2">
-                    {ticket.images.map((img, idx) => (
-                      <a key={idx} href={`https://gateway.pinata.cloud/ipfs/${img}`} target="_blank" rel="noreferrer" className="block w-20 h-20 rounded-xl border border-slate-200 overflow-hidden bg-white hover:opacity-90 transition-opacity">
-                        <img src={`https://gateway.pinata.cloud/ipfs/${img}`} alt={`Minh chứng ${idx + 1}`} className="w-full h-full object-cover" />
-                      </a>
-                    ))}
+                    {ticket.images.map((img, idx) => {
+                      const finalUrl = img.includes('ipfs://') ? img.replace('ipfs://', 'https://ipfs.io/ipfs/') : (img.startsWith('Qm') || img.startsWith('bafy')) ? `https://ipfs.io/ipfs/${img}` : img;
+                      return (
+                        <a key={idx} href={finalUrl} target="_blank" rel="noreferrer" className="block w-20 h-20 rounded-xl border border-slate-200 overflow-hidden bg-white hover:opacity-90 transition-opacity">
+                          <img src={finalUrl} alt={`Minh chứng ${idx + 1}`} className="w-full h-full object-cover" />
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
               )}

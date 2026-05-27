@@ -52,6 +52,19 @@ const khachHangSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+
+  // Ví Voucher (Gifted vouchers for this customer)
+  Vouchers: [
+    {
+      VoucherCode: { type: String, required: true },
+      DiscountPercent: { type: Number, default: 0 },
+      DiscountAmount: { type: Number, default: 0 },
+      Description: { type: String },
+      ExpirationDate: { type: Date },
+      IsUsed: { type: Boolean, default: false },
+      DateGifted: { type: Date, default: Date.now }
+    }
+  ],
 }, {
   timestamps: true,
 });

@@ -5,7 +5,8 @@ const SanPhamSon = require('../models/SanPhamSon');
 const calculateTotal = async (items) => {
   let subtotal = 0;
   for (let item of items) {
-    const sp = await SanPhamSon.findById(item.SanPham);
+    const spId = item.SanPham?._id || item.SanPham;
+    const sp = await SanPhamSon.findById(spId);
     if (sp) {
       subtotal += (sp.DonGiaCoSo || 0) * item.SoLuong;
     }
@@ -30,6 +31,29 @@ exports.getCart = async (req, res) => {
 
     if (!cart) {
       cart = await GioHang.create({ SessionId: sessionId, Items: [], TongTienTamTinh: 0 });
+    } else {
+      // Merge any duplicate items resulting from previous bugs
+      let hasDuplicates = false;
+      const mergedItems = [];
+      for (const item of cart.Items) {
+        if (!item.SanPham) continue;
+        const itemMaMau = item.MaMau || 'N/A';
+        const existing = mergedItems.find(i => i.SanPham._id.toString() === item.SanPham._id.toString() && (i.MaMau || 'N/A') === itemMaMau);
+        if (existing) {
+          existing.SoLuong += item.SoLuong;
+          hasDuplicates = true;
+        } else {
+          mergedItems.push(item);
+        }
+      }
+      if (hasDuplicates) {
+        cart.Items = mergedItems;
+        const totals = await calculateTotal(cart.Items);
+        cart.TongTienTamTinh = totals.TongTienTamTinh;
+        cart.TienThue = totals.TienThue;
+        cart.TongThanhToan = totals.TongThanhToan;
+        await cart.save();
+      }
     }
 
     res.status(200).json({ success: true, data: cart });
@@ -53,8 +77,9 @@ exports.updateCart = async (req, res) => {
     // Tìm theo SanPhamId và MaMau (nếu có)
     const itemIndex = cart.Items.findIndex(i => {
       const sameProduct = i.SanPham.toString() === SanPhamId;
+      const itemMaMau = i.MaMau || 'N/A';
       if (MaMau) {
-        return sameProduct && i.MaMau === MaMau;
+        return sameProduct && itemMaMau === MaMau;
       }
       return sameProduct;
     });

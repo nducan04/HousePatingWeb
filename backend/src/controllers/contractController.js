@@ -6,6 +6,100 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
+async function autoCreateDownstreamData(contract) {
+  try {
+    const DonHang = require('../models/DonHang');
+    const VanChuyen = require('../models/VanChuyen');
+    const NhanVien = require('../models/NhanVien');
+    const SanPhamSon = require('../models/SanPhamSon');
+    const NhatKyTestMau = require('../models/NhatKyTestMau');
+    
+    // Check if DonHang already exists to avoid duplicates by checking GhiChu for the contract ID
+    let order = await DonHang.findOne({ GhiChu: { $regex: contract.MaHopDong, $options: 'i' } });
+    
+    if (!order) {
+      const sampleSP = await SanPhamSon.findOne();
+      const defaultSpId = sampleSP ? sampleSP._id : null;
+      
+      const sampleNV = await NhanVien.findOne();
+      const defaultNvId = contract.EmployeeID || (sampleNV ? sampleNV._id : null);
+
+      const subtotalForTaxCalculation = contract.ChiTietHopDong.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+      
+      const randomHDCode = `HD${Math.floor(1000 + Math.random() * 9000)}${Date.now().toString().slice(-2)}`;
+      order = await DonHang.create({
+        MaDonHang: randomHDCode,
+        KhachHang: contract.CustomerID,
+        NhanVienPhuTrach: defaultNvId,
+        Items: contract.ChiTietHopDong.map(item => ({
+          SanPham: defaultSpId, 
+          TenSanPham: item.productName,
+          MaMau: item.colorCode,
+          SoLuong: item.quantity,
+          DonGia: item.unitPrice,
+          ThanhTien: item.quantity * item.unitPrice
+        })),
+        TienThue: contract.TongGiaTri > subtotalForTaxCalculation ? contract.TongGiaTri - subtotalForTaxCalculation : 0,
+        TongTien: contract.TongGiaTri,
+        TrangThai: contract.TrangThai === 'signed' ? 'DANG_XU_LY' : 'CHO_XAC_NHAN',
+        PhuongThucThanhToan: 'CHUYEN_KHOAN',
+        TrangThaiThanhToan: 'CHUA_THANH_TOAN',
+        DiaChiGiaoHang: contract.partyBAddress || 'Kho khách hàng',
+        GhiChu: `Người nhận: ${contract.partyBRepresentative || 'Khách hàng'} - SĐT: ${contract.partyBPhoneNumber || '0987654321'}. Đơn hàng tự động từ Hợp đồng R&D ${contract.MaHopDong}`
+      });
+    }
+
+    if (contract.TrangThai === 'signed') {
+      if (order.TrangThai === 'CHO_XAC_NHAN') {
+        order.TrangThai = 'DANG_XU_LY';
+        await order.save();
+      }
+
+      const existingVC = await VanChuyen.findOne({ DonHang: order._id });
+      if (!existingVC) {
+        await VanChuyen.create({
+          MaVanChuyen: `VC-${order.MaDonHang}`,
+          DonHang: order._id,
+          LoHang: {
+            SoKien: 1,
+            KhoiLuong: contract.ChiTietHopDong.reduce((sum, i) => sum + i.quantity, 0),
+            MauSon: contract.ChiTietHopDong[0]?.colorCode || 'Mixed'
+          },
+          VanChuyenInfo: {
+            DonVi: 'VTSC Logistics',
+            NhanVien: order.NhanVienPhuTrach
+          },
+          LoTrinh: [{
+            ThoiGian: new Date(),
+            NoiDung: 'Tiếp nhận đơn hàng R&D từ Hợp đồng',
+            Status: 'COMPLETE',
+            Icon: 'Package'
+          }],
+          TrangThaiTongQuat: 'Chờ sản xuất R&D'
+        });
+      }
+
+      const existingRD = await NhatKyTestMau.findOne({ ContractID: contract._id });
+      if (!existingRD) {
+        for (let i = 0; i < contract.ChiTietHopDong.length; i++) {
+          const item = contract.ChiTietHopDong[i];
+          const count = await NhatKyTestMau.countDocuments();
+          const MaNhatKy = `RD-${new Date().getFullYear() % 100}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(count + i + 1).padStart(2, '0')}`;
+          await NhatKyTestMau.create({
+            MaNhatKy,
+            ContractID: contract._id,
+            MaMauYeuCau: item.colorCode || 'CustomColor',
+            TrangThai: 'testing',
+            LichSuPhienBan: []
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error auto-creating downstream data:', error);
+  }
+}
+
 // @desc    Get all contracts
 // @route   GET /api/contracts
 // @access  Private (Admin, NhanVien, KhachHangB2B)
@@ -220,6 +314,9 @@ exports.createContract = async (req, res) => {
     };
 
     const contract = await HopDong.create(contractData);
+    
+    // Auto-create order as CHO_XAC_NHAN
+    await autoCreateDownstreamData(contract);
 
     // Return API-compatible format
     res.status(201).json({
@@ -561,6 +658,10 @@ exports.signContract = async (req, res) => {
     }
 
     await contract.save();
+    
+    if (contract.TrangThai === 'signed') {
+      await autoCreateDownstreamData(contract);
+    }
 
     res.status(200).json({
       success: true,
@@ -598,66 +699,9 @@ exports.updateStatus = async (req, res) => {
     contract.TrangThai = status;
     await contract.save();
 
-    // Auto-create DonHang & VanChuyen if signed
+    // Auto-create DonHang, VanChuyen & R&D if signed
     if (status === 'signed') {
-      const DonHang = require('../models/DonHang');
-      const VanChuyen = require('../models/VanChuyen');
-      const NhanVien = require('../models/NhanVien');
-      const SanPhamSon = require('../models/SanPhamSon');
-      
-      // Tìm 1 sản phẩm bất kỳ làm tham chiếu (vì mongoose yêu cầu ObjectId)
-      const sampleSP = await SanPhamSon.findOne();
-      const defaultSpId = sampleSP ? sampleSP._id : null;
-      
-      // Tìm 1 nhân viên bất kỳ làm người phụ trách vận chuyển mặc định
-      const sampleNV = await NhanVien.findOne();
-      const defaultNvId = contract.EmployeeID || (sampleNV ? sampleNV._id : null);
-
-      // Auto-tính subtotal để ghi nhận thuế
-      const subtotalForTaxCalculation = contract.ChiTietHopDong.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
-      // Tạo đơn hàng
-      const newOrder = await DonHang.create({
-        MaDonHang: `DH-${contract.MaHopDong}`,
-        KhachHang: contract.CustomerID,
-        NhanVienPhuTrach: defaultNvId,
-        Items: contract.ChiTietHopDong.map(item => ({
-          SanPham: defaultSpId, // ID tạm
-          TenSanPham: item.productName,
-          MaMau: item.colorCode,
-          SoLuong: item.quantity,
-          DonGia: item.unitPrice,
-          ThanhTien: item.quantity * item.unitPrice
-        })),
-        TienThue: contract.TongGiaTri > subtotalForTaxCalculation ? contract.TongGiaTri - subtotalForTaxCalculation : 0,
-        TongTien: contract.TongGiaTri,
-        TrangThai: 'DANG_XU_LY',
-        PhuongThucThanhToan: 'CHUYEN_KHOAN',
-        TrangThaiThanhToan: 'CHUA_THANH_TOAN',
-        DiaChiGiaoHang: contract.partyBAddress || 'Kho khách hàng',
-        GhiChu: `Người nhận: ${contract.partyBRepresentative || 'Khách hàng'} - SĐT: ${contract.partyBPhoneNumber || '0987654321'}. Đơn hàng tự động từ Hợp đồng R&D`
-      });
-
-      // Tạo vận chuyển
-      await VanChuyen.create({
-        MaVanChuyen: `VC-${contract.MaHopDong}`,
-        DonHang: newOrder._id,
-        LoHang: {
-          SoKien: 1,
-          KhoiLuong: contract.ChiTietHopDong.reduce((sum, i) => sum + i.quantity, 0),
-          MauSon: contract.ChiTietHopDong[0]?.colorCode || 'Mixed'
-        },
-        VanChuyenInfo: {
-          DonVi: 'VTSC Logistics',
-          NhanVien: defaultNvId // Tạm lấy Employee Hợp đồng làm NV giao hàng
-        },
-        LoTrinh: [{
-          ThoiGian: new Date(),
-          NoiDung: 'Tiếp nhận đơn hàng R&D từ Hợp đồng',
-          Status: 'COMPLETE',
-          Icon: 'Package'
-        }],
-        TrangThaiTongQuat: 'Chờ sản xuất R&D'
-      });
+      await autoCreateDownstreamData(contract);
     }
 
     res.status(200).json({
@@ -742,6 +786,8 @@ exports.signContractByServer = async (req, res) => {
     contractDoc.clientSignature = receipt.hash; // Đánh dấu Client đã ký bằng Server
 
     await contractDoc.save();
+    
+    await autoCreateDownstreamData(contractDoc);
 
     // Bước 5: Trả về phản hồi JSON thành công cho Frontend kèm theo mã txHash
     res.status(200).json({

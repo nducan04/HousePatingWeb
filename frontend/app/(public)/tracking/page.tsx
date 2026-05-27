@@ -12,7 +12,7 @@ import {
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/authStore';
 import api from '@/lib/utils/axiosAuth';
-import RouteMap from '@/app/(admin)/van-chuyen/RouteMap';
+import RouteMap from '@/app/(admin)/shipping/RouteMap';
 
 export default function TrackingPage() {
   const router = useRouter();
@@ -89,7 +89,7 @@ export default function TrackingPage() {
 
   const fetchDBTracking = async () => {
     try {
-      const res = await api.get('/van-chuyen');
+      const res = await api.get('/shipping');
       if (res.data.success) {
         const mapped = res.data.data.map(mapDBTrackingToUI);
         setDbTrackingList(mapped);
@@ -886,6 +886,17 @@ export default function TrackingPage() {
                             <span className="flex items-center gap-1.5"><Layers size={14} /> Bề mặt: <span className="text-slate-800">{selectedSample.surface}</span></span>
                           </div>
                         </div>
+                        {selectedSample.imageUrl && (
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
+                            <img 
+                              src={selectedSample.imageUrl} 
+                              alt="Ảnh mẫu khách gửi" 
+                              className="w-16 h-16 object-cover rounded-lg shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform"
+                              onClick={() => window.open(selectedSample.imageUrl, '_blank')}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -947,6 +958,16 @@ export default function TrackingPage() {
                                         {v.feedback && (
                                           <div className="text-xs text-slate-600 font-medium bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
                                             <strong>Phản hồi kỹ thuật: </strong>{v.feedback}
+                                          </div>
+                                        )}
+                                        {v.imageUrl && (
+                                          <div className="mt-2">
+                                            <img 
+                                              src={v.imageUrl} 
+                                              alt={`Ảnh mẻ test ${v.version}`} 
+                                              className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:scale-105 transition-transform"
+                                              onClick={() => window.open(v.imageUrl, '_blank')}
+                                            />
                                           </div>
                                         )}
                                         <div className="flex flex-wrap gap-3 text-[10px] font-bold text-slate-400">

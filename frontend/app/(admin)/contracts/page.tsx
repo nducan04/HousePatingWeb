@@ -312,7 +312,7 @@ export default function ContractsPage() {
 
       <div className="no-print flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">
             Quản Lý Hợp Đồng Pháp Lý
           </h1>
           <p className="text-slate-500 font-medium mt-1">Số hóa và quản lý điều khoản thương mại VTSC trên Blockchain</p>
@@ -323,31 +323,31 @@ export default function ContractsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 no-print">
         <div className="bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><FileSignature size={64} /></div>
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm mb-4"><FileSignature size={24} /></div>
+          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center shadow-sm mb-4"><FileSignature size={24} /></div>
           <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">Tổng Hợp Đồng</div>
-          <div className="text-3xl font-black text-slate-800 mt-1">{TOTAL_STATS.count}</div>
+          <div className="text-3xl font-semibold text-slate-800 mt-1">{TOTAL_STATS.count}</div>
         </div>
 
         <div className="bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><ShieldCheck size={64} className="text-emerald-500" /></div>
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-sm mb-4"><ShieldCheck size={24} /></div>
+          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shadow-sm mb-4"><ShieldCheck size={24} /></div>
           <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">Đang Hiệu Lực</div>
-          <div className="text-3xl font-black text-slate-800 mt-1">{TOTAL_STATS.active}</div>
+          <div className="text-3xl font-semibold text-slate-800 mt-1">{TOTAL_STATS.active}</div>
         </div>
 
         <div className="bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Handshake size={64} className="text-purple-500" /></div>
-          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shadow-sm mb-4"><Handshake size={24} /></div>
+          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center shadow-sm mb-4"><Handshake size={24} /></div>
           <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">Chờ Ký Duyệt</div>
-          <div className="text-3xl font-black text-slate-800 mt-1">{TOTAL_STATS.pending}</div>
+          <div className="text-3xl font-semibold text-slate-800 mt-1">{TOTAL_STATS.pending}</div>
         </div>
 
         <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-800 rounded-3xl p-6 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
           <div className="absolute inset-0 bg-blue-500/10 mix-blend-overlay"></div>
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><TrendingUp size={64} className="text-blue-300" /></div>
-          <div className="w-12 h-12 bg-white/10 text-blue-300 rounded-2xl flex items-center justify-center backdrop-blur-md mb-4"><TrendingUp size={24} /></div>
+          <div className="w-12 h-12 bg-white/10 text-blue-300 rounded-lg flex items-center justify-center backdrop-blur-md mb-4"><TrendingUp size={24} /></div>
           <div className="text-sm font-bold text-slate-400 uppercase tracking-wider">Giá Trị Đang Vận Hành</div>
-          <div className="text-3xl font-black text-white mt-1">{(TOTAL_STATS.value / 1000000).toFixed(0)}<span className="text-lg text-slate-400 ml-1">Tr</span></div>
+          <div className="text-3xl font-semibold text-white mt-1">{(TOTAL_STATS.value / 1000000).toFixed(0)}<span className="text-lg text-slate-400 ml-1">Tr</span></div>
         </div>
       </div>
 
@@ -357,18 +357,18 @@ export default function ContractsPage() {
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
             <div className="relative w-full sm:w-80">
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <input type="text" className="w-full bg-slate-50 border-none rounded-2xl px-11 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 transition-all font-medium" placeholder="Tìm mã HĐ, tên khách hàng..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <input type="text" className="w-full bg-slate-50 border-none rounded-lg px-11 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 transition-all font-medium" placeholder="Tìm mã HĐ, tên khách hàng..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            <div className="flex bg-slate-50 p-1 rounded-2xl w-full sm:w-auto">
+            <div className="flex bg-slate-50 p-1 rounded-lg w-full sm:w-auto">
               {[{ id: 'all', label: 'Tất cả' }, { id: 'active', label: 'Đang chạy' }, { id: 'pending', label: 'Bản nháp' }].map(f => (
-                <button key={f.id} className={`flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${filter === f.id ? 'bg-white text-blue-600 shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-700'}`} onClick={() => setFilter(f.id)}>{f.label}</button>
+                <button key={f.id} className={`flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${filter === f.id ? 'bg-white text-blue-600 shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-700'}`} onClick={() => setFilter(f.id)}>{f.label}</button>
               ))}
             </div>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            <button className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm transition-all duration-200 cursor-pointer bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/50" onClick={fetchData}><History size={16} /> Lịch sử</button>
+            <button className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/50" onClick={fetchData}><History size={16} /> Lịch sử</button>
             {isAdminOrEmployee && (
-              <button onClick={openForm} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm transition-all duration-200 cursor-pointer bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30">
+              <button onClick={openForm} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30">
                 <Plus size={18} /> Soạn Hợp Đồng
               </button>
             )}
@@ -382,11 +382,11 @@ export default function ContractsPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50">
-                <th className="py-4 px-6 font-black text-[11px] text-slate-400 uppercase tracking-widest">Mã Hợp Đồng</th>
-                <th className="py-4 px-6 font-black text-[11px] text-slate-400 uppercase tracking-widest">Khách Hàng / Đối Tác</th>
-                <th className="py-4 px-6 font-black text-[11px] text-slate-400 uppercase tracking-widest">Tổng Giá Trị</th>
-                <th className="py-4 px-6 font-black text-[11px] text-slate-400 uppercase tracking-widest text-center">Trạng Thái</th>
-                <th className="py-4 px-6 font-black text-[11px] text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                <th className="py-4 px-6 font-semibold text-[11px] text-slate-400 uppercase tracking-widest">Mã Hợp Đồng</th>
+                <th className="py-4 px-6 font-semibold text-[11px] text-slate-400 uppercase tracking-widest">Khách Hàng / Đối Tác</th>
+                <th className="py-4 px-6 font-semibold text-[11px] text-slate-400 uppercase tracking-widest">Tổng Giá Trị</th>
+                <th className="py-4 px-6 font-semibold text-[11px] text-slate-400 uppercase tracking-widest text-center">Trạng Thái</th>
+                <th className="py-4 px-6 font-semibold text-[11px] text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -395,7 +395,7 @@ export default function ContractsPage() {
               ) : filteredData.map(item => (
                 <tr key={item._id} className="hover:bg-slate-50/80 transition-colors group">
                   <td className="py-4 px-6">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50/50 text-blue-700 font-black text-xs border border-blue-100/50">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50/50 text-blue-700 font-semibold text-xs border border-blue-100/50">
                       #{item.contractId}
                     </span>
                   </td>
@@ -404,10 +404,10 @@ export default function ContractsPage() {
                     <div className="text-[12px] font-semibold text-slate-400 mt-1 flex items-center gap-1"><History size={12} /> {new Date(item.createdAt).toLocaleDateString('vi-VN')}</div>
                   </td>
                   <td className="py-4 px-6">
-                    <div className="font-black text-emerald-600 text-[15px]">{item.value.toLocaleString()} ₫</div>
+                    <div className="font-semibold text-emerald-600 text-[15px]">{item.value.toLocaleString()} ₫</div>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className={`inline-flex items-center justify-center px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${['signed', 'completed'].includes(item.status) ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/50' : item.status === 'delivering' ? 'bg-blue-50 text-blue-600 border border-blue-200/50' : 'bg-amber-50 text-amber-600 border border-amber-200/50'}`}>
+                    <span className={`inline-flex items-center justify-center px-3 py-1.5 rounded-md text-[10px] font-semibold uppercase tracking-widest ${['signed', 'completed'].includes(item.status) ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/50' : item.status === 'delivering' ? 'bg-blue-50 text-blue-600 border border-blue-200/50' : 'bg-amber-50 text-amber-600 border border-amber-200/50'}`}>
                       {(
                         {
                           'draft': 'Bản nháp',
@@ -422,8 +422,8 @@ export default function ContractsPage() {
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Link href={`/contracts/${item._id}`} className="w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="Đến trang xử lý Blockchain"><Eye size={16} /></Link>
-                      <button className="w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-slate-100 transition-all shadow-sm" title="In hợp đồng (Bản in thử)" onClick={() => viewContract(item)}><Printer size={16} /></button>
+                      <Link href={`/contracts/${item._id}`} className="w-9 h-9 rounded-md bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="Đến trang xử lý Blockchain"><Eye size={16} /></Link>
+                      <button className="w-9 h-9 rounded-md bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-slate-100 transition-all shadow-sm" title="In hợp đồng (Bản in thử)" onClick={() => viewContract(item)}><Printer size={16} /></button>
                     </div>
                   </td>
                 </tr>
@@ -444,13 +444,13 @@ export default function ContractsPage() {
             {/* Modal Header */}
             <div className="no-print p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner"><Scale size={24} /></div>
+                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shadow-inner"><Scale size={24} /></div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-800 tracking-tight">Soạn Thảo Hợp Đồng Nguyên Tắc</h3>
+                  <h3 className="text-xl font-semibold text-slate-800 tracking-tight">Soạn Thảo Hợp Đồng Nguyên Tắc</h3>
                   <div className="text-sm font-bold text-blue-600 mt-0.5">Mã số: {formData.contractId}</div>
                 </div>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors">
+              <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -464,7 +464,7 @@ export default function ContractsPage() {
                 { step: 4, label: 'Xem trước', icon: Eye }
               ].map((s, idx) => (
                 <div key={s.step} className={`flex items-center gap-3 transition-all duration-300 min-w-max ${currentStep >= s.step ? 'opacity-100' : 'opacity-40 grayscale'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all shadow-sm ${currentStep > s.step ? 'bg-blue-600 text-white' : currentStep === s.step ? 'bg-blue-600 text-white ring-4 ring-blue-100' : 'bg-slate-100 text-slate-500'}`}>
+                  <div className={`w-8 h-8 rounded-md flex items-center justify-center text-sm font-bold transition-all shadow-sm ${currentStep > s.step ? 'bg-blue-600 text-white' : currentStep === s.step ? 'bg-blue-600 text-white ring-4 ring-blue-100' : 'bg-slate-100 text-slate-500'}`}>
                     {currentStep > s.step ? <Check size={16} strokeWidth={3} /> : s.step}
                   </div>
                   <span className={`font-bold ${currentStep >= s.step ? 'text-slate-800' : 'text-slate-500'}`}>{s.label}</span>
@@ -479,49 +479,49 @@ export default function ContractsPage() {
               {/* STEP 1: Parties Info */}
               {currentStep === 1 && (
                 <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
-                  <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, background: 'rgba(255,255,255,0.02)' }}>
+                  <div className="bg-white border border-slate-200 rounded-lg shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, background: 'rgba(255,255,255,0.02)' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#2563eb' }}><Globe size={18} /> Đại diện Bên B (Người Mua)</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="form-label">Chọn Khách hàng (Đối tác)</label>
-                        <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%', background: '#f1f5f9' }} value={formData.customer} onChange={e => handleCustomerSelect(e.target.value)}>
+                        <select className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%', background: '#f1f5f9' }} value={formData.customer} onChange={e => handleCustomerSelect(e.target.value)}>
                           <option value="">-- Chọn khách hàng --</option>
                           {customers.map(c => <option key={c._id} value={c._id}>{c.TenKhachHang} ({c.PhanLoai})</option>)}
                         </select>
                       </div>
                       <div>
                         <label className="form-label">Tên Hợp đồng</label>
-                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
                       </div>
                       <div>
                         <label className="form-label">Mã số thuế</label>
-                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.partyBTaxCode} onChange={e => setFormData({ ...formData, partyBTaxCode: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.partyBTaxCode} onChange={e => setFormData({ ...formData, partyBTaxCode: e.target.value })} />
                       </div>
                       <div>
                         <label className="form-label">Người đại diện</label>
-                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.partyBRepresentative} onChange={e => setFormData({ ...formData, partyBRepresentative: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.partyBRepresentative} onChange={e => setFormData({ ...formData, partyBRepresentative: e.target.value })} />
                       </div>
                       <div>
                         <label className="form-label">Chức vụ</label>
-                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="VD: Giám đốc" value={formData.partyBPosition} onChange={e => setFormData({ ...formData, partyBPosition: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="VD: Giám đốc" value={formData.partyBPosition} onChange={e => setFormData({ ...formData, partyBPosition: e.target.value })} />
                       </div>
                       <div>
                         <label className="form-label">Địa chỉ trụ sở</label>
-                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.partyBAddress} onChange={e => setFormData({ ...formData, partyBAddress: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={formData.partyBAddress} onChange={e => setFormData({ ...formData, partyBAddress: e.target.value })} />
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, background: 'rgba(255,255,255,0.02)' }}>
+                  <div className="bg-white border border-slate-200 rounded-lg shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 24, background: 'rgba(255,255,255,0.02)' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#7c3aed' }}><CreditCard size={18} /> Thông tin Thanh toán & Ví Số</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="form-label">Số tài khoản ngân hàng</label>
-                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="1903..." value={formData.partyBBankAccount} onChange={e => setFormData({ ...formData, partyBBankAccount: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="1903..." value={formData.partyBBankAccount} onChange={e => setFormData({ ...formData, partyBBankAccount: e.target.value })} />
                       </div>
                       <div>
                         <label className="form-label">Tại ngân hàng</label>
-                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Techcombank..." value={formData.partyBBankName} onChange={e => setFormData({ ...formData, partyBBankName: e.target.value })} />
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Techcombank..." value={formData.partyBBankName} onChange={e => setFormData({ ...formData, partyBBankName: e.target.value })} />
                       </div>
 
                     </div>
@@ -532,7 +532,7 @@ export default function ContractsPage() {
               {/* STEP 2: Products Table */}
               {currentStep === 2 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                  <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '24px', border: '1px solid rgba(37, 99, 235, 0.08)', background: 'rgba(2, 103, 255, 0.05)' }}>
+                  <div className="bg-white border border-slate-200 rounded-lg shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '24px', border: '1px solid rgba(37, 99, 235, 0.08)', background: 'rgba(2, 103, 255, 0.05)' }}>
                     <h4 style={{ marginBottom: '20px', fontWeight: 900, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: 10 }}>
                       <Package size={22} className="text-[#2563eb]" /> THÊM DÒNG HÀNG HÓA (ĐIỀU 1)
                     </h4>
@@ -544,7 +544,7 @@ export default function ContractsPage() {
                         <div className="relative">
                           <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                           <select
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-md pl-10 pr-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                             value={newItem.productCode}
                             onChange={e => handleProductSelection(e.target.value)}
                           >
@@ -559,7 +559,7 @@ export default function ContractsPage() {
                         <label className="form-label-mini">Tên hàng / Dòng sơn</label>
                         <div className="relative">
                           <Package size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <input type="text" className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-all" placeholder="Tên dòng sơn..." value={newItem.productName} readOnly />
+                          <input type="text" className="w-full bg-white border border-slate-200 rounded-md pl-10 pr-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-all" placeholder="Tên dòng sơn..." value={newItem.productName} readOnly />
                         </div>
                       </div>
                       <div className="input-group-premium md:col-span-3 lg:col-span-2">
@@ -569,7 +569,7 @@ export default function ContractsPage() {
                           <input
                             type="text"
                             list="color-suggestions"
-                            className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            className="w-full bg-white border border-slate-200 rounded-md pl-10 pr-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                             placeholder="Gõ mã..."
                             value={newItem.colorCode}
                             onChange={e => setNewItem({ ...newItem, colorCode: e.target.value })}
@@ -586,14 +586,14 @@ export default function ContractsPage() {
                       </div>
                       <div className="input-group-premium md:col-span-2 lg:col-span-2">
                         <label className="form-label-mini">Số lượng (Kg)</label>
-                        <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="0" value={newItem.quantity} onChange={e => setNewItem({ ...newItem, quantity: Number(e.target.value) })} />
+                        <input type="number" className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="0" value={newItem.quantity} onChange={e => setNewItem({ ...newItem, quantity: Number(e.target.value) })} />
                       </div>
                       <div className="input-group-premium md:col-span-6 lg:col-span-2">
                         <label className="form-label-mini">Đơn giá (VNĐ)</label>
-                        <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="0" value={newItem.unitPrice} onChange={e => setNewItem({ ...newItem, unitPrice: Number(e.target.value) })} />
+                        <input type="number" className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="0" value={newItem.unitPrice} onChange={e => setNewItem({ ...newItem, unitPrice: Number(e.target.value) })} />
                       </div>
                       <div className="md:col-span-6 lg:col-span-1">
-                        <button onClick={addProductItem} className="w-full h-11 mt-6 inline-flex items-center justify-center gap-2 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 cursor-pointer border-none transition-all shadow-md shadow-blue-600/20">
+                        <button onClick={addProductItem} className="w-full h-11 mt-6 inline-flex items-center justify-center gap-2 rounded-md font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 cursor-pointer border-none transition-all shadow-md shadow-blue-600/20">
                           <Plus size={18} /> THÊM
                         </button>
                       </div>
@@ -601,12 +601,12 @@ export default function ContractsPage() {
 
                     <div style={{ padding: '0 5px' }}>
                       <label className="form-label-mini">Yêu cầu kỹ thuật đi kèm (Tùy chọn)</label>
-                      <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} placeholder="VD: Chịu nhiệt cao, bền màu 10 năm..." value={newItem.technicalReqs} onChange={e => setNewItem({ ...newItem, technicalReqs: e.target.value })} />
+                      <input type="text" className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ width: '100%' }} placeholder="VD: Chịu nhiệt cao, bền màu 10 năm..." value={newItem.technicalReqs} onChange={e => setNewItem({ ...newItem, technicalReqs: e.target.value })} />
                     </div>
                   </div>
 
                   {/* Products Table */}
-                  <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 0, borderRadius: 12, overflow: 'hidden' }}>
+                  <div className="bg-white border border-slate-200 rounded-lg shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 0, borderRadius: 12, overflow: 'hidden' }}>
                     <table className="w-full text-left text-sm">
                       <thead>
                         <tr style={{ background: '#ffffff' }}>
@@ -632,7 +632,7 @@ export default function ContractsPage() {
                             <td>{item.unitPrice.toLocaleString()} ₫</td>
                             <td><span style={{ fontWeight: 900, color: '#2563eb' }}>{(item.quantity * item.unitPrice).toLocaleString()}</span> ₫</td>
                             <td style={{ textAlign: 'right', paddingRight: 24 }}>
-                              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" onClick={() => removeProductItem(idx)}><X size={16} className="text-rose-500" /></button>
+                              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" onClick={() => removeProductItem(idx)}><X size={16} className="text-rose-500" /></button>
                             </td>
                           </tr>
                         ))}
@@ -694,18 +694,18 @@ export default function ContractsPage() {
 
                   {/* On-chain Proof Card */}
                   {(['signed', 'delivering', 'completed'].includes(formData.status) || formData.txHash) && (
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-5 shadow-sm relative overflow-hidden mb-8 no-print animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="bg-green-50 border border-green-200 rounded-md p-5 shadow-sm relative overflow-hidden mb-8 no-print animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                         <ShieldCheck size={100} />
                       </div>
                       <div className="flex gap-4 relative z-10">
                         <div className="shrink-0">
-                          <div className="w-12 h-12 bg-white text-green-600 rounded-full flex items-center justify-center shadow-sm border border-green-100">
+                          <div className="w-12 h-12 bg-white text-green-600 rounded-md flex items-center justify-center shadow-sm border border-green-100">
                             <ShieldCheck size={24} />
                           </div>
                         </div>
                         <div className="flex-1">
-                          <h4 className="text-[17px] font-black text-green-800 tracking-tight">Xác thực Pháp lý trên Blockchain thành công</h4>
+                          <h4 className="text-[17px] font-semibold text-green-800 tracking-tight">Xác thực Pháp lý trên Blockchain thành công</h4>
                           <p className="text-sm text-gray-600 font-medium mt-1 mb-5 leading-relaxed">Văn bản hợp đồng đã được băm SHA-256 và đóng dấu bất biến lên mạng lưới Ethereum Sepolia Testnet.</p>
 
                           <div className="bg-white/80 border border-green-100 rounded-lg p-3 mb-5 shadow-sm">
@@ -731,7 +731,7 @@ export default function ContractsPage() {
                             href={`https://sepolia.etherscan.io/tx/${formData.txHash}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 w-full py-3.5 px-5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-slate-900/20 hover:shadow-slate-900/30"
+                            className="inline-flex items-center justify-center gap-2 w-full py-3.5 px-5 bg-slate-900 hover:bg-slate-800 text-white rounded-md font-bold text-sm transition-all shadow-lg shadow-slate-900/20 hover:shadow-slate-900/30"
                           >
                             Kiểm tra sổ cái Etherscan <ExternalLink size={16} />
                           </a>
@@ -842,7 +842,7 @@ export default function ContractsPage() {
             {/* Modal Footer Controls */}
             <div className="no-print" style={{ padding: '24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between' }}>
               <button
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 disabled={currentStep === 1}
                 onClick={() => setCurrentStep(prev => prev - 1)}
               >
@@ -851,24 +851,24 @@ export default function ContractsPage() {
 
               <div style={{ display: 'flex', gap: 12 }}>
                 {currentStep === 4 && (
-                  <button disabled={isExportingPDF} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50" onClick={handlePrint} style={{ background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button disabled={isExportingPDF} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50" onClick={handlePrint} style={{ background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 8 }}>
                     {isExportingPDF ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
                     {isExportingPDF ? 'ĐANG XUẤT...' : 'XUẤT PDF'}
                   </button>
                 )}
                 {currentStep < 4 ? (
-                  <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => setCurrentStep(prev => prev + 1)}>
+                  <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" onClick={() => setCurrentStep(prev => prev + 1)}>
                     Tiếp theo <ChevronRight size={20} />
                   </button>
                 ) : (
                   <>
                     {formData._id && formData.status === 'draft' && (
-                      <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-rose-50 text-rose-600 hover:bg-rose-100 shadow-sm" disabled={isSubmitting} onClick={handleCancelContract}>
+                      <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-rose-50 text-rose-600 hover:bg-rose-100 shadow-sm" disabled={isSubmitting} onClick={handleCancelContract}>
                         {isSubmitting ? <Loader2 className="animate-spin" /> : <X size={20} />} HUỶ HỢP ĐỒNG
                       </button>
                     )}
                     {!formData._id && (
-                      <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" disabled={isSubmitting} style={{ background: '#059669', border: 'none' }} onClick={handleSubmit}>
+                      <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" disabled={isSubmitting} style={{ background: '#059669', border: 'none' }} onClick={handleSubmit}>
                         {isSubmitting ? <Loader2 className="animate-spin" /> : <ShieldCheck size={20} />} LƯU TẠO BẢN NHÁP
                       </button>
                     )}

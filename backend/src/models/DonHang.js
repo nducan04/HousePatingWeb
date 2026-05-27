@@ -53,7 +53,7 @@ const donHangSchema = new mongoose.Schema({
   },
   TrangThai: {
     type: String,
-    enum: ['CHO_XAC_NHAN', 'DANG_XU_LY', 'DANG_GIAO', 'DA_GIAO', 'DA_HUY'],
+    enum: ['CHO_XAC_NHAN', 'DANG_XU_LY', 'DA_XU_LY_XONG', 'DANG_GIAO', 'DA_GIAO', 'DA_HUY'],
     default: 'CHO_XAC_NHAN'
   },
   PhuongThucThanhToan: {

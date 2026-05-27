@@ -52,13 +52,13 @@ const allNavItems = [
     section: "Quản lý hệ thống",
     items: [
       {
-        href: "/taikhoan",
+        href: "/accounts",
         label: "Quản lý tài khoản",
         icon: User,
         roles: ["Admin"],
       },
       {
-        href: "/thongtin",
+        href: "/profile",
         label: "Thông tin cá nhân",
         icon: Users,
         roles: [
@@ -70,7 +70,7 @@ const allNavItems = [
         ],
       },
       {
-        href: "/phanquyen",
+        href: "/roles",
         label: "Quản lý phân quyền",
         icon: Users,
         roles: ["Admin"],
@@ -81,37 +81,37 @@ const allNavItems = [
     section: "Quản lý danh mục",
     items: [
       {
-        href: "/san-pham",
+        href: "/products",
         label: "Sản phẩm sơn",
         icon: Package,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
       {
-        href: "/gia-thanh",
+        href: "/cost-analysis",
         label: "Quản lý giá thành",
         icon: DollarSign,
         roles: ["Admin"],
       },
       {
-        href: "/kho",
+        href: "/inventory",
         label: "Quản lý kho",
         icon: ClipboardList,
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/nhan-vien",
+        href: "/staff",
         label: "Quản lý nhân viên",
         icon: User,
         roles: ["Admin"],
       },
       {
-        href: "/doi-tac",
+        href: "/partners",
         label: "Quản lý khách hàng",
         icon: User,
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/nha-cung-cap",
+        href: "/suppliers",
         label: "Quản lý nhà cung cấp",
         icon: User,
         roles: ["Admin", "NhanVien"],
@@ -134,37 +134,37 @@ const allNavItems = [
     section: "Quản lý kinh doanh sơn",
     items: [
       {
-        href: "/tin-tuc",
+        href: "/news",
         label: "Quảng bá sản phẩm",
         icon: Package,
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/don-hang",
+        href: "/orders",
         label: "Quản lý đơn hàng",
         icon: ListOrdered,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
-        href: "/thanh-toan",
+        href: "/payments",
         label: "Quản lý thanh toán",
         icon: QrCode,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
-        href: "/van-chuyen",
+        href: "/shipping",
         label: "Theo dõi vận chuyển",
         icon: TrainFront,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
-        href: "/hieu-suat",
+        href: "/performance",
         label: "Theo dõi hiệu suất",
         icon: SignalHigh,
         roles: ["Admin", "Director"],
       },
       {
-        href: "/khuyen-mai",
+        href: "/promotions",
         label: "Quản lý khuyến mãi",
         icon: PanelsRightBottom,
         roles: ["Admin", "NhanVien"],
@@ -199,7 +199,7 @@ const allNavItems = [
         roles: ["KhachHangB2B", "KhachHangB2C"],
       },
       {
-        href: "/thanh-toan-hd",
+        href: "/contract-payments",
         label: "Thanh toán và công nợ HĐ",
         icon: DollarSign,
         roles: ["Admin", "NhanVien", "KhachHangB2B"],
@@ -210,13 +210,13 @@ const allNavItems = [
     section: "BÁO CÁO & THỐNG KÊ",
     items: [
       {
-        href: "/bao-cao",
+        href: "/reports",
         label: "Báo cáo",
         icon: FileSignature,
         roles: ["Admin", "Director"],
       },
       {
-        href: "/thong-ke",
+        href: "/statistics",
         label: "Thống kê",
         icon: FlaskConical,
         roles: ["Admin", "Director"],
@@ -273,7 +273,7 @@ export default function AdminLayout({
     // Phân quyền cho trang Dashboard
     if (pathname === "/dashboard") {
       if (userRole === "NhanVien") {
-        router.push("/san-pham");
+        router.push("/products");
         return;
       }
       if (isCustomer) {
@@ -352,17 +352,17 @@ export default function AdminLayout({
     if (pathname === "/dashboard") {
       return userRole === "NhanVien" ? "📦 Quản lý nghiệp vụ" : "📊 Dashboard";
     }
-    if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
-    if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
+    if (pathname?.startsWith("/products")) return "📦 Quản lý Sản phẩm Sơn";
+    if (pathname?.startsWith("/inventory")) return "🏭 Quản lý Kho";
     if (pathname?.startsWith("/doi-tra"))
       return "🎯 Trung Tâm Giải Quyết Khiếu Nại";
-    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
-    if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
+    if (pathname?.startsWith("/partners")) return "🤝 Quản lý Khách Hàng";
+    if (pathname?.startsWith("/staff")) return "👥 Quản lý Nhân sự";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
     if (pathname?.startsWith("/contracts")) return "📝 Hợp đồng B2B";
     if (pathname === "/colors") return "🎨 Tra cứu Mã Màu";
     if (pathname === "/tracking") return "📦 QR Tracking";
-    if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
+    if (pathname === "/orders") return "📋 Quản lý Đơn hàng";
     if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
     if (pathname === "/import") return "📤 Nhập Dữ Liệu (Excel/CSV)";
     return "Quản lý nghiệp vụ";
@@ -383,22 +383,12 @@ export default function AdminLayout({
         {!isCustomer && (
           <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
             {/* Logo Area */}
-            <div className="px-8 py-7 flex items-center gap-4">
-              <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10">
-                <img
-                  src="/vtsc.png"
-                  alt="Logo"
-                  className="w-full h-full object-contain brightness-110"
-                />
-              </div>
-              <div>
-                <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
-                  VTSC
+            <div className="px-8 py-7 flex items-center justify-center">
+              <Link href="/" className="block no-underline group">
+                <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-105 px-3">
+                  <img src="/images/vosco-logo.png" alt="VTSC Logo" className="w-full h-full object-contain" />
                 </div>
-                <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
-                  PaintPro
-                </div>
-              </div>
+              </Link>
             </div>
 
             {/* Navigation */}

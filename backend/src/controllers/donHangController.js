@@ -45,6 +45,19 @@ exports.checkoutFromCart = async (req, res) => {
 
         // 3. Xử lý mã giảm giá (Voucher)
         let discountAmount = 0;
+        let appliedVoucherId = null;
+
+        // 3.5 Lấy đúng ID KhachHang từ TaiKhoan ID (chuyển lên trên để dùng cho voucher tặng riêng)
+        const KhachHangModel = require('../models/KhachHang');
+        let realKhachHangId = khachHangId;
+        let kh = null;
+        if (khachHangId) {
+            kh = await KhachHangModel.findOne({ $or: [{ AccountID: khachHangId }, { _id: khachHangId }] }).session(session);
+            if (kh) {
+                realKhachHangId = kh._id;
+            }
+        }
+
         if (discountCode) {
             const voucher = await KhuyenMai.findOne({ MaVoucher: discountCode.toUpperCase() }).session(session);
             if (voucher && voucher.TrangThai === 'DANG_DIEN_RA') {
@@ -60,18 +73,20 @@ exports.checkoutFromCart = async (req, res) => {
                     voucher.SoLuongDaDung += 1;
                     if (voucher.SoLuongDaDung >= voucher.SoLuongToiDa) voucher.TrangThai = 'DA_KET_THUC';
                     await voucher.save({ session });
+                    appliedVoucherId = voucher._id;
                 }
-            }
-        }
-
-        // 3.5 Lấy đúng ID KhachHang từ TaiKhoan ID
-        const KhachHangModel = require('../models/KhachHang');
-        let realKhachHangId = khachHangId;
-        let kh = null;
-        if (khachHangId) {
-            kh = await KhachHangModel.findOne({ $or: [{ AccountID: khachHangId }, { _id: khachHangId }] }).session(session);
-            if (kh) {
-                realKhachHangId = kh._id;
+            } else if (kh && kh.Vouchers) {
+                // Thử kiểm tra voucher được tặng riêng
+                const giftedVoucher = kh.Vouchers.find(v => v.VoucherCode.toUpperCase() === discountCode.toUpperCase());
+                if (giftedVoucher && !giftedVoucher.IsUsed && new Date(giftedVoucher.ExpirationDate) >= new Date()) {
+                    if (giftedVoucher.DiscountPercent > 0) {
+                        discountAmount = (subtotal * giftedVoucher.DiscountPercent) / 100;
+                    } else if (giftedVoucher.DiscountAmount > 0) {
+                        discountAmount = giftedVoucher.DiscountAmount;
+                    }
+                    giftedVoucher.IsUsed = true;
+                    await kh.save({ session });
+                }
             }
         }
 
@@ -89,6 +104,8 @@ exports.checkoutFromCart = async (req, res) => {
             Items: orderItems,
             TienThue: taxAmount,
             TongTien: totalAmount,
+            GiamGia: discountAmount,
+            KhuyenMai: appliedVoucherId,
             TrangThai: 'CHO_XAC_NHAN',
             DiaChiGiaoHang: diaChiGiaoHang,
             GhiChu: ghiChu
@@ -463,6 +480,47 @@ exports.rateOrder = async (req, res) => {
         };
 
         await order.save();
+
+        // Update SanPhamSon rating
+        if (ChatLuongSanPham && order.Items && order.Items.length > 0) {
+            const SanPhamSon = require('../models/SanPhamSon');
+            const KhachHang = require('../models/KhachHang');
+            const khProfile = await KhachHang.findOne({ AccountID: req.user._id });
+            const khTen = khProfile ? khProfile.HoTen : 'Khách hàng ẩn danh';
+
+            for (const item of order.Items) {
+                if (item.SanPham) {
+                    await SanPhamSon.findByIdAndUpdate(item.SanPham, {
+                        $push: {
+                            DanhGia: {
+                                KhachHang: khTen,
+                                SoSao: ChatLuongSanPham,
+                                BinhLuan: BinhLuan || '',
+                                NgayDanhGia: new Date()
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        // Update NhanVien KPI
+        if (ChatLuongDichVu && order.NhanVienPhuTrach) {
+            const NhanVien = require('../models/NhanVien');
+            const nv = await NhanVien.findById(order.NhanVienPhuTrach);
+            if (nv) {
+                // Convert 5 stars to 100 points
+                const newScore = (ChatLuongDichVu / 5) * 100;
+                // Simple moving average (assume 10 ratings if we don't know total count, just push it up/down)
+                const currentScore = nv.HieuSuatKPI?.diemKPI || 85;
+                const updatedScore = Math.round((currentScore * 9 + newScore) / 10);
+                
+                await NhanVien.findByIdAndUpdate(order.NhanVienPhuTrach, {
+                    'HieuSuatKPI.diemKPI': updatedScore,
+                    'HieuSuatKPI.diemDanhGia': updatedScore
+                });
+            }
+        }
 
         res.status(200).json({ success: true, message: 'Đánh giá đơn hàng thành công', data: order });
     } catch (error) {

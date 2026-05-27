@@ -63,7 +63,10 @@ const baoHanhSchema = new mongoose.Schema({
     type: Number,
     min: 1,
     max: 5
-  }
+  },
+  HinhAnh: [{
+    type: String
+  }]
 }, {
   timestamps: true
 });

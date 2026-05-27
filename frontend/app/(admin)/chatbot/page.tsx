@@ -117,7 +117,7 @@ export default function ChatbotPage() {
 
   const fetchStaffList = async () => {
     try {
-      const res = await api.get('/nhan-vien');
+      const res = await api.get('/staff');
       if (res.data.success) {
         setAllStaff(res.data.data);
       }
@@ -130,7 +130,7 @@ export default function ChatbotPage() {
     try {
       const [resDoiTra, resBaoHanh] = await Promise.all([
         api.get('/doi-tra').catch(() => ({ data: { success: false, data: [] } })),
-        api.get('/bao-hanh').catch(() => ({ data: { success: false, data: [] } }))
+        api.get('/warranties').catch(() => ({ data: { success: false, data: [] } }))
       ]);
 
       const allTickets: Ticket[] = [];
@@ -179,6 +179,7 @@ export default function ChatbotPage() {
             rawCreatedAt: new Date(item.createdAt).getTime(),
             contractId: item.HopDong || null,
             rawId: item._id,
+            images: item.HinhAnh || [],
             source: 'bao-hanh'
           } as any);
         });
@@ -218,6 +219,7 @@ export default function ChatbotPage() {
       createdAt: new Date(entry.date).toLocaleDateString('vi-VN'),
       rawId: entry.id,
       contractId: entry.raw?.HopDong || entry.raw?.DonHang?._id || entry.raw?.DonHang,
+      images: entry.raw?.HinhAnh || [],
       source: entry.type === 'WARRANTY' ? 'bao-hanh' : 'doi-tra'
     } as any;
 
@@ -250,7 +252,7 @@ export default function ChatbotPage() {
 
       // Depending on the ticket source, route to the correct update endpoint
       if ((selectedTicket as any).source === 'bao-hanh') {
-        endpoint = `/bao-hanh/${selectedTicket.rawId}/status`;
+        endpoint = `/warranties/${selectedTicket.rawId}/status`;
       } else {
         endpoint = `/doi-tra/${selectedTicket.rawId}/status`;
       }
@@ -289,8 +291,8 @@ export default function ChatbotPage() {
       setIsLoadingDashboard(true);
       const [returnsRes, warrantyRes, ordersRes] = await Promise.all([
         api.get('/doi-tra'),
-        api.get('/bao-hanh'),
-        api.get('/don-hang')
+        api.get('/warranties'),
+        api.get('/orders')
       ]);
 
       const unifiedEntries: SupportEntry[] = [];
@@ -373,7 +375,7 @@ export default function ChatbotPage() {
         const item = entries.find(e => e.id === id);
         // Often warranty is linked to a customer, we show their latest order or let them choose
         // For now, let's try to fetch the item's info which might contain linked order info
-        const resTicket = await api.get(`/bao-hanh/${id}`);
+        const resTicket = await api.get(`/warranties/${id}`);
         // If we don't have a direct link in model, we show the products from the ticket or latest order
         if (resTicket.data.success) {
           // Logic for warranty details...
@@ -381,7 +383,7 @@ export default function ChatbotPage() {
       }
 
       if (orderId && orderId.length > 5) {
-        const res = await api.get(`/don-hang/${orderId}`);
+        const res = await api.get(`/orders/${orderId}`);
         if (res.data.success) setOrderDetails(res.data.data);
       }
     } catch (err) {
@@ -396,7 +398,7 @@ export default function ChatbotPage() {
     setIsDetailOpen(true);
     setIsLoadingOrders(true);
     try {
-      const res = await api.get(`/don-hang`);
+      const res = await api.get(`/orders`);
       setCustomerOrders(res.data.data.filter((o: any) => o.KhachHang?._id === customerId));
     } catch (error) {
       console.error(error);
@@ -424,8 +426,8 @@ export default function ChatbotPage() {
       };
 
       if (targetEntry.type === 'RETURN') endpoint = `/doi-tra/${targetEntry.id}/status`;
-      else if (targetEntry.type === 'WARRANTY') endpoint = `/bao-hanh/${targetEntry.id}/status`;
-      else if (targetEntry.type === 'ORDER') endpoint = `/don-hang/${targetEntry.id}/status`;
+      else if (targetEntry.type === 'WARRANTY') endpoint = `/warranties/${targetEntry.id}/status`;
+      else if (targetEntry.type === 'ORDER') endpoint = `/orders/${targetEntry.id}/status`;
 
       const res = await api.patch(endpoint, payload);
       if (res.data.success) {

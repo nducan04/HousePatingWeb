@@ -30,7 +30,7 @@ export default function MaterialsPage() {
 
   const fetchSuppliers = async () => {
     try {
-      const res = await api.get('/nha-cung-cap');
+      const res = await api.get('/suppliers');
       if (res.data.success) {
         setSuppliers(res.data.data);
       }
@@ -42,7 +42,7 @@ export default function MaterialsPage() {
   const fetchMaterials = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/kho/nguyen-vat-lieu');
+      const res = await api.get('/inventory/nguyen-vat-lieu');
       if (res.data.success && res.data.data.length > 0) {
         const mapped = res.data.data.map((item: any) => ({
           id: item.MaNVL || `MAT-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
@@ -72,7 +72,7 @@ export default function MaterialsPage() {
       } else {
         // Try to fetch from inventory API
         try {
-          const res = await api.get('/kho/nguyen-vat-lieu');
+          const res = await api.get('/inventory/nguyen-vat-lieu');
           if (res.data.success && res.data.data.length > 0) {
             const mapped = res.data.data.map((item: any) => ({
               id: item.MaNVL || `MAT-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
