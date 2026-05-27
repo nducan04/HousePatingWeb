@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Eye, Shield, Wrench, Clock, FileWarning, Plus, X, User, Calendar, FileText, CheckCircle, AlertCircle, Bookmark } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
+import { toast } from '@/lib/utils/notification';
 
 interface BaoHanh {
   _id: string;
@@ -81,16 +82,16 @@ export default function BaoHanhPage() {
   const handleSubmit = async () => {
     try {
       if (!formData.KhachHang || !formData.NoiDungLoi || !formData.HanBaoHanh) {
-        return alert('Vui lòng điền đủ thông tin bắt buộc (Khách hàng, Lỗi, Hạn BH)');
+        return toast.error('Vui lòng điền đủ thông tin bắt buộc (Khách hàng, Lỗi, Hạn BH)');
       }
       const res = await api.post('/warranties', formData);
       if (res.data?.success) {
-        alert('Tạo log bảo hành thành công!');
+        toast.success('Tạo log bảo hành thành công!');
         setIsModalOpen(false);
         fetchData();
       }
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Lỗi lưu log bảo hành');
+      toast.error(error.response?.data?.error || 'Lỗi lưu log bảo hành');
     }
   };
 
@@ -437,7 +438,7 @@ export default function BaoHanhPage() {
 
             <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex justify-end gap-3 flex-shrink-0">
               <button onClick={() => setIsDetailOpen(false)} className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer shadow-sm border border-slate-200">Đóng chi tiết</button>
-              <button className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 shadow-lg shadow-slate-900/20 transition-all cursor-pointer" onClick={() => alert('Chức năng In Ticket đang được phát triển')}>In Biên Bản Kỹ Thuật</button>
+              <button className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 shadow-lg shadow-slate-900/20 transition-all cursor-pointer" onClick={() => toast.info('Chức năng In Ticket đang được phát triển')}>In Biên Bản Kỹ Thuật</button>
             </div>
           </div>
         </div>

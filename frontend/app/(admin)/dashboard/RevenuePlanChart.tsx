@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { TrendingUp, Award, Calendar, DollarSign, Loader2, Target, X, BarChart3 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
+import { toast } from "@/lib/utils/notification";
 
 // Tooltip cho chế độ 1 năm
 const SingleYearTooltip = ({ active, payload, label }: any) => {
@@ -147,7 +148,7 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
 
   const handleSaveTarget = async () => {
     if (!targetAmount || isNaN(Number(targetAmount)) || Number(targetAmount) < 0) {
-      alert("Vui lòng nhập số tiền hợp lệ!");
+      toast.warning("Vui lòng nhập số tiền hợp lệ!");
       return;
     }
 
@@ -164,7 +165,7 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
         targetAmount: amountInVND,
       });
 
-      alert("Thiết lập mục tiêu thành công!");
+      toast.success("Thiết lập mục tiêu thành công!");
       setIsModalOpen(false);
 
       // Tải lại data nếu năm mục tiêu lưu trùng với năm hiển thị
@@ -173,7 +174,7 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
       }
     } catch (error) {
       console.error("Lỗi khi lưu mục tiêu:", error);
-      alert("Có lỗi xảy ra khi lưu mục tiêu.");
+      toast.error("Có lỗi xảy ra khi lưu mục tiêu.");
     } finally {
       setIsSaving(false);
     }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Building, DollarSign, Briefcase, FileSignature, User, Mail, Phone, MapPin, Receipt, ShoppingCart, X, Download } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
+import { toast, confirm } from '@/lib/utils/notification';
 import * as XLSX from 'xlsx';
 
 const API_URL = '/suppliers';
@@ -103,7 +104,7 @@ export default function NhaCungCapPage() {
     try {
       const res = await api.post(`${API_URL}/${accountNCC._id}/create-account`, accountForm);
       if (res.data.success) {
-        alert('Cấp tài khoản nhà cung cấp thành công!');
+        toast.success('Cấp tài khoản nhà cung cấp thành công!');
         setIsAccountModalOpen(false);
         fetchData();
         if (selectedNCC && selectedNCC._id === accountNCC._id) {
@@ -111,7 +112,7 @@ export default function NhaCungCapPage() {
         }
       }
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Lỗi cấp tài khoản');
+      toast.error(error.response?.data?.error || 'Lỗi cấp tài khoản');
     }
   };
 
@@ -229,7 +230,7 @@ export default function NhaCungCapPage() {
         // Tải lại danh sách nhà cung cấp ở trang chính để đồng bộ công nợ
         fetchData();
       }
-    } catch (error: any) { alert(error.response?.data?.error || 'Lỗi lưu phiếu đặt'); }
+    } catch (error: any) { toast.error(error.response?.data?.error || 'Lỗi lưu phiếu đặt'); }
   };
 
   const handleSubmit = async () => {
@@ -238,16 +239,16 @@ export default function NhaCungCapPage() {
       else await api.post(API_URL, formData);
       setIsModalOpen(false);
       fetchData();
-    } catch (error: any) { alert(error.response?.data?.error || 'Lỗi lưu NCC'); }
+    } catch (error: any) { toast.error(error.response?.data?.error || 'Lỗi lưu NCC'); }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Chắc chắn muốn xóa đối tác cung ứng này?')) {
+    if (await confirm('Chắc chắn muốn xóa đối tác cung ứng này?')) {
       try {
         await api.delete(`${API_URL}/${id}`);
         fetchData();
       } catch (error) {
-        alert('Lỗi xóa đối tác cung ứng');
+        toast.error('Lỗi xóa đối tác cung ứng');
       }
     }
   };

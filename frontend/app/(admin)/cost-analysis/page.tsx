@@ -13,6 +13,7 @@ import {
   X
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
+import { toast } from '@/lib/utils/notification';
 
 const API_PATH = '/san-pham-son';
 
@@ -77,11 +78,11 @@ export default function GiaThanhPage() {
       await api.put(`${API_PATH}/${selectedProduct._id}/price`, {
         DonGiaCoSo: newPrice
       });
-      alert('Cập nhật giá thành công!');
+      toast.success('Cập nhật giá thành công!');
       setIsModalOpen(false);
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Lỗi cập nhật giá');
+      toast.error(err.response?.data?.error || 'Lỗi cập nhật giá');
     }
   };
 

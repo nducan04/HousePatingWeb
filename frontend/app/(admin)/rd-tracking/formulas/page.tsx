@@ -5,6 +5,7 @@ import { Search, FlaskConical, ArrowLeft, Plus, Beaker, Clipboard, Settings, X, 
 import Link from 'next/link';
 import { paintColors } from '@/lib/data/colors-data';
 import { useAuthStore } from '@/lib/store/authStore';
+import { toast } from '@/lib/utils/notification';
 
 export default function FormulasPage() {
   const { user } = useAuthStore();
@@ -114,7 +115,7 @@ export default function FormulasPage() {
     // Validate total percentage
     const total = newFormula.components.reduce((acc, curr) => acc + parseFloat(curr.percentage as any || 0), 0);
     if (total !== 100) {
-      alert(`❌ Tổng tỷ lệ phải bằng 100%. Hiện tại là ${total}%`);
+      toast.error(`❌ Tổng tỷ lệ phải bằng 100%. Hiện tại là ${total}%`);
       return;
     }
 
@@ -158,7 +159,7 @@ export default function FormulasPage() {
       nhietDo: '195',
       components: [{ materialId: '', percentage: 0 }]
     });
-    alert('✅ Đã tạo công thức mới thành công!');
+    toast.success('✅ Đã tạo công thức mới thành công!');
   };
 
   const filteredFormulas = formulas.filter(f => 

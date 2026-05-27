@@ -19,7 +19,6 @@ import {
   Cell,
 } from "recharts";
 
-
 import {
   BarChart3,
   Users,
@@ -53,11 +52,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           {payload.map((p: any, i: number) => (
             <div key={i} className="flex justify-between gap-6">
               <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.stroke || p.fill }} />
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ background: p.stroke || p.fill }}
+                />
                 {p.name}
               </span>
               <span className="text-xs font-black text-slate-900">
-                {typeof p.value === "number" ? p.value.toLocaleString("vi-VN") : p.value}
+                {typeof p.value === "number"
+                  ? p.value.toLocaleString("vi-VN")
+                  : p.value}
               </span>
             </div>
           ))}
@@ -67,8 +71,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   }
   return null;
 };
-
-
 
 // ───────────────────────────────────────────────
 // Gauge (Semi-circle) chart component
@@ -352,7 +354,7 @@ export default function DashboardPage() {
             <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
               <Activity size={18} />
             </div>
-            Báo cáo Bán hàng
+            Báo cáo bán hàng
           </h1>
           <p className="text-slate-400 font-medium text-sm mt-0.5">
             Hệ thống phân tích dữ liệu kinh doanh &amp; sản xuất theo thời gian
@@ -387,10 +389,11 @@ export default function DashboardPage() {
                 <button
                   key={y}
                   onClick={() => setActiveYears([y])}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeYears.includes(y)
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-500 hover:bg-slate-100"
-                    }`}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    activeYears.includes(y)
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-slate-500 hover:bg-slate-100"
+                  }`}
                 >
                   {y}
                 </button>
@@ -408,10 +411,11 @@ export default function DashboardPage() {
                 <button
                   key={m}
                   onClick={() => toggle(activeMonths, m, setActiveMonths)}
-                  className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${activeMonths.includes(m)
-                    ? "bg-indigo-500 text-white shadow-sm"
-                    : "text-slate-500 hover:bg-slate-100"
-                    }`}
+                  className={`px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
+                    activeMonths.includes(m)
+                      ? "bg-indigo-500 text-white shadow-sm"
+                      : "text-slate-500 hover:bg-slate-100"
+                  }`}
                 >
                   {m}
                 </button>
@@ -545,7 +549,7 @@ export default function DashboardPage() {
                   className="font-black text-slate-900 text-sm"
                   style={{ fontSize: "14px" }}
                 >
-                  Top 10 Nhân viên Doanh thu
+                  Top 10 nhân viên doanh thu
                 </h3>
                 <p className="text-slate-400" style={{ fontSize: "12px" }}>
                   Dựa trên đơn hàng &amp; hợp đồng
@@ -593,7 +597,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-black text-slate-900 text-sm">
-                  Top Khách hàng trọng tâm
+                  Top khách hàng trọng tâm
                 </h3>
                 <p className="text-[11px] text-slate-400 font-medium">
                   Theo sản lượng tích lũy
@@ -606,7 +610,11 @@ export default function DashboardPage() {
                 <AreaChart data={stats.monthlyTrends}>
                   <defs>
                     <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
+                      <stop
+                        offset="5%"
+                        stopColor="#2563eb"
+                        stopOpacity={0.15}
+                      />
                       <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                     </linearGradient>
                   </defs>
@@ -679,7 +687,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-[18px] font-black text-slate-900 tracking-tight">
-                Sản lượng Thực tế vs Kế hoạch
+                Sản lượng thực tế vs kế hoạch
               </h3>
               <p className="text-sm text-slate-400 font-medium mt-1">
                 Đơn vị: Kilogram (KG)
@@ -748,7 +756,7 @@ export default function DashboardPage() {
         <div className="p-6 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-base font-black text-slate-900 tracking-tight">
-              Bảng chi tiết tiến độ Khách hàng trọng tâm
+              Bảng chi tiết tiến độ khách hàng trọng tâm
             </h3>
             <p className="text-xs text-slate-400 font-medium mt-0.5">
               Thống kê sản lượng và doanh thu tích lũy dựa theo mục tiêu kế
@@ -808,14 +816,15 @@ export default function DashboardPage() {
                   >
                     <td className="px-6 py-3.5">
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shadow-sm ${i === 0
-                          ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
-                          : i === 1
-                            ? "bg-gradient-to-br from-slate-300 to-slate-400 text-white"
-                            : i === 2
-                              ? "bg-gradient-to-br from-orange-300 to-orange-400 text-white"
-                              : "bg-slate-50 text-slate-400 border border-slate-100"
-                          }`}
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shadow-sm ${
+                          i === 0
+                            ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
+                            : i === 1
+                              ? "bg-gradient-to-br from-slate-300 to-slate-400 text-white"
+                              : i === 2
+                                ? "bg-gradient-to-br from-orange-300 to-orange-400 text-white"
+                                : "bg-slate-50 text-slate-400 border border-slate-100"
+                        }`}
                       >
                         {i + 1}
                       </div>
@@ -846,12 +855,13 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-3">
                         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                           <div
-                            className={`h-full rounded-full transition-all duration-1000 shadow-sm ${pct >= 90
-                              ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                              : pct >= 70
-                                ? "bg-gradient-to-r from-amber-400 to-amber-500"
-                                : "bg-gradient-to-r from-rose-400 to-rose-500"
-                              }`}
+                            className={`h-full rounded-full transition-all duration-1000 shadow-sm ${
+                              pct >= 90
+                                ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                                : pct >= 70
+                                  ? "bg-gradient-to-r from-amber-400 to-amber-500"
+                                  : "bg-gradient-to-r from-rose-400 to-rose-500"
+                            }`}
                             style={{ width: `${Math.min(pct, 100)}%` }}
                           />
                         </div>
@@ -862,20 +872,22 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-6 py-3.5 text-center">
                       <div
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight shadow-sm border ${pct >= 90
-                          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                          : pct >= 70
-                            ? "bg-amber-50 text-amber-600 border-amber-100"
-                            : "bg-rose-50 text-rose-600 border-rose-100"
-                          }`}
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight shadow-sm border ${
+                          pct >= 90
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                            : pct >= 70
+                              ? "bg-amber-50 text-amber-600 border-amber-100"
+                              : "bg-rose-50 text-rose-600 border-rose-100"
+                        }`}
                       >
                         <div
-                          className={`w-1 h-1 rounded-full animate-pulse ${pct >= 90
-                            ? "bg-emerald-500"
-                            : pct >= 70
-                              ? "bg-amber-500"
-                              : "bg-rose-500"
-                            }`}
+                          className={`w-1 h-1 rounded-full animate-pulse ${
+                            pct >= 90
+                              ? "bg-emerald-500"
+                              : pct >= 70
+                                ? "bg-amber-500"
+                                : "bg-rose-500"
+                          }`}
                         />
                         {pct >= 90
                           ? "Vượt chỉ tiêu"
