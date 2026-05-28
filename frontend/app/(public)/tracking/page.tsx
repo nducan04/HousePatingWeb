@@ -22,8 +22,6 @@ export default function TrackingPage() {
   const [trackingCode, setTrackingCode] = useState('');
   const [selectedTracking, setSelectedTracking] = useState<any | null>(null);
 
-  // R&D Tracking states
-  const [selectedRDRequest, setSelectedRDRequest] = useState<any | null>(null);
   const [loadingRD, setLoadingRD] = useState(false);
   const [sampleRequests, setSampleRequests] = useState<any[]>([]);
   const [selectedSample, setSelectedSample] = useState<any | null>(null);
@@ -35,7 +33,6 @@ export default function TrackingPage() {
   const [simSpeed, setSimSpeed] = useState(72);
   const [simTemp, setSimTemp] = useState(19.4);
   const [lastPing, setLastPing] = useState(0);
-
 
 
   const [dbTrackingList, setDbTrackingList] = useState<any[]>([]);
@@ -249,7 +246,7 @@ export default function TrackingPage() {
           // Check local R&D requests
           const foundRD = customerRequests.find((r: any) => r.id === trackingCode);
           if (foundRD) {
-            setSelectedRDRequest(foundRD);
+            setSelectedSample(foundRD);
             setActiveTab('samples');
           } else {
             // Try fetching from DB if not start with REQ
@@ -280,16 +277,6 @@ export default function TrackingPage() {
       clearInterval(pingInterval);
     };
   }, []);
-
-  // R&D samples states
-  const [selectedSample, setSelectedSample] = useState<any | null>(null);
-  const [sampleSearchTerm, setSampleSearchTerm] = useState('');
-
-  // Inline login states
-  const [loginUsername, setLoginUsername] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -350,7 +337,7 @@ export default function TrackingPage() {
     if (!trackingCode) return;
 
     if (activeTab === 'shipment') {
-      const found = filteredTrackingData.find(t => t.code.toLowerCase() === trackingCode.toLowerCase());
+      const found = filteredTrackingData.find((t: any) => t.code.toLowerCase() === trackingCode.toLowerCase());
       if (found) {
         setSelectedTracking(found);
       } else {
@@ -360,7 +347,7 @@ export default function TrackingPage() {
           const reqs = JSON.parse(stored);
           const foundRD = reqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
           if (foundRD) {
-            setSelectedRDRequest(foundRD);
+            setSelectedSample(foundRD);
             setActiveTab('samples');
             setSelectedTracking(null);
             return;
@@ -432,7 +419,7 @@ export default function TrackingPage() {
     'CheckCircle2': CheckCircle2,
     'Package': Package,
     'Clock': Clock,
-
+    'Camera': Camera,
   };
 
   const statusColors = {
@@ -538,19 +525,74 @@ export default function TrackingPage() {
                   </div>
                 </div>
 
-              {/* Timeline */}
-              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 md:gap-2">
-                {selectedTracking.steps.map((step: any, i: number) => {
-                  const Icon = iconMap[step.label] || Package;
-                  return (
-                    <div key={i} className="flex flex-col items-center gap-3 flex-1 relative text-center">
-                      {/* Connector line */}
-                      {i < selectedTracking.steps.length - 1 && (
-                        <div className={`hidden md:block absolute top-5 left-1/2 w-full h-0.5 z-0 ${step.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-100'}`} />
-                      )}
-                      {/* Dot */}
-                      <div className={`w-11 h-11 rounded-full flex items-center justify-center z-10 shadow-sm transition-all ${statusColors[step.status as keyof typeof statusColors]}`}>
-                        <Icon size={18} />
+                {/* Right Side: Info & Timeline */}
+                <div className="p-8 flex flex-col h-[500px] lg:h-[800px] overflow-y-auto">
+                  {/* Order Info Header */}
+                  <div className="flex justify-between items-start flex-wrap gap-6 mb-8 pb-8 border-b border-slate-100 shrink-0">
+                    <div className="flex-1">
+                      <span className="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-lg">Mã đơn hàng</span>
+                      <h3 className="text-2xl font-black text-slate-900 mt-2 mb-4">
+                        {selectedTracking.code}
+                      </h3>
+                      {/* Enhanced Order Info Cards */}
+                      <div className="mt-4 space-y-6">
+                        
+                        {/* Customer Info Card */}
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <User size={12} className="text-blue-500" /> Thông tin người nhận
+                          </h4>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-start">
+                              <span className="text-slate-500 text-xs font-semibold">Khách hàng:</span>
+                              <strong className="text-slate-900 text-sm">{selectedTracking.customer}</strong>
+                            </div>
+                            <div className="flex justify-between items-start">
+                              <span className="text-slate-500 text-xs font-semibold">Số điện thoại:</span>
+                              <strong className="text-slate-900 text-sm">{selectedTracking.phone}</strong>
+                            </div>
+                            <div className="flex justify-between items-start pt-2 border-t border-slate-200/60 mt-1">
+                              <span className="text-slate-500 text-xs font-semibold shrink-0 mt-0.5">Địa chỉ:</span>
+                              <strong className="text-slate-800 text-[13px] text-right leading-tight ml-4">{selectedTracking.address}</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Product List Card */}
+                        <div>
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2 px-1">
+                            <Package size={12} className="text-amber-500" /> Sản phẩm ({selectedTracking.allProducts?.length || 1})
+                          </h4>
+                          <div className="space-y-2.5">
+                            {selectedTracking.allProducts && selectedTracking.allProducts.length > 0 ? (
+                              selectedTracking.allProducts.map((p: any, idx: number) => (
+                                <div key={idx} className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all group">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
+                                      <Package size={16} />
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-800 line-clamp-2">{p.TenSanPham || p.name}</span>
+                                  </div>
+                                  <span className="text-blue-700 font-bold bg-blue-50 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border border-blue-100/50 shrink-0 ml-3">
+                                    {p.SoLuong ? `${p.SoLuong} Thùng` : p.quantity}
+                                  </span>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all group">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
+                                    <Package size={16} />
+                                  </div>
+                                  <span className="text-sm font-bold text-slate-800 line-clamp-2">{selectedTracking.product}</span>
+                                </div>
+                                <span className="text-blue-700 font-bold bg-blue-50 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border border-blue-100/50 shrink-0 ml-3">
+                                  {selectedTracking.quantity}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center shrink-0 hidden sm:flex">
@@ -788,7 +830,7 @@ export default function TrackingPage() {
                           <span className="text-[12px] font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-md border border-purple-100">
                             {req.id}
                           </span>
-                          <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5"><Calendar size={12} /> {req.date}</span>
+                          <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5"><Calendar size={12}/> {req.date}</span>
                         </div>
                         <h4 className="font-extrabold text-slate-800 text-lg mb-1">{req.colorCode}</h4>
                         <div className="flex items-center gap-2 mb-4">
@@ -823,9 +865,9 @@ export default function TrackingPage() {
                         {req.imageUrl && (
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
-                            <img
-                              src={req.imageUrl}
-                              alt="Ảnh mẫu khách gửi"
+                            <img 
+                              src={req.imageUrl} 
+                              alt="Ảnh mẫu khách gửi" 
                               className="w-16 h-16 object-cover rounded-lg shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform"
                               onClick={() => window.open(req.imageUrl, '_blank')}
                             />
@@ -845,13 +887,13 @@ export default function TrackingPage() {
       {showQRModal && qrRequestId && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <button
+            <button 
               onClick={() => setShowQRModal(false)}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors cursor-pointer border-none bg-transparent"
             >
               <XCircle size={24} />
             </button>
-
+            
             <div className="text-center space-y-6">
               <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto">
                 <QrCode size={32} />
@@ -860,21 +902,21 @@ export default function TrackingPage() {
                 <h3 className="text-xl font-black text-slate-900">Mã QR Lộ Trình</h3>
                 <p className="text-sm text-slate-500 font-medium mt-2">Quét mã dưới đây bằng điện thoại để xem lộ trình R&D.</p>
               </div>
-
+              
               <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center justify-center">
-                <QRCodeSVG
-                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking/rd/${qrRequestId}`}
-                  size={180}
-                  bgColor="#f8fafc"
-                  fgColor="#0f172a"
+                <QRCodeSVG 
+                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking/rd/${qrRequestId}`} 
+                  size={180} 
+                  bgColor="#f8fafc" 
+                  fgColor="#0f172a" 
                   level="H"
                 />
                 <div className="mt-4 font-mono font-bold text-sm text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200 shadow-sm">
                   {qrRequestId}
                 </div>
               </div>
-
-              <button
+              
+              <button 
                 onClick={() => setShowQRModal(false)}
                 className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-600/20 transition-all cursor-pointer border-none"
               >
