@@ -3,14 +3,20 @@ const SanPhamSon = require('../models/SanPhamSon');
 
 // Helper tính tổng tiền
 const calculateTotal = async (items) => {
-  let total = 0;
+  let subtotal = 0;
   for (let item of items) {
-    const sp = await SanPhamSon.findById(item.SanPham);
+    const spId = item.SanPham?._id || item.SanPham;
+    const sp = await SanPhamSon.findById(spId);
     if (sp) {
-      total += (sp.DonGiaCoSo || 0) * item.SoLuong;
+      subtotal += (sp.DonGiaCoSo || 0) * item.SoLuong;
     }
   }
-  return total;
+  const tax = subtotal >= 5000000 ? subtotal * 0.08 : 0;
+  return {
+    TongTienTamTinh: subtotal,
+    TienThue: tax,
+    TongThanhToan: subtotal + tax
+  };
 };
 
 // @desc    Lấy giỏ hàng theo SessionId
@@ -25,8 +31,31 @@ exports.getCart = async (req, res) => {
 
     if (!cart) {
       cart = await GioHang.create({ SessionId: sessionId, Items: [], TongTienTamTinh: 0 });
+    } else {
+      // Merge any duplicate items resulting from previous bugs
+      let hasDuplicates = false;
+      const mergedItems = [];
+      for (const item of cart.Items) {
+        if (!item.SanPham) continue;
+        const itemMaMau = item.MaMau || 'N/A';
+        const existing = mergedItems.find(i => i.SanPham._id.toString() === item.SanPham._id.toString() && (i.MaMau || 'N/A') === itemMaMau);
+        if (existing) {
+          existing.SoLuong += item.SoLuong;
+          hasDuplicates = true;
+        } else {
+          mergedItems.push(item);
+        }
+      }
+      if (hasDuplicates) {
+        cart.Items = mergedItems;
+        const totals = await calculateTotal(cart.Items);
+        cart.TongTienTamTinh = totals.TongTienTamTinh;
+        cart.TienThue = totals.TienThue;
+        cart.TongThanhToan = totals.TongThanhToan;
+        await cart.save();
+      }
     }
-    
+
     res.status(200).json({ success: true, data: cart });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -38,15 +67,23 @@ exports.getCart = async (req, res) => {
 exports.updateCart = async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const { SanPhamId, SoLuong } = req.body;
-    
+    const { SanPhamId, SoLuong, MaMau = 'N/A' } = req.body;
+
     let cart = await GioHang.findOne({ SessionId: sessionId });
     if (!cart) {
       cart = new GioHang({ SessionId: sessionId, Items: [] });
     }
 
-    const itemIndex = cart.Items.findIndex(i => i.SanPham.toString() === SanPhamId);
-    
+    // Tìm theo SanPhamId và MaMau (nếu có)
+    const itemIndex = cart.Items.findIndex(i => {
+      const sameProduct = i.SanPham.toString() === SanPhamId;
+      const itemMaMau = i.MaMau || 'N/A';
+      if (MaMau) {
+        return sameProduct && itemMaMau === MaMau;
+      }
+      return sameProduct;
+    });
+
     if (itemIndex > -1) {
       if (SoLuong <= 0) {
         // Remove item if SoLuong is 0 or less
@@ -57,12 +94,15 @@ exports.updateCart = async (req, res) => {
       }
     } else {
       if (SoLuong > 0) {
-        cart.Items.push({ SanPham: SanPhamId, SoLuong });
+        cart.Items.push({ SanPham: SanPhamId, MaMau, SoLuong });
       }
     }
 
     // Tính tổng tiền
-    cart.TongTienTamTinh = await calculateTotal(cart.Items);
+    const totals = await calculateTotal(cart.Items);
+    cart.TongTienTamTinh = totals.TongTienTamTinh;
+    cart.TienThue = totals.TienThue;
+    cart.TongThanhToan = totals.TongThanhToan;
     await cart.save();
 
     // Lấy lại cart info với populate

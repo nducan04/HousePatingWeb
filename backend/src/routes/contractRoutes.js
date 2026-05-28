@@ -9,7 +9,8 @@ const {
   deployOnChain,
   signContract,
   updateStatus,
-  verifyOnChain
+  verifyOnChain,
+  signContractByServer
 } = require('../controllers/contractController');
 
 const router = express.Router();
@@ -26,6 +27,7 @@ const upload = multer({ dest: 'uploads/' });
  * POST   /:id/preview    Admin, NhanVien
  * POST   /:id/deploy     Admin
  * PATCH  /:id/sign       Admin, KhachHangB2B
+ * POST   /:id/sign-by-server KhachHangB2B
  * PATCH  /:id/status     Admin
  * GET    /:id/onchain    Admin, NhanVien, KhachHangB2B
  */
@@ -47,8 +49,11 @@ router.post('/:id/preview', authorize('Admin', 'NhanVien'), generatePreviewPDF);
 // Deploy lên Blockchain Sepolia (chỉ Admin)
 router.post('/:id/deploy', authorize('Admin'), deployOnChain);
 
-// Ký số qua MetaMask (Admin phê duyệt hoặc KhachHangB2B ký)
+// Ký số qua MetaMask (Admin phê duyệt hoặc KhachHangB2B ký) - Dành cho luồng cũ
 router.patch('/:id/sign', authorize('Admin', 'KhachHangB2B', 'KhachHangB2C'), signContract);
+
+// Ký số Server-side (Client gọi API để backend dùng ví hệ thống ký)
+router.post('/:id/sign-by-server', authorize('Admin', 'KhachHangB2B', 'KhachHangB2C'), signContractByServer);
 
 // Cập nhật trạng thái (chỉ Admin)
 router.patch('/:id/status', authorize('Admin'), updateStatus);

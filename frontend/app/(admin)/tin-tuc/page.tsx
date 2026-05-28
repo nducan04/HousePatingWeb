@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, Megaphone, FileText, Send, Users, FileCheck } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Megaphone, FileText, Send, Users, FileCheck, X, Upload } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import api from '@/lib/utils/axiosAuth';
 
 const API_PATH = '/tin-tuc';
-const BACKEND_URL = 'http://localhost:5000'; // Match the pattern in other pages
+import { resolveImageUrl, BACKEND_URL } from '@/lib/utils/imageUrl';
 
 interface TinTuc {
   _id?: string;
@@ -27,15 +27,7 @@ interface TinTuc {
 }
 
 const getImageUrl = (path: any) => {
-  let resolvedPath = path;
-  if (Array.isArray(path)) {
-    resolvedPath = path[0];
-  }
-  if (!resolvedPath || typeof resolvedPath !== 'string' || resolvedPath === 'undefined' || resolvedPath === 'null') {
-    return '';
-  }
-  if (resolvedPath.startsWith('http')) return resolvedPath;
-  return `${BACKEND_URL}${resolvedPath.startsWith('/') ? '' : '/'}${resolvedPath}`;
+  return resolveImageUrl(path);
 };
 
 export default function TinTucPage() {
@@ -180,189 +172,229 @@ export default function TinTucPage() {
   });
 
   return (
-    <div>
+    <div className="p-8 pb-32">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Chiến Dịch Truyền Thông</h1>
+        <p className="text-slate-500 font-medium mt-2">Quản lý bài viết, tin tức và các chiến dịch marketing của VTSC PaintPro.</p>
+      </div>
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><Megaphone size={22} /></div>
-          <div className="kpi-label">Tổng Chiến Dịch</div>
-          <div className="kpi-value">{STATS.total}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 p-6 rounded-xl border border-blue-100 relative overflow-hidden group">
+          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
+            <Megaphone size={24} />
+          </div>
+          <p className="text-xs font-bold text-blue-900/60 uppercase tracking-wider mb-1">Tổng Chiến Dịch</p>
+          <h3 className="text-3xl font-bold text-blue-950">{STATS.total}</h3>
+          <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform"><Megaphone size={120} /></div>
         </div>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><Send size={22} /></div>
-          <div className="kpi-label">Đã Xuất Bản</div>
-          <div className="kpi-value">{STATS.published}</div>
+        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-6 rounded-xl border border-emerald-100 relative overflow-hidden group">
+          <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-emerald-600/20 group-hover:scale-110 transition-transform">
+            <Send size={24} />
+          </div>
+          <p className="text-xs font-bold text-emerald-900/60 uppercase tracking-wider mb-1">Đã Xuất Bản</p>
+          <h3 className="text-3xl font-bold text-emerald-950">{STATS.published}</h3>
+          <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform"><Send size={120} /></div>
         </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><FileText size={22} /></div>
-          <div className="kpi-label">Nháp / Lên lịch</div>
-          <div className="kpi-value">{STATS.drafts}</div>
+        <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 p-6 rounded-xl border border-amber-100 relative overflow-hidden group">
+          <div className="w-12 h-12 bg-amber-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-amber-600/20 group-hover:scale-110 transition-transform">
+            <FileText size={24} />
+          </div>
+          <p className="text-xs font-bold text-amber-900/60 uppercase tracking-wider mb-1">Nháp / Lên lịch</p>
+          <h3 className="text-3xl font-bold text-amber-950">{STATS.drafts}</h3>
+          <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform"><FileText size={120} /></div>
         </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><Users size={22} /></div>
-          <div className="kpi-label">Tổng Lượt Tiếp Cận</div>
-          <div className="kpi-value">{STATS.views.toLocaleString()}</div>
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 p-6 rounded-xl border border-purple-100 relative overflow-hidden group">
+          <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-purple-600/20 group-hover:scale-110 transition-transform">
+            <Users size={24} />
+          </div>
+          <p className="text-xs font-bold text-purple-900/60 uppercase tracking-wider mb-1">Tổng Tương Tác</p>
+          <h3 className="text-3xl font-bold text-purple-950">{STATS.views.toLocaleString()}</h3>
+          <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform"><Users size={120} /></div>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem', marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.125rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.125rem' }}>
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <input
-                type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                placeholder="Tìm tiêu đề chiến dịch..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {[
-                { id: 'all', label: 'Tất cả' },
-                { id: 'published', label: 'Đã xuất bản' },
-                { id: 'draft', label: 'Bản nháp' }
-              ].map(f => (
-                <button
-                  key={f.id}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'btn-ghost'}`}
-                  onClick={() => setFilter(f.id)}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
+      <div className="bg-white border border-slate-100 rounded-xl shadow-sm p-4 mb-6 flex flex-col xl:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
+          <div className="relative w-full md:w-80">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+              placeholder="Tìm chiến dịch..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
           </div>
-          <button onClick={() => openForm()} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
-            <Plus size={16} /> Soạn Bài Mới
-          </button>
+          <div className="flex items-center bg-slate-50 p-1.5 rounded-xl w-full md:w-auto overflow-x-auto custom-scrollbar">
+            {[
+              { id: 'all', label: 'Tất cả' },
+              { id: 'published', label: 'Đã xuất bản' },
+              { id: 'draft', label: 'Bản nháp' }
+            ].map(f => (
+              <button
+                key={f.id}
+                className={`${filter === f.id ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'} whitespace-nowrap px-6 py-2 rounded-lg text-sm font-bold transition-all`}
+                onClick={() => setFilter(f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
+        <button onClick={() => openForm()} className="w-full xl:w-auto bg-blue-600 text-white rounded-xl px-6 py-3 font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2">
+          <Plus size={18} /> Soạn Bài Mới
+        </button>
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden rounded-none" style={{ overflow: 'hidden', borderRadius: 0, marginTop: '1rem' }}>
-        <table className="w-full text-left text-sm">
-          <thead className="justify-center text-center">
-            <tr>
-              <th>Mã BV</th>
-              <th>Hình Ảnh</th>
-              <th>Tiêu đề quảng bá</th>
-              <th>Teaser</th>
-              <th>Biên tập viên</th>
-              <th>Trạng thái</th>
-              <th>Ngày tạo</th>
-              <th style={{ textAlign: 'right' }}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map(item => (
-              <tr key={item._id}>
-                <td style={{ fontWeight: 700, color: '#2563eb' }}>{item.MaTinTuc}</td>
-                <td>
-                  {item.HinhAnh ? (
-                    <img src={getImageUrl(item.HinhAnh)} alt={item.TieuDe} style={{ width: 60, height: 40, objectFit: 'cover', borderRadius: 4 }} />
-                  ) : (
-                    <div style={{ width: 60, height: 40, background: '#eee', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={16} color="#aaa" /></div>
-                  )}
-                </td>
-                <td
-                  onClick={() => openDetail(item)}
-                  style={{ fontWeight: 600, color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}
-                >
-                  {item.TieuDe}
-                </td>
-                <td style={{ color: '#475569', fontSize: 13, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {item.Abstract || item.GhiChu || 'N/A'}
-                </td>
-                <td style={{ fontWeight: 600, color: '#94a3b8' }}>{item.NhanVienDang?.HoTen || 'ADMIN'}</td>
-                <td>
-                  <span className={`badge ${item.TrangThai === 'Published' ? 'approved' : 'pending'}`}>
-                    {item.TrangThai}
-                  </span>
-                </td>
-                <td>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A'}</td>
-                <td style={{ textAlign: 'right' }}>
-                  <button onClick={() => exportToPDF(item)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" title="Xuất PDF"><FileCheck size={16} color="#059669" /></button>
-                  <button onClick={() => openForm(item)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Edit size={16} /></button>
-                  <button onClick={() => handleDelete(item._id!)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"><Trash2 size={16} color="#e11d48" /></button>
-                </td>
+      <div className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden animate-in fade-in duration-500">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-[13px]">
+            <thead className="bg-slate-50/50 border-b border-slate-100">
+              <tr>
+                <th className="px-6 py-5 font-bold text-slate-400 uppercase tracking-wider text-[11px]">Chiến Dịch Truyền Thông</th>
+                <th className="px-6 py-5 font-bold text-slate-400 uppercase tracking-wider text-[11px]">Trạng Thái</th>
+                <th className="px-6 py-5 font-bold text-slate-400 uppercase tracking-wider text-[11px]">Biên Tập Viên</th>
+                <th className="px-6 py-5 font-bold text-slate-400 uppercase tracking-wider text-[11px] text-right">Thao Tác</th>
               </tr>
-            ))}
-            {filteredData.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20 }}>Không có chiến dịch truyền thông nào</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredData.map(item => (
+                <tr key={item._id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onDoubleClick={() => openDetail(item)}>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200/60 shadow-sm relative group-hover:shadow-md transition-all">
+                        {item.HinhAnh ? <img src={getImageUrl(item.HinhAnh)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : <div className="w-full h-full flex items-center justify-center"><FileText size={20} className="text-slate-400" /></div>}
+                      </div>
+                      <div>
+                        <button onClick={() => openDetail(item)} className="font-bold text-sm text-slate-900 hover:text-blue-600 transition-colors text-left line-clamp-1">{item.TieuDe}</button>
+                        <div className="text-[11px] font-semibold text-slate-500 mt-1.5 flex items-center gap-2">
+                          <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100/50">{item.MaTinTuc}</span>
+                          <span className="line-clamp-1 max-w-xs">{item.Abstract || "Chưa có mô tả..."}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    {item.TrangThai === 'Published' ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200/50"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>Xuất bản</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-200/50"><div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>Bản nháp</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">{item.NhanVienDang?.HoTen?.charAt(0) || "A"}</div>
+                      <span className="font-bold text-slate-700">{item.NhanVienDang?.HoTen || "Admin"}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={(e) => { e.stopPropagation(); exportToPDF(item); }} className="w-9 h-9 rounded-xl flex items-center justify-center text-emerald-600 hover:bg-emerald-50 hover:scale-110 transition-all" title="Xuất PDF"><FileCheck size={18} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); openForm(item); }} className="w-9 h-9 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-50 hover:scale-110 transition-all"><Edit size={18} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(item._id!); }} className="w-9 h-9 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:scale-110 transition-all"><Trash2 size={18} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredData.length === 0 && (
+                <tr>
+                  <td colSpan={4}>
+                    <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                      <FileText size={48} className="mb-4 text-slate-200" />
+                      <p className="font-bold">Không tìm thấy chiến dịch nào</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal Soạn Bài Tức Thời */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: '800px', background: '#fff', borderRadius: '12px', padding: '30px', margin: '2rem auto', color: '#000', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: 15, marginBottom: 20 }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Soạn / Sửa Chiến Dịch Bài Viết</h2>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>×</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm"><Edit size={20} /></div>
+                {formData._id ? "Cập Nhật Chiến Dịch" : "Soạn Chiến Dịch Mới"}
+              </h2>
+              <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-200 transition-colors"><X size={20} /></button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Mã Bài Viết (*)</label>
-                  <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} placeholder="VD: NEWS001" value={formData.MaTinTuc} onChange={e => setFormData({ ...formData, MaTinTuc: e.target.value })} />
+            <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Mã Bài Viết</label>
+                  <input type="text" className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" value={formData.MaTinTuc} onChange={e => setFormData({ ...formData, MaTinTuc: e.target.value })} />
                 </div>
-                <div style={{ flex: 2 }}>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Tiêu Đề Bài Viết (*)</label>
-                  <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} placeholder="VD: Khai trương dòng sơn Mới..." value={formData.TieuDe} onChange={e => setFormData({ ...formData, TieuDe: e.target.value })} />
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Tiêu Đề (*)</label>
+                  <input type="text" className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" value={formData.TieuDe} onChange={e => setFormData({ ...formData, TieuDe: e.target.value })} />
                 </div>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Ảnh Bìa Bài Viết / Banner</label>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <input type="text" style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} placeholder="URL Ảnh hoặc tải lên file..." value={formData.HinhAnh} onChange={e => setFormData({ ...formData, HinhAnh: e.target.value })} />
-                  <label className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, border: '1px solid #ddd' }}>
-                    <Plus size={14} /> {uploading ? 'Đang tải...' : 'Tải ảnh'}
-                    <input type="file" hidden accept="image/*" onChange={handleImageUpload} disabled={uploading} />
-                  </label>
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ảnh Bìa / Banner</label>
+                <div className="flex flex-col sm:flex-row gap-4 items-start">
+                  {formData.HinhAnh ? (
+                    <div className="relative w-40 h-28 rounded-lg overflow-hidden group shrink-0 border border-slate-200 shadow-sm">
+                      <img src={getImageUrl(formData.HinhAnh)} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <label className="w-8 h-8 bg-white/20 hover:bg-white/40 rounded-full flex items-center justify-center text-white cursor-pointer transition-colors backdrop-blur-md">
+                          <Edit size={14} />
+                          <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="w-40 h-28 rounded-lg border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 flex flex-col items-center justify-center text-slate-400 cursor-pointer transition-all shrink-0">
+                      <Upload size={24} className="mb-2" />
+                      <span className="text-[10px] font-bold">Tải ảnh lên</span>
+                      <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+                    </label>
+                  )}
+                  <input type="text" className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-sm font-medium text-slate-600 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all mt-2" placeholder="Hoặc dán URL ảnh trực tiếp..." value={formData.HinhAnh} onChange={e => setFormData({ ...formData, HinhAnh: e.target.value })} />
                 </div>
-                {formData.HinhAnh && <img src={getImageUrl(formData.HinhAnh)} alt="Preview" style={{ marginTop: 10, height: 120, width: '100%', objectFit: 'cover', borderRadius: 8, border: '1px solid #ddd' }} />}
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Nội dung quảng cáo (Short Teaser)</label>
-                <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} placeholder="Mô tả ngắn gọn thu hút người đọc" value={formData.Abstract || ''} onChange={e => setFormData({ ...formData, Abstract: e.target.value })} />
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Mô tả ngắn (Teaser)</label>
+                <input type="text" className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-sm font-medium text-slate-800 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" placeholder="Mô tả tóm tắt thu hút độc giả..." value={formData.Abstract} onChange={e => setFormData({ ...formData, Abstract: e.target.value })} />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Ghi Chú Nội Bộ</label>
-                <input type="text" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} placeholder="Ghi chú thêm cho biên tập viên" value={formData.GhiChu} onChange={e => setFormData({ ...formData, GhiChu: e.target.value })} />
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nội Dung Chi Tiết (*)</label>
+                <textarea rows={10} className="w-full bg-slate-50 border-none rounded-lg px-5 py-4 text-sm text-slate-800 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all resize-none custom-scrollbar font-medium leading-relaxed" placeholder="Soạn nội dung bài viết..." value={formData.NoiDung} onChange={e => setFormData({ ...formData, NoiDung: e.target.value })}></textarea>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Nội Dung Chi Tiết (*)</label>
-                <textarea style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', minHeight: 250, fontFamily: 'monospace' }} placeholder="Nội dung truyền thông chi tiết..." value={formData.NoiDung} onChange={e => setFormData({ ...formData, NoiDung: e.target.value })}></textarea>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Trạng Thái Hiển Thị</label>
-                <select style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} value={formData.TrangThai} onChange={e => setFormData({ ...formData, TrangThai: e.target.value as any })}>
-                  <option value="Published">Xuất Bản</option>
-                  <option value="Draft">Bản Nháp (Lưu tạm)</option>
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Trạng Thái</label>
+                  <select className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all appearance-none" value={formData.TrangThai} onChange={e => setFormData({ ...formData, TrangThai: e.target.value as any })}>
+                    <option value="Published">Xuất bản (Hiển thị ngay)</option>
+                    <option value="Draft">Bản nháp (Lưu tạm)</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ghi chú nội bộ</label>
+                  <input type="text" className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-sm font-medium text-slate-800 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" placeholder="Ghi chú cho BTV khác..." value={formData.GhiChu} onChange={e => setFormData({ ...formData, GhiChu: e.target.value })} />
+                </div>
               </div>
             </div>
 
-            <div style={{ marginTop: '24px', display: 'flex', gap: 10 }}>
-              <button onClick={() => setIsModalOpen(false)} style={{ flex: 1, background: '#eee', color: '#333', border: 'none', padding: '12px', borderRadius: '4px', fontSize: '16px', cursor: 'pointer' }}>Hủy Bỏ</button>
-              <button onClick={submitForm} style={{ flex: 1, background: '#28a745', color: '#fff', border: 'none', padding: '12px', borderRadius: '4px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
-                Lưu Bài
-              </button>
+            <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 items-center">
+              <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-200 transition-colors">Hủy Bỏ</button>
+              <button onClick={submitForm} className="px-8 py-3 rounded-xl text-sm font-bold text-white bg-blue-600 shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all">Lưu Chiến Dịch</button>
             </div>
           </div>
         </div>
       )}
+
       {/* Hidden Printable Area for PDF Export */}
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
         <div
@@ -378,7 +410,7 @@ export default function TinTucPage() {
         >
           {/* Header */}
           <div style={{ textAlign: 'center', borderBottom: '2px solid #333', paddingBottom: '10mm', marginBottom: '10mm' }}>
-            <h1 style={{ fontSize: '28px', margin: '0 0 5px 0', color: '#1a1a1a' }}>VTSC PAINTPRO</h1>
+            <h1 style={{ fontSize: '28px', margin: '0 0 5px 0', color: '#1a1a1a', fontWeight: 'bold' }}>VTSC PAINTPRO</h1>
             <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>HỆ THỐNG QUẢN TRỊ TIN TỨC & TRUYỀN THÔNG</p>
           </div>
 
@@ -432,49 +464,72 @@ export default function TinTucPage() {
 
       {/* Modern Detail View (READ ONLY) */}
       {isDetailOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 70, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', overflowY: 'auto', padding: '20px' }}>
-          <div style={{ width: '100%', maxWidth: '900px', background: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', position: 'relative' }}>
-            {/* Close Button UI */}
-            <button
-              onClick={() => setIsDetailOpen(false)}
-              style={{ position: 'absolute', top: 20, right: 20, width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zIndex: 10 }}
-            >
-              <div style={{ fontSize: 24, color: '#333' }}>×</div>
-            </button>
+        <div className="fixed inset-0 z-[110] flex justify-center bg-slate-100 p-0 md:p-8 animate-in fade-in duration-300 overflow-y-auto custom-scrollbar">
+          <div className="bg-white md:rounded-xl w-full max-w-5xl flex flex-col shadow-sm relative min-h-full md:min-h-0 md:my-auto md:h-max overflow-hidden animate-in zoom-in-95 duration-500">
+            
+            {/* Header / Breadcrumb */}
+            <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-20">
+              <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                <span className="cursor-pointer hover:text-blue-600 transition-colors">Trang chủ</span>
+                <span>/</span>
+                <span className="cursor-pointer hover:text-blue-600 transition-colors">Tin tức</span>
+                <span>/</span>
+                <span className="text-slate-800 font-bold truncate max-w-[200px] md:max-w-sm">{formData.TieuDe}</span>
+              </div>
+              <button onClick={() => setIsDetailOpen(false)} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
+                <X size={16} /> Quay lại
+              </button>
+            </div>
 
-            {/* Content Container */}
-            <div style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-              {/* Hero Banner */}
+            <div className="px-8 md:px-24 py-12 md:py-16 bg-white">
+              {/* Tag */}
+              <div className="inline-flex items-center px-4 py-1.5 bg-amber-50 text-amber-600 rounded-full font-bold text-[11px] uppercase tracking-widest mb-6">
+                {formData.Abstract || "Góc Nhìn Nghệ Thuật"}
+              </div>
+
+              {/* Title */}
+              <h1 className="text-4xl md:text-5xl font-sans font-bold text-slate-900 leading-[1.3] mb-8">
+                {formData.TieuDe}
+              </h1>
+
+              {/* Author Info */}
+              <div className="flex items-center gap-4 mb-10">
+                <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-white font-bold text-lg">
+                  {formData.NhanVienDang?.HoTen?.charAt(0) || "T"}
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 text-sm">{formData.NhanVienDang?.HoTen || "Trần Quản Trị"}</div>
+                  <div className="text-[12px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5">
+                    <FileText size={12} /> {formData.createdAt ? new Date(formData.createdAt).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' }) : 'Thứ Tư, 22/05/2026'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Featured Image */}
               {formData.HinhAnh && (
-                <div style={{ width: '100%', height: '400px' }}>
-                  <img src={getImageUrl(formData.HinhAnh)} alt="Hero" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div className="w-full mb-12 rounded-2xl overflow-hidden shadow-sm border border-slate-100">
+                  <img src={getImageUrl(formData.HinhAnh)} className="w-full h-auto object-cover max-h-[600px]" alt="Cover" />
                 </div>
               )}
 
-              <div style={{ padding: '40px 60px' }}>
-                {/* Abstract / Teaser */}
-                {formData.Abstract && (
-                  <div style={{ color: '#059669', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', fontSize: '12px', marginBottom: '10px' }}>
-                    {formData.Abstract}
-                  </div>
-                )}
+              {/* Content */}
+              <div className="prose prose-slate prose-lg max-w-none font-sans text-slate-700 leading-[2] prose-headings:font-sans prose-headings:font-bold prose-a:text-blue-600 prose-img:rounded-xl whitespace-pre-wrap">
+                {formData.NoiDung}
+              </div>
 
-                {/* Header Title */}
-                <h1 style={{ fontSize: '36px', fontWeight: 800, color: '#111', lineHeight: '1.2', marginBottom: '20px' }}>
-                  {formData.TieuDe}
-                </h1>
-
-                <div style={{ width: '60px', height: '4px', background: '#000', marginBottom: '30px' }}></div>
-
-                {/* Detailed Content */}
-                <div style={{ fontSize: '18px', lineHeight: '1.8', color: '#444', textAlign: 'justify', whiteSpace: 'pre-wrap' }}>
-                  {formData.NoiDung}
+              {/* Footer / Tags */}
+              <div className="mt-16 pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-sm text-slate-900">Tags:</span>
+                  <span className="text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer">Sơn Nội Thất</span>
+                  <span className="text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer">Sơn Ngoại Thất</span>
+                  <span className="text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer">Kiến Thức Ngành Sơn</span>
                 </div>
-
-                {/* Signature */}
-                <div style={{ marginTop: '50px', borderTop: '1px solid #eee', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ color: '#999', fontSize: '14px' }}>VTSC PaintPro Editorial Board</div>
-                  <button onClick={() => setIsDetailOpen(false)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm">Xong, đã đọc tài liệu</button>
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-sm text-slate-500">Chia sẻ:</span>
+                  <button className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"><Megaphone size={14} /></button>
+                  <button className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"><Send size={14} /></button>
+                  <button className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"><FileText size={14} /></button>
                 </div>
               </div>
             </div>

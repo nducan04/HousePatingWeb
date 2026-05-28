@@ -17,6 +17,14 @@ const baoHanhSchema = new mongoose.Schema({
     ref: 'KhachHang',
     required: true
   },
+  HopDong: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'HopDong'
+  },
+  DonHang: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'DonHang'
+  },
   SanPham: {
     type: String, // Có thể là text hoặc reference, trong ảnh là text tóm tắt
     required: true,
@@ -50,7 +58,15 @@ const baoHanhSchema = new mongoose.Schema({
   PhuongAnGiaiQuyet: {
     type: String,
     trim: true
-  }
+  },
+  KhachHangDanhGia: {
+    type: Number,
+    min: 1,
+    max: 5
+  },
+  HinhAnh: [{
+    type: String
+  }]
 }, {
   timestamps: true
 });

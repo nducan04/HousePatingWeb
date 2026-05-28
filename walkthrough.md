@@ -1,37 +1,48 @@
-# Walkthrough — Build and Compilation Fixes
+# Walkthrough — Codebase and Next.js Build Fixes
 
-In this follow-up phase of the Order Management UI Redesign, we resolved several compilation and syntax errors that arose after the redesign, ensuring a 100% clean Next.js build.
+We resolved all remaining compilation errors, syntax issues, type mismatches, and Next.js build-time prerender bailouts across the codebase.
 
 ## Changes Made
 
-### 1. Fixed Truncation and Syntax in Order Management Page
+### 1. Resolved Syntax Error in Homepage
+- **File**: `frontend/app/page.tsx`
+- **Fix**: Corrected the unbalanced JSX element nesting near line 520, removing the unexpected syntax error and restoring full validation.
+
+### 2. Deduplicated & Cleaned Up R&D and Shipping Tracking Page
+- **File**: `frontend/app/(public)/tracking/page.tsx`
+- **Fixes**:
+  - Deduplicated multiple hook calls and state declarations (e.g. `user`, `activeTab`, `sampleRequests`) that were declared twice.
+  - Aligned all occurrences of target tracking tab comparisons to use `'shipment'` and `'samples'` correctly.
+  - Added typing declarations `(t: any)` and `(step: any, i: number)` to resolve implicit-any compiler warnings.
+  - Imported `useMemo` and `Camera` from React and `lucide-react` respectively.
+  - Asserted types for `statusColors` object mapping.
+
+### 3. Cleaned Up Recharts & CustomTooltip in Admin Dashboard
+- **File**: `frontend/app/(admin)/dashboard/page.tsx`
+- **Fixes**:
+  - Removed duplicate `Area` and `AreaChart` imports from the Recharts block.
+  - Removed the duplicate `CustomTooltip` component declaration.
+
+### 4. Corrected Imports and Inventory Properties in Order Management
 - **File**: `frontend/app/(admin)/don-hang/page.tsx`
 - **Fixes**:
-  - Closed the `TABS` array definition which was cut off. Included the missing `DA_HUY` tab.
-  - Removed duplicate remnant code from the bottom of the file (lines 1724 to 1742) left behind from a previous edit.
-  - Defined the `PAYMENT_METHODS` constant at the top of the file so the payment grid modal resolves correctly.
+  - Imported `useRouter` from `'next/navigation'` to enable order routing redirects.
+  - Safely accessed product inventory values using fallback expressions `sp.TonKho ?? sp.TongTonKho ?? 0` in order mapping and product dropdown list selectors to bypass strict undefined check errors.
 
-### 2. Resolved Syntax Errors in R&D Tracking Page
-- **File**: `frontend/app/(admin)/rd-tracking/page.tsx`
+### 5. Suspense Boundaries for Static Site Generation Prerendering
+- **Files**: 
+  - `frontend/app/(public)/my-contracts/create/page.tsx`
+  - `frontend/app/(admin)/rd-tracking/new/page.tsx`
 - **Fixes**:
-  - Balanced closing HTML `</div>` tags at the end of the component (restored exactly two closing tags).
-
-### 3. Added Missing Auth Modal State to Colors Catalog Page
-- **File**: `frontend/app/(public)/colors/page.tsx`
-- **Fixes**:
-  - Defined all the login, register, and forgot password state Hooks and form submit handlers (`handlePageLogin`, `handlePageRegister`, `handleForgotSubmit`). These were copy-pasted in JSX but lacked state hook backings in the component body.
-
-### 4. Wrapped Login Page in Suspense Boundary
-- **File**: `frontend/app/(auth)/login/page.tsx`
-- **Fixes**:
-  - Renamed the main logic to `LoginContent` and exported a default `LoginPage` wrapped in a `<Suspense>` boundary. This avoids the Next.js static prerender bailout error when using `useSearchParams()`.
+  - Wrapped these pages in React `<Suspense>` boundaries. This prevents Next.js static page generation (`next build`) from bailing out when they consume search parameters via `useSearchParams()` on client load.
 
 ---
 
 ## Verification Results
 
-We verified that the compilation builds completely:
+We verified that the codebase compiles with zero type errors and exports a production build successfully:
 ```powershell
-npm run build
+npx tsc --noEmit
+npx next build
 ```
 **Result**: Build succeeded with zero errors (`Exit code: 0`).

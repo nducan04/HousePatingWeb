@@ -24,8 +24,13 @@ import {
 import api from "@/lib/utils/axiosAuth";
 import * as XLSX from "xlsx";
 import { paintColors } from "@/lib/data/colors-data";
+import { useAuthStore } from "@/lib/store/authStore";
+import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
-const API_KHO = "/kho";
+import { resolveImageUrl } from "@/lib/utils/imageUrl";
+
+const API_KHO = "/inventory";
 
 interface MaMauItem {
   _id: string;
@@ -36,6 +41,7 @@ interface MaMauItem {
   TonKhoTamGiu: number;
   NguongCanhBao: number;
   TrangThai: boolean;
+  HinhAnh?: string;
 }
 
 interface KhoItem {
@@ -136,6 +142,7 @@ const [nvlForm, setNvlForm] = useState({
 
 const [isNXModal, setIsNXModal] = useState(false);
 const [editingNXId, setEditingNXId] = useState<string | null>(null);
+const [openColorDropdownIdx, setOpenColorDropdownIdx] = useState<number | null>(null);
 const [nxForm, setNxForm] = useState({
   MaPhieu: "",
   LoaiPhieu: "NHAP",
@@ -261,7 +268,7 @@ const fetchPhieuNhapXuat = async () => {
 
 const fetchNhaCungCap = async () => {
   try {
-    const res = await api.get("/nha-cung-cap");
+    const res = await api.get("/suppliers");
     if (res.data.success) setNccList(res.data.data);
   } catch (error) {
     console.error(error);
@@ -287,13 +294,13 @@ const handleSubmitKiemKho = async () => {
   try {
     const validItems = kiemKhoItems.filter((i) => i.Sanpham !== "");
     if (validItems.length === 0)
-      return alert("Vui lòng chọn sản phẩm để kiểm kê");
+      return toast.error("Vui lòng chọn sản phẩm để kiểm kê");
 
     await api.post(`${API_KHO}/kiem-kho`, {
       ChiTiet: validItems,
       MaPhieu: "PKK" + Date.now().toString().slice(-4),
     });
-    alert(
+    toast.success(
       "Kiểm kê thành công! Vui lòng vào Danh sách Phiếu để xem và chốt số lượng.",
     );
     setIsKiemKhoModal(false);
@@ -301,24 +308,35 @@ const handleSubmitKiemKho = async () => {
     setMaNVKiemKe("");
     fetchPhieuKiemKho();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi tạo phiếu kiểm kê");
+    toast.error(error.response?.data?.message || "Lỗi tạo phiếu kiểm kê");
   }
 };
 
 const hoanThanhPhiếu = async (maPhieu: string) => {
-  if (
-    !confirm(
-      "Xác nhận Cân bằng Kho theo biên bản này? Thao tác này sẽ áp số lượng thực tế trực tiếp lên tồn kho hiện hành.",
-    )
-  )
-    return;
+  const confirmResult = await Swal.fire({
+    title: 'Xác nhận',
+    text: "Xác nhận Cân bằng Kho theo biên bản này? Thao tác này sẽ áp số lượng thực tế trực tiếp lên tồn kho hiện hành.",
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy',
+    confirmButtonColor: '#2563eb',
+    cancelButtonColor: '#cbd5e1',
+    customClass: {
+      popup: 'rounded-lg border border-slate-100 shadow-2xl font-sans',
+      title: 'text-xl font-bold text-slate-800',
+      confirmButton: 'px-6 py-2.5 rounded-md font-bold text-sm shadow-md',
+      cancelButton: 'px-6 py-2.5 rounded-md font-bold text-sm text-slate-700 bg-white border border-slate-200'
+    }
+  });
+  if (!confirmResult.isConfirmed) return;
   try {
     await api.post(`${API_KHO}/kiem-kho/${maPhieu}/hoan-thanh`);
-    alert("Đã cập nhật tồn kho thành công!");
+    toast.success("Đã cập nhật tồn kho thành công!");
     fetchTonKho();
     fetchPhieuKiemKho();
   } catch (err: any) {
-    alert(err.response?.data?.message || "Lỗi chốt phiếu");
+    toast.error(err.response?.data?.message || "Lỗi chốt phiếu");
   }
 };
 
@@ -352,26 +370,42 @@ const openEditNVL = (item: NguyenVatLieu) => {
 };
 
 const handleDeleteNVL = async (id: string) => {
-  if (!confirm("Bạn có chắc muốn xóa nguyên vật liệu này?")) return;
+  const confirmResult = await Swal.fire({
+    title: 'Xóa Nguyên Vật Liệu',
+    text: "Bạn có chắc muốn xóa nguyên vật liệu này?",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Xóa ngay',
+    cancelButtonText: 'Hủy',
+    confirmButtonColor: '#e11d48',
+    cancelButtonColor: '#cbd5e1',
+    customClass: {
+      popup: 'rounded-lg border border-slate-100 shadow-2xl font-sans',
+      title: 'text-xl font-bold text-slate-800',
+      confirmButton: 'px-6 py-2.5 rounded-md font-bold text-sm shadow-md',
+      cancelButton: 'px-6 py-2.5 rounded-md font-bold text-sm text-slate-700 bg-white border border-slate-200'
+    }
+  });
+  if (!confirmResult.isConfirmed) return;
   try {
     await api.delete(`${API_KHO}/nguyen-vat-lieu/${id}`);
-    alert("Đã xóa nguyên vật liệu!");
+    toast.success("Đã xóa nguyên vật liệu!");
     fetchNguyenVatLieu();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi xóa NVL");
+    toast.error(error.response?.data?.message || "Lỗi xóa NVL");
   }
 };
 
 const handleSubmitNVL = async () => {
   try {
     if (!nvlForm.MaNVL || !nvlForm.TenNguyenVatLieu)
-      return alert("Vui lòng nhập mã và tên nguyên vật liệu");
+      return toast.error("Vui lòng nhập mã và tên nguyên vật liệu");
     if (editingNVLId) {
       await api.put(`${API_KHO}/nguyen-vat-lieu/${editingNVLId}`, nvlForm);
-      alert("Cập nhật nguyên vật liệu thành công!");
+      toast.success("Cập nhật nguyên vật liệu thành công!");
     } else {
       await api.post(`${API_KHO}/nguyen-vat-lieu`, nvlForm);
-      alert("Thêm nguyên vật liệu thành công!");
+      toast.success("Thêm nguyên vật liệu thành công!");
     }
     setIsNVLModal(false);
     setEditingNVLId(null);
@@ -386,7 +420,7 @@ const handleSubmitNVL = async () => {
     });
     fetchNguyenVatLieu();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi lưu NVL");
+    toast.error(error.response?.data?.message || "Lỗi lưu NVL");
   }
 };
 
@@ -420,52 +454,96 @@ const openEditNXModal = (item: any) => {
 };
 
 const handleDeleteNX = async (id: string) => {
-  if (
-    !confirm(
-      "XÁC NHẬN: Bạn có chắc chắn muốn xóa phiếu này? (Chỉ phiếu đang chờ duyệt mới được xóa)",
-    )
-  )
-    return;
+  const confirmResult = await Swal.fire({
+    title: 'Xóa Phiếu',
+    text: "XÁC NHẬN: Bạn có chắc chắn muốn xóa phiếu này? (Chỉ phiếu đang chờ duyệt mới được xóa)",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Xóa ngay',
+    cancelButtonText: 'Hủy',
+    confirmButtonColor: '#e11d48',
+    cancelButtonColor: '#cbd5e1',
+    customClass: {
+      popup: 'rounded-lg border border-slate-100 shadow-2xl font-sans',
+      title: 'text-xl font-bold text-slate-800',
+      confirmButton: 'px-6 py-2.5 rounded-md font-bold text-sm shadow-md',
+      cancelButton: 'px-6 py-2.5 rounded-md font-bold text-sm text-slate-700 bg-white border border-slate-200'
+    }
+  });
+  if (!confirmResult.isConfirmed) return;
   try {
     await api.delete(`${API_KHO}/nhap-xuat/${id}`);
-    alert("Đã xóa phiếu thành công!");
+    toast.success("Đã xóa phiếu thành công!");
     fetchPhieuNhapXuat();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi xóa phiếu");
+    toast.error(error.response?.data?.message || "Lỗi xóa phiếu");
   }
 };
 
 // ★ DUYỆT PHIẾU
 const handleDuyetPhieu = async (id: string) => {
-  if (
-    !confirm(
-      "Xác nhận DUYỆT phiếu này? Tồn kho sẽ được cập nhật ngay lập tức.",
-    )
-  )
-    return;
+  const confirmResult = await Swal.fire({
+    title: 'Duyệt Phiếu',
+    text: "Xác nhận DUYỆT phiếu này? Tồn kho sẽ được cập nhật ngay lập tức.",
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Duyệt ngay',
+    cancelButtonText: 'Hủy',
+    confirmButtonColor: '#059669',
+    cancelButtonColor: '#cbd5e1',
+    customClass: {
+      popup: 'rounded-lg border border-slate-100 shadow-2xl font-sans',
+      title: 'text-xl font-bold text-slate-800',
+      confirmButton: 'px-6 py-2.5 rounded-md font-bold text-sm shadow-md',
+      cancelButton: 'px-6 py-2.5 rounded-md font-bold text-sm text-slate-700 bg-white border border-slate-200'
+    }
+  });
+  if (!confirmResult.isConfirmed) return;
   try {
     const res = await api.post(`${API_KHO}/nhap-xuat/${id}/duyet`);
-    alert(res.data.message || "Đã duyệt phiếu thành công!");
+    toast.success(res.data.message || "Đã duyệt phiếu thành công!");
     fetchPhieuNhapXuat();
     fetchTonKho();
     fetchNguyenVatLieu();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi duyệt phiếu");
+    toast.error(error.response?.data?.message || "Lỗi duyệt phiếu");
   }
 };
 
 // ★ TỪ CHỐI PHIẾU
 const handleTuChoiPhieu = async (id: string) => {
-  const lyDo = prompt("Nhập lý do từ chối:");
+  const { value: lyDo } = await Swal.fire({
+    title: 'Từ chối phiếu',
+    text: "Nhập lý do từ chối:",
+    input: 'text',
+    showCancelButton: true,
+    confirmButtonText: 'Xác nhận từ chối',
+    cancelButtonText: 'Hủy',
+    confirmButtonColor: '#e11d48',
+    cancelButtonColor: '#cbd5e1',
+    inputValidator: (value) => {
+      if (!value) {
+        return 'Vui lòng nhập lý do từ chối!'
+      }
+      return null;
+    },
+    customClass: {
+      popup: 'rounded-lg border border-slate-100 shadow-2xl font-sans',
+      title: 'text-xl font-bold text-slate-800',
+      input: 'border-slate-300 rounded-md focus:border-blue-500 focus:ring-blue-500',
+      confirmButton: 'px-6 py-2.5 rounded-md font-bold text-sm shadow-md',
+      cancelButton: 'px-6 py-2.5 rounded-md font-bold text-sm text-slate-700 bg-white border border-slate-200'
+    }
+  });
   if (!lyDo) return;
   try {
     const res = await api.post(`${API_KHO}/nhap-xuat/${id}/tu-choi`, {
       lyDo,
     });
-    alert(res.data.message || "Đã từ chối phiếu!");
+    toast.success(res.data.message || "Đã từ chối phiếu!");
     fetchPhieuNhapXuat();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi từ chối phiếu");
+    toast.error(error.response?.data?.message || "Lỗi từ chối phiếu");
   }
 };
 
@@ -525,12 +603,12 @@ const handleSubmitPhieuNX = async () => {
   try {
     const validItems = nxItems.filter((i) => i.ItemId !== "");
     if (validItems.length === 0)
-      return alert("Vui lòng chọn ít nhất 1 hàng hóa");
+      return toast.error("Vui lòng chọn ít nhất 1 hàng hóa");
 
     if (nxForm.LoaiHang === "SAN_PHAM") {
       const missingColor = validItems.find((i) => !i.MaMau);
       if (missingColor) {
-        return alert(`Sản phẩm "${missingColor.TenItem}" chưa chọn mã màu.`);
+        return toast.error(`Sản phẩm "${missingColor.TenItem}" chưa chọn mã màu.`);
       }
     }
 
@@ -542,13 +620,13 @@ const handleSubmitPhieuNX = async () => {
         TongTien: tongTien,
         ChiTiet: validItems,
       });
-      alert("Đã cập nhật phiếu và điều chỉnh tồn kho!");
+      toast.success("Đã cập nhật phiếu và điều chỉnh tồn kho!");
     } else {
       await api.post(`${API_KHO}/nhap-xuat`, {
         ...nxForm,
         ChiTiet: validItems,
       });
-      alert(
+      toast.success(
         `Đã lập Phiếu ${nxForm.LoaiPhieu} thành công! Phiếu đang chờ Admin duyệt.`,
       );
     }
@@ -559,7 +637,7 @@ const handleSubmitPhieuNX = async () => {
     fetchTonKho();
     fetchNguyenVatLieu();
   } catch (error: any) {
-    alert(error.response?.data?.message || "Lỗi lưu phiếu");
+    toast.error(error.response?.data?.message || "Lỗi lưu phiếu");
   }
 };
 
@@ -608,7 +686,7 @@ const exportToExcel = () => {
     fileName = "Lich_Su_Nhap_Xuat_Kho";
   }
 
-  if (dataToExport.length === 0) return alert("Không có dữ liệu để xuất!");
+  if (dataToExport.length === 0) return toast.error("Không có dữ liệu để xuất!");
 
   const worksheet = XLSX.utils.json_to_sheet(dataToExport);
   const workbook = XLSX.utils.book_new();
@@ -624,80 +702,80 @@ return (
     {/* Summary Cards */}
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-50 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-50 rounded-md blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
         <div className="relative z-10 flex items-start justify-between">
           <div>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
               Tổng Mặt Hàng Sơn
             </p>
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
               {STATS.total}
             </h3>
           </div>
-          <div className="w-12 h-12 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+          <div className="w-12 h-12 bg-cyan-50 text-cyan-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
             <Package size={22} />
           </div>
         </div>
       </div>
 
       <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-md blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
         <div className="relative z-10 flex items-start justify-between">
           <div>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
               Tồn Kho Sơn
             </p>
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
               {STATS.tonTotal}
               <span className="text-sm font-bold text-slate-400 ml-1">
                 ĐV
               </span>
             </h3>
           </div>
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
             <ArrowDownToLine size={22} />
           </div>
         </div>
       </div>
 
       <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-md blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
         <div className="relative z-10 flex items-start justify-between">
           <div>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
               Nguyên Vật Liệu
             </p>
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
               {nvlData.length}
             </h3>
           </div>
-          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
             <Beaker size={22} />
           </div>
         </div>
       </div>
 
       <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-md blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
         <div className="relative z-10 flex items-start justify-between">
           <div>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
               Cảnh Báo (Dưới MOQ)
             </p>
-            <h3 className="text-2xl font-black text-rose-600 tracking-tight">
+            <h3 className="text-2xl font-semibold text-rose-600 tracking-tight">
               {STATS.warning}
             </h3>
           </div>
-          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
             <AlertTriangle size={22} />
           </div>
         </div>
       </div>
     </div>
 
-    <div className="flex flex-wrap gap-3 mb-8 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm w-fit">
+    <div className="flex flex-wrap gap-3 mb-8 bg-white p-2 rounded-lg border border-slate-100 shadow-sm w-fit">
       <button
-        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kho"
+        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kho"
           ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
           : "bg-transparent text-slate-500 hover:bg-slate-50"
           }`}
@@ -706,7 +784,7 @@ return (
         <Package size={18} /> Danh Mục Thành Phẩm
       </button>
       <button
-        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nvl"
+        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nvl"
           ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
           : "bg-transparent text-slate-500 hover:bg-slate-50"
           }`}
@@ -715,7 +793,7 @@ return (
         <Beaker size={18} /> Nguyên Vật Liệu Pha Chế
       </button>
       <button
-        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nhapxuat"
+        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nhapxuat"
           ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
           : "bg-transparent text-slate-500 hover:bg-slate-50"
           }`}
@@ -724,7 +802,7 @@ return (
         <ArrowRightLeft size={18} /> Lịch Sử Nhập / Xuất
       </button>
       <button
-        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kiemke"
+        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kiemke"
           ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
           : "bg-transparent text-slate-500 hover:bg-slate-50"
           }`}
@@ -744,7 +822,7 @@ return (
             />
             <input
               type="text"
-              className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-11 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
+              className="w-full bg-slate-50/50 border border-slate-200 rounded-lg px-11 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
               placeholder="Tra cứu nhanh Mã SP, Tên dòng sơn..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -752,33 +830,33 @@ return (
           </div>
           <button
             onClick={exportToExcel}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-200 cursor-pointer border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 w-full sm:w-auto"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 w-full sm:w-auto"
           >
             <Download size={18} /> Xuất Báo Cáo
           </button>
         </div>
 
-        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full border-collapse min-w-[1000px]">
               <thead>
                 <tr className="border-b border-slate-50">
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-32">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-32">
                     Mã SP
                   </th>
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Tên Dòng Sơn
                   </th>
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Phân loại
                   </th>
-                  <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest w-48">
+                  <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-48">
                     Tồn Kho (Thùng/Kg)
                   </th>
-                  <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Đơn giá Cơ sở
                   </th>
-                  <th className="px-6 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-center text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Trạng thái (MOQ: 200)
                   </th>
                 </tr>
@@ -805,7 +883,7 @@ return (
                         className="hover:bg-slate-50/50 transition-colors group"
                       >
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-blue-50 text-blue-600">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-600">
                             {item.MaSanPham}
                           </span>
                         </td>
@@ -821,9 +899,9 @@ return (
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-3">
-                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner max-w-[80px]">
+                            <div className="flex-1 h-1.5 bg-slate-100 rounded-md overflow-hidden shadow-inner max-w-[80px]">
                               <div
-                                className={`h-full rounded-full transition-all duration-1000 shadow-sm ${tk >= 200
+                                className={`h-full rounded-md transition-all duration-1000 shadow-sm ${tk >= 200
                                   ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
                                   : tk > 0
                                     ? "bg-gradient-to-r from-amber-400 to-amber-500"
@@ -833,13 +911,13 @@ return (
                               />
                             </div>
                             <span
-                              className={`font-black tabular-nums ${isLow ? "text-rose-600" : "text-emerald-600"}`}
+                              className={`font-semibold tabular-nums ${isLow ? "text-rose-600" : "text-emerald-600"}`}
                             >
                               {tk.toLocaleString("vi-VN")}
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-right font-black text-slate-700">
+                        <td className="px-6 py-4 text-right font-semibold text-slate-700">
                           {item.DonGiaCoSo.toLocaleString("vi-VN")}{" "}
                           <span className="text-[10px] text-slate-400 font-bold ml-0.5">
                             đ
@@ -847,7 +925,7 @@ return (
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm border ${tk >= 200
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight shadow-sm border ${tk >= 200
                               ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                               : tk > 0
                                 ? "bg-amber-50 text-amber-600 border-amber-100"
@@ -855,7 +933,7 @@ return (
                               }`}
                           >
                             <div
-                              className={`w-1.5 h-1.5 rounded-full ${tk < 200 ? "animate-pulse" : ""} ${tk >= 200
+                              className={`w-1.5 h-1.5 rounded-md ${tk < 200 ? "animate-pulse" : ""} ${tk >= 200
                                 ? "bg-emerald-500"
                                 : tk > 0
                                   ? "bg-amber-500"
@@ -889,7 +967,7 @@ return (
             />
             <input
               type="text"
-              className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-11 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
+              className="w-full bg-slate-50/50 border border-slate-200 rounded-lg px-11 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
               placeholder="Tra cứu nhanh Mã NVL, Tên..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -898,43 +976,43 @@ return (
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button
               onClick={exportToExcel}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-200 cursor-pointer border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 w-full sm:w-auto"
             >
               <Download size={18} /> Xuất Báo Cáo
             </button>
             <button
               onClick={openCreateNVL}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-200 cursor-pointer border-none bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border-none bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 w-full sm:w-auto"
             >
               <Plus size={18} /> Khai Báo NVL Mới
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full border-collapse min-w-[1000px]">
               <thead>
                 <tr className="border-b border-slate-50">
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-32">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-32">
                     Mã NVL
                   </th>
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Tên Nguyên Vật Liệu
                   </th>
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Nhà Cung Cấp
                   </th>
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Nhóm Chất
                   </th>
-                  <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Tồn Kho
                   </th>
-                  <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Đơn Giá
                   </th>
-                  <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Thao tác
                   </th>
                 </tr>
@@ -956,7 +1034,7 @@ return (
                       className="hover:bg-slate-50/50 transition-colors group"
                     >
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-purple-50 text-purple-600">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider bg-purple-50 text-purple-600">
                           {item.MaNVL}
                         </span>
                       </td>
@@ -977,13 +1055,13 @@ return (
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm border bg-slate-50 text-slate-600 border-slate-100">
+                        <span className="inline-flex items-center px-2.5 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight shadow-sm border bg-slate-50 text-slate-600 border-slate-100">
                           {item.PhanLoai}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span
-                          className={`font-black ${(item.TonKho || 0) > 0 ? "text-emerald-600" : "text-rose-600"}`}
+                          className={`font-semibold ${(item.TonKho || 0) > 0 ? "text-emerald-600" : "text-rose-600"}`}
                         >
                           {(item.TonKho || 0).toLocaleString("vi-VN")}
                         </span>
@@ -991,7 +1069,7 @@ return (
                           {item.DonViTinh}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right font-black text-slate-700">
+                      <td className="px-6 py-4 text-right font-semibold text-slate-700">
                         {item.DonGia.toLocaleString("vi-VN")}{" "}
                         <span className="text-[10px] text-slate-400 font-bold ml-0.5">
                           đ
@@ -1001,14 +1079,14 @@ return (
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => openEditNVL(item)}
-                            className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
+                            className="w-8 h-8 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
                             title="Sửa"
                           >
                             <Edit size={14} />
                           </button>
                           <button
                             onClick={() => handleDeleteNVL(item._id)}
-                            className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-colors"
+                            className="w-8 h-8 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-colors"
                             title="Xóa"
                           >
                             <Trash2 size={14} />
@@ -1039,49 +1117,49 @@ return (
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button
               onClick={exportToExcel}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-200 cursor-pointer border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 w-full sm:w-auto"
             >
               <Download size={18} /> Xuất Báo Cáo
             </button>
             <button
               onClick={openCreateNXModal}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-200 cursor-pointer border-none bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20 w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border-none bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20 w-full sm:w-auto"
             >
               <ArrowRightLeft size={18} /> Lập Lệnh Nhập / Xuất
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full border-collapse min-w-[1000px]">
               <thead>
                 <tr className="border-b border-slate-50">
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-32">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-32">
                     Mã Lệnh
                   </th>
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Loại Kho
                   </th>
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Loại Lệnh
                   </th>
-                  <th className="px-6 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-center text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Trạng Thái
                   </th>
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Người Lập
                   </th>
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Mô Tả
                   </th>
-                  <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Tổng Giá Trị
                   </th>
-                  <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Thời Gian
                   </th>
-                  <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Thao tác
                   </th>
                 </tr>
@@ -1093,7 +1171,7 @@ return (
                     className="hover:bg-slate-50/50 transition-colors group"
                   >
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-600">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-600">
                         {item.MaPhieu}
                       </span>
                     </td>
@@ -1106,7 +1184,7 @@ return (
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm border ${item.LoaiPhieu === "NHAP"
+                        className={`inline-flex items-center px-2.5 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight shadow-sm border ${item.LoaiPhieu === "NHAP"
                           ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                           : "bg-rose-50 text-rose-600 border-rose-100"
                           }`}
@@ -1117,7 +1195,7 @@ return (
                     {/* ★ TRẠNG THÁI */}
                     <td className="px-6 py-4 text-center">
                       <span
-                        className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-tight ${item.TrangThai === "DA_DUYET"
+                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight ${item.TrangThai === "DA_DUYET"
                           ? "bg-green-50 text-green-600"
                           : item.TrangThai === "TU_CHOI"
                             ? "bg-red-50 text-red-600"
@@ -1157,7 +1235,7 @@ return (
                         {item.MoTa || "Không có mô tả"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right font-black text-slate-900">
+                    <td className="px-6 py-4 text-right font-semibold text-slate-900">
                       {item.TongTien.toLocaleString("vi-VN")}{" "}
                       <span className="text-[10px] text-slate-400 font-bold ml-0.5">
                         đ
@@ -1195,14 +1273,14 @@ return (
                             </button>
                             <button
                               onClick={() => openEditNXModal(item)}
-                              className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
+                              className="w-8 h-8 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
                               title="Sửa"
                             >
                               <Edit size={14} />
                             </button>
                             <button
                               onClick={() => handleDeleteNX(item._id)}
-                              className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-colors"
+                              className="w-8 h-8 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-colors"
                               title="Xóa"
                             >
                               <Trash2 size={14} />
@@ -1239,33 +1317,33 @@ return (
         <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-4 mb-6 flex justify-end items-center gap-4">
           <button
             onClick={() => setIsKiemKhoModal(true)}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-200 cursor-pointer border border-amber-500 bg-amber-50 text-amber-600 hover:bg-amber-100 hover:border-amber-600 w-full sm:w-auto"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border border-amber-500 bg-amber-50 text-amber-600 hover:bg-amber-100 hover:border-amber-600 w-full sm:w-auto"
           >
             <FileCheck size={18} /> Tạo Phiếu Kiểm Kê Thực Tế
           </button>
         </div>
 
-        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full border-collapse min-w-[1000px]">
               <thead>
                 <tr className="border-b border-slate-50">
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-40">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-40">
                     Mã Phiếu Kiểm
                   </th>
-                  <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Người Lập Phiếu
                   </th>
-                  <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Tổng Lệch (Giá Trị)
                   </th>
-                  <th className="px-6 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-center text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Trạng thái
                   </th>
-                  <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Ngày Lập
                   </th>
-                  <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                     Thao tác
                   </th>
                 </tr>
@@ -1277,7 +1355,7 @@ return (
                     className="hover:bg-slate-50/50 transition-colors group"
                   >
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-600">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-600">
                         {item.MaPhieu}
                       </span>
                     </td>
@@ -1291,7 +1369,7 @@ return (
                     <td className="px-6 py-4 text-right">
                       <div className="flex flex-col items-end">
                         <span
-                          className={`font-black text-lg ${item.TongChenhLech < 0 ? "text-rose-600" : item.TongChenhLech > 0 ? "text-emerald-600" : "text-slate-400"}`}
+                          className={`font-semibold text-lg ${item.TongChenhLech < 0 ? "text-rose-600" : item.TongChenhLech > 0 ? "text-emerald-600" : "text-slate-400"}`}
                         >
                           {item.TongChenhLech > 0 ? "+" : ""}
                           {item.TongChenhLech.toLocaleString("vi-VN")}
@@ -1303,7 +1381,7 @@ return (
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span
-                        className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-tight shadow-sm border ${item.TrangThai === "HOAN_THANH"
+                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight shadow-sm border ${item.TrangThai === "HOAN_THANH"
                           ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                           : "bg-amber-50 text-amber-600 border-amber-100"
                           }`}
@@ -1322,7 +1400,7 @@ return (
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => setSelectedPhieu(item)}
-                          className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
+                          className="w-8 h-8 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
                           title="Xem chi tiết & In"
                         >
                           <Eye size={14} />
@@ -1330,7 +1408,7 @@ return (
                         {item.TrangThai !== "HOAN_THANH" && (
                           <button
                             onClick={() => hoanThanhPhiếu(item.MaPhieu)}
-                            className="inline-flex items-center px-3 h-8 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition-colors shadow-sm"
+                            className="inline-flex items-center px-3 h-8 rounded-md bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition-colors shadow-sm"
                           >
                             Chốt Số
                           </button>
@@ -1359,18 +1437,18 @@ return (
     {/* Modal Lập / Sửa Phiếu NVL */}
     {isNVLModal && (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300">
+        <div className="bg-white rounded-md shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300">
           {/* Header */}
           <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
-            <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+            <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center">
                 <Beaker size={20} />
               </div>
               {editingNVLId ? "CẬP NHẬT NVL" : "KHAI BÁO NVL MỚI"}
             </h2>
             <button
               onClick={() => setIsNVLModal(false)}
-              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
+              className="w-10 h-10 rounded-md flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
             >
               <X size={20} />
             </button>
@@ -1386,7 +1464,7 @@ return (
                 <input
                   type="text"
                   placeholder="VD: NVL001"
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium disabled:opacity-50"
+                  className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium disabled:opacity-50"
                   value={nvlForm.MaNVL}
                   onChange={(e) =>
                     setNvlForm({ ...nvlForm, MaNVL: e.target.value })
@@ -1401,7 +1479,7 @@ return (
                 <input
                   type="text"
                   placeholder="Nhập tên nguyên liệu..."
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                  className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                   value={nvlForm.TenNguyenVatLieu}
                   onChange={(e) =>
                     setNvlForm({
@@ -1419,7 +1497,7 @@ return (
                   Phân Loại
                 </label>
                 <select
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold"
+                  className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold"
                   value={nvlForm.PhanLoai}
                   onChange={(e) =>
                     setNvlForm({ ...nvlForm, PhanLoai: e.target.value })
@@ -1438,7 +1516,7 @@ return (
                 <input
                   type="text"
                   placeholder="VD: Kg, Lít..."
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                  className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                   value={nvlForm.DonViTinh}
                   onChange={(e) =>
                     setNvlForm({ ...nvlForm, DonViTinh: e.target.value })
@@ -1455,7 +1533,7 @@ return (
                 <input
                   type="number"
                   min={0}
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-black"
+                  className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-semibold"
                   value={nvlForm.TonKho}
                   onChange={(e) =>
                     setNvlForm({ ...nvlForm, TonKho: Number(e.target.value) })
@@ -1468,7 +1546,7 @@ return (
                 </label>
                 <input
                   type="number"
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-black text-emerald-600"
+                  className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-semibold text-emerald-600"
                   value={nvlForm.DonGia}
                   onChange={(e) =>
                     setNvlForm({ ...nvlForm, DonGia: Number(e.target.value) })
@@ -1482,7 +1560,7 @@ return (
                 Nhà Cung Cấp
               </label>
               <select
-                className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold"
+                className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold"
                 value={nvlForm.NhaCungCap}
                 onChange={(e) =>
                   setNvlForm({ ...nvlForm, NhaCungCap: e.target.value })
@@ -1505,13 +1583,13 @@ return (
                 setIsNVLModal(false);
                 setEditingNVLId(null);
               }}
-              className="px-6 py-3 rounded-xl font-bold text-[14px] text-slate-500 hover:bg-slate-100 transition-all"
+              className="px-6 py-3 rounded-md font-bold text-[14px] text-slate-500 hover:bg-slate-100 transition-all"
             >
               Hủy Bỏ
             </button>
             <button
               onClick={handleSubmitNVL}
-              className="px-8 py-3 rounded-xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
+              className="px-8 py-3 rounded-md font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
             >
               {editingNVLId ? "Cập Nhật Thông Tin" : "Xác Nhận Khai Báo"}
             </button>
@@ -1523,14 +1601,14 @@ return (
     {/* Modal Lập Phiếu Nhập Xuất */}
     {isNXModal && (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300 max-h-[90vh]">
+        <div className="bg-white rounded-md shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300 max-h-[90vh]">
           {/* Header */}
           <div
             className={`px-8 py-6 border-b border-slate-50 flex items-center justify-between ${nxForm.LoaiPhieu === "NHAP" ? "bg-emerald-50/50" : "bg-rose-50/50"}`}
           >
-            <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+            <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${nxForm.LoaiPhieu === "NHAP" ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"}`}
+                className={`w-10 h-10 rounded-md flex items-center justify-center shadow-sm ${nxForm.LoaiPhieu === "NHAP" ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"}`}
               >
                 {nxForm.LoaiPhieu === "NHAP" ? (
                   <ArrowDownToLine size={20} />
@@ -1544,7 +1622,7 @@ return (
             </h2>
             <button
               onClick={() => { setIsNXModal(false); setEditingNXId(null); }}
-              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
+              className="w-10 h-10 rounded-md flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
             >
               <X size={20} />
             </button>
@@ -1558,7 +1636,7 @@ return (
                   Mục Đích Lệnh
                 </label>
                 <select
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none disabled:opacity-50"
+                  className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none disabled:opacity-50"
                   value={nxForm.LoaiPhieu}
                   onChange={(e) =>
                     setNxForm({ ...nxForm, LoaiPhieu: e.target.value })
@@ -1574,7 +1652,7 @@ return (
                   Đối Tượng Lệnh
                 </label>
                 <select
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none disabled:opacity-50"
+                  className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none disabled:opacity-50"
                   value={nxForm.LoaiHang}
                   onChange={(e) =>
                     setNxForm({ ...nxForm, LoaiHang: e.target.value })
@@ -1590,7 +1668,7 @@ return (
                   Nhà Cung Cấp (Nếu có)
                 </label>
                 <select
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none"
+                  className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none"
                   value={nxForm.NhaCungCapID}
                   onChange={(e) =>
                     setNxForm({ ...nxForm, NhaCungCapID: e.target.value })
@@ -1613,7 +1691,7 @@ return (
               <input
                 type="text"
                 placeholder="Nhập lý do nhập xuất hoặc mô tả chi tiết..."
-                className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                 value={nxForm.MoTa}
                 onChange={(e) =>
                   setNxForm({ ...nxForm, MoTa: e.target.value })
@@ -1624,7 +1702,7 @@ return (
             {/* Items Table */}
             <div className="space-y-4">
               <div className="flex items-center justify-between px-1">
-                <h3 className="text-[15px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <h3 className="text-[15px] font-semibold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                   <Box size={18} className="text-blue-500" />
                   Danh sách Hàng Hóa Chỉ Định
                 </h3>
@@ -1642,16 +1720,16 @@ return (
                 {nxItems.map((k: any, idx) => (
                   <div
                     key={idx}
-                    className="p-5 rounded-[24px] bg-slate-50/50 border border-slate-100 grid grid-cols-1 md:grid-cols-12 gap-4 items-end animate-in slide-in-from-right-2 duration-300"
+                    className="p-5 rounded-lg bg-slate-50/50 border border-slate-100 grid grid-cols-1 md:grid-cols-12 gap-4 items-end animate-in slide-in-from-right-2 duration-300"
                   >
                     <div className="md:col-span-4 space-y-1.5">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">
+                      <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-tighter">
                         {nxForm.LoaiHang === "SAN_PHAM"
                           ? "Sản Phẩm"
                           : "Nguyên Vật Liệu"}
                       </label>
                       <select
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] text-slate-800 outline-none focus:border-blue-500 transition-all font-bold disabled:opacity-50"
+                        className="w-full bg-white border border-slate-200 rounded-md px-4 py-2.5 text-[13px] text-slate-800 outline-none focus:border-blue-500 transition-all font-bold disabled:opacity-50"
                         value={k.ItemId}
                         onChange={(e) =>
                           handleNXItemChange(idx, "ItemId", e.target.value)
@@ -1674,50 +1752,88 @@ return (
                     </div>
                     {nxForm.LoaiHang === "SAN_PHAM" && (
                       <div className="md:col-span-3 space-y-1.5 animate-in fade-in duration-200">
-                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">Mã Màu (SKU)</label>
-                        <div className="relative flex items-center">
-                          <select
-                            className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-6 py-2.5 text-[13px] text-slate-800 outline-none focus:border-blue-500 transition-all font-bold appearance-none disabled:opacity-50"
-                            value={k.MaMau || ""}
-                            onChange={(e) => handleNXItemChange(idx, "MaMau", e.target.value)}
-                            disabled={!k.ItemId || !!editingNXId}
+                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-tighter">Mã Màu (SKU)</label>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!k.ItemId || !!editingNXId) return;
+                              setOpenColorDropdownIdx(openColorDropdownIdx === idx ? null : idx);
+                            }}
+                            className={`w-full bg-white border border-slate-200 rounded-md pl-9 pr-6 py-2.5 text-[13px] text-slate-800 text-left outline-none focus:border-blue-500 transition-all font-bold ${(!k.ItemId || !!editingNXId) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                           >
-                            <option value="">-- Chọn màu --</option>
-                            {k.ItemId && paintColors.map((c, cIdx) => {
-                              const sp = data.find((d) => d._id === k.ItemId);
-                              const currentSpColor = sp?.DanhSachMaMau?.find((m: any) => m.MaMau.toUpperCase() === c.code.toUpperCase());
-                              const stock = currentSpColor ? currentSpColor.TonKhoKhaDung || 0 : 0;
-                              return (
-                                <option key={cIdx} value={c.code}>
-                                  {c.code} - {c.name} ({c.category}) {currentSpColor ? `[Sẵn có: ${stock}]` : "[Mới]"}
-                                </option>
-                              );
-                            })}
-                          </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            <span className="text-[10px]">▼</span>
-                          </div>
+                            <span className="truncate block">
+                              {k.MaMau ? `${k.MaMau} - ${k.TenMau}` : '-- Chọn màu --'}
+                            </span>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                              <span className="text-[10px]">▼</span>
+                            </div>
+                          </button>
+                          
                           {(() => {
                             const sp = data.find((d) => d._id === k.ItemId);
                             const m = sp?.DanhSachMaMau?.find((m: any) => m.MaMau === k.MaMau);
                             const matchColor = paintColors.find((c) => c.code === k.MaMau);
                             const hex = matchColor?.hex || m?.HexCode || "#cbd5e1";
+                            
+                            if (m?.HinhAnh) {
+                              return (
+                                <img 
+                                  src={resolveImageUrl(m.HinhAnh)} 
+                                  alt={k.MaMau}
+                                  className="absolute left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md object-cover border border-slate-200 shadow-sm pointer-events-none" 
+                                />
+                              );
+                            }
                             return (
                               <div
-                                className="absolute left-3 w-4 h-4 rounded-full border border-slate-200 shadow-sm"
+                                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-md border border-slate-200 shadow-sm pointer-events-none"
                                 style={{ backgroundColor: hex }}
                               />
                             );
                           })()}
+
+                          {openColorDropdownIdx === idx && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => setOpenColorDropdownIdx(null)} />
+                              <div className="absolute z-50 top-full left-0 mt-1 min-w-[450px] w-max max-w-[90vw] max-h-72 overflow-y-auto bg-white border border-slate-200 rounded-md shadow-2xl p-1 custom-scrollbar">
+                                {k.ItemId && paintColors.map((c, cIdx) => {
+                                  const sp = data.find((d) => d._id === k.ItemId);
+                                  const currentSpColor = sp?.DanhSachMaMau?.find((m: any) => m.MaMau.toUpperCase() === c.code.toUpperCase());
+                                  const stock = currentSpColor ? currentSpColor.TonKhoKhaDung || 0 : 0;
+                                  
+                                  return (
+                                    <div
+                                      key={cIdx}
+                                      onClick={() => {
+                                        handleNXItemChange(idx, "MaMau", c.code);
+                                        setOpenColorDropdownIdx(null);
+                                      }}
+                                      className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer rounded-lg transition-colors"
+                                    >
+                                      {currentSpColor?.HinhAnh ? (
+                                        <img src={resolveImageUrl(currentSpColor.HinhAnh)} className="w-6 h-6 rounded-md object-cover border border-slate-200 shadow-sm shrink-0" />
+                                      ) : (
+                                        <div className="w-5 h-5 rounded-md border border-slate-200 shadow-sm shrink-0" style={{ backgroundColor: c.hex }} />
+                                      )}
+                                      <div className="text-[12px] text-slate-700 truncate">
+                                        <span className="font-bold">{c.code}</span> - {c.name} ({c.category}) {currentSpColor ? <span className="text-emerald-600 font-bold ml-1">[Sẵn có: {stock}]</span> : <span className="text-blue-500 font-bold ml-1">[Mới]</span>}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     )}
                     <div className={`${nxForm.LoaiHang === "SAN_PHAM" ? "md:col-span-2" : "md:col-span-3"} space-y-1.5`}>
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">Số lượng</label>
+                      <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-tighter">Số lượng</label>
                       <input
                         type="number"
                         min={1}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] text-slate-800 font-black outline-none focus:border-blue-500 transition-all"
+                        className="w-full bg-white border border-slate-200 rounded-md px-4 py-2.5 text-[13px] text-slate-800 font-semibold outline-none focus:border-blue-500 transition-all"
                         value={k.SoLuong}
                         onChange={(e) =>
                           handleNXItemChange(
@@ -1730,13 +1846,13 @@ return (
                     </div>
 
                     <div className="md:col-span-2 space-y-1.5">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">
+                      <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-tighter">
                         Đơn Giá
                       </label>
                       <input
                         type="number"
                         min={0}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] text-slate-800 font-bold outline-none focus:border-blue-500 transition-all"
+                        className="w-full bg-white border border-slate-200 rounded-md px-4 py-2.5 text-[13px] text-slate-800 font-bold outline-none focus:border-blue-500 transition-all"
                         value={k.DonGia}
                         onChange={(e) =>
                           handleNXItemChange(
@@ -1755,7 +1871,7 @@ return (
                           newItems.splice(idx, 1);
                           setNxItems(newItems);
                         }}
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-colors"
+                        className="w-10 h-10 rounded-md flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-colors"
                         disabled={nxItems.length <= 1}
                       >
                         <Trash2 size={16} />
@@ -1770,10 +1886,10 @@ return (
           {/* Footer */}
           <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-between">
             <div className="flex flex-col">
-              <span className="text-[11px] font-black text-slate-400 uppercase">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase">
                 Tổng giá trị lệnh
               </span>
-              <span className="text-2xl font-black text-slate-900">
+              <span className="text-2xl font-semibold text-slate-900">
                 {nxItems.reduce((acc, curr) => acc + (curr.ThanhTien || 0), 0).toLocaleString("vi-VN")}
                 <span className="text-sm ml-1 text-slate-400 uppercase">đ</span>
               </span>
@@ -1784,13 +1900,13 @@ return (
                   setIsNXModal(false);
                   setEditingNXId(null);
                 }}
-                className="px-6 py-3 rounded-xl font-bold text-[14px] text-slate-500 hover:bg-slate-100 transition-all"
+                className="px-6 py-3 rounded-md font-bold text-[14px] text-slate-500 hover:bg-slate-100 transition-all"
               >
                 Hủy Bỏ
               </button>
               <button
                 onClick={handleSubmitPhieuNX}
-                className={`px-8 py-3 rounded-xl font-bold text-[14px] text-white shadow-lg transition-all active:scale-95 ${nxForm.LoaiPhieu === "NHAP" ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"}`}
+                className={`px-8 py-3 rounded-md font-bold text-[14px] text-white shadow-lg transition-all active:scale-95 ${nxForm.LoaiPhieu === "NHAP" ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"}`}
               >
                 {editingNXId
                   ? "CẬP NHẬT LỆNH"
@@ -1805,18 +1921,18 @@ return (
     {/* Modal Lập Phiếu Kiem Ke (Giữ nguyên cấu trúc đã có) */}
     {isKiemKhoModal && (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300 max-h-[90vh]">
+        <div className="bg-white rounded-md shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300 max-h-[90vh]">
           {/* Header */}
           <div className="px-8 py-6 border-b border-slate-50 bg-amber-50/50 flex items-center justify-between">
-            <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-md bg-amber-100 text-amber-600 flex items-center justify-center shadow-sm">
                 <FileCheck size={20} />
               </div>
               KIỂM KÊ KHO THỰC TẾ
             </h2>
             <button
               onClick={() => setIsKiemKhoModal(false)}
-              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
+              className="w-10 h-10 rounded-md flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
             >
               <X size={20} />
             </button>
@@ -1824,8 +1940,8 @@ return (
 
           {/* Content */}
           <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-            <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100/50 flex gap-4 items-start mb-4">
-              <div className="w-8 h-8 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="bg-amber-50 rounded-lg p-4 border border-amber-100/50 flex gap-4 items-start mb-4">
+              <div className="w-8 h-8 rounded-md bg-amber-200 text-amber-700 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <AlertTriangle size={16} />
               </div>
               <div className="text-[13px] text-amber-800 leading-relaxed font-medium">
@@ -1839,14 +1955,14 @@ return (
               {kiemKhoItems.map((k: any, idx: number) => (
                 <div
                   key={idx}
-                  className="p-6 rounded-[28px] bg-slate-50 border border-slate-100 grid grid-cols-1 md:grid-cols-12 gap-5 items-end animate-in slide-in-from-right-2 duration-300 relative"
+                  className="p-6 rounded-md bg-slate-50 border border-slate-100 grid grid-cols-1 md:grid-cols-12 gap-5 items-end animate-in slide-in-from-right-2 duration-300 relative"
                 >
                   <div className="md:col-span-5 space-y-1.5">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter ml-1">
+                    <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-tighter ml-1">
                       Sản Phẩm Thành Phẩm
                     </label>
                     <select
-                      className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/10 transition-all font-bold appearance-none"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/10 transition-all font-bold appearance-none"
                       value={k.Sanpham}
                       onChange={(e) => {
                         const newArr = [...kiemKhoItems];
@@ -1868,11 +1984,11 @@ return (
 
                   {k.Sanpham && (
                     <div className="md:col-span-4 space-y-1.5">
-                      <label className="text-[11px] font-black text-blue-500 uppercase tracking-tighter ml-1">
+                      <label className="text-[11px] font-semibold text-blue-500 uppercase tracking-tighter ml-1">
                         Mã Màu (SKU)
                       </label>
                       <select
-                        className="w-full bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 text-[14px] text-blue-700 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold appearance-none"
+                        className="w-full bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-[14px] text-blue-700 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold appearance-none"
                         value={k.MaMau}
                         onChange={(e) => {
                           const newArr = [...kiemKhoItems];
@@ -1903,13 +2019,13 @@ return (
                   )}
 
                   <div className="md:col-span-2 space-y-1.5">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-tighter ml-1">
+                    <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-tighter ml-1">
                       Tồn Thực Tế
                     </label>
                     <input
                       type="number"
                       min={0}
-                      className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-[14px] text-slate-800 font-black outline-none focus:ring-2 focus:ring-blue-500/10 transition-all text-center"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-[14px] text-slate-800 font-semibold outline-none focus:ring-2 focus:ring-blue-500/10 transition-all text-center"
                       value={k.TonThucTe}
                       onChange={(e) => {
                         const newArr = [...kiemKhoItems];
@@ -1926,7 +2042,7 @@ return (
                         newArr.splice(idx, 1);
                         setKiemKhoItems(newArr);
                       }}
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-100 transition-colors"
+                      className="w-10 h-10 rounded-md flex items-center justify-center text-rose-500 hover:bg-rose-100 transition-colors"
                       disabled={kiemKhoItems.length <= 1}
                     >
                       <Trash2 size={16} />
@@ -1938,7 +2054,7 @@ return (
 
             <button
               onClick={handleAddKiemKhoItem}
-              className="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold text-sm hover:bg-slate-50 hover:border-blue-400 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 font-bold text-sm hover:bg-slate-50 hover:border-blue-400 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
             >
               <Plus size={18} /> Thêm dòng sản phẩm cần kiểm kê
             </button>
@@ -1948,13 +2064,13 @@ return (
           <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-end gap-3">
             <button
               onClick={() => setIsKiemKhoModal(false)}
-              className="px-6 py-3 rounded-xl font-bold text-[14px] text-slate-500 hover:bg-slate-100 transition-all"
+              className="px-6 py-3 rounded-md font-bold text-[14px] text-slate-500 hover:bg-slate-100 transition-all"
             >
               Đóng
             </button>
             <button
               onClick={handleSubmitKiemKho}
-              className="px-8 py-3 rounded-xl font-bold text-[14px] bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-600/20 transition-all active:scale-95"
+              className="px-8 py-3 rounded-md font-bold text-[14px] bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-600/20 transition-all active:scale-95"
             >
               Lưu Phiếu & Tính Chênh Lệch
             </button>
@@ -2006,7 +2122,7 @@ return (
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 onClick={() => window.print()}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
               >
                 <Printer size={16} /> In Phiếu
               </button>

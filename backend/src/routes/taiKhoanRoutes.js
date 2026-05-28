@@ -4,9 +4,9 @@ const { getAll, create, update, remove } = require('../controllers/taiKhoanContr
 
 const router = express.Router();
 
-// Hiện tại cho phép tất cả thao tác của Admin
-// Có thể thêm phân quyền .use(authorize('Admin')) nếu cần
-// router.use(protect);
+// Protect and authorize Admin for all user account endpoints
+router.use(protect);
+router.use(authorize('Admin'));
 
 router.route('/')
   .get(getAll)

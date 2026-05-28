@@ -13,6 +13,7 @@ import {
   X
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
+import { toast } from '@/lib/utils/notification';
 
 const API_PATH = '/san-pham-son';
 
@@ -77,11 +78,11 @@ export default function GiaThanhPage() {
       await api.put(`${API_PATH}/${selectedProduct._id}/price`, {
         DonGiaCoSo: newPrice
       });
-      alert('Cập nhật giá thành công!');
+      toast.success('Cập nhật giá thành công!');
       setIsModalOpen(false);
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Lỗi cập nhật giá');
+      toast.error(err.response?.data?.error || 'Lỗi cập nhật giá');
     }
   };
 
@@ -160,7 +161,7 @@ export default function GiaThanhPage() {
           />
         </div>
         <button
-          onClick={() => window.location.href = '/san-pham'}
+          onClick={() => window.location.href = '/products'}
           title="Chuyển sang trang Quản lý Sản Phẩm để tạo mới dòng sơn và thiết lập giá"
           className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors w-full sm:w-auto"
         >

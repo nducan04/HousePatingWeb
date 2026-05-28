@@ -5,6 +5,7 @@ import {
   Crown, Ticket, AlertTriangle, Gift, Phone, Plus, X,
   Users, TrendingUp, Check, MessageCircle, User
 } from 'lucide-react';
+import api from '@/lib/utils/axiosAuth';
 
 // --- Types ---
 export interface CustomerData {
@@ -122,49 +123,26 @@ export default function LoyaltyPromotionHub() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Khởi tạo mock data
-    const mockCustomerData: CustomerData[] = [
-      {
-        id: 1,
-        name: "Công ty XD Thái Hưng",
-        totalPoints: 12450,
-        totalOrders: 87,
-        totalSpent: 1250000000, // 1.25 tỷ -> VIP
-        lastOrderDate: new Date(new Date().setDate(new Date().getDate() - 72)).toISOString(),
-        recentTickets: 0,
-      },
-      {
-        id: 2,
-        name: "Tập Đoàn Nam Phương",
-        totalPoints: 9800,
-        totalOrders: 62,
-        totalSpent: 650000000, // 650 triệu -> Vàng
-        lastOrderDate: new Date(new Date().setDate(new Date().getDate() - 10)).toISOString(),
-        recentTickets: 1,
-      },
-      {
-        id: 3,
-        name: "Xưởng Cơ Khí Vina",
-        totalPoints: 4200,
-        totalOrders: 31,
-        totalSpent: 120000000, // 120 triệu -> Bạc
-        lastOrderDate: new Date(new Date().setDate(new Date().getDate() - 15)).toISOString(),
-        recentTickets: 0,
-      },
-      {
-        id: 4,
-        name: "Đại lý Việt Nam",
-        totalPoints: 1850,
-        totalOrders: 14,
-        totalSpent: 45000000, // 45 triệu -> Mới
-        lastOrderDate: new Date(new Date().setDate(new Date().getDate() - 65)).toISOString(),
-        recentTickets: 0,
-      },
-    ];
+    const fetchRealData = async () => {
+      try {
+        const res = await api.get('/khach-hang');
+        if (res.data.success) {
+          const realCustomers = res.data.data.map((c: any) => ({
+            id: c._id,
+            name: c.TenKhachHang || 'Khách hàng ẩn danh',
+            totalPoints: Math.floor((c.TongChiTieu || 0) / 100000),
+            totalOrders: c.SoDonHang || 0,
+            totalSpent: c.TongChiTieu || 0,
+            lastOrderDate: c.NgayMuaGanNhat || c.createdAt || new Date().toISOString(),
+            recentTickets: 0
+          }));
+          setCustomers(realCustomers.map(analyzeCustomer).sort((a: any, b: any) => b.totalSpent - a.totalSpent));
+        }
+      } catch (error) {
+        console.error("Lỗi tải khách hàng:", error);
+      }
 
-    setCustomers(mockCustomerData.map(analyzeCustomer));
-
-    setVouchers([
+      setVouchers([
       {
         id: 1,
         code: "VTSC-VIP20",
@@ -192,6 +170,9 @@ export default function LoyaltyPromotionHub() {
     ]);
 
     setLoading(false);
+    };
+
+    fetchRealData();
   }, []);
 
   // --- Logic Tạo Chiến Dịch Khuyến Mãi ---
@@ -244,7 +225,7 @@ export default function LoyaltyPromotionHub() {
     voucherId: ''
   });
 
-  const handleGiftVoucher = () => {
+  const handleGiftVoucher = async () => {
     if (!giftData.customerId || !giftData.voucherId) {
       alert("Vui lòng chọn khách hàng và voucher.");
       return;
@@ -254,11 +235,25 @@ export default function LoyaltyPromotionHub() {
     const voucher = vouchers.find(v => v.id.toString() === giftData.voucherId);
 
     if (customer && voucher) {
-      // API call mô phỏng
-      console.log(`Tặng ${voucher.code} cho ${customer.name}`);
-      setIsGiftModalOpen(false);
-      setGiftData({ customerId: '', voucherId: '' });
-      showToast(`Đã tặng thành công voucher ${voucher.code} cho ${customer.name}!`);
+      try {
+        const payload = {
+          VoucherCode: voucher.code,
+          DiscountPercent: voucher.type === 'percent' ? voucher.value : 0,
+          DiscountAmount: voucher.type === 'fixed' ? voucher.value : 0,
+          Description: `Tặng ${voucher.code} - ${voucher.condition}`,
+          ExpirationDate: voucher.endDate
+        };
+        const res = await api.post(`/khach-hang/${customer.id}/gift-voucher`, payload);
+        if (res.data.success) {
+          setIsGiftModalOpen(false);
+          setGiftData({ customerId: '', voucherId: '' });
+          showToast(`Đã tặng thành công voucher ${voucher.code} cho ${customer.name}!`);
+        } else {
+          alert("Lỗi khi tặng voucher: " + res.data.error);
+        }
+      } catch (error: any) {
+        alert("Lỗi khi tặng voucher: " + (error.response?.data?.error || error.message));
+      }
     }
   };
 
@@ -362,7 +357,7 @@ export default function LoyaltyPromotionHub() {
       'Mới': 'bg-blue-100 text-blue-700'
     };
     return (
-      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${colors[tier]}`}>
+      <span className={`px-3 py-1 text-xs font-semibold rounded-md ${colors[tier]}`}>
         {tier}
       </span>
     );
@@ -375,7 +370,7 @@ export default function LoyaltyPromotionHub() {
       info: 'bg-blue-100 text-blue-700 border-blue-200'
     };
     return (
-      <span className={`px-3 py-1 text-xs font-medium rounded-full border ${colors[type]}`}>
+      <span className={`px-3 py-1 text-xs font-medium rounded-md border ${colors[type]}`}>
         {analysis}
       </span>
     );
@@ -402,8 +397,8 @@ export default function LoyaltyPromotionHub() {
         {/* Top Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
           {/* Stat 1 */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
-            <div className="p-3 bg-amber-100 rounded-xl">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-amber-100 rounded-md">
               <Crown className="w-6 h-6 text-amber-600" />
             </div>
             <div>
@@ -418,8 +413,8 @@ export default function LoyaltyPromotionHub() {
 
 
           {/* Stat 3 */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
-            <div className="p-3 bg-emerald-100 rounded-xl">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-emerald-100 rounded-md">
               <Ticket className="w-6 h-6 text-emerald-600" />
             </div>
             <div>
@@ -447,7 +442,7 @@ export default function LoyaltyPromotionHub() {
 
         {/* Loyalty Tab Content */}
         {activeTab === 'loyalty' && (
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-200 flex justify-between items-center">
               <div>
                 <h3 className="font-semibold text-lg">Danh sách Khách hàng & Hạng Thành Viên</h3>
@@ -455,7 +450,7 @@ export default function LoyaltyPromotionHub() {
                   Quy định hạng: Bạc (≥ 50tr), Vàng (≥ 500tr), VIP (≥ 1 tỷ).
                 </p>
               </div>
-              <button onClick={() => setIsGiftModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">
+              <button onClick={() => setIsGiftModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
                 <Gift className="w-4 h-4" /> Tặng Voucher Cho Khách Hàng Thân Thiết
               </button>
             </div>
@@ -522,13 +517,13 @@ export default function LoyaltyPromotionHub() {
               </div>
               <button
                 onClick={() => setIsCampaignModalOpen(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
               >
                 <Plus className="w-4 h-4" /> Tạo Chiến dịch Mới
               </button>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50">
@@ -551,14 +546,14 @@ export default function LoyaltyPromotionHub() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <span className="font-semibold text-slate-800">{v.used} đơn</span>
-                          <div className="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                          <div className="w-20 h-1.5 bg-slate-200 rounded-md overflow-hidden">
                             <div className="h-full bg-emerald-500" style={{ width: `${(v.used / v.budget) * 100}%` }}></div>
                           </div>
                           <span className="text-xs text-slate-500">Giới hạn {v.budget}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-3 py-1 text-xs font-medium rounded-full ${v.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                        <span className={`px-3 py-1 text-xs font-medium rounded-md ${v.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
                           {v.status === 'active' ? 'Đang chạy' : 'Đã kết thúc'}
                         </span>
                       </td>
@@ -593,7 +588,7 @@ export default function LoyaltyPromotionHub() {
                 <select
                   value={giftData.customerId}
                   onChange={(e) => setGiftData({ ...giftData, customerId: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-md"
                 >
                   <option value="">-- Chọn khách hàng --</option>
                   {customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.tier})</option>)}
@@ -604,7 +599,7 @@ export default function LoyaltyPromotionHub() {
                 <select
                   value={giftData.voucherId}
                   onChange={(e) => setGiftData({ ...giftData, voucherId: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl font-mono text-blue-700"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-md font-mono text-blue-700"
                 >
                   <option value="">-- Chọn Voucher đang active --</option>
                   {vouchers.filter(v => v.status === 'active').map(v => <option key={v.id} value={v.id}>{v.code} - Giảm {v.type === 'percent' ? `${v.value}%` : `${v.value.toLocaleString()}đ`}</option>)}
@@ -612,8 +607,8 @@ export default function LoyaltyPromotionHub() {
               </div>
             </div>
             <div className="px-6 py-4 bg-slate-50 flex justify-end gap-3 border-t border-slate-200">
-              <button onClick={() => setIsGiftModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Hủy</button>
-              <button onClick={handleGiftVoucher} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2">
+              <button onClick={() => setIsGiftModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-md transition-colors">Hủy</button>
+              <button onClick={handleGiftVoucher} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2">
                 <Check className="w-4 h-4" /> Xác nhận Tặng
               </button>
             </div>
@@ -633,30 +628,30 @@ export default function LoyaltyPromotionHub() {
               <div className="space-y-5">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Tên chiến dịch</label>
-                  <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 border border-slate-300 rounded-xl" />
+                  <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 border border-slate-300 rounded-md" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Mã Voucher</label>
-                  <input type="text" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="w-full px-4 py-2.5 border border-slate-300 rounded-xl font-mono" />
+                  <input type="text" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="w-full px-4 py-2.5 border border-slate-300 rounded-md font-mono" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Loại giảm giá</label>
-                    <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as any })} className="w-full px-4 py-2.5 border border-slate-300 rounded-xl">
+                    <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as any })} className="w-full px-4 py-2.5 border border-slate-300 rounded-md">
                       <option value="percent">Giảm theo %</option>
                       <option value="fixed">Giảm tiền mặt</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Giá trị</label>
-                    <input type="number" value={formData.value} onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })} className="w-full px-4 py-2.5 border border-slate-300 rounded-xl" />
+                    <input type="number" value={formData.value} onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })} className="w-full px-4 py-2.5 border border-slate-300 rounded-md" />
                   </div>
                 </div>
               </div>
               <div className="space-y-5">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Targeting (Hạng khách hàng)</label>
-                  <select value={formData.targetTier} onChange={(e) => setFormData({ ...formData, targetTier: e.target.value as any })} className="w-full px-4 py-2.5 border border-slate-300 rounded-xl">
+                  <select value={formData.targetTier} onChange={(e) => setFormData({ ...formData, targetTier: e.target.value as any })} className="w-full px-4 py-2.5 border border-slate-300 rounded-md">
                     <option value="all">Tất cả</option>
                     <option value="VIP">VIP</option>
                     <option value="Vàng">Vàng</option>
@@ -667,25 +662,25 @@ export default function LoyaltyPromotionHub() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Giá trị đơn hàng tối thiểu</label>
                   <div className="flex items-center gap-2">
-                    <input type="number" value={formData.minOrder} onChange={(e) => setFormData({ ...formData, minOrder: Number(e.target.value) })} className="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl" />
+                    <input type="number" value={formData.minOrder} onChange={(e) => setFormData({ ...formData, minOrder: Number(e.target.value) })} className="flex-1 px-4 py-2.5 border border-slate-300 rounded-md" />
                     <span className="text-slate-500">VNĐ</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Ngày bắt đầu</label>
-                    <input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} className="w-full px-4 py-2.5 border border-slate-300 rounded-xl" />
+                    <input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} className="w-full px-4 py-2.5 border border-slate-300 rounded-md" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Ngày kết thúc</label>
-                    <input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} className="w-full px-4 py-2.5 border border-slate-300 rounded-xl" />
+                    <input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} className="w-full px-4 py-2.5 border border-slate-300 rounded-md" />
                   </div>
                 </div>
               </div>
             </div>
             <div className="px-8 py-6 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
-              <button onClick={() => setIsCampaignModalOpen(false)} className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Hủy</button>
-              <button onClick={handleCreateCampaign} className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors">Lưu & Kích hoạt</button>
+              <button onClick={() => setIsCampaignModalOpen(false)} className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors">Hủy</button>
+              <button onClick={handleCreateCampaign} className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">Lưu & Kích hoạt</button>
             </div>
           </div>
         </div>
@@ -700,13 +695,13 @@ export default function LoyaltyPromotionHub() {
                 <h2 className="text-xl font-semibold">Chi tiết Voucher: <span className="text-blue-600 font-mono">{selectedVoucherDetails.code}</span></h2>
                 <p className="text-sm text-slate-500 mt-1">Lịch sử các đơn hàng đã áp dụng khuyến mãi</p>
               </div>
-              <button onClick={() => setSelectedVoucherDetails(null)} className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors">
+              <button onClick={() => setSelectedVoucherDetails(null)} className="text-slate-400 hover:text-slate-600 p-2 rounded-md hover:bg-slate-100 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-8 overflow-y-auto bg-slate-50 flex-1">
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50">
@@ -735,7 +730,7 @@ export default function LoyaltyPromotionHub() {
             </div>
 
             <div className="px-8 py-5 bg-white border-t border-slate-200 flex justify-end">
-              <button onClick={() => setSelectedVoucherDetails(null)} className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+              <button onClick={() => setSelectedVoucherDetails(null)} className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors">
                 Đóng
               </button>
             </div>
@@ -752,7 +747,7 @@ export default function LoyaltyPromotionHub() {
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 bg-slate-50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                <div className="w-10 h-10 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-sm">
                   {selectedCustomerForChat.name.charAt(0)}
                 </div>
                 <div>
@@ -765,7 +760,7 @@ export default function LoyaltyPromotionHub() {
                   </span>
                 </div>
               </div>
-              <button onClick={() => setSelectedCustomerForChat(null)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors">
+              <button onClick={() => setSelectedCustomerForChat(null)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-md hover:bg-slate-100 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -782,13 +777,13 @@ export default function LoyaltyPromotionHub() {
                 {/* Agent Chat Window */}
                 <div className="flex-1 p-5 overflow-y-auto space-y-3 flex flex-col justify-end">
                   <div className="text-center my-1">
-                    <span className="text-[10px] text-slate-400 bg-slate-200/50 px-3 py-1 rounded-full font-medium">Lịch sử hội thoại CRM</span>
+                    <span className="text-[10px] text-slate-400 bg-slate-200/50 px-3 py-1 rounded-md font-medium">Lịch sử hội thoại CRM</span>
                   </div>
                   {chatMessages.map((msg, index) => {
                     const isAgent = msg.sender === 'agent';
                     return (
                       <div key={index} className={`flex ${isAgent ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm shadow-sm ${isAgent ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'}`}>
+                        <div className={`max-w-[75%] rounded-lg px-4 py-2 text-sm shadow-sm ${isAgent ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'}`}>
                           <p className="leading-relaxed">{msg.text}</p>
                           <div className={`text-[9px] mt-1 text-right ${isAgent ? 'text-blue-200' : 'text-slate-400'}`}>
                             {msg.timestamp}
@@ -808,12 +803,12 @@ export default function LoyaltyPromotionHub() {
                       onChange={(e) => setChatInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSendChatMessageAgent()}
                       placeholder="Nhập nội dung tư vấn gửi cho Khách hàng..."
-                      className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 bg-slate-50 focus:bg-white transition-all font-sans"
+                      className="flex-1 px-4 py-2.5 border border-slate-200 rounded-md text-sm focus:outline-none focus:border-blue-500 bg-slate-50 focus:bg-white transition-all font-sans"
                     />
                     <button
                       onClick={handleSendChatMessageAgent}
                       disabled={!chatInput.trim()}
-                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-md text-sm font-semibold transition-colors shadow-sm"
                     >
                       Gửi tin nhắn
                     </button>
@@ -837,7 +832,7 @@ export default function LoyaltyPromotionHub() {
                             : t.getContent(selectedCustomerForChat.name);
                           setChatInput(content);
                         }}
-                        className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all text-xs font-semibold text-slate-700 group"
+                        className="w-full text-left p-3 rounded-md border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all text-xs font-semibold text-slate-700 group"
                       >
                         <div className="font-bold text-slate-800 group-hover:text-blue-800 mb-0.5">{t.title}</div>
                         <p className="text-[11px] text-slate-400 line-clamp-1 group-hover:text-slate-500">{t.id === 'gift_tier' ? t.getContent(selectedCustomerForChat.name, selectedCustomerForChat.tier) : t.getContent(selectedCustomerForChat.name)}</p>
@@ -863,7 +858,7 @@ export default function LoyaltyPromotionHub() {
                         onClick={() => {
                           handleSendChatMessageCustomer(reply.text);
                         }}
-                        className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-slate-300 hover:bg-slate-50 transition-all text-xs font-semibold text-slate-700 group"
+                        className="w-full text-left p-3 rounded-md border border-slate-100 hover:border-slate-300 hover:bg-slate-50 transition-all text-xs font-semibold text-slate-700 group"
                       >
                         <div className="font-bold text-slate-800 mb-0.5">{reply.title}</div>
                         <p className="text-[11px] text-slate-400 line-clamp-1 group-hover:text-slate-600">{reply.text}</p>
@@ -879,7 +874,7 @@ export default function LoyaltyPromotionHub() {
 
       {/* Toast */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-[100] animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 z-[100] animate-in slide-in-from-bottom-5">
           <Gift className="w-5 h-5 text-emerald-400" />
           <span className="font-medium text-sm">{toastMessage}</span>
         </div>

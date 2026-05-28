@@ -10,9 +10,11 @@ import jsPDF from 'jspdf';
 import api from '@/lib/utils/axiosAuth';
 import { paintColors, trackingData } from '@/lib/data/colors-data';
 import { QRCodeSVG } from 'qrcode.react';
+import Swal from 'sweetalert2';
 import * as XLSX from 'xlsx';
 import { useAuthStore } from '@/lib/store/authStore';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import {
     Document, Packer, Paragraph, TextRun, AlignmentType,
@@ -22,23 +24,87 @@ import { saveAs } from 'file-saver';
 
 // ==================== HÀM HỖ TRỢ ====================
 const numberToVietnameseWords = (num: number): string => {
-    if (num === 0) return "không đồng chẵn";
+    if (num === 0) return "Không đồng chẵn";
 
     const units = ["", "nghìn", "triệu", "tỷ"];
-    let words = "";
-    let i = 0;
+    const digits = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
 
-    while (num > 0) {
-        const chunk = num % 1000;
-        if (chunk > 0) {
-            words = `${chunk.toLocaleString('vi-VN')} ${units[i]} ` + words;
+    const readThreeDigits = (n: number, isFirst: boolean): string => {
+        let temp = n;
+        const hundred = Math.floor(temp / 100);
+        temp %= 100;
+        const ten = Math.floor(temp / 10);
+        const unit = temp % 10;
+
+        let res = "";
+
+        if (hundred > 0 || !isFirst) {
+            res += digits[hundred] + " trăm ";
         }
-        num = Math.floor(num / 1000);
-        i++;
+
+        if (ten > 0) {
+            if (ten === 1) {
+                res += "mười ";
+            } else {
+                res += digits[ten] + " mươi ";
+            }
+        } else if (hundred > 0 && unit > 0) {
+            res += "lẻ ";
+        }
+
+        if (unit > 0) {
+            if (unit === 1 && ten > 1) {
+                res += "mốt";
+            } else if (unit === 5 && ten > 0) {
+                res += "lăm";
+            } else if (unit === 5 && ten === 0) {
+                res += "năm";
+            } else {
+                res += digits[unit];
+            }
+        }
+
+        return res.trim();
+    };
+
+    let result = "";
+    let tempNum = num;
+    const groups: number[] = [];
+
+    while (tempNum > 0) {
+        groups.push(tempNum % 1000);
+        tempNum = Math.floor(tempNum / 1000);
     }
-    return words.trim() + " đồng chẵn";
+
+    for (let idx = groups.length - 1; idx >= 0; idx--) {
+        const groupVal = groups[idx];
+        if (groupVal > 0) {
+            const isFirst = idx === groups.length - 1;
+            const groupText = readThreeDigits(groupVal, isFirst);
+            
+            let unitName = "";
+            if (idx === 1) unitName = "nghìn";
+            else if (idx === 2) unitName = "triệu";
+            else if (idx >= 3) {
+                const billionGroup = idx % 3;
+                const billionPower = Math.floor(idx / 3);
+                let suffix = "tỷ".repeat(billionPower);
+                if (billionGroup === 1) unitName = "nghìn " + suffix;
+                else if (billionGroup === 2) unitName = "triệu " + suffix;
+                else unitName = suffix;
+            }
+            
+            result += groupText + " " + unitName + " ";
+        }
+    }
+
+    result = result.trim().replace(/\s+/g, ' ');
+    if (result.length > 0) {
+        result = result.charAt(0).toUpperCase() + result.slice(1);
+    }
+    return result + " đồng chẵn";
 };
-const API_DON_HANG = '/don-hang';
+const API_DON_HANG = '/orders';
 
 const PAYMENT_METHODS = [
     { key: 'TIEN_MAT', label: 'Tiền mặt', icon: Banknote },
@@ -68,7 +134,8 @@ interface Order {
     };
     Items: OrderItem[];
     TongTien: number;
-    TrangThai: 'CHO_XAC_NHAN' | 'DANG_XU_LY' | 'DANG_GIAO' | 'DA_GIAO' | 'DA_HUY';
+    TienThue?: number;
+    TrangThai: 'CHO_XAC_NHAN' | 'DANG_XU_LY' | 'DA_XU_LY_XONG' | 'DANG_GIAO' | 'DA_GIAO' | 'DA_HUY';
     PhuongThucThanhToan: string;
     TrangThaiThanhToan: string;
     DiaChiGiaoHang: string;
@@ -133,6 +200,7 @@ interface SanPham {
     TenDongSon: string;
     DonGiaCoSo: number;
     TongTonKho: number;
+    TonKho?: number;
     HinhAnh?: string;
     DanhSachMaMau?: MaMauSon[];
 }
@@ -232,7 +300,7 @@ export default function OrderManagementPage() {
 
     const fetchStaff = async () => {
         try {
-            const res = await api.get('/nhan-vien');
+            const res = await api.get('/staff');
             if (res.data.success) {
                 setAllStaff(res.data.data);
             }
@@ -243,7 +311,7 @@ export default function OrderManagementPage() {
 
     const fetchPromotions = async () => {
         try {
-            const res = await api.get('/khuyen-mai');
+            const res = await api.get('/promotions');
             if (res.data.success) {
                 // Only active ones
                 setPromotions(res.data.data.filter((p: any) => p.TrangThai === 'DANG_DIEN_RA'));
@@ -255,7 +323,7 @@ export default function OrderManagementPage() {
 
     const fetchDrivers = async () => {
         try {
-            const res = await api.get('/nhan-vien');
+            const res = await api.get('/staff');
             if (res.data.success) {
                 // Filter for Logistics/Warehouse/Shipping departments & Delivery/Technical Staff
                 const eligibleDrivers = res.data.data.filter((nv: any) =>
@@ -278,12 +346,19 @@ export default function OrderManagementPage() {
         const createdDate = new Date(selectedOrder.createdAt).toLocaleDateString('vi-VN');
         const customerName = selectedOrder.KhachHang?.TenKhachHang || 'Khách lẻ';
         const phoneNumber = selectedOrder.KhachHang?.SDT || 'Chưa cập nhật';
-        const productName = selectedOrder.Items?.[0]?.TenSanPham || 'Sản phẩm sơn';
-        const colorCode = selectedOrder.Items?.[0]?.MaMau || 'N/A';
+        
+        const itemsContent = selectedOrder.Items && selectedOrder.Items.length > 0
+            ? selectedOrder.Items.map(item => `"${item.TenSanPham} (${item.SoLuong} thùng)"`).join(', ')
+            : '"Sản phẩm sơn"';
+        const colorCodes = selectedOrder.Items && selectedOrder.Items.length > 0
+            ? Array.from(new Set(selectedOrder.Items.map(item => item.MaMau))).join(', ')
+            : 'N/A';
+            
         const powderType = selectedOrder.TechnicalSpecs?.LoaiBot || 'AkzoNobel Interpon';
         const totalAmount = selectedOrder.TongTien || 0;
         const depositAmount = selectedOrder.DaCoc || 0;
         const remainingAmount = totalAmount - depositAmount;
+        const depositPercent = totalAmount > 0 ? Math.round((depositAmount / totalAmount) * 100) : 0;
 
         const fileName = `Phieu_Coc_${orderId.replace('#', '')}.docx`;
 
@@ -319,6 +394,7 @@ export default function OrderManagementPage() {
                     // === HEADER ===
                     new Table({
                         width: { type: WidthType.PERCENTAGE, size: 100 },
+                        borders: noBorder,
                         rows: [
                             new TableRow({
                                 children: [
@@ -327,9 +403,15 @@ export default function OrderManagementPage() {
                                         borders: noBorder,
                                         children: [
                                             new Paragraph({
-                                                children: [new TextRun({ text: "CÔNG TY CP TMDV VOSCO (VTSC)", bold: true, font: "Times New Roman", size: 24 })],
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "CÔNG TY CP TMDV VOSCO", bold: true, font: "Times New Roman", size: 24 })],
                                             }),
                                             new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "(VTSC)", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
                                                 children: [new TextRun({ text: "Hệ thống PaintPro", font: "Times New Roman", size: 22 })],
                                             }),
                                         ],
@@ -339,11 +421,15 @@ export default function OrderManagementPage() {
                                         borders: noBorder,
                                         children: [
                                             new Paragraph({
-                                                alignment: AlignmentType.RIGHT,
-                                                children: [new TextRun({ text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", bold: true, font: "Times New Roman", size: 24 })],
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT", bold: true, font: "Times New Roman", size: 24 })],
                                             }),
                                             new Paragraph({
-                                                alignment: AlignmentType.RIGHT,
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: "NAM", bold: true, font: "Times New Roman", size: 24 })],
+                                            }),
+                                            new Paragraph({
+                                                alignment: AlignmentType.CENTER,
                                                 children: [new TextRun({ text: "Độc lập - Tự do - Hạnh phúc", bold: true, underline: { type: "single" }, font: "Times New Roman", size: 24 })],
                                             }),
                                         ],
@@ -354,8 +440,7 @@ export default function OrderManagementPage() {
                     }),
 
                     new Paragraph({
-                        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000", space: 1 } },
-                        spacing: { before: 100, after: 200 },
+                        spacing: { before: 200, after: 200 },
                         children: [new TextRun("")]
                     }),
 
@@ -391,7 +476,7 @@ export default function OrderManagementPage() {
                         children: [
                             new TextRun({ text: "Nội dung đặt cọc: ", bold: true, font: "Times New Roman", size: 24 }),
                             new TextRun({
-                                text: `Đặt cọc thi công/mua sơn tĩnh điện sản phẩm "${productName}", Mã màu: ${colorCode}, Loại bột: ${powderType}.`,
+                                text: `Đặt cọc thi công/mua sơn tĩnh điện sản phẩm ${itemsContent}, Mã màu: ${colorCodes}, Loại bột: ${powderType}.`,
                                 font: "Times New Roman", size: 24
                             }),
                         ],
@@ -407,7 +492,7 @@ export default function OrderManagementPage() {
                     new Paragraph({
                         spacing: { after: 80 },
                         children: [
-                            new TextRun({ text: "Số tiền đã đặt cọc (50%): ", bold: true, font: "Times New Roman", size: 24 }),
+                            new TextRun({ text: `Số tiền đã đặt cọc (${depositPercent}%): `, bold: true, font: "Times New Roman", size: 24 }),
                             new TextRun({ text: formatCurrency(depositAmount), font: "Times New Roman", size: 24 }),
                         ],
                     }),
@@ -433,6 +518,7 @@ export default function OrderManagementPage() {
                     new Paragraph({ spacing: { before: 300 }, children: [new TextRun("")] }),
                     new Table({
                         width: { type: WidthType.PERCENTAGE, size: 100 },
+                        borders: noBorder,
                         rows: [
                             new TableRow({
                                 children: [
@@ -507,10 +593,10 @@ export default function OrderManagementPage() {
             const [day, month, year] = orderDateStr.split('/');
 
             // Mock data for VAT calculation
-            const taxRate = 8;
+            const vatAmount = selectedOrder.TienThue || 0;
             const totalGross = selectedOrder.TongTien || 0;
-            const subTotalCalc = Math.round(totalGross / (1 + taxRate / 100));
-            const vatAmount = totalGross - subTotalCalc;
+            const subTotalCalc = totalGross - vatAmount;
+            const taxRate = vatAmount > 0 ? 8 : 0;
 
             const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + ' đ';
 
@@ -646,7 +732,11 @@ export default function OrderManagementPage() {
                                 }),
                                 // Data Rows
                                 ...(selectedOrder.Items || []).map((item, index) => {
-                                    const itemPrice = Math.round(item.DonGia / (1 + taxRate / 100)); // Mock trước thuế
+                                    const itemRatio = (item.DonGia * item.SoLuong) / (subTotalCalc > 0 ? subTotalCalc : 1);
+                                    // If there's tax, the line item price without tax is its proportion of the total. 
+                                    // Actually, item.DonGia is the base price. Since no discount is applied to line items here, 
+                                    // we can just use item.DonGia (which doesn't include tax in DB).
+                                    const itemPrice = item.DonGia;
                                     const itemTotal = itemPrice * item.SoLuong;
                                     return new TableRow({
                                         children: [
@@ -797,19 +887,27 @@ export default function OrderManagementPage() {
 
     useEffect(() => {
         fetchOrders();
+
+        // Auto-refresh real-time every 5 seconds
+        const intervalId = setInterval(() => {
+            fetchOrders(false);
+        }, 5000);
+
+        return () => clearInterval(intervalId);
     }, [activeTab]);
 
-    const fetchOrders = async () => {
-        setLoading(true);
+    const fetchOrders = async (showLoading = true) => {
+        if (showLoading) setLoading(true);
         try {
             const res = await api.get(`${API_DON_HANG}?status=${activeTab}`);
             if (res.data.success) {
-                setOrders(res.data.data);
+                const sortedData = res.data.data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setOrders(sortedData);
             }
         } catch (error) {
             console.error('Error fetching orders:', error);
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
     };
 
@@ -911,7 +1009,8 @@ export default function OrderManagementPage() {
         if (!selectedProductId) return;
         const sp = allProducts.find(p => p._id === selectedProductId);
         if (!sp) return;
-        if ((sp.TongTonKho || 0) <= 0) { alert('Sản phẩm hết hàng'); return; }
+        const stockAvailable = Math.max(sp.TongTonKho || 0, sp.TonKho || 0);
+        if (stockAvailable <= 0) { alert('Sản phẩm hết hàng'); return; }
 
         if (!selectedColorCode) return alert('Vui lòng chọn mã màu sơn');
 
@@ -936,7 +1035,7 @@ export default function OrderManagementPage() {
             tenSanPham: sp.TenDongSon,
             soLuong: 1,
             donGia: sp.DonGiaCoSo * factor,
-            tonKho: sp.TonKho,
+            tonKho: Math.max(sp.TongTonKho || 0, sp.TonKho || 0),
             maMau: chosenMaMau,
             tenMau: chosenTenMau,
             hexCode: chosenHex
@@ -1051,7 +1150,23 @@ export default function OrderManagementPage() {
             return;
         }
 
-        if (!confirm(`Bạn có chắc chắn muốn chuyển đơn hàng sang trạng thái ${status}?`)) return;
+        const confirmResult = await Swal.fire({
+            title: 'Xác nhận trạng thái',
+            text: `Bạn có chắc chắn muốn chuyển đơn hàng sang trạng thái ${STATUS_MAP[status as keyof typeof STATUS_MAP]?.label || status}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy',
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#94a3b8',
+            buttonsStyling: true,
+            customClass: {
+                confirmButton: 'px-6 py-2.5 rounded-md font-bold text-sm shadow-md',
+                cancelButton: 'px-6 py-2.5 rounded-md font-bold text-sm bg-slate-400 text-white',
+            }
+        });
+
+        if (!confirmResult.isConfirmed) return;
 
         try {
             const payload: any = { status };
@@ -1095,7 +1210,23 @@ export default function OrderManagementPage() {
     };
 
     const handleDeleteOrder = async (id: string) => {
-        if (!confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
+        const confirmResult = await Swal.fire({
+            title: 'Xác nhận xóa',
+            text: 'Bạn có chắc chắn muốn xóa đơn hàng này?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Xóa ngay',
+            cancelButtonText: 'Hủy',
+            confirmButtonColor: '#e11d48',
+            cancelButtonColor: '#94a3b8',
+            buttonsStyling: true,
+            customClass: {
+                confirmButton: 'px-6 py-2.5 rounded-md font-bold text-sm shadow-md',
+                cancelButton: 'px-6 py-2.5 rounded-md font-bold text-sm bg-slate-400 text-white',
+            }
+        });
+
+        if (!confirmResult.isConfirmed) return;
         try {
             await api.delete(`${API_DON_HANG}/${id}`);
             alert('Đã xóa đơn hàng');
@@ -1132,7 +1263,8 @@ export default function OrderManagementPage() {
 
     const STATUS_MAP = {
         'CHO_XAC_NHAN': { label: 'Chờ xác nhận', color: '#d97706', icon: Clock },
-        'DANG_XU_LY': { label: 'Đã xử lý xong', color: '#2563eb', icon: Package },
+        'DANG_XU_LY': { label: 'Đang xử lý', color: '#3b82f6', icon: Package },
+        'DA_XU_LY_XONG': { label: 'Đã xử lý xong', color: '#2563eb', icon: Package },
         'DANG_GIAO': { label: 'Đang vận chuyển', color: '#7c3aed', icon: Truck },
         'DA_GIAO': { label: 'Đã giao hàng', color: '#059669', icon: CheckCircle },
         'DA_HUY': { label: 'Đã hủy', color: '#e11d48', icon: XCircle },
@@ -1152,7 +1284,7 @@ export default function OrderManagementPage() {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Quản lý Đơn Hàng</h1>
+                    <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Quản lý Đơn Hàng</h1>
                     <p className="text-sm text-slate-400 font-medium mt-1">
                         Theo dõi, xác nhận và xử lý toàn bộ đơn hàng từ khách hàng lẻ và doanh nghiệp.
                     </p>
@@ -1171,7 +1303,7 @@ export default function OrderManagementPage() {
                             className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300"
                         >
                             <div
-                                className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"
+                                className="absolute top-0 right-0 w-32 h-32 rounded-md blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"
                                 style={{ backgroundColor: `${statusInfo.color}12` }}
                             ></div>
                             <div className="relative z-10 flex items-start justify-between">
@@ -1179,13 +1311,13 @@ export default function OrderManagementPage() {
                                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                                         {tab.label}
                                     </p>
-                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                                    <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
                                         {count}{' '}
                                         <span className="text-xs font-bold text-slate-400 ml-1">đơn</span>
                                     </h3>
                                 </div>
                                 <div
-                                    className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm"
+                                    className="w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm"
                                     style={{ backgroundColor: `${statusInfo.color}15`, color: statusInfo.color }}
                                 >
                                     <Icon size={22} />
@@ -1197,13 +1329,13 @@ export default function OrderManagementPage() {
             </div>
 
             {/* Kiện Hàng Gần Đây / Tracking Section */}
-            <div className="bg-gradient-to-br from-blue-50/40 via-indigo-50/20 to-white p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+            <div className="bg-gradient-to-br from-blue-50/40 via-indigo-50/20 to-white p-8 rounded-md border border-slate-100 shadow-sm space-y-6">
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shadow-sm">
                         <Truck size={22} className="animate-bounce" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Theo Dõi Kiện Hàng Mới Nhất</h2>
+                        <h2 className="text-xl font-semibold text-slate-900 tracking-tight">Theo Dõi Đơn Hàng Mới Nhất</h2>
                         <p className="text-xs text-slate-400 font-semibold mt-0.5">Click vào kiện hàng để xem chi tiết lộ trình vận chuyển trên toàn cầu</p>
                     </div>
                 </div>
@@ -1221,29 +1353,29 @@ export default function OrderManagementPage() {
                                     window.location.href = `/tracking?code=${t.code}`;
                                 }}
                             >
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/20 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
-                                
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/20 rounded-md blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+
                                 <div className="relative z-10 flex-1">
-                                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                                    <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
                                         {t.code}
                                     </span>
-                                    <div className="font-extrabold text-slate-800 mt-3 text-[14px]">{t.customer}</div>
+                                    <div className="font-medium text-slate-800 mt-3 text-[14px]">{t.customer}</div>
                                     <div className="text-[12px] text-slate-400 font-semibold mt-0.5">{t.product}</div>
-                                    
+
                                     <div className="flex items-center gap-2 mt-4">
-                                        <div className="w-28 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                            <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(completedSteps / totalSteps) * 100}%` }} />
+                                        <div className="w-28 h-1.5 bg-slate-100 rounded-md overflow-hidden">
+                                            <div className="h-full bg-blue-500 rounded-md transition-all duration-500" style={{ width: `${(completedSteps / totalSteps) * 100}%` }} />
                                         </div>
                                         <span className="text-[11px] font-bold text-slate-400">{completedSteps}/{totalSteps} chặng</span>
                                     </div>
                                     {currentStep && (
-                                        <span className="inline-block mt-3 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold shadow-sm">
+                                        <span className="inline-block mt-3 px-3 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-bold shadow-sm">
                                             • {currentStep.label.toUpperCase()}
                                         </span>
                                     )}
                                 </div>
-                                
-                                <div className="relative z-10 bg-white p-3 rounded-2xl border border-slate-100 group-hover:border-blue-200 transition-colors shadow-sm ml-4">
+
+                                <div className="relative z-10 bg-white p-3 rounded-lg border border-slate-100 group-hover:border-blue-200 transition-colors shadow-sm ml-4">
                                     <QRCodeSVG value={`https://vtsc.vn/tracking/${t.code}`} size={75} bgColor="#ffffff" fgColor="#0c102a" level="M" />
                                 </div>
                             </div>
@@ -1253,26 +1385,26 @@ export default function OrderManagementPage() {
             </div>
 
             {/* Filters & Search */}
-            <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-6">
+            <div className="bg-white p-6 rounded-lg border border-slate-100 shadow-sm space-y-6">
                 <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
                     <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
                         <div className="relative w-full md:w-80 group">
                             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                             <input
                                 type="text"
-                                className="w-full bg-slate-50 border-none rounded-2xl px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                                className="w-full bg-slate-50 border-none rounded-lg px-12 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                                 placeholder="Tìm mã đơn, khách hàng..."
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl overflow-x-auto max-w-full">
+                        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-lg overflow-x-auto max-w-full">
                             {TABS.map(tab => (
                                 <button
                                     key={tab.key}
                                     onClick={() => setActiveTab(tab.key)}
-                                    className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${activeTab === tab.key
+                                    className={`px-4 py-2 rounded-md text-[13px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${activeTab === tab.key
                                         ? "bg-white text-blue-600 shadow-sm"
                                         : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
                                         }`}
@@ -1288,13 +1420,13 @@ export default function OrderManagementPage() {
                             <>
                                 <button
                                     onClick={exportToExcel}
-                                    className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-[14px] bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all border border-emerald-100 cursor-pointer"
+                                    className="flex items-center gap-2 px-5 py-3 rounded-lg font-bold text-[14px] bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all border border-emerald-100 cursor-pointer"
                                 >
                                     <Download size={18} /> Xuất Excel
                                 </button>
                                 <button
                                     onClick={openCreateModal}
-                                    className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+                                    className="flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
                                 >
                                     <Plus size={18} /> Tạo đơn hàng
                                 </button>
@@ -1305,19 +1437,19 @@ export default function OrderManagementPage() {
             </div>
 
             {/* Orders Table */}
-            <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full border-collapse min-w-[1000px]">
                         <thead>
                             <tr className="border-b border-slate-50">
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest w-36 whitespace-nowrap">Mã đơn hàng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Khách hàng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Số lượng</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Tổng tiền</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Thanh toán</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Trạng thái</th>
-                                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Hạn xác nhận</th>
-                                <th className="px-6 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest w-40 whitespace-nowrap">Thao tác</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-36 whitespace-nowrap">Mã đơn hàng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Khách hàng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Số lượng</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Tổng tiền</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Thanh toán</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Trạng thái</th>
+                                <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">Hạn xác nhận</th>
+                                <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-40 whitespace-nowrap">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -1336,7 +1468,7 @@ export default function OrderManagementPage() {
                             ) : filteredOrders.map(order => (
                                 <tr key={order._id} className="hover:bg-slate-50/50 transition-colors group">
                                     <td className="px-6 py-4">
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-blue-50 text-blue-600">
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-600">
                                             #{order.MaDonHang}
                                         </span>
                                     </td>
@@ -1348,7 +1480,7 @@ export default function OrderManagementPage() {
                                         {order.Items.reduce((acc, curr) => acc + curr.SoLuong, 0)} sản phẩm
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="font-black text-emerald-600 text-[15px]">
+                                        <div className="font-semibold text-emerald-600 text-[15px]">
                                             {order.TongTien.toLocaleString()} ₫
                                         </div>
                                         {order.KhuyenMai && (
@@ -1365,7 +1497,7 @@ export default function OrderManagementPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span
-                                            className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border"
+                                            className="inline-flex items-center px-3 py-1 rounded-md text-[11px] font-bold border"
                                             style={{
                                                 background: `${STATUS_MAP[order.TrangThai].color}18`,
                                                 color: STATUS_MAP[order.TrangThai].color,
@@ -1386,7 +1518,7 @@ export default function OrderManagementPage() {
                                         <div className="flex items-center gap-2 justify-end">
                                             <button
                                                 onClick={() => { setSelectedOrder(order); setIsDetailsModalOpen(true); }}
-                                                className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer border-none"
+                                                className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer border-none"
                                                 title="Xem chi tiết"
                                             >
                                                 <Eye size={15} />
@@ -1394,7 +1526,7 @@ export default function OrderManagementPage() {
                                             {!isAdminOrEmployee && (order.TrangThai === 'DANG_GIAO' || order.TrangThai === 'DA_GIAO') && (
                                                 <Link
                                                     href="/tracking"
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-[11px] bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors no-underline"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-[11px] bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors no-underline"
                                                     title="Theo dõi vận chuyển"
                                                 >
                                                     <Truck size={13} /> Theo dõi
@@ -1407,7 +1539,7 @@ export default function OrderManagementPage() {
                                                             onClick={() => {
                                                                 handleUpdateStatus(order._id, 'DANG_XU_LY');
                                                             }}
-                                                            className="inline-flex items-center px-3 py-1.5 rounded-xl font-bold text-[11px] bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-all cursor-pointer border-none"
+                                                            className="inline-flex items-center px-3 py-1.5 rounded-md font-bold text-[11px] bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-all cursor-pointer border-none"
                                                             title="Xác nhận đơn"
                                                         >
                                                             XÁC NHẬN
@@ -1416,7 +1548,7 @@ export default function OrderManagementPage() {
                                                     {order.TrangThai === 'DANG_XU_LY' && (
                                                         <button
                                                             onClick={() => handleUpdateStatus(order._id, 'DANG_GIAO')}
-                                                            className="inline-flex items-center px-3 py-1.5 rounded-xl font-bold text-[11px] text-white hover:opacity-90 shadow-sm transition-all cursor-pointer border-none"
+                                                            className="inline-flex items-center px-3 py-1.5 rounded-md font-bold text-[11px] text-white hover:opacity-90 shadow-sm transition-all cursor-pointer border-none"
                                                             style={{ background: '#7c3aed' }}
                                                             title="Giao hàng"
                                                         >
@@ -1436,15 +1568,15 @@ export default function OrderManagementPage() {
                 {/* ═══ CREATE ORDER MODAL ═══ */}
                 {isCreateModalOpen && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-                        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-6xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                        <div className="bg-white rounded-md shadow-2xl w-full max-w-6xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
                             {/* Header */}
                             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-                                <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                                <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
                                     <Plus size={22} className="text-blue-600" /> Tạo Đơn Hàng Mới
                                 </h3>
                                 <button
                                     onClick={() => setIsCreateModalOpen(false)}
-                                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer"
+                                    className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer"
                                 >
                                     ×
                                 </button>
@@ -1456,11 +1588,11 @@ export default function OrderManagementPage() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         {/* Khách hàng */}
                                         <div>
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 block">
                                                 Khách hàng <span className="text-rose-500">*</span>
                                             </label>
                                             <select
-                                                className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
+                                                className="w-full bg-slate-50 border-none rounded-lg px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
                                                 value={selectedCustomerId}
                                                 onChange={e => handleSelectCustomer(e.target.value)}
                                             >
@@ -1475,11 +1607,11 @@ export default function OrderManagementPage() {
 
                                         {/* Khuyến mãi */}
                                         <div>
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 block">
                                                 Chương trình ưu đãi
                                             </label>
                                             <select
-                                                className={`w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer ${calculatedDiscount > 0 ? 'ring-2 ring-emerald-500/20' : ''}`}
+                                                className={`w-full bg-slate-50 border-none rounded-lg px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer ${calculatedDiscount > 0 ? 'ring-2 ring-emerald-500/20' : ''}`}
                                                 value={selectedPromotionId}
                                                 onChange={e => setSelectedPromotionId(e.target.value)}
                                             >
@@ -1495,17 +1627,17 @@ export default function OrderManagementPage() {
 
                                     {/* Thêm sản phẩm */}
                                     <div className="space-y-4">
-                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 block">
                                             Sản phẩm sơn <span className="text-rose-500">*</span>
                                         </label>
                                         <div className="flex gap-3">
                                             <select
-                                                className="flex-1 bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
+                                                className="flex-1 bg-slate-50 border-none rounded-lg px-4 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
                                                 value={selectedProductId}
                                                 onChange={e => { setSelectedProductId(e.target.value); setSelectedColorCode(''); setColorSearchTerm(''); }}
                                             >
                                                 <option value="">-- Chọn sản phẩm --</option>
-                                                {allProducts.filter(p => p.TonKho > 0).map(p => {
+                                                {allProducts.filter(p => Math.max(p.TongTonKho || 0, p.TonKho || 0) > 0).map(p => {
                                                     const kh = customers.find(c => c._id === selectedCustomerId);
                                                     let factor = 1.0;
                                                     let labelSuffix = "";
@@ -1517,9 +1649,10 @@ export default function OrderManagementPage() {
                                                         labelSuffix = " (B2C +30%)";
                                                     }
                                                     const displayPrice = p.DonGiaCoSo * factor;
+                                                    const availableStock = Math.max(p.TongTonKho || 0, p.TonKho || 0);
                                                     return (
                                                         <option key={p._id} value={p._id}>
-                                                            {p.TenDongSon} — {displayPrice.toLocaleString()}₫{labelSuffix} (Kho: {p.TonKho})
+                                                            {p.TenDongSon} — {displayPrice.toLocaleString()}₫{labelSuffix} (Kho: {availableStock})
                                                         </option>
                                                     );
                                                 })}
@@ -1527,7 +1660,7 @@ export default function OrderManagementPage() {
                                             <button
                                                 onClick={handleAddProduct}
                                                 disabled={!selectedProductId || !selectedColorCode}
-                                                className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-[14px] hover:bg-blue-700 shadow-md disabled:opacity-55 disabled:cursor-not-allowed transition-all cursor-pointer border-none"
+                                                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-bold text-[14px] hover:bg-blue-700 shadow-md disabled:opacity-55 disabled:cursor-not-allowed transition-all cursor-pointer border-none"
                                             >
                                                 Thêm sản phẩm
                                             </button>
@@ -1535,13 +1668,13 @@ export default function OrderManagementPage() {
 
                                         {/* Bảng màu sơn - luôn hiển thị khi đã chọn sản phẩm */}
                                         {selectedProductId && (
-                                            <div className="p-5 bg-slate-50/50 border border-slate-100 rounded-2xl space-y-3">
-                                                <label className="text-[11px] font-black text-slate-450 uppercase tracking-wider block">
+                                            <div className="p-5 bg-slate-50/50 border border-slate-100 rounded-lg space-y-3">
+                                                <label className="text-[11px] font-semibold text-slate-450 uppercase tracking-wider block">
                                                     Chọn mã màu sơn <span className="text-rose-500">*</span>
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                                                    className="w-full bg-white border border-slate-100 rounded-md px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                                                     placeholder="Tìm mã màu hoặc tên màu (RAL-1015, Silver, Red...)"
                                                     value={colorSearchTerm}
                                                     onChange={e => setColorSearchTerm(e.target.value)}
@@ -1549,7 +1682,7 @@ export default function OrderManagementPage() {
                                                 {selectedColorCode && (() => {
                                                     const c = paintColors.find(pc => pc.code === selectedColorCode);
                                                     return c ? (
-                                                        <div className="flex items-center gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
+                                                        <div className="flex items-center gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-md">
                                                             <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-200" style={{ background: c.hex }} />
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="font-bold text-sm text-blue-700">{c.code}</div>
@@ -1557,14 +1690,14 @@ export default function OrderManagementPage() {
                                                             </div>
                                                             <button
                                                                 onClick={() => { setSelectedColorCode(''); setColorSearchTerm(''); }}
-                                                                className="w-6 h-6 rounded-full hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center text-slate-455 transition-colors border-none bg-transparent cursor-pointer font-bold"
+                                                                className="w-6 h-6 rounded-md hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center text-slate-455 transition-colors border-none bg-transparent cursor-pointer font-bold"
                                                             >
                                                                 ×
                                                             </button>
                                                         </div>
                                                     ) : null;
                                                 })()}
-                                                <div className="bg-white border border-slate-150 rounded-xl overflow-hidden max-h-[160px] overflow-y-auto custom-scrollbar">
+                                                <div className="bg-white border border-slate-150 rounded-md overflow-hidden max-h-[160px] overflow-y-auto custom-scrollbar">
                                                     {paintColors
                                                         .filter(c => {
                                                             if (!colorSearchTerm) return true;
@@ -1596,16 +1729,16 @@ export default function OrderManagementPage() {
                                     </div>
 
                                     {/* Danh sách sản phẩm đã chọn */}
-                                    <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm">
+                                    <div className="border border-slate-100 rounded-lg overflow-hidden bg-white shadow-sm">
                                         <div className="overflow-x-auto">
                                             <table className="w-full border-collapse">
                                                 <thead>
                                                     <tr className="bg-slate-50/50 border-b border-slate-150">
-                                                        <th className="px-4 py-3 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Sản phẩm</th>
-                                                        <th className="px-4 py-3 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Mã màu</th>
-                                                        <th className="px-4 py-3 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Số lượng</th>
-                                                        <th className="px-4 py-3 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Đơn giá</th>
-                                                        <th className="px-4 py-3 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Thành tiền</th>
+                                                        <th className="px-4 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Sản phẩm</th>
+                                                        <th className="px-4 py-3 text-center text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Mã màu</th>
+                                                        <th className="px-4 py-3 text-center text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Số lượng</th>
+                                                        <th className="px-4 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Đơn giá</th>
+                                                        <th className="px-4 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Thành tiền</th>
                                                         <th className="px-4 py-3 w-10"></th>
                                                     </tr>
                                                 </thead>
@@ -1625,7 +1758,7 @@ export default function OrderManagementPage() {
                                                             <td className="px-4 py-3 text-center">
                                                                 <div className="flex items-center gap-1.5 justify-center">
                                                                     <div className="w-4 h-4 rounded-md shadow-inner border border-slate-200 flex-shrink-0" style={{ background: item.hexCode }} />
-                                                                    <span className="text-[11px] font-black text-slate-700">{item.maMau}</span>
+                                                                    <span className="text-[11px] font-semibold text-slate-700">{item.maMau}</span>
                                                                 </div>
                                                                 <div className="text-[9px] text-slate-400">{item.tenMau}</div>
                                                             </td>
@@ -1633,7 +1766,7 @@ export default function OrderManagementPage() {
                                                                 <div className="flex items-center justify-center gap-2">
                                                                     <button
                                                                         onClick={() => handleItemQtyChange(idx, item.soLuong - 1)}
-                                                                        className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center cursor-pointer border-none font-bold text-sm"
+                                                                        className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center cursor-pointer border-none font-bold text-sm"
                                                                     >
                                                                         -
                                                                     </button>
@@ -1647,7 +1780,7 @@ export default function OrderManagementPage() {
                                                                     />
                                                                     <button
                                                                         onClick={() => handleItemQtyChange(idx, item.soLuong + 1)}
-                                                                        className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center cursor-pointer border-none font-bold text-sm"
+                                                                        className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center cursor-pointer border-none font-bold text-sm"
                                                                     >
                                                                         +
                                                                     </button>
@@ -1656,7 +1789,7 @@ export default function OrderManagementPage() {
                                                             <td className="px-4 py-3 text-right text-[12px] font-semibold text-slate-700">
                                                                 {item.donGia.toLocaleString()} ₫
                                                             </td>
-                                                            <td className="px-4 py-3 text-right text-[12px] font-black text-blue-600">
+                                                            <td className="px-4 py-3 text-right text-[12px] font-semibold text-blue-600">
                                                                 {(item.donGia * item.soLuong).toLocaleString()} ₫
                                                             </td>
                                                             <td className="px-4 py-3 text-center">
@@ -1672,9 +1805,9 @@ export default function OrderManagementPage() {
                                                 </tbody>
                                                 {orderItems.length > 0 && (
                                                     <tfoot>
-                                                        <tr className="bg-slate-50/50 font-black text-slate-700 border-t border-slate-150">
+                                                        <tr className="bg-slate-50/50 font-semibold text-slate-700 border-t border-slate-150">
                                                             <td colSpan={4} className="px-4 py-3.5 text-right text-xs uppercase tracking-wider">Tổng cộng sản phẩm:</td>
-                                                            <td className="px-4 py-3.5 text-right text-sm text-emerald-600 font-black">
+                                                            <td className="px-4 py-3.5 text-right text-sm text-emerald-600 font-semibold">
                                                                 {orderSubtotal.toLocaleString()} ₫
                                                             </td>
                                                             <td></td>
@@ -1687,24 +1820,24 @@ export default function OrderManagementPage() {
 
                                     {/* THÔNG SỐ KỸ THUẬT SƠN */}
                                     <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl space-y-4">
-                                        <div className="text-[12px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="text-[12px] font-semibold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                                             <Layers size={16} /> Thông số kỹ thuật sơn (MERN)
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Loại bột sơn</label>
-                                                <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={loaiBot} onChange={e => setLoaiBot(e.target.value)} />
+                                                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Loại bột sơn</label>
+                                                <input type="text" className="w-full bg-white border border-slate-100 rounded-md px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={loaiBot} onChange={e => setLoaiBot(e.target.value)} />
                                             </div>
                                             <div>
-                                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Nhiệt độ sấy</label>
-                                                <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={nhietDoSay} onChange={e => setNhietDoSay(e.target.value)} />
+                                                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Nhiệt độ sấy</label>
+                                                <input type="text" className="w-full bg-white border border-slate-100 rounded-md px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={nhietDoSay} onChange={e => setNhietDoSay(e.target.value)} />
                                             </div>
                                             <div>
-                                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Độ dày lớp phủ</label>
-                                                <input type="text" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={doDayLopPhu} onChange={e => setDoDayLopPhu(e.target.value)} />
+                                                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Độ dày lớp phủ</label>
+                                                <input type="text" className="w-full bg-white border border-slate-100 rounded-md px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={doDayLopPhu} onChange={e => setDoDayLopPhu(e.target.value)} />
                                             </div>
                                             <div>
-                                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 flex justify-between items-center">
+                                                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex justify-between items-center">
                                                     <span>Diện tích sơn (m2)</span>
                                                     <button
                                                         type="button"
@@ -1714,7 +1847,7 @@ export default function OrderManagementPage() {
                                                         <Calculator size={10} /> Công cụ tính
                                                     </button>
                                                 </label>
-                                                <input type="number" className="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={tongDienTichSon} onChange={e => setTongDienTichSon(Number(e.target.value))} />
+                                                <input type="number" className="w-full bg-white border border-slate-100 rounded-md px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={tongDienTichSon} onChange={e => setTongDienTichSon(Number(e.target.value))} />
                                             </div>
                                         </div>
                                     </div>
@@ -1724,11 +1857,11 @@ export default function OrderManagementPage() {
                                 <div className="lg:col-span-5 flex flex-col gap-6 lg:border-l lg:border-slate-100 lg:pl-8">
                                     {/* Địa chỉ giao hàng */}
                                     <div>
-                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 block">
                                             Địa chỉ giao hàng <span className="text-rose-500">*</span>
                                         </label>
                                         <textarea
-                                            className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium resize-none min-h-[80px]"
+                                            className="w-full bg-slate-50 border-none rounded-lg px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium resize-none min-h-[80px]"
                                             placeholder="Nhập địa chỉ giao hàng chi tiết..."
                                             value={diaChiGiaoHang}
                                             onChange={e => setDiaChiGiaoHang(e.target.value)}
@@ -1738,12 +1871,12 @@ export default function OrderManagementPage() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         {/* SĐT người nhận */}
                                         <div>
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 block">
                                                 SĐT người nhận <span className="text-rose-500">*</span>
                                             </label>
                                             <input
                                                 type="text"
-                                                className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
+                                                className="w-full bg-slate-50 border-none rounded-lg px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                                                 placeholder="VD: 0912345678"
                                                 value={sdtNguoiNhan}
                                                 onChange={e => setSdtNguoiNhan(e.target.value)}
@@ -1752,11 +1885,11 @@ export default function OrderManagementPage() {
 
                                         {/* Nhân viên phụ trách */}
                                         <div>
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                                            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 block">
                                                 Nhân viên sales phụ trách
                                             </label>
                                             <select
-                                                className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
+                                                className="w-full bg-slate-50 border-none rounded-lg px-4 py-3.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium cursor-pointer"
                                                 value={selectedSalespersonId}
                                                 onChange={e => setSelectedSalespersonId(e.target.value)}
                                             >
@@ -1770,7 +1903,7 @@ export default function OrderManagementPage() {
 
                                     {/* Phương thức thanh toán */}
                                     <div>
-                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-3 block">
+                                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-3 block">
                                             Phương thức thanh toán
                                         </label>
                                         <div className="grid grid-cols-3 gap-2">
@@ -1782,7 +1915,7 @@ export default function OrderManagementPage() {
                                                         key={pm.key}
                                                         type="button"
                                                         onClick={() => setPhuongThucTT(pm.key)}
-                                                        className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all cursor-pointer gap-2 ${isActive
+                                                        className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer gap-2 ${isActive
                                                             ? 'border-blue-600 bg-blue-50/50 text-blue-600 font-bold shadow-sm'
                                                             : 'border-slate-100 bg-slate-50/30 text-slate-500 hover:bg-slate-50'
                                                             }`}
@@ -1798,19 +1931,19 @@ export default function OrderManagementPage() {
                                     {/* CHI PHÍ BỔ SUNG & ĐẶT CỌC */}
                                     <div className="p-5 bg-slate-50/50 border border-slate-100 rounded-3xl grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Phụ phí (Đóng gói/VC)</label>
+                                            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Phụ phí (Đóng gói/VC)</label>
                                             <input
                                                 type="number"
-                                                className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2 text-sm text-amber-600 font-bold outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+                                                className="w-full bg-white border border-slate-100 rounded-md px-3 py-2 text-sm text-amber-600 font-bold outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
                                                 value={phuPhi}
                                                 onChange={e => setPhuPhi(Number(e.target.value))}
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Số tiền đã cọc</label>
+                                            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Số tiền đã cọc</label>
                                             <input
                                                 type="number"
-                                                className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2 text-sm text-emerald-600 font-bold outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+                                                className="w-full bg-white border border-slate-100 rounded-md px-3 py-2 text-sm text-emerald-600 font-bold outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
                                                 value={daCoc}
                                                 onChange={e => setDaCoc(Number(e.target.value))}
                                             />
@@ -1819,9 +1952,9 @@ export default function OrderManagementPage() {
 
                                     {/* Ghi chú */}
                                     <div>
-                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 block">Ghi chú đơn hàng</label>
+                                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Ghi chú đơn hàng</label>
                                         <textarea
-                                            className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium resize-none min-h-[60px]"
+                                            className="w-full bg-slate-50 border-none rounded-lg px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium resize-none min-h-[60px]"
                                             placeholder="Nhập ghi chú khác (tùy chọn)..."
                                             value={ghiChu}
                                             onChange={e => setGhiChu(e.target.value)}
@@ -1841,17 +1974,17 @@ export default function OrderManagementPage() {
                                         {calculatedDiscount > 0 && (
                                             <div className="flex justify-between items-center text-sm font-medium text-emerald-600">
                                                 <span>Chiết khấu ưu đãi:</span>
-                                                <span className="font-black">-{calculatedDiscount.toLocaleString()} ₫</span>
+                                                <span className="font-semibold">-{calculatedDiscount.toLocaleString()} ₫</span>
                                             </div>
                                         )}
                                         <div className="flex justify-between items-end border-t border-slate-50 pt-4">
-                                            <span className="text-xs font-black text-slate-900 uppercase tracking-widest">TỔNG THANH TOÁN:</span>
-                                            <span className="text-2xl font-black text-emerald-600">{(orderSubtotal + phuPhi - calculatedDiscount).toLocaleString()} ₫</span>
+                                            <span className="text-xs font-semibold text-slate-900 uppercase tracking-widest">TỔNG THANH TOÁN:</span>
+                                            <span className="text-2xl font-semibold text-emerald-600">{(orderSubtotal + phuPhi - calculatedDiscount).toLocaleString()} ₫</span>
                                         </div>
                                         <button
                                             onClick={handleCreateOrder}
                                             disabled={isSubmittingOrder}
-                                            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
+                                            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-blue-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
                                         >
                                             {isSubmittingOrder ? (
                                                 'ĐANG TẠO ĐƠN HÀNG...'
@@ -1869,19 +2002,19 @@ export default function OrderManagementPage() {
                 {/* ═══ DETAILS MODAL ═══ */}
                 {isDetailsModalOpen && selectedOrder && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-                        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                        <div className="bg-white rounded-md shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
                             {/* Custom Header with Back Button */}
                             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
                                 <div className="flex items-center gap-4">
                                     <button
                                         onClick={() => setIsDetailsModalOpen(false)}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer border-none"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-bold transition-colors cursor-pointer border-none"
                                     >
                                         <ArrowLeft size={14} /> Quay lại
                                     </button>
-                                    <h3 className="text-lg font-black text-slate-900 uppercase tracking-wider">Chi tiết đơn hàng #{selectedOrder.MaDonHang}</h3>
+                                    <h3 className="text-lg font-semibold text-slate-900 uppercase tracking-wider">Chi tiết đơn hàng #{selectedOrder.MaDonHang}</h3>
                                 </div>
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase bg-blue-50 text-blue-600">
+                                <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold uppercase bg-blue-50 text-blue-600">
                                     {STATUS_MAP[selectedOrder.TrangThai].label}
                                 </span>
                             </div>
@@ -1891,7 +2024,7 @@ export default function OrderManagementPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {/* I. THÔNG TIN KHÁCH HÀNG & SẢN PHẨM */}
                                     <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl hover:shadow-sm transition-all space-y-4">
-                                        <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest flex items-center gap-2 pb-2 border-b border-slate-100">
+                                        <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-widest flex items-center gap-2 pb-2 border-b border-slate-100">
                                             <User size={14} /> I. Thông tin khách hàng
                                         </h4>
                                         <div className="space-y-2.5 text-[13px] font-medium text-slate-600">
@@ -1911,22 +2044,47 @@ export default function OrderManagementPage() {
                                                 <span className="text-slate-400">Diện tích sơn:</span>
                                                 <span className="font-bold text-amber-600">{selectedOrder.TongDienTichSon || 0} m2</span>
                                             </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400">Ngày tạo:</span>
-                                                <span className="text-slate-800">{new Date(selectedOrder.createdAt).toLocaleDateString()}</span>
+                                            <div className="flex flex-col gap-1 mt-3 pt-3 border-t border-slate-100">
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-400">Ngày giờ mua hàng:</span>
+                                                    <span className="text-slate-800 font-bold">{new Date(selectedOrder.createdAt).toLocaleString('vi-VN')}</span>
+                                                </div>
+                                                {(() => {
+                                                    const diffTime = Math.abs(new Date().getTime() - new Date(selectedOrder.createdAt).getTime());
+                                                    const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30.44);
+                                                    if (diffMonths > 24) {
+                                                        return (
+                                                            <div className="mt-2 text-xs text-rose-600 bg-rose-50 p-2.5 rounded-md border border-rose-100 flex flex-col gap-1">
+                                                                <span className="font-bold">⚠️ Không đủ điều kiện:</span> Đơn hàng / Hợp đồng đã mua sau 2 năm sẽ không được áp dụng chính sách bảo hành, đổi trả.
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* II. THÔNG SỐ KỸ THUẬT SƠN (MERN) */}
                                     <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl hover:shadow-sm transition-all space-y-4">
-                                        <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 pb-2 border-b border-slate-100">
+                                        <h4 className="text-xs font-semibold text-emerald-600 uppercase tracking-widest flex items-center gap-2 pb-2 border-b border-slate-100">
                                             <Layers size={14} /> II. Thông số kỹ thuật sơn
                                         </h4>
                                         <div className="space-y-2.5 text-[13px] font-medium text-slate-600">
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400">Mã màu chọn:</span>
-                                                <span className="font-black text-blue-600">{selectedOrder?.Items?.[0]?.MaMau || 'N/A'}</span>
+                                            <div className="flex justify-between items-start">
+                                                <span className="text-slate-400 mt-0.5">Mã màu đặt hàng:</span>
+                                                <div className="flex flex-col gap-1.5 items-end">
+                                                    {selectedOrder?.Items?.map((item: any, idx: number) => {
+                                                        const cInfo = paintColors.find(c => c.code === item.MaMau);
+                                                        return (
+                                                            <div key={idx} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-md border border-slate-100">
+                                                                <span className="w-3 h-3 rounded-md border border-slate-200" style={{ backgroundColor: cInfo?.hex || '#ccc' }}></span>
+                                                                <span className="font-semibold text-blue-600 text-xs">{item.MaMau || 'N/A'}</span>
+                                                                <span className="text-[10px] text-slate-400">x{item.SoLuong}</span>
+                                                            </div>
+                                                        );
+                                                    }) || <span className="font-semibold text-slate-400">N/A</span>}
+                                                </div>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-slate-400">Loại bột:</span>
@@ -1942,7 +2100,7 @@ export default function OrderManagementPage() {
                                             </div>
                                             {(selectedOrder?.KhachHang?.PhanLoai === 'DOANH_NGHIEP' || (selectedOrder?.GhiChu?.toLowerCase().includes('pha chế')) || (selectedOrder?.GhiChu?.toLowerCase().includes('mẫu')) || (selectedOrder?.GhiChu?.toLowerCase().includes('hợp đồng'))) && (
                                                 <div style={{ marginTop: 8 }}>
-                                                    <button onClick={() => setIsChartModalOpen(true)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ fontSize: 11, padding: '4px 10px', color: '#2563eb', border: '1px solid #2563eb' }}>📈 Xem biểu đồ hiệu suất thực</button>
+                                                    <button onClick={() => setIsChartModalOpen(true)} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ fontSize: 11, padding: '4px 10px', color: '#2563eb', border: '1px solid #2563eb' }}>📈 Xem biểu đồ hiệu suất thực</button>
                                                 </div>
                                             )}
                                         </div>
@@ -1951,7 +2109,7 @@ export default function OrderManagementPage() {
 
                                 {/* III. THÔNG TIN THANH TOÁN (PAYMENT) */}
                                 <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl">
-                                    <h4 className="text-xs font-black text-amber-600 uppercase tracking-widest flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
+                                    <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-widest flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
                                         <CreditCard size={14} /> III. Thông tin thanh toán (Payment)
                                     </h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-150">
@@ -1976,21 +2134,21 @@ export default function OrderManagementPage() {
                                             )}
                                             <div className="flex justify-between border-t border-slate-100 pt-3 text-[14px]">
                                                 <span className="font-bold text-slate-900">TỔNG CỘNG:</span>
-                                                <span className="font-black text-emerald-600">{selectedOrder.TongTien.toLocaleString()}đ</span>
+                                                <span className="font-semibold text-emerald-600">{selectedOrder.TongTien.toLocaleString()}đ</span>
                                             </div>
                                         </div>
                                         <div className="space-y-3 text-[13px] font-medium text-slate-650 pt-4 md:pt-0 md:pl-8">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-slate-400">Khách đã đặt cọc:</span>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-black text-slate-900">{(selectedOrder.DaCoc || 0).toLocaleString()}đ ({Math.round(((selectedOrder.DaCoc || 0) / selectedOrder.TongTien) * 100)}%)</span>
+                                                    <span className="font-semibold text-slate-900">{(selectedOrder.DaCoc || 0).toLocaleString()}đ ({Math.round(((selectedOrder.DaCoc || 0) / selectedOrder.TongTien) * 100)}%)</span>
                                                     {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
                                                         <button
-                                                        onClick={() => {
+                                                            onClick={() => {
                                                                 setDepositAmount(selectedOrder.DaCoc || 0);
                                                                 setIsPaymentModalOpen(true);
                                                             }}
-                                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
+                                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                                                             style={{ padding: '2px 8px', fontSize: '10px', color: '#2563eb', border: '1px solid #2563eb' }}
                                                         >
                                                             Cập nhật
@@ -2000,7 +2158,7 @@ export default function OrderManagementPage() {
                                             </div>
                                             <div className="flex justify-between border-t border-slate-100 pt-4 text-[16px]">
                                                 <span className="font-bold text-slate-900">SỐ TIỀN CÒN LẠI:</span>
-                                                <span className="font-black text-rose-500">{Math.max(0, selectedOrder.TongTien - (selectedOrder.DaCoc || 0)).toLocaleString()}đ</span>
+                                                <span className="font-semibold text-rose-500">{Math.max(0, selectedOrder.TongTien - (selectedOrder.DaCoc || 0)).toLocaleString()}đ</span>
                                             </div>
                                         </div>
                                     </div>
@@ -2008,41 +2166,41 @@ export default function OrderManagementPage() {
 
                                 {/* Timeline / Action Section */}
                                 <div className="space-y-3.5">
-                                    <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                                    <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-lg">
                                         <Calendar size={18} className="text-blue-500" />
                                         <div className="flex-1 text-sm font-medium text-slate-700">
                                             <span className="text-slate-400">[{new Date(selectedOrder.createdAt).toLocaleDateString()}]</span> Đã đặt cọc đơn hàng <span className="font-bold text-emerald-600">[{(selectedOrder.DaCoc || 0).toLocaleString()}đ]</span>
                                         </div>
                                         <button
                                             onClick={handleDownloadPhieuCoc}
-                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
+                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
                                             style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#2563eb' }}
                                         >
                                             <FileCheck size={14} /> In Phiếu Cọc (Word)
                                         </button>
                                     </div>
 
-                                    <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                                    <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-lg">
                                         <FileText size={18} className="text-purple-500" />
                                         <div className="flex-1 text-sm font-medium text-slate-700">
                                             <span className="text-slate-400">[{new Date().toLocaleDateString()}]</span> Tiến độ sản xuất & Vận chuyển hàng hóa
                                         </div>
                                         {selectedOrder.TrangThai === 'CHO_XAC_NHAN' && (
                                             <button
-                                            onClick={() => {
+                                                onClick={() => {
                                                     if ((selectedOrder.DaCoc || 0) <= 0) {
                                                         alert('Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.');
                                                         return;
                                                     }
                                                     handleUpdateStatus(selectedOrder._id, 'DANG_XU_LY');
                                                 }}
-                                                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                                                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                                                 style={{ background: (selectedOrder.DaCoc || 0) <= 0 ? '#94a3b8' : 'var(--accent-primary)', opacity: (selectedOrder.DaCoc || 0) <= 0 ? 0.7 : 1 }}
                                             >
                                                 Bắt đầu sản xuất
                                             </button>
                                         )}
-                                        <button onClick={handleDownloadHoaDonGTGT} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#059669' }} disabled={isPrinting}>
+                                        <button onClick={handleDownloadHoaDonGTGT} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#059669' }} disabled={isPrinting}>
                                             <Printer size={14} /> In Hóa Đơn GTGT
                                         </button>
                                     </div>
@@ -2053,7 +2211,7 @@ export default function OrderManagementPage() {
                                     {selectedOrder.TrangThai !== 'DA_GIAO' && selectedOrder.TrangThai !== 'DA_HUY' && (
                                         <button
                                             onClick={() => handleUpdateStatus(selectedOrder._id, 'DA_HUY')}
-                                            className="px-5 py-2.5 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-2xl text-xs font-bold transition-colors cursor-pointer"
+                                            className="px-5 py-2.5 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                                         >
                                             Hủy đơn hàng
                                         </button>
@@ -2065,7 +2223,7 @@ export default function OrderManagementPage() {
                         {/* CHART MODAL */}
                         {isChartModalOpen && selectedOrder && (
                             <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)' }}>
-                                <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ width: '95%', maxWidth: '800px', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '32px', background: '#0f172a', color: '#fff' }}>
+                                <div className="bg-white border border-slate-200 rounded-lg shadow-md transition-all duration-300 overflow-hidden" style={{ width: '95%', maxWidth: '800px', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '32px', background: '#0f172a', color: '#fff' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 16 }}>
                                         <h3 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: '#00d4ff', display: 'flex', alignItems: 'center', gap: 10 }}>
                                             <Thermometer size={24} /> Hiệu Suất Sấy Thực Tế - Đơn #{selectedOrder.MaDonHang}
@@ -2216,14 +2374,14 @@ export default function OrderManagementPage() {
                 {/* ═══ DRIVER SELECTION MODAL ═══ */}
                 {isDriverModalOpen && (
                     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-                        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                        <div className="bg-white rounded-md shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
                             <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-                                <h3 className="text-base font-black text-slate-900 flex items-center gap-2.5">
+                                <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2.5">
                                     <Truck size={20} className="text-purple-600" /> Điều phối tài xế giao hàng
                                 </h3>
                                 <button
                                     onClick={() => setIsDriverModalOpen(false)}
-                                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
+                                    className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
                                 >
                                     ×
                                 </button>
@@ -2238,12 +2396,12 @@ export default function OrderManagementPage() {
                                         <div
                                             key={driver._id}
                                             onClick={() => setSelectedDriverId(driver._id)}
-                                            className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3.5 ${selectedDriverId === driver._id
+                                            className={`p-3.5 rounded-lg border transition-all cursor-pointer flex items-center gap-3.5 ${selectedDriverId === driver._id
                                                 ? 'border-blue-600 bg-blue-50/40 shadow-sm'
                                                 : 'border-slate-100 hover:bg-slate-50'
                                                 }`}
                                         >
-                                            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
+                                            <div className="w-9 h-9 rounded-md bg-slate-100 flex items-center justify-center text-slate-500">
                                                 <User size={18} />
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -2261,11 +2419,11 @@ export default function OrderManagementPage() {
                                 </div>
 
                                 <div className="flex gap-3 pt-4 border-t border-slate-50">
-                                    <button onClick={() => setIsDriverModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
+                                    <button onClick={() => setIsDriverModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg font-bold text-xs transition-colors cursor-pointer">Hủy</button>
                                     <button
                                         onClick={() => pendingStatusUpdate && handleUpdateStatus(pendingStatusUpdate.id, pendingStatusUpdate.status, selectedDriverId)}
                                         disabled={!selectedDriverId}
-                                        className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 disabled:opacity-50 transition-all cursor-pointer border-none"
+                                        className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-md shadow-blue-600/20 disabled:opacity-50 transition-all cursor-pointer border-none"
                                     >
                                         Xác nhận giao hàng
                                     </button>
@@ -2278,15 +2436,15 @@ export default function OrderManagementPage() {
                 {/* ═══ PAINT CALCULATOR MODAL ═══ */}
                 {isCalculatorOpen && (
                     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-                        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                        <div className="bg-white rounded-md shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
                             {/* Header */}
                             <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-                                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                                <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                                     <Calculator size={20} className="text-blue-600" /> Tính diện tích bề mặt sơn
                                 </h3>
                                 <button
                                     onClick={() => setIsCalculatorOpen(false)}
-                                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
+                                    className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
                                 >
                                     ×
                                 </button>
@@ -2295,9 +2453,9 @@ export default function OrderManagementPage() {
                             {/* Body */}
                             <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
                                 {/* Unit Toggle */}
-                                <div className="flex justify-between items-center bg-slate-50 p-2 rounded-2xl">
+                                <div className="flex justify-between items-center bg-slate-50 p-2 rounded-lg">
                                     <span className="text-xs font-semibold text-slate-500 pl-2">Đơn vị đo lường</span>
-                                    <div className="flex gap-1 p-0.5 bg-slate-200/50 rounded-xl">
+                                    <div className="flex gap-1 p-0.5 bg-slate-200/50 rounded-md">
                                         <button onClick={() => setCalcUnit('m')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-none ${calcUnit === 'm' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 bg-transparent'}`}>Mét (m)</button>
                                         <button onClick={() => setCalcUnit('ft')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-none ${calcUnit === 'ft' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 bg-transparent'}`}>Feet (ft)</button>
                                     </div>
@@ -2305,18 +2463,18 @@ export default function OrderManagementPage() {
 
                                 {/* Walls Section */}
                                 <div className="space-y-3">
-                                    <div className="text-xs font-black text-blue-600 uppercase tracking-wider">
+                                    <div className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
                                         Bề mặt tường ({calcWalls.length})
                                     </div>
                                     <div className="space-y-3">
                                         {calcWalls.map((wall, index) => (
                                             <div key={wall.id} className="flex gap-2 items-center">
                                                 <div className="relative flex-1">
-                                                    <input type="number" placeholder="Chiều dài" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={wall.length} onChange={(e) => updateCalcItem(wall.id, 'length', e.target.value, 'wall')} />
+                                                    <input type="number" placeholder="Chiều dài" className="w-full bg-slate-50 border-none rounded-md px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={wall.length} onChange={(e) => updateCalcItem(wall.id, 'length', e.target.value, 'wall')} />
                                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
                                                 </div>
                                                 <div className="relative flex-1">
-                                                    <input type="number" placeholder="Chiều cao" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={wall.height} onChange={(e) => updateCalcItem(wall.id, 'height', e.target.value, 'wall')} />
+                                                    <input type="number" placeholder="Chiều cao" className="w-full bg-slate-50 border-none rounded-md px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={wall.height} onChange={(e) => updateCalcItem(wall.id, 'height', e.target.value, 'wall')} />
                                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
                                                 </div>
                                                 {calcWalls.length > 1 && (
@@ -2324,7 +2482,7 @@ export default function OrderManagementPage() {
                                                 )}
                                             </div>
                                         ))}
-                                        <button onClick={handleAddCalcWall} className="w-full py-2.5 bg-white border border-dashed border-blue-200 hover:bg-blue-50/50 text-blue-650 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                                        <button onClick={handleAddCalcWall} className="w-full py-2.5 bg-white border border-dashed border-blue-200 hover:bg-blue-50/50 text-blue-650 rounded-md font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
                                             <Plus size={14} /> Thêm diện tích tường
                                         </button>
                                     </div>
@@ -2332,24 +2490,24 @@ export default function OrderManagementPage() {
 
                                 {/* Deductions Section */}
                                 <div className="space-y-3">
-                                    <div className="text-xs font-black text-rose-500 uppercase tracking-wider">
+                                    <div className="text-xs font-semibold text-rose-500 uppercase tracking-wider">
                                         Diện tích khấu trừ (Cửa đi / Cửa sổ) ({calcDeductions.length})
                                     </div>
                                     <div className="space-y-3">
                                         {calcDeductions.map((ded, index) => (
                                             <div key={ded.id} className="flex gap-2 items-center">
                                                 <div className="relative flex-1">
-                                                    <input type="number" placeholder="Chiều dài" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={ded.length} onChange={(e) => updateCalcItem(ded.id, 'length', e.target.value, 'deduction')} />
+                                                    <input type="number" placeholder="Chiều dài" className="w-full bg-slate-50 border-none rounded-md px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={ded.length} onChange={(e) => updateCalcItem(ded.id, 'length', e.target.value, 'deduction')} />
                                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
                                                 </div>
                                                 <div className="relative flex-1">
-                                                    <input type="number" placeholder="Chiều cao" className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={ded.height} onChange={(e) => updateCalcItem(ded.id, 'height', e.target.value, 'deduction')} />
+                                                    <input type="number" placeholder="Chiều cao" className="w-full bg-slate-50 border-none rounded-md px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium" value={ded.height} onChange={(e) => updateCalcItem(ded.id, 'height', e.target.value, 'deduction')} />
                                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">{calcUnit}</span>
                                                 </div>
                                                 <button onClick={() => handleRemoveCalcItem(ded.id, 'deduction')} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"><Trash2 size={14} /></button>
                                             </div>
                                         ))}
-                                        <button onClick={handleAddCalcDeduction} className="w-full py-2.5 bg-white border border-dashed border-rose-200 hover:bg-rose-50/50 text-rose-500 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                                        <button onClick={handleAddCalcDeduction} className="w-full py-2.5 bg-white border border-dashed border-rose-200 hover:bg-rose-50/50 text-rose-500 rounded-md font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
                                             <Plus size={14} /> Thêm cửa sổ / cửa đi
                                         </button>
                                     </div>
@@ -2369,17 +2527,17 @@ export default function OrderManagementPage() {
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-end border-t border-slate-200/60 pt-3">
-                                    <span className="text-xs font-black text-slate-900 uppercase">Khối lượng sơn ước tính:</span>
-                                    <span className="text-2xl font-black text-blue-600">{calculatedResult.liters} Lít</span>
+                                    <span className="text-xs font-semibold text-slate-900 uppercase">Khối lượng sơn ước tính:</span>
+                                    <span className="text-2xl font-semibold text-blue-600">{calculatedResult.liters} Lít</span>
                                 </div>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setIsCalculatorOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
+                                    <button onClick={() => setIsCalculatorOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg font-bold text-xs transition-colors cursor-pointer">Hủy</button>
                                     <button
                                         onClick={() => {
                                             setTongDienTichSon(calculatedResult.area);
                                             setIsCalculatorOpen(false);
                                         }}
-                                        className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none"
+                                        className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none"
                                     >
                                         <FileCheck size={16} /> Áp dụng kết quả
                                     </button>
@@ -2392,14 +2550,14 @@ export default function OrderManagementPage() {
                 {/* ═══ PAYMENT MODAL ═══ */}
                 {isPaymentModalOpen && (
                     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
-                        <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+                        <div className="bg-white rounded-md shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
                             <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-                                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                                <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                                     <CreditCard size={20} className="text-amber-500" /> Cập nhật tiền cọc
                                 </h3>
                                 <button
                                     onClick={() => setIsPaymentModalOpen(false)}
-                                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
+                                    className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors text-xl font-bold cursor-pointer border-none bg-transparent"
                                 >
                                     ×
                                 </button>
@@ -2409,20 +2567,20 @@ export default function OrderManagementPage() {
                                     <label style={{ fontSize: 13, color: '#475569', marginBottom: 8, display: 'block' }}>Số tiền khách đã trả (VNĐ)</label>
                                     <input
                                         type="number"
-                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                        className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                         style={{ width: '100%', fontSize: 20, fontWeight: 700, textAlign: 'right', color: '#059669' }}
                                         value={depositAmount}
                                         onChange={(e) => setDepositAmount(Number(e.target.value))}
                                     />
                                     <div className="flex gap-2">
                                         {[0.3, 0.5, 1].map(p => (
-                                        <button
-                                            key={p}
-                                            onClick={() => setDepositAmount(Math.round(selectedOrder!.TongTien * p))}
-                                            className="flex-1 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                                        >
-                                            {p * 100}%
-                                        </button>
+                                            <button
+                                                key={p}
+                                                onClick={() => setDepositAmount(Math.round(selectedOrder!.TongTien * p))}
+                                                className="flex-1 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-md text-xs font-bold transition-all cursor-pointer"
+                                            >
+                                                {p * 100}%
+                                            </button>
                                         ))}
                                     </div>
                                 </div>
@@ -2432,8 +2590,8 @@ export default function OrderManagementPage() {
                                 </p>
 
                                 <div className="flex gap-3 pt-4 border-t border-slate-50">
-                                    <button onClick={() => setIsPaymentModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-2xl font-bold text-xs transition-colors cursor-pointer">Hủy</button>
-                                    <button onClick={handleUpdateDeposit} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer border-none">Xác nhận thanh toán</button>
+                                    <button onClick={() => setIsPaymentModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-lg font-bold text-xs transition-colors cursor-pointer">Hủy</button>
+                                    <button onClick={handleUpdateDeposit} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer border-none">Xác nhận thanh toán</button>
                                 </div>
                             </div>
                         </div>

@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { Package, Award, Calendar, Loader2, Target, X, Factory, BarChart3 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
+import { toast } from "@/lib/utils/notification";
 
 // Tooltip cho chế độ 1 năm
 const SingleYearTooltip = ({ active, payload, label }: any) => {
@@ -138,7 +139,7 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
 
   const handleSaveTarget = async () => {
     if (!targetAmount || isNaN(Number(targetAmount)) || Number(targetAmount) < 0) {
-      alert("Vui lòng nhập số lượng hợp lệ!");
+      toast.warning("Vui lòng nhập số lượng hợp lệ!");
       return;
     }
 
@@ -152,7 +153,7 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
         targetAmount: Number(targetAmount),
       });
 
-      alert("Thiết lập mục tiêu sản lượng thành công!");
+      toast.success("Thiết lập mục tiêu sản lượng thành công!");
       setIsModalOpen(false);
 
       if (selectedYear === targetYear) {
@@ -160,7 +161,7 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
       }
     } catch (error) {
       console.error("Lỗi khi lưu mục tiêu:", error);
-      alert("Có lỗi xảy ra khi lưu mục tiêu.");
+      toast.error("Có lỗi xảy ra khi lưu mục tiêu.");
     } finally {
       setIsSaving(false);
     }

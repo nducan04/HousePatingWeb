@@ -4,7 +4,14 @@ const NhanVien = require('../models/NhanVien');
 // @desc    Lấy danh sách đổi trả
 exports.getReturns = async (req, res) => {
     try {
-        const data = await DoiTra.find()
+        let query = {};
+        if (req.user && (req.user.VaiTro === 'KhachHangB2B' || req.user.VaiTro === 'KhachHangB2C')) {
+            const KhachHang = require('../models/KhachHang');
+            const kh = await KhachHang.findOne({ AccountID: req.user._id });
+            if (kh) query.KhachHang = kh._id;
+        }
+
+        const data = await DoiTra.find(query)
             .populate('DonHang', 'MaDonHang')
             .populate('KhachHang', 'MaKH TenKhachHang')
             .populate('NhanVienPhuTrach', 'MaNV HoTen')
@@ -19,10 +26,10 @@ exports.getReturns = async (req, res) => {
 // @desc    Tạo lệnh đổi trả thủ công
 exports.createReturn = async (req, res) => {
     try {
-        const { MaDoiTra, DonHang, KhachHang, LyDo, LoaiYeuCau, DuKienDenHang, GiaTriTru } = req.body;
+        const { MaDoiTra, DonHang, KhachHang, LyDo, LoaiYeuCau, DuKienDenHang, GiaTriTru, NhanVienPhuTrach, HinhAnh } = req.body;
 
-        let nvPhuTrach = null;
-        if (req.user) {
+        let nvPhuTrach = NhanVienPhuTrach;
+        if (!nvPhuTrach && req.user) {
             const nv = await NhanVien.findOne({ AccountID: req.user._id });
             if (nv) nvPhuTrach = nv._id;
         }
@@ -35,7 +42,8 @@ exports.createReturn = async (req, res) => {
             LoaiYeuCau: LoaiYeuCau || 'Đổi trả',
             DuKienDenHang,
             GiaTriTru,
-            NhanVienPhuTrach: nvPhuTrach
+            NhanVienPhuTrach: nvPhuTrach,
+            HinhAnh: HinhAnh || []
         });
 
         await newReturn.save();
@@ -67,11 +75,13 @@ exports.getReturnById = async (req, res) => {
 exports.updateStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status, phuongAn, assignedTo } = req.body;
+        const { status, phuongAn, assignedTo, KhachHangDanhGia } = req.body;
 
-        const updateData = { TrangThai: status };
+        const updateData = {};
+        if (status) updateData.TrangThai = status;
         if (phuongAn) updateData.PhuongAnGiaiQuyet = phuongAn;
         if (assignedTo) updateData.NhanVienPhuTrach = assignedTo;
+        if (KhachHangDanhGia) updateData.KhachHangDanhGia = KhachHangDanhGia;
 
         const item = await DoiTra.findByIdAndUpdate(
             id,

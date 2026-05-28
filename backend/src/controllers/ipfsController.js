@@ -15,8 +15,10 @@ try {
   console.log("Pinata not fully configured. IPFS uploads will return mock CIDs.");
 }
 
-// Multer config for temporary local storage before IPFS upload
-const upload = multer({ dest: 'uploads/' });
+const { Readable } = require('stream');
+
+// Use memory storage to avoid triggering node --watch restarts when writing to disk
+const upload = multer({ storage: multer.memoryStorage() });
 
 exports.uploadMiddleware = upload.single('file');
 
@@ -26,21 +28,27 @@ exports.uploadToIPFS = async (req, res) => {
       return res.status(400).json({ success: false, error: 'No file uploaded' });
     }
 
-    // Mock response if IPFS not configured
+    // Fallback response if IPFS not configured (Returns Base64 Data URI)
     if (!pinata) {
-      const mockCid = 'QmMockHash' + Date.now();
+      const base64Image = req.file.buffer.toString('base64');
+      const dataUri = `data:${req.file.mimetype};base64,${base64Image}`;
+      
       return res.status(200).json({ 
         success: true, 
         mock: true,
         data: {
-          ipfsCid: mockCid,
-          url: `https://gateway.pinata.cloud/ipfs/${mockCid}`,
+          ipfsCid: dataUri,
+          url: dataUri,
           fileName: req.file.originalname
         } 
       });
     }
 
-    const readableStreamForFile = fs.createReadStream(req.file.path);
+    // Convert buffer to Readable stream
+    const readableStreamForFile = Readable.from(req.file.buffer);
+    // Pinata SDK may rely on the path property for the filename if not provided in options
+    readableStreamForFile.path = req.file.originalname;
+
     const options = {
         pinataMetadata: {
             name: req.file.originalname,
@@ -49,9 +57,6 @@ exports.uploadToIPFS = async (req, res) => {
     
     // Both SDK v2 and v3 support pinning from stream/fs in node
     const result = await pinata.pinFileToIPFS(readableStreamForFile, options);
-    
-    // Clean up temp file
-    fs.unlinkSync(req.file.path);
 
     res.status(200).json({
       success: true,
@@ -65,9 +70,6 @@ exports.uploadToIPFS = async (req, res) => {
 
   } catch (error) {
     console.error('IPFS upload error:', error);
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
     res.status(500).json({ success: false, error: 'Failed to upload to IPFS' });
   }
 };

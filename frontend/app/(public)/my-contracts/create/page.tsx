@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, ArrowRight, Plus, Trash2, FileText, CheckCircle2,
   Package, ClipboardList, Eye, Building, CreditCard, Scale,
-  ChevronLeft, ChevronRight, Loader2, Wallet, Printer
+  ChevronLeft, ChevronRight, Loader2, Wallet, Printer, Download
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -42,7 +42,7 @@ const EMPTY_DETAIL: ContractDetail = {
   technicalReqs: ''
 };
 
-export default function CustomerCreateContractPage() {
+function CustomerCreateContractPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated } = useAuthStore();
@@ -51,6 +51,7 @@ export default function CustomerCreateContractPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
 
   // Pre-populated params from R&D
@@ -118,8 +119,32 @@ export default function CustomerCreateContractPage() {
       .catch(err => console.error(err));
   }, []);
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    try {
+      setIsExportingPDF(true);
+      const element = document.getElementById('printable-contract');
+      if (!element) return;
+      
+      const html2pdf = (await import('html2pdf.js')).default;
+      const opt = {
+        margin:       [10, 10, 10, 10] as [number, number, number, number],
+        filename:     `HopDong_NguyenTac_${contractId || 'VTSC'}.pdf`,
+        image:        { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        pagebreak:    { mode: ['css', 'legacy'] }
+      };
+      
+      // html2pdf().output('blob') returns a Promise resolving to a Blob
+      const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, '_blank');
+    } catch (error) {
+      console.error('Lỗi xuất PDF:', error);
+      alert('Có lỗi xảy ra khi xuất PDF. Vui lòng thử lại.');
+    } finally {
+      setIsExportingPDF(false);
+    }
   };
 
   const totalValue = details.reduce((sum, d) => sum + (d.quantity * d.unitPrice), 0);
@@ -132,7 +157,7 @@ export default function CustomerCreateContractPage() {
   const updateDetail = (index: number, field: keyof ContractDetail, value: any) => {
     const updated = [...details];
     (updated[index] as any)[field] = value;
-    
+
     // Tự động lấy đơn giá chuẩn nếu khách hàng chọn Sản phẩm
     if (field === 'productName') {
       const selectedProduct = allProducts.find(p => p.TenDongSon === value);
@@ -140,7 +165,7 @@ export default function CustomerCreateContractPage() {
         updated[index].unitPrice = selectedProduct.DonGiaCoSo || 0;
       }
     }
-    
+
     setDetails(updated);
   };
 
@@ -442,77 +467,75 @@ export default function CustomerCreateContractPage() {
 
             {/* Simulated Paper Draft */}
             <div className="bg-slate-100/50 p-6 rounded-2xl max-h-[450px] overflow-y-auto border border-slate-200/40">
-              <div id="printable-contract" className="bg-white p-8 border border-slate-200 text-black max-w-2xl mx-auto shadow-sm text-xs leading-relaxed" style={{ fontFamily: 'Arial, Helvetica, sans-serif', textAlign: 'left', wordBreak: 'normal' }}>
-
-                {/* Header quốc hiệu */}
-                <div className="text-center mb-6">
-                  <div className="font-bold uppercase text-[10px] tracking-wide">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-                  <div className="font-bold text-[10px]">Độc lập — Tự do — Hạnh phúc</div>
-                  <div className="text-[10px] my-1 text-slate-400">—————————</div>
+              <div id="printable-contract" style={{ background: '#fff', color: '#000', padding: '50px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', minHeight: '1000px', fontSize: '13px', lineHeight: '1.4', position: 'relative', fontFamily: 'Arial, Helvetica, sans-serif', width: '100%', maxWidth: '210mm', margin: '0 auto' }}>
+                <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                  <div style={{ fontWeight: 'bold', fontSize: 13, color: '#333' }}>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                  <div style={{ fontWeight: 'bold', fontSize: 13 }}>Độc lập — Tự do — Hạnh phúc</div>
+                  <div style={{ marginTop: 5, fontSize: 11 }}>--- o0o ---</div>
                 </div>
 
-                <div className="text-center mb-8">
-                  <div className="font-bold text-base text-blue-900 tracking-wide uppercase">HỢP ĐỒNG NGUYÊN TẮC MUA BÁN SƠN</div>
-                  <div className="text-[9px] text-slate-500 mt-1 italic">Mã hợp đồng: {contractId}</div>
+                <div style={{ textAlign: 'center', marginBottom: 30 }}>
+                  <div style={{ fontWeight: 900, fontSize: 20, color: '#003399', textTransform: 'uppercase', letterSpacing: '0.5px' }}>HỢP ĐỒNG NGUYÊN TẮC MUA BÁN SƠN</div>
+                  <div style={{ fontStyle: 'italic', color: '#666', marginTop: 5 }}>Mã số (Smart Contract ID): {contractId}</div>
                 </div>
 
-                <p className="mb-4">Hôm nay, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}, chúng tôi gồm:</p>
+                <p style={{ marginBottom: 20 }}>Hôm nay, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}, chúng tôi gồm có:</p>
 
-                {/* Bên A */}
-                <div className="mb-4">
-                  <div className="font-bold text-blue-900 border-b border-blue-900 pb-1 mb-2">BÊN BÁN / BÊN CUNG CẤP (BÊN A)</div>
-                  <div className="pl-2 space-y-1">
-                    <div><b>Tên tổ chức:</b> CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)</div>
-                    <div><b>Địa chỉ:</b> Số 215 phố Lạch Tray, Quận Ngô Quyền, TP. Hải Phòng</div>
-                    <div><b>Mã số thuế:</b> 0201137068</div>
-                    <div><b>Người đại diện:</b> Ông Đặng Hồng Trường — <b>Chức vụ:</b> Giám đốc</div>
-                    <div className="text-[9px] text-slate-500 italic"><b>Địa chỉ ví Blockchain đại diện:</b> 0x0201020304050607080910111213141516171819</div>
+                {/* BÊN A */}
+                <div style={{ marginBottom: 25 }}>
+                  <div style={{ fontWeight: 'bold', color: '#003399', fontSize: 15, borderBottom: '1px solid #003399', paddingBottom: 5, marginBottom: 10 }}>BÊN BÁN / BÊN CUNG CẤP (BÊN A)</div>
+                  <div style={{ paddingLeft: 10 }}>
+                    <div style={{ marginBottom: 4 }}><b>Tên tổ chức:</b> CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)</div>
+                    <div style={{ marginBottom: 4 }}><b>Địa chỉ:</b> Số 215 phố Lạch Tray, Quận Ngô Quyền, TP. Hải Phòng</div>
+                    <div style={{ marginBottom: 4 }}><b>Mã số thuế:</b> 0201137068</div>
+                    <div style={{ marginBottom: 4 }}><b>Người đại diện:</b> Ông Phí Bình Minh — <b>Chức vụ:</b> Trưởng phòng kinh doanh sơn</div>
+                    <div style={{ fontSize: 11, color: '#444', fontStyle: 'italic', marginTop: 3 }}><b>Ví Blockchain xác thực:</b> 0x0201020304050607080910111213141516171819</div>
                   </div>
                 </div>
 
-                {/* Bên B */}
-                <div className="mb-4">
-                  <div className="font-bold text-blue-900 border-b border-blue-900 pb-1 mb-2">BÊN MUA (BÊN B)</div>
-                  <div className="pl-2 space-y-1">
-                    <div><b>Tên khách hàng:</b> {partyBRepresentative}</div>
-                    <div><b>Điện thoại:</b> {partyBPhoneNumber || '................................'}</div>
-                    <div><b>Địa chỉ:</b> {partyBAddress}</div>
-                    <div><b>Đại diện:</b> {partyBRepresentative} — <b>Chức vụ:</b> {partyBPosition}</div>
-                    {partyBBankAccount && <div><b>Tài khoản:</b> {partyBBankAccount} tại {partyBBankName}</div>}
+                {/* BÊN B */}
+                <div style={{ marginBottom: 25 }}>
+                  <div style={{ fontWeight: 'bold', color: '#003399', fontSize: 15, borderBottom: '1px solid #003399', paddingBottom: 5, marginBottom: 10 }}>BÊN MUA (BÊN B)</div>
+                  <div style={{ paddingLeft: 10 }}>
+                    <div style={{ marginBottom: 4 }}><b>Tên khách hàng:</b> {partyBCompanyName || partyBRepresentative || '...................................................'}</div>
+                    <div style={{ marginBottom: 4 }}><b>Địa chỉ:</b> {partyBAddress || '......................................................................................'}</div>
+                    <div style={{ marginBottom: 4 }}><b>Mã số thuế:</b> {partyBTaxCode || '................................'}</div>
+                    <div style={{ marginBottom: 4 }}><b>Điện thoại:</b> {partyBPhoneNumber || '................................'}</div>
+                    <div style={{ marginBottom: 4 }}><b>Người đại diện:</b> {partyBRepresentative || '................................'} — <b>Chức vụ:</b> {partyBPosition || '................................'}</div>
+                    {(partyBBankAccount || partyBBankName) && <div style={{ marginBottom: 4 }}><b>Tài khoản:</b> {partyBBankAccount || '................'} tại {partyBBankName || '................'}</div>}
                   </div>
                 </div>
 
-                <p className="font-bold mb-3">Hai bên cùng thống nhất ký kết các điều khoản mua bán sau đây:</p>
+                <p style={{ fontWeight: 'bold', marginBottom: 15 }}>Sau khi bàn bạc, hai bên thống nhất ký kết hợp đồng với các điều khoản kèm theo Mã hash (IPFS/Blockchain) bên dưới:</p>
 
-                {/* Điều 1: Hàng hóa */}
-                <div className="mb-3">
-                  <b className="text-blue-900">Điều 1: Hàng hóa và Giá cả</b>
-                  <p className="my-1.5">{articles.article1}</p>
-                  <table className="w-full border-collapse border border-blue-900 text-[10px] mt-2">
+                <div style={{ marginBottom: 20, pageBreakInside: 'avoid' }}>
+                  <b style={{ color: '#003399' }}>Điều 1: Hàng hóa và Giá cả</b>
+                  <p style={{ margin: '8px 0', fontSize: 12, whiteSpace: 'pre-wrap' }}>{articles.article1}</p>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 10, border: '1.5px solid #003399' }}>
                     <thead>
-                      <tr className="bg-slate-50">
-                        <th className="border border-blue-900 p-2 text-left">Sản phẩm / Dòng sơn</th>
-                        <th className="border border-blue-900 p-2 text-center">Mã màu</th>
-                        <th className="border border-blue-900 p-2 text-center">Khối lượng</th>
-                        <th className="border border-blue-900 p-2 text-right">Đơn giá</th>
-                        <th className="border border-blue-900 p-2 text-right">Thành tiền</th>
+                      <tr style={{ background: '#f8faff' }}>
+                        <th style={{ border: '1px solid #003399', padding: 8, fontSize: 12 }}>Sản phẩm / Dòng sơn</th>
+                        <th style={{ border: '1px solid #003399', padding: 8, fontSize: 12 }}>Mã màu</th>
+                        <th style={{ border: '1px solid #003399', padding: 8, fontSize: 12 }}>Số lượng</th>
+                        <th style={{ border: '1px solid #003399', padding: 8, fontSize: 12 }}>Đơn giá</th>
+                        <th style={{ border: '1px solid #003399', padding: 8, fontSize: 12 }}>Thành tiền</th>
                       </tr>
                     </thead>
                     <tbody>
                       {details.map((it, idx) => (
                         <tr key={idx}>
-                          <td className="border border-blue-900 p-2 font-bold">{it.productName}</td>
-                          <td className="border border-blue-900 p-2 text-center">{it.colorCode || '—'}</td>
-                          <td className="border border-blue-900 p-2 text-center">{it.quantity} Kg</td>
-                          <td className="border border-blue-900 p-2 text-right">{it.unitPrice.toLocaleString('vi-VN')}đ</td>
-                          <td className="border border-blue-900 p-2 text-right font-bold">{(it.quantity * it.unitPrice).toLocaleString('vi-VN')}đ</td>
+                          <td style={{ border: '1px solid #003399', padding: 8 }}>{it.productName}</td>
+                          <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'center', fontWeight: 'bold' }}>{it.colorCode || '—'}</td>
+                          <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'center' }}>{it.quantity} Kg</td>
+                          <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>{it.unitPrice.toLocaleString('vi-VN')}đ</td>
+                          <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right', fontWeight: 'bold' }}>{(it.quantity * it.unitPrice).toLocaleString('vi-VN')}đ</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="font-bold bg-slate-50">
-                        <td colSpan={4} className="border border-blue-900 p-2 text-right">Tổng giá trị:</td>
-                        <td className="border border-blue-900 p-2 text-right text-blue-900">
+                      <tr style={{ background: '#f8faff', fontWeight: 'bold' }}>
+                        <td colSpan={4} style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>Tổng giá trị:</td>
+                        <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right', color: '#003399' }}>
                           {totalValue.toLocaleString('vi-VN')}đ
                         </td>
                       </tr>
@@ -522,28 +545,27 @@ export default function CustomerCreateContractPage() {
 
                 {/* Các điều khoản khác */}
                 {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(num => (
-                  <div key={num} className="mb-3">
-                    <b className="text-blue-900">Điều {num}:</b>
-                    <p className="mt-1">{(articles as any)[`article${num}`]}</p>
+                  <div key={num} className="article-wrapper" style={{ marginBottom: 15, pageBreakInside: 'avoid' }}>
+                    <b style={{ color: '#003399' }}>Điều {num}:</b>
+                    <p style={{ marginTop: 5, fontSize: 12, whiteSpace: 'pre-wrap' }}>{(articles as any)[`article${num}`]}</p>
                   </div>
                 ))}
 
                 {/* Signatures */}
-                <div className="flex justify-between mt-10 text-center font-bold">
-                  <div className="w-[45%]">
-                    <div className="text-blue-900">ĐẠI DIỆN BÊN A</div>
-                    <div className="text-[8px] text-slate-400 font-normal mt-0.5">(Đã xác nhận on-chain)</div>
-                    <div className="h-16" />
-                    <div className="text-blue-900">Đặng Hồng Trường</div>
+                <div className="signature-section" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 60, textAlign: 'center', pageBreakInside: 'avoid' }}>
+                  <div style={{ width: '45%' }}>
+                    <b style={{ color: '#003399' }}>ĐẠI DIỆN BÊN A</b>
+                    <div style={{ fontSize: 10, color: '#666' }}>(Đã xác nhận on-chain)</div>
+                    <div style={{ height: 80 }} />
+                    <div style={{ color: '#003399', fontWeight: 900 }}>Phí Bình Minh</div>
                   </div>
-                  <div className="w-[45%]">
-                    <div className="text-blue-900">ĐẠI DIỆN BÊN B</div>
-                    <div className="text-[8px] text-slate-400 font-normal mt-0.5">(Ký trực tiếp)</div>
-                    <div className="h-16" />
-                    <div className="text-blue-900">{partyBRepresentative || '................................'}</div>
+                  <div style={{ width: '45%' }}>
+                    <b style={{ color: '#003399' }}>ĐẠI DIỆN BÊN B</b>
+                    <div style={{ fontSize: 10, color: '#666' }}>(Ký trực tiếp)</div>
+                    <div style={{ height: 80 }} />
+                    <div style={{ color: '#003399', fontWeight: 900 }}>{partyBRepresentative || '................................'}</div>
                   </div>
                 </div>
-
               </div>
             </div>
 
@@ -565,8 +587,9 @@ export default function CustomerCreateContractPage() {
                 <ChevronLeft size={16} /> Quay lại
               </button>
               <div className="flex items-center gap-2">
-                <button onClick={handlePrint} className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">
-                  <Printer size={14} /> In nháp / Xuất PDF
+                <button disabled={isExportingPDF || isSubmitting || submitSuccess} onClick={handlePrint} className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-50">
+                  {isExportingPDF ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}
+                  {isExportingPDF ? 'Đang xuất file...' : 'Xuất PDF'}
                 </button>
                 <button disabled={isSubmitting || submitSuccess} onClick={handleSubmit} className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm transition-all cursor-pointer shadow-md shadow-emerald-200">
                   {isSubmitting ? (
@@ -622,5 +645,13 @@ export default function CustomerCreateContractPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-blue-600" size={32} /></div>}>
+      <CustomerCreateContractPage />
+    </Suspense>
   );
 }

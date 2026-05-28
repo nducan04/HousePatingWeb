@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import * as XLSX from 'xlsx';
+import { toast, confirm } from '@/lib/utils/notification';
 
 const API_URL = '/khach-hang';
 
@@ -121,9 +122,10 @@ export default function DoiTacPage() {
       }
       setIsModalOpen(false);
       fetchData();
+      toast.success(formData._id ? 'Cập nhật đối tác thành công!' : 'Thêm đối tác mới thành công!');
     } catch (error: any) {
       console.error('Lỗi lưu đối tác:', error);
-      alert(error.response?.data?.error || 'Lỗi lưu đối tác');
+      toast.error(error.response?.data?.error || 'Lỗi lưu đối tác');
     }
   };
 
@@ -141,17 +143,18 @@ export default function DoiTacPage() {
       link.parentNode?.removeChild(link);
     } catch (err) {
       console.error('Lỗi tải file', err);
-      alert('Có lỗi xảy ra khi tải file Excel');
+      toast.error('Có lỗi xảy ra khi tải file Excel');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Chắc chắn muốn xóa khách hàng này?')) {
+    if (await confirm('Chắc chắn muốn xóa khách hàng này?')) {
       try {
         await api.delete(`${API_URL}/${id}`);
+        toast.success('Xóa khách hàng thành công!');
         fetchData();
       } catch (error) {
-        alert('Lỗi xóa khách hàng');
+        toast.error('Lỗi xóa khách hàng');
       }
     }
   };

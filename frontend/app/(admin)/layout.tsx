@@ -81,7 +81,7 @@ const allNavItems = [
     section: "Quản lý danh mục",
     items: [
       {
-        href: "/san-pham",
+        href: "/quan-ly-san-pham",
         label: "Sản phẩm sơn",
         icon: Package,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
@@ -117,13 +117,13 @@ const allNavItems = [
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/colors",
+        href: "/quan-ly-ma-mau",
         label: "Tra cứu mã màu",
         icon: Palette,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
       {
-        href: "/import",
+        href: "/nhap-du-lieu",
         label: "Nhập dữ liệu",
         icon: FileUp,
         roles: ["Admin", "NhanVien"],
@@ -146,13 +146,7 @@ const allNavItems = [
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
-        href: "/giohang",
-        label: "Quản lý giỏ hàng",
-        icon: ShoppingCart,
-        roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
-      },
-      {
-        href: "/thanh-toan",
+        href: "/quan-ly-thanh-toan",
         label: "Quản lý thanh toán",
         icon: QrCode,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
@@ -193,7 +187,7 @@ const allNavItems = [
     section: "Quy trình pha chế sơn",
     items: [
       {
-        href: "/contracts",
+        href: "/hop-dong-pha-che",
         label: "Hợp đồng pha chế",
         icon: FileSignature,
         roles: ["Admin", "NhanVien", "KhachHangB2B"],
@@ -278,12 +272,45 @@ export default function AdminLayout({
     }));
   };
 
-  // Chặn nhân viên xem Dashboard - Redirect về Sản phẩm
+  // Chặn truy cập trái phép ở cấp giao diện dựa trên allNavItems và dashboard
   React.useEffect(() => {
-    if (!isLoading && userRole === "NhanVien" && pathname === "/dashboard") {
-      router.push("/san-pham");
+    if (isLoading || !user) return;
+
+    // Phân quyền cho trang Dashboard
+    if (pathname === "/dashboard") {
+      if (userRole === "NhanVien") {
+        router.push("/san-pham");
+        return;
+      }
+      if (isCustomer) {
+        router.push("/");
+        return;
+      }
+      return;
     }
-  }, [userRole, pathname, isLoading, router]);
+
+    // Tìm item khớp với pathname hiện tại (chọn item có href dài nhất để xử lý chính xác các trang con như /rd-tracking/new)
+    let matchedItem: any = null;
+    allNavItems.forEach((section) => {
+      section.items.forEach((item) => {
+        if (item.href && (pathname === item.href || pathname.startsWith(item.href + "/"))) {
+          if (!matchedItem || item.href.length > matchedItem.href.length) {
+            matchedItem = item;
+          }
+        }
+      });
+    });
+
+    if (matchedItem) {
+      if (!matchedItem.roles.includes(userRole)) {
+        if (isCustomer) {
+          router.push("/");
+        } else {
+          router.push("/unauthorized");
+        }
+      }
+    }
+  }, [pathname, user, userRole, isLoading, router, isCustomer]);
 
   // Lọc menu theo vai trò người dùng
   const filteredNav = allNavItems
@@ -318,7 +345,7 @@ export default function AdminLayout({
         : userRole === "NhanVien"
           ? "Nhân viên công ty"
           : user?.profile?.ChucVu ||
-            (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
+          (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
   const initials = displayName
     .split(" ")
     .map((w: string) => w[0])
@@ -344,7 +371,7 @@ export default function AdminLayout({
     if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
     if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
     if (pathname === "/import") return "📤 Nhập Dữ Liệu (Excel/CSV)";
-    return "📦 Quản lý nghiệp vụ";
+    return "Quản lý nghiệp vụ";
   };
 
   return (
@@ -362,22 +389,24 @@ export default function AdminLayout({
         {!isCustomer && (
           <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
             {/* Logo Area */}
-            <div className="px-8 py-7 flex items-center gap-4">
-              <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10">
-                <img
-                  src="/vtsc.png"
-                  alt="Logo"
-                  className="w-full h-full object-contain brightness-110"
-                />
-              </div>
-              <div>
-                <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
-                  VTSC
+            <div className="px-8 py-7">
+              <Link href="/" className="flex items-center gap-4 no-underline group">
+                <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10 transition-transform group-hover:scale-105">
+                  <img
+                    src="/vtsc.png"
+                    alt="Logo"
+                    className="w-full h-full object-contain brightness-110"
+                  />
                 </div>
-                <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
-                  PaintPro
+                <div>
+                  <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
+                    VTSC
+                  </div>
+                  <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
+                    PaintPro
+                  </div>
                 </div>
-              </div>
+              </Link>
             </div>
 
             {/* Navigation */}
@@ -405,11 +434,10 @@ export default function AdminLayout({
                           <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${
-                              isActive
-                                ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
-                                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                            }`}
+                            className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${isActive
+                              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
+                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                              }`}
                           >
                             <div
                               className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-blue-600" : "text-slate-400"}`}
@@ -459,15 +487,13 @@ export default function AdminLayout({
           {/* Top Bar */}
           <header className="h-[88px] flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-10">
             <div className="flex items-center gap-4">
-              {isCustomer && (
-                <Link
-                  href="/"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-150 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl text-[13px] font-bold transition-all no-underline shadow-sm border border-slate-200 cursor-pointer mr-2"
-                >
-                  <Home size={16} />
-                  Về Trang Chủ
-                </Link>
-              )}
+              <Link
+                href="/"
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl text-[13px] font-bold transition-all no-underline shadow-sm border border-slate-200 cursor-pointer mr-2"
+              >
+                <Home size={16} />
+                Về Trang Chủ
+              </Link>
               <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
                 {(() => {
                   const currentItem = allNavItems

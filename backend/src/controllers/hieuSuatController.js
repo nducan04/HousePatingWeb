@@ -15,39 +15,82 @@ exports.getPerformanceStats = async (req, res) => {
         // 2. TỔNG HỢP DOANH SỐ (Kinh doanh)
         const salesStats = await DonHang.aggregate([
             { $match: { TrangThai: { $ne: 'DA_HUY' } } },
-            { $group: {
-                _id: '$NhanVienPhuTrach',
-                totalRevenue: { $sum: '$TongTien' },
-                orderCount: { $sum: 1 }
-            }}
+            {
+                $group: {
+                    _id: '$NhanVienPhuTrach',
+                    totalRevenue: { $sum: '$TongTien' },
+                    orderCount: { $sum: 1 }
+                }
+            }
         ]);
 
         // 3. TỔNG HỢP VẬN CHUYỂN (Logistics)
         const logisticsStats = await VanChuyen.aggregate([
             { $match: { TrangThaiTongQuat: 'Giao hàng thành công' } },
-            { $group: {
-                _id: '$VanChuyenInfo.NhanVien',
-                deliveryCount: { $sum: 1 }
-            }}
+            {
+                $group: {
+                    _id: '$VanChuyenInfo.NhanVien',
+                    deliveryCount: { $sum: 1 }
+                }
+            }
         ]);
 
-        // 4. TỔNG HỢP R&D (Kỹ thuật)
+        // 4. TỔNG HỢP R&D (Kỹ thuật pha chế)
         // Lưu ý: NhatKyTestMau lưu tester là string (tên), nên ta aggregate theo tên
         const rdStats = await NhatKyTestMau.aggregate([
             { $unwind: '$LichSuPhienBan' },
-            { $match: { 'LichSuPhienBan.result': 'pass' } },
-            { $group: {
-                _id: '$LichSuPhienBan.tester',
-                testCount: { $sum: 1 }
-            }}
+            {
+                $group: {
+                    _id: '$LichSuPhienBan.tester',
+                    testCount: { $sum: 1 },
+                    passCount: { $sum: { $cond: [{ $eq: ['$LichSuPhienBan.result', 'pass'] }, 1, 0] } },
+                    failCount: { $sum: { $cond: [{ $eq: ['$LichSuPhienBan.result', 'fail'] }, 1, 0] } }
+                }
+            }
         ]);
+
+        let globalTotalTests = 0;
+        let globalPassTests = 0;
+        let globalFailTests = 0;
+
+        rdStats.forEach(stat => {
+            globalTotalTests += stat.testCount;
+            globalPassTests += stat.passCount;
+            globalFailTests += stat.failCount;
+        });
+
+        const errorRate = globalTotalTests > 0 ? parseFloat(((globalFailTests / globalTotalTests) * 100).toFixed(1)) : 0;
+        const passRate = globalTotalTests > 0 ? parseFloat(((globalPassTests / globalTotalTests) * 100).toFixed(1)) : 0;
+
+        const mixingChartData = rdStats
+            .filter(s => s._id)
+            .map(s => {
+                const isSystem = s._id.toLowerCase().includes('hệ thống') || s._id.toLowerCase().includes('system');
+                let displayName = '';
+                if (isSystem) {
+                    displayName = 'Hợp đồng pha chế';
+                } else {
+                    const nameParts = s._id.split(' ');
+                    displayName = nameParts.length > 2 ? nameParts.slice(-2).join(' ') : s._id;
+                }
+                return {
+                    name: displayName,
+                    pass: s.passCount,
+                    fail: s.failCount,
+                    total: s.testCount
+                };
+            })
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 5);
 
         // 5. TỔNG HỢP CSKH (Hỗ trợ)
         const supportStats = await PhanHoiHoTro.aggregate([
-            { $group: {
-                _id: '$AssignedTo',
-                ticketCount: { $sum: 1 }
-            }}
+            {
+                $group: {
+                    _id: '$AssignedTo',
+                    ticketCount: { $sum: 1 }
+                }
+            }
         ]);
 
         // 6. TRỘN DỮ LIỆU VÀO NHÂN VIÊN
@@ -57,10 +100,10 @@ exports.getPerformanceStats = async (req, res) => {
 
             // Doanh số
             const sales = salesStats.find(s => s._id && s._id.toString() === nvId) || { totalRevenue: 0, orderCount: 0 };
-            
+
             // Logistics
             const logistics = logisticsStats.find(l => l._id && l._id.toString() === nvId) || { deliveryCount: 0 };
-            
+
             // R&D (Dựa trên tên nhân viên)
             const rd = rdStats.find(r => r._id === nvName) || { testCount: 0 };
 
@@ -80,8 +123,8 @@ exports.getPerformanceStats = async (req, res) => {
                 deliveries: logistics.deliveryCount,
                 tests: rd.testCount,
                 customers: support.ticketCount,
-                satisfaction: nv.HieuSuatKPI?.diemKPI || 90, 
-                level: nv.HieuSuatKPI?.diemKPI >= 95 ? 'Excellent' : (nv.HieuSuatKPI?.diemKPI >= 80 ? 'Good' : 'Average')
+                satisfaction: nv.HieuSuatKPI?.diemKPI || 90,
+                level: nv.HieuSuatKPI?.diemKPI >= 95 ? 'Excellent' : (nv.HieuSuatKPI?.diemKPI >= 85 ? 'Good' : 'Average')
             };
         });
 
@@ -105,10 +148,12 @@ exports.getPerformanceStats = async (req, res) => {
             summary: {
                 totalRevenue,
                 bestStaff,
-                errorRate: 1.2 // Mock figure for now unless we have a specific error log collection
+                errorRate,
+                passRate
             },
             charts: {
                 topSales: topSalesStaff,
+                mixingStats: mixingChartData,
                 // Radar data based on global avg or specific staff if passed in query
                 radar: [
                     { subject: 'Kỹ thuật', A: 120, fullMark: 150 },

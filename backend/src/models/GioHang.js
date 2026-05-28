@@ -6,6 +6,10 @@ const gioHangItemSchema = new mongoose.Schema({
     ref: 'SanPhamSon',
     required: true
   },
+  MaMau: {
+    type: String,
+    default: 'N/A'
+  },
   SoLuong: {
     type: Number,
     required: true,
@@ -26,6 +30,14 @@ const gioHangSchema = new mongoose.Schema({
   },
   Items: [gioHangItemSchema],
   TongTienTamTinh: {
+    type: Number,
+    default: 0
+  },
+  TienThue: {
+    type: Number,
+    default: 0
+  },
+  TongThanhToan: {
     type: Number,
     default: 0
   }

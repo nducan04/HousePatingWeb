@@ -10,6 +10,7 @@ const lichSuPhienBanSchema = new mongoose.Schema({
   inputWeight: { type: Number, default: 0 }, // Khối lượng đầu vào (kg)
   outputWeight: { type: Number, default: 0 }, // Khối lượng thực thu (kg)
   images: [{ type: String }], // Mảng URL ảnh (để sau này gắn ImageKit)
+  imageUrl: { type: String }, // URL ảnh đại diện cho mẻ test (IPFS)
   tester: { type: String, required: true },
   testerCode: { type: String, default: '' }
 }, { _id: false });

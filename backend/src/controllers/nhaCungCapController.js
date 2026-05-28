@@ -142,7 +142,7 @@ exports.getMyProfile = async (req, res) => {
 exports.getMyMaterials = async (req, res) => {
   try {
     let supplierId;
-    if (req.user.role === 'Admin' && req.query.supplierId) {
+    if (req.user.VaiTro === 'Admin' && req.query.supplierId) {
       supplierId = req.query.supplierId;
     } else {
       const supplier = await NhaCungCap.findOne({ AccountID: req.user._id });
@@ -163,7 +163,7 @@ exports.getMyMaterials = async (req, res) => {
 exports.createMyMaterial = async (req, res) => {
   try {
     let supplierId;
-    if (req.user.role === 'Admin' && req.body.NhaCungCap) {
+    if (req.user.VaiTro === 'Admin' && req.body.NhaCungCap) {
       supplierId = req.body.NhaCungCap;
     } else {
       const supplier = await NhaCungCap.findOne({ AccountID: req.user._id });
@@ -200,7 +200,7 @@ exports.createMyMaterial = async (req, res) => {
 exports.updateMyMaterial = async (req, res) => {
   try {
     let supplierId;
-    if (req.user.role === 'Admin') {
+    if (req.user.VaiTro === 'Admin') {
       const material = await NguyenVatLieu.findByIdAndUpdate(req.params.materialId, req.body, { new: true });
       if (!material) {
         return res.status(404).json({ success: false, error: 'Không tìm thấy vật tư' });

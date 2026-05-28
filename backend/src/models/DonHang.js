@@ -43,18 +43,22 @@ const donHangSchema = new mongoose.Schema({
       required: true
     }
   }],
+  TienThue: {
+    type: Number,
+    default: 0
+  },
   TongTien: {
     type: Number,
     required: true
   },
   TrangThai: {
     type: String,
-    enum: ['CHO_XAC_NHAN', 'DANG_XU_LY', 'DANG_GIAO', 'DA_GIAO', 'DA_HUY'],
+    enum: ['CHO_XAC_NHAN', 'DANG_XU_LY', 'DA_XU_LY_XONG', 'DANG_GIAO', 'DA_GIAO', 'DA_HUY'],
     default: 'CHO_XAC_NHAN'
   },
   PhuongThucThanhToan: {
     type: String,
-    enum: ['COD', 'BANK_TRANSFER', 'WEB3', 'TIEN_MAT', 'CHUYEN_KHOAN', 'GHI_NO'],
+    enum: ['COD', 'BANK_TRANSFER', 'WEB3', 'TIEN_MAT', 'CHUYEN_KHOAN', 'GHI_NO', 'MOMO'],
     default: 'TIEN_MAT'
   },
   TrangThaiThanhToan: {
@@ -65,6 +69,12 @@ const donHangSchema = new mongoose.Schema({
   DiaChiGiaoHang: {
     type: String,
     required: true
+  },
+  TenNguoiNhan: {
+    type: String,
+  },
+  SDTNguoiNhan: {
+    type: String,
   },
   HanXacNhan: {
     type: Date,
@@ -84,6 +94,12 @@ const donHangSchema = new mongoose.Schema({
     LoaiBot: { type: String, default: 'AkzoNobel Interpon' },
     NhietDoSay: { type: String, default: '195°C / 15 phút' },
     DoDayLopPhu: { type: String, default: '75 µm' }
+  },
+  DanhGia: {
+    ChatLuongSanPham: { type: Number, min: 1, max: 5 },
+    ChatLuongDichVu: { type: Number, min: 1, max: 5 },
+    BinhLuan: String,
+    NgayDanhGia: Date
   }
 }, {
   timestamps: true

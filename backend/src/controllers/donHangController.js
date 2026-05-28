@@ -12,7 +12,7 @@ exports.checkoutFromCart = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, ghiChu } = req.body;
+        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, phuongThucThanhToan, ghiChu } = req.body;
 
         // 1. Lấy giỏ hàng
         const cart = await GioHang.findOne({ SessionId: sessionId }).populate('Items.SanPham');
@@ -35,7 +35,7 @@ exports.checkoutFromCart = async (req, res) => {
             orderItems.push({
                 SanPham: sp._id,
                 TenSanPham: sp.TenDongSon,
-                MaMau: sp.MaMau || 'BASE',
+                MaMau: item.MaMau,
                 SoLuong: item.SoLuong,
                 DonGia: sp.DonGiaCoSo,
                 ThanhTien: sp.DonGiaCoSo * item.SoLuong
@@ -45,6 +45,19 @@ exports.checkoutFromCart = async (req, res) => {
 
         // 3. Xử lý mã giảm giá (Voucher)
         let discountAmount = 0;
+        let appliedVoucherId = null;
+
+        // 3.5 Lấy đúng ID KhachHang từ TaiKhoan ID (chuyển lên trên để dùng cho voucher tặng riêng)
+        const KhachHangModel = require('../models/KhachHang');
+        let realKhachHangId = khachHangId;
+        let kh = null;
+        if (khachHangId) {
+            kh = await KhachHangModel.findOne({ $or: [{ AccountID: khachHangId }, { _id: khachHangId }] }).session(session);
+            if (kh) {
+                realKhachHangId = kh._id;
+            }
+        }
+
         if (discountCode) {
             const voucher = await KhuyenMai.findOne({ MaVoucher: discountCode.toUpperCase() }).session(session);
             if (voucher && voucher.TrangThai === 'DANG_DIEN_RA') {
@@ -55,33 +68,46 @@ exports.checkoutFromCart = async (req, res) => {
                     } else if (voucher.LoaiGiamGia === 'GIAM_THANG') {
                         discountAmount = voucher.MucGiam;
                     }
-                    
+
                     // Cập nhật lượt dùng voucher
                     voucher.SoLuongDaDung += 1;
                     if (voucher.SoLuongDaDung >= voucher.SoLuongToiDa) voucher.TrangThai = 'DA_KET_THUC';
                     await voucher.save({ session });
+                    appliedVoucherId = voucher._id;
                 }
-            }
-        }
-
-        // 3.5 Lấy đúng ID KhachHang từ TaiKhoan ID
-        const KhachHangModel = require('../models/KhachHang');
-        let realKhachHangId = khachHangId;
-        if (khachHangId) {
-            const kh = await KhachHangModel.findOne({ $or: [{ AccountID: khachHangId }, { _id: khachHangId }] }).session(session);
-            if (kh) {
-                realKhachHangId = kh._id;
+            } else if (kh && kh.Vouchers) {
+                // Thử kiểm tra voucher được tặng riêng
+                const giftedVoucher = kh.Vouchers.find(v => v.VoucherCode.toUpperCase() === discountCode.toUpperCase());
+                if (giftedVoucher && !giftedVoucher.IsUsed && new Date(giftedVoucher.ExpirationDate) >= new Date()) {
+                    if (giftedVoucher.DiscountPercent > 0) {
+                        discountAmount = (subtotal * giftedVoucher.DiscountPercent) / 100;
+                    } else if (giftedVoucher.DiscountAmount > 0) {
+                        discountAmount = giftedVoucher.DiscountAmount;
+                    }
+                    giftedVoucher.IsUsed = true;
+                    await kh.save({ session });
+                }
             }
         }
 
         // 4. Tạo đơn hàng
         const maDonHang = `DH${Date.now().toString().slice(-8)}`;
+        const finalSubtotal = subtotal - discountAmount;
+        const taxAmount = finalSubtotal >= 5000000 ? finalSubtotal * 0.08 : 0;
+        const totalAmount = finalSubtotal + taxAmount;
+
         const donHang = new DonHang({
             MaDonHang: maDonHang,
             KhachHang: realKhachHangId,
+            TenNguoiNhan: typeof kh !== 'undefined' && kh ? kh.TenKhachHang : '',
+            SDTNguoiNhan: typeof kh !== 'undefined' && kh ? kh.SDT : '',
             Items: orderItems,
-            TongTien: subtotal - discountAmount,
+            TienThue: taxAmount,
+            TongTien: totalAmount,
+            GiamGia: discountAmount,
+            KhuyenMai: appliedVoucherId,
             TrangThai: 'CHO_XAC_NHAN',
+            PhuongThucThanhToan: phuongThucThanhToan || 'TIEN_MAT',
             DiaChiGiaoHang: diaChiGiaoHang,
             GhiChu: ghiChu
         });
@@ -105,8 +131,12 @@ exports.checkoutFromCart = async (req, res) => {
 // Get all orders with filtering
 exports.getOrders = async (req, res) => {
     try {
-        const { status } = req.query;
+        const { status, customer } = req.query;
         let query = {};
+
+        if (customer) {
+            query.KhachHang = customer;
+        }
 
         // RBAC: Khách hàng chỉ thấy đơn của mình
         if (req.user && (req.user.VaiTro === 'KhachHangB2C' || req.user.VaiTro === 'KhachHangB2B')) {
@@ -140,7 +170,7 @@ exports.getOrderById = async (req, res) => {
             .populate('Items.SanPham')
             .populate('KhuyenMai')
             .populate('NhanVienPhuTrach', 'MaNV HoTen');
-        
+
         if (!order) {
             return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
         }
@@ -164,7 +194,7 @@ exports.createOrder = async (req, res) => {
                 // Note: The discount amount (GiamGia) should be provided by the frontend 
                 // but we could also calculate it here for extra safety.
                 // For now, let's assume the frontend sends the calculated GiamGia.
-                
+
                 // Update voucher used count
                 voucher.SoLuongDaDung += 1;
                 if (voucher.SoLuongDaDung >= voucher.SoLuongToiDa) voucher.TrangThai = 'DA_KET_THUC';
@@ -200,15 +230,15 @@ exports.updateStatus = async (req, res) => {
 
         const oldStatus = order.TrangThai;
 
-        // Nếu chuyển sang DANG_XU_LY thì trừ kho
-        if (status === 'DANG_XU_LY' && oldStatus === 'CHO_XAC_NHAN') {
+        // 1. Nếu đơn hàng được giao (DANG_GIAO hoặc DA_GIAO), trừ tồn kho tạm giữ
+        if ((status === 'DANG_GIAO' || status === 'DA_GIAO') && (oldStatus === 'CHO_XAC_NHAN' || oldStatus === 'DANG_XU_LY')) {
             for (let item of order.Items) {
                 const sp = await SanPhamSon.findById(item.SanPham).session(session);
                 if (!sp) throw new Error(`Không tìm thấy sản phẩm ${item.TenSanPham}`);
                 if (sp.TongTonKho < item.SoLuong) {
                     throw new Error(`Sản phẩm ${item.TenSanPham} không đủ tồn kho (Cần: ${item.SoLuong}, Kho có: ${sp.TongTonKho})`);
                 }
-                
+
                 sp.TongTonKho -= item.SoLuong;
                 sp.SoLuongDaBan += item.SoLuong;
                 await sp.save({ session });
@@ -217,7 +247,7 @@ exports.updateStatus = async (req, res) => {
 
         // Nếu HỦY mà trạng thái trước đó đã trừ kho thì phải HOÀN KHO
         if (status === 'DA_HUY' && (oldStatus === 'DANG_XU_LY' || oldStatus === 'DANG_GIAO')) {
-             for (let item of order.Items) {
+            for (let item of order.Items) {
                 const sp = await SanPhamSon.findById(item.SanPham).session(session);
                 if (sp) {
                     sp.TongTonKho += item.SoLuong;
@@ -254,7 +284,7 @@ exports.updateStatus = async (req, res) => {
 
                 // Tạo mã vận chuyển
                 const maVC = `DEL-${order.MaDonHang}-${Date.now().toString().slice(-4)}`;
-                
+
                 // Chuẩn bị dữ liệu lô hàng từ Items
                 const mauSon = order.Items.length > 0 ? order.Items[0].MaMau : 'N/A';
                 const soKien = order.Items.reduce((acc, current) => acc + current.SoLuong, 0);
@@ -268,7 +298,7 @@ exports.updateStatus = async (req, res) => {
                         MauSon: mauSon
                     },
                     VanChuyenInfo: {
-                        NhanVien: finalTaiXeId || null, 
+                        NhanVien: finalTaiXeId || null,
                         SDT: finalSdtTaiXe || '098.xxx.xxxx',
                         PhiVC: order.PhuPhi || 0
                     },
@@ -325,7 +355,7 @@ exports.updateDeposit = async (req, res) => {
         if (!order) return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
 
         order.DaCoc = amount;
-        
+
         // Update payment status automatically based on amount
         if (order.DaCoc >= order.TongTien) {
             order.TrangThaiThanhToan = 'DA_THANH_TOAN';
@@ -347,6 +377,153 @@ exports.deleteOrder = async (req, res) => {
     try {
         await DonHang.findByIdAndDelete(req.params.id);
         res.status(200).json({ success: true, message: 'Đã xóa đơn hàng' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Update order info by customer (only allowed when pending)
+exports.updateOrderInfo = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { tenNguoiNhan, sdtNguoiNhan, DiaChiGiaoHang } = req.body;
+
+        const order = await DonHang.findById(id);
+        if (!order) return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+
+        // Ensure only the owner or an admin/staff can update
+        if (req.user.VaiTro === 'KhachHangB2B' || req.user.VaiTro === 'KhachHangB2C') {
+            // Find user's KhachHang profile
+            const KhachHang = require('../models/KhachHang');
+            const khProfile = await KhachHang.findOne({ AccountID: req.user._id });
+            if (!khProfile || order.KhachHang.toString() !== khProfile._id.toString()) {
+                return res.status(403).json({ success: false, message: 'Bạn không có quyền sửa đơn hàng này' });
+            }
+            if (order.TrangThai !== 'CHO_XAC_NHAN') {
+                return res.status(400).json({ success: false, message: 'Chỉ có thể sửa thông tin khi đơn hàng đang chờ xác nhận' });
+            }
+        }
+
+        // We update the fields. In DonHang model, there might not be explicit tenNguoiNhan/sdtNguoiNhan fields,
+        // we might store them in DiaChiGiaoHang or add them. Let's see DonHang model!
+        // Wait, the prompt says "thông tin người nhận bao gồm tên, số điện thoại, địa chỉ nhận hàng".
+        // Let's assume these are stored.
+        if (DiaChiGiaoHang) order.DiaChiGiaoHang = DiaChiGiaoHang;
+
+        // If the model supports these:
+        if (tenNguoiNhan !== undefined) order.TenNguoiNhan = tenNguoiNhan;
+        if (sdtNguoiNhan !== undefined) order.SDTNguoiNhan = sdtNguoiNhan;
+
+        await order.save();
+        res.status(200).json({ success: true, message: 'Đã cập nhật thông tin nhận hàng thành công', data: order });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Customer cancel order
+exports.cancelOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const order = await DonHang.findById(id);
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+        }
+
+        if (req.user.VaiTro === 'KhachHangB2B' || req.user.VaiTro === 'KhachHangB2C') {
+            const KhachHang = require('../models/KhachHang');
+            const khProfile = await KhachHang.findOne({ AccountID: req.user._id });
+            if (!khProfile || order.KhachHang.toString() !== khProfile._id.toString()) {
+                return res.status(403).json({ success: false, message: 'Bạn không có quyền hủy đơn hàng này' });
+            }
+        }
+
+        if (order.TrangThai !== 'CHO_XAC_NHAN') {
+            return res.status(400).json({ success: false, message: 'Chỉ có thể hủy đơn hàng khi đang ở trạng thái Chờ xác nhận' });
+        }
+
+        order.TrangThai = 'DA_HUY';
+        await order.save();
+
+        res.status(200).json({ success: true, message: 'Hủy đơn hàng thành công', data: order });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Customer rate order
+exports.rateOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { ChatLuongSanPham, ChatLuongDichVu, BinhLuan } = req.body;
+        const order = await DonHang.findById(id);
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+        }
+
+        // Only allow rating once
+        if (order.DanhGia && order.DanhGia.NgayDanhGia) {
+            return res.status(400).json({ success: false, message: 'Đơn hàng này đã được đánh giá' });
+        }
+
+        // Must be DA_GIAO
+        if (order.TrangThai !== 'DA_GIAO') {
+            return res.status(400).json({ success: false, message: 'Chỉ có thể đánh giá đơn hàng đã giao thành công' });
+        }
+
+        order.DanhGia = {
+            ChatLuongSanPham: ChatLuongSanPham,
+            ChatLuongDichVu: ChatLuongDichVu,
+            BinhLuan: BinhLuan,
+            NgayDanhGia: new Date()
+        };
+
+        await order.save();
+
+        // Update SanPhamSon rating
+        if (ChatLuongSanPham && order.Items && order.Items.length > 0) {
+            const SanPhamSon = require('../models/SanPhamSon');
+            const KhachHang = require('../models/KhachHang');
+            const khProfile = await KhachHang.findOne({ AccountID: req.user._id });
+            const khTen = khProfile ? khProfile.HoTen : 'Khách hàng ẩn danh';
+
+            for (const item of order.Items) {
+                if (item.SanPham) {
+                    await SanPhamSon.findByIdAndUpdate(item.SanPham, {
+                        $push: {
+                            DanhGia: {
+                                KhachHang: khTen,
+                                SoSao: ChatLuongSanPham,
+                                BinhLuan: BinhLuan || '',
+                                NgayDanhGia: new Date()
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        // Update NhanVien KPI
+        if (ChatLuongDichVu && order.NhanVienPhuTrach) {
+            const NhanVien = require('../models/NhanVien');
+            const nv = await NhanVien.findById(order.NhanVienPhuTrach);
+            if (nv) {
+                // Convert 5 stars to 100 points
+                const newScore = (ChatLuongDichVu / 5) * 100;
+                // Simple moving average (assume 10 ratings if we don't know total count, just push it up/down)
+                const currentScore = nv.HieuSuatKPI?.diemKPI || 85;
+                const updatedScore = Math.round((currentScore * 9 + newScore) / 10);
+                
+                await NhanVien.findByIdAndUpdate(order.NhanVienPhuTrach, {
+                    'HieuSuatKPI.diemKPI': updatedScore,
+                    'HieuSuatKPI.diemDanhGia': updatedScore
+                });
+            }
+        }
+
+        res.status(200).json({ success: true, message: 'Đánh giá đơn hàng thành công', data: order });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

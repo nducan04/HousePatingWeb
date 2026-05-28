@@ -4,7 +4,14 @@ const NhanVien = require('../models/NhanVien');
 // @desc    Lấy danh sách ticket bảo hành
 exports.getTickets = async (req, res) => {
     try {
-        const data = await BaoHanh.find()
+        let query = {};
+        if (req.user && (req.user.VaiTro === 'KhachHangB2B' || req.user.VaiTro === 'KhachHangB2C')) {
+            const KhachHang = require('../models/KhachHang');
+            const kh = await KhachHang.findOne({ AccountID: req.user._id });
+            if (kh) query.KhachHang = kh._id;
+        }
+
+        const data = await BaoHanh.find(query)
             .populate('KhachHang', 'MaKH TenKhachHang')
             .populate('KyThuatKCS', 'MaNV HoTen')
             .sort({ createdAt: -1 });
@@ -18,7 +25,7 @@ exports.getTickets = async (req, res) => {
 // @desc    Tạo log bảo hành mới
 exports.createTicket = async (req, res) => {
     try {
-        const { MaBaoHanh, KhachHang, SanPham, NoiDungLoi, KyThuatKCS, HanBaoHanh, NgayMua } = req.body;
+        const { MaBaoHanh, KhachHang, SanPham, NoiDungLoi, KyThuatKCS, HanBaoHanh, NgayMua, HinhAnh } = req.body;
 
         let ktvPhuTrach = KyThuatKCS;
         // Nếu không gửi KTV lên, thử tự gán nếu người đang login là KTV
@@ -34,7 +41,10 @@ exports.createTicket = async (req, res) => {
             NoiDungLoi,
             KyThuatKCS: ktvPhuTrach,
             HanBaoHanh: HanBaoHanh || new Date(Date.now() + 5 * 365 * 24 * 60 * 60 * 1000), // Mặc định 5 năm
-            NgayMua
+            NgayMua,
+            DonHang: req.body.DonHang,
+            HopDong: req.body.HopDong,
+            HinhAnh: HinhAnh || []
         });
 
         await newTicket.save();
@@ -62,11 +72,13 @@ exports.getTicketById = async (req, res) => {
 exports.updateStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status, phuongAn, assignedTo } = req.body;
+        const { status, phuongAn, assignedTo, KhachHangDanhGia } = req.body;
 
-        const updateData = { TrangThai: status };
+        const updateData = {};
+        if (status) updateData.TrangThai = status;
         if (phuongAn) updateData.PhuongAnGiaiQuyet = phuongAn;
         if (assignedTo) updateData.KyThuatKCS = assignedTo;
+        if (KhachHangDanhGia) updateData.KhachHangDanhGia = KhachHangDanhGia;
 
         const item = await BaoHanh.findByIdAndUpdate(
             id,

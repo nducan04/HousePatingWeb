@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import AuthProvider from '@/lib/components/AuthProvider';
+import { Inter } from 'next/font/google';
+import { Toaster } from 'react-hot-toast';
+import AlertOverride from '@/components/AlertOverride';
+
+const inter = Inter({
+  subsets: ['latin', 'vietnamese'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'VTSC PaintPro | Quản lý Sơn Tĩnh Điện',
@@ -14,10 +22,44 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi">
+    <html lang="vi" className={inter.className}>
       <body>
         <AuthProvider>
+          <AlertOverride />
           {children}
+          <Toaster 
+            position="top-center" 
+            toastOptions={{
+              className: 'font-bold text-sm',
+              duration: 4000,
+              style: {
+                background: '#333',
+                color: '#fff',
+                borderRadius: '12px',
+                padding: '16px 24px',
+              },
+              success: {
+                style: {
+                  background: '#059669',
+                  color: 'white',
+                },
+                iconTheme: {
+                  primary: 'white',
+                  secondary: '#059669',
+                },
+              },
+              error: {
+                style: {
+                  background: '#e11d48',
+                  color: 'white',
+                },
+                iconTheme: {
+                  primary: 'white',
+                  secondary: '#e11d48',
+                },
+              },
+            }}
+          />
         </AuthProvider>
       </body>
     </html>

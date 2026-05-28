@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { MapPin, Truck, CheckCircle, Clock } from 'lucide-react';
+import { toast } from '@/lib/utils/notification';
 
 const mockTrackingHistory = [
   {
@@ -56,7 +57,7 @@ export default function OrderTrackingMap() {
     
     setCurrentLocation('');
     setUpdateContent('');
-    alert('Đã cập nhật vị trí và trạng thái!');
+    toast.success('Đã cập nhật vị trí và trạng thái!');
   };
 
   return (

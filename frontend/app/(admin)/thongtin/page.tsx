@@ -60,7 +60,7 @@ export default function ThongTinCaNhanPage() {
 
     try {
       const isEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
-      const endpoint = isEmployee ? `/nhan-vien/${user?.profile?._id}` : `/khach-hang/${user?.profile?._id}`;
+      const endpoint = isEmployee ? `/staff/${user?.profile?._id}` : `/khach-hang/${user?.profile?._id}`;
 
       const payload: any = {
         SDT: formData.phone,
@@ -135,11 +135,11 @@ export default function ThongTinCaNhanPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-lg shadow-md transition-all duration-300 overflow-hidden overflow-hidden">
         {/* Header/Cover Profile Style */}
         <div className="h-32 bg-gradient-to-r from-blue-100 to-indigo-100 relative">
           <div className="absolute -bottom-16 left-8">
-            <div className="w-32 h-32 rounded-2xl bg-white border-4 border-white overflow-hidden shadow-2xl flex items-center justify-center text-4xl font-bold text-blue-600 uppercase" style={{ background: 'linear-gradient(135deg, #f0f9ff, #e0e7ff)' }}>
+            <div className="w-32 h-32 rounded-lg bg-white border-4 border-white overflow-hidden shadow-2xl flex items-center justify-center text-4xl font-bold text-blue-600 uppercase" style={{ background: 'linear-gradient(135deg, #f0f9ff, #e0e7ff)' }}>
               {formData.displayName[0] || '?'}
             </div>
             <button className="absolute bottom-1 right-1 p-2 bg-blue-600 rounded-lg text-white shadow-lg hover:bg-blue-500 transition-colors">
@@ -151,9 +151,9 @@ export default function ThongTinCaNhanPage() {
         <div className="pt-20 pb-8 px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
             <div>
-              <h1 className="text-3xl font-extrabold text-slate-900 mb-1">{formData.displayName}</h1>
+              <h1 className="text-3xl font-medium text-slate-900 mb-1">{formData.displayName}</h1>
               <p className="text-slate-500 flex items-center gap-2">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 uppercase">{user.role}</span>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-amber-50 text-amber-700 uppercase">{user.role}</span>
                 {isEmployee && <span>• {formData.department}</span>}
                 {!isEmployee && <span>• {user.profile?.MaKH}</span>}
               </p>
@@ -162,7 +162,7 @@ export default function ThongTinCaNhanPage() {
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-6 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-6 flex items-center gap-2 shadow-lg shadow-blue-500/20"
               >
                 {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                 {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
@@ -171,13 +171,13 @@ export default function ThongTinCaNhanPage() {
           </div>
 
           {success && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-xl mb-6 animate-in fade-in slide-in-from-top-2">
+            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-md mb-6 animate-in fade-in slide-in-from-top-2">
               {success}
             </div>
           )}
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl mb-6">
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-md mb-6">
               {error}
             </div>
           )}
@@ -195,7 +195,7 @@ export default function ThongTinCaNhanPage() {
                     <input
                       type="text"
                       name="displayName"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
+                      className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                       value={formData.displayName}
                       onChange={handleChange}
                     />
@@ -209,7 +209,7 @@ export default function ThongTinCaNhanPage() {
                     <input
                       type="date"
                       name="dob"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
+                      className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                       value={formData.dob}
                       onChange={handleChange}
                     />
@@ -223,7 +223,7 @@ export default function ThongTinCaNhanPage() {
                       <label className="block text-sm font-medium text-slate-500 mb-1">Phòng ban</label>
                       <input
                         type="text"
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all opacity-70"
+                        className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all opacity-70"
                         value={formData.department}
                         readOnly
                       />
@@ -232,7 +232,7 @@ export default function ThongTinCaNhanPage() {
                       <label className="block text-sm font-medium text-slate-500 mb-1">Chức vụ</label>
                       <input
                         type="text"
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all opacity-70"
+                        className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all opacity-70"
                         value={formData.jobTitle}
                         readOnly
                       />
@@ -256,7 +256,7 @@ export default function ThongTinCaNhanPage() {
                     <input
                       type="text"
                       name="phone"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
+                      className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                       value={formData.phone}
                       onChange={handleChange}
                     />
@@ -270,7 +270,7 @@ export default function ThongTinCaNhanPage() {
                     <input
                       type="email"
                       name="email"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
+                      className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                       value={formData.email}
                       onChange={handleChange}
                     />
@@ -283,7 +283,7 @@ export default function ThongTinCaNhanPage() {
                   <div className="relative">
                     <textarea
                       name="address"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10 py-3 min-h-[100px]"
+                      className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10 py-3 min-h-[100px]"
                       value={formData.address}
                       onChange={handleChange}
                     ></textarea>
@@ -318,7 +318,7 @@ export default function ThongTinCaNhanPage() {
                   <label className="block text-sm font-medium text-slate-500 mb-1">Mật khẩu hiện tại</label>
                   <input
                     type="password"
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-md px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
                     value={passwordData.oldPassword}
                     onChange={(e) => setPasswordData(prev => ({ ...prev, oldPassword: e.target.value }))}
                     required
@@ -329,7 +329,7 @@ export default function ThongTinCaNhanPage() {
                   <label className="block text-sm font-medium text-slate-500 mb-1">Mật khẩu mới</label>
                   <input
                     type="password"
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-md px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
                     value={passwordData.newPassword}
                     onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
                     required
@@ -340,7 +340,7 @@ export default function ThongTinCaNhanPage() {
                   <label className="block text-sm font-medium text-slate-500 mb-1">Nhập lại mật khẩu mới</label>
                   <input
                     type="password"
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-md px-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
                     value={passwordData.confirmPassword}
                     onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     required
@@ -351,14 +351,14 @@ export default function ThongTinCaNhanPage() {
                   <button
                     type="button"
                     onClick={() => setIsChangePasswordOpen(false)}
-                    className="flex-1 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-all border-none cursor-pointer"
+                    className="flex-1 px-4 py-3 rounded-md font-bold text-sm text-slate-500 hover:bg-slate-100 transition-all border-none cursor-pointer"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
                     disabled={passwordLoading}
-                    className="flex-1 px-4 py-3 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center border-none cursor-pointer"
+                    className="flex-1 px-4 py-3 rounded-md font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center border-none cursor-pointer"
                   >
                     {passwordLoading ? <Loader2 size={18} className="animate-spin" /> : 'Cập nhật'}
                   </button>

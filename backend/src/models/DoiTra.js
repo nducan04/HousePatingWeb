@@ -22,6 +22,10 @@ const doiTraSchema = new mongoose.Schema({
     ref: 'KhachHang',
     required: true
   },
+  HopDong: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'HopDong'
+  },
   LyDo: {
     type: String,
     required: [true, 'Vui lòng nhập lý do đổi trả'],
@@ -40,6 +44,9 @@ const doiTraSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  HinhAnh: [{
+    type: String
+  }],
   NhanVienPhuTrach: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'NhanVien'
@@ -52,6 +59,11 @@ const doiTraSchema = new mongoose.Schema({
   PhuongAnGiaiQuyet: {
     type: String,
     trim: true
+  },
+  KhachHangDanhGia: {
+    type: Number,
+    min: 1,
+    max: 5
   }
 }, {
   timestamps: true
