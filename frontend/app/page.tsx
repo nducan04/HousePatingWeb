@@ -423,7 +423,7 @@ export default function HomePage() {
 
         alert("Đặt hàng thành công!");
         if (user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C") {
-          router.push("/my-orders");
+          router.push("/don-hang-cua-toi");
         } else {
           router.push("/don-hang");
         }
@@ -618,14 +618,24 @@ export default function HomePage() {
               Sản phẩm
             </Link>
             <Link
+<<<<<<< Updated upstream
               href="/colors"
               className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+=======
+              href="/mau-sac"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
+>>>>>>> Stashed changes
             >
               Bảng màu
             </Link>
             <Link
+<<<<<<< Updated upstream
               href="/tracking"
               className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+=======
+              href="/theo-doi-don-hang"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
+>>>>>>> Stashed changes
             >
               Theo dõi & Tra cứu
             </Link>
@@ -701,13 +711,13 @@ export default function HomePage() {
                   {/* Premium Horizontal Navigation */}
                   <div className="grid grid-cols-4 gap-2 py-3 px-4 bg-slate-50/60 border-b border-slate-100">
                     <Link
-                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/don-hang"}
+                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/my-orders"}
                       className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-blue-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
                       onClick={(e) => {
                         setIsCartOpen(false);
                         if (!isAuthenticated) {
                           e.preventDefault();
-                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/don-hang");
+                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/my-orders");
                         }
                       }}
                     >
@@ -718,7 +728,7 @@ export default function HomePage() {
                     </Link>
 
                     <Link
-                      href="/tracking"
+                      href="/theo-doi-don-hang"
                       className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-emerald-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
                       onClick={(e) => {
                         setIsCartOpen(false);
@@ -752,13 +762,13 @@ export default function HomePage() {
                     </Link>
 
                     <Link
-                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/tracking?tab=rd" : "/rd-tracking"}
+                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/theo-doi-don-hang?tab=rd" : "/rd-tracking"}
                       className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-purple-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
                       onClick={(e) => {
                         setIsCartOpen(false);
                         if (!isAuthenticated) {
                           e.preventDefault();
-                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/tracking?tab=rd" : "/rd-tracking");
+                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/theo-doi-don-hang?tab=rd" : "/rd-tracking");
                         }
                       }}
                     >
@@ -806,7 +816,7 @@ export default function HomePage() {
                             </div>
                             <div className="flex justify-between items-center mt-1">
                               <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
-                                <button 
+                                <button
                                   onClick={() => handleUpdateCartItemQuantity(item.SanPham?._id, item.SoLuong - 1)}
                                   className="w-5 h-5 rounded-md bg-white text-slate-600 hover:text-blue-600 flex items-center justify-center font-bold shadow-sm text-xs"
                                 >
@@ -815,7 +825,7 @@ export default function HomePage() {
                                 <span className="text-[11px] font-bold text-blue-600 w-4 text-center">
                                   {item.SoLuong}
                                 </span>
-                                <button 
+                                <button
                                   onClick={() => handleUpdateCartItemQuantity(item.SanPham?._id, item.SoLuong + 1)}
                                   className="w-5 h-5 rounded-md bg-white text-slate-600 hover:text-blue-600 flex items-center justify-center font-bold shadow-sm text-xs"
                                 >
@@ -983,7 +993,7 @@ export default function HomePage() {
               desc="Tạo và ký kết hợp đồng nguyên tắc mua bán sơn với VTSC."
               ctaText="Quản lý hợp đồng"
               ctaColor="text-red-600"
-              href="/my-contracts"
+              href="/hop-dong-cua-toi"
               onClick={(e: any) => {
                 e.preventDefault();
                 handleServiceClick("/my-contracts");
@@ -997,7 +1007,7 @@ export default function HomePage() {
               desc="Theo dõi lộ trình giao nhận hàng minh bạch, đảm bảo tiến độ công trình của bạn."
               ctaText="Tra cứu"
               ctaColor="text-emerald-600"
-              href="/tracking"
+              href="/theo-doi-don-hang"
             />
             <ServiceCard
               icon={<ShieldCheck size={28} />}
@@ -1007,7 +1017,7 @@ export default function HomePage() {
               desc="Hỗ trợ kỹ thuật 24/7 từ các chuyên gia sơn tĩnh điện hàng đầu Việt Nam."
               ctaText="Chi tiết"
               ctaColor="text-amber-600"
-              href="#"
+              href="my-warranties"
             />
           </div>
         </div>
@@ -1133,7 +1143,7 @@ export default function HomePage() {
               </p>
             </div>
             <Link
-              href="/colors"
+              href="/mau-sac"
               className="text-blue-600 font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline"
             >
               Tra Cứu Toàn Bộ <ArrowRight size={18} />
@@ -1184,7 +1194,6 @@ export default function HomePage() {
               href="/san-pham"
               className="text-blue-600 font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline"
             >
-              Xem tất cả <ArrowRight size={18} />
             </Link>
           </div>
 
@@ -1319,6 +1328,15 @@ export default function HomePage() {
                   </div>
                 ))
             )}
+          </div>
+
+          <div className="mt-12 flex justify-center">
+            <Link
+              href="/san-pham"
+              className="px-8 py-3.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-2xl font-bold text-[14px] transition-all shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center gap-2 no-underline"
+            >
+              Xem tất cả sản phẩm <ArrowRight size={18} />
+            </Link>
           </div>
         </div>
       </section>
@@ -1477,7 +1495,7 @@ export default function HomePage() {
               <ul className="space-y-4 text-slate-300 font-medium text-sm">
                 <li>
                   <Link
-                    href="/tracking"
+                    href="/theo-doi-don-hang"
                     className="hover:text-blue-400 transition-colors no-underline text-slate-300"
                   >
                     - Theo dõi đơn hàng

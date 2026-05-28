@@ -143,7 +143,11 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
       const storedMaterials = localStorage.getItem('rdMaterials');
       if (storedMaterials) {
         const materialsList = JSON.parse(storedMaterials);
+<<<<<<< Updated upstream
         
+=======
+
+>>>>>>> Stashed changes
         // Sum up quantities by materialId to handle potential duplicate selections
         const sumQuantities: { [key: string]: number } = {};
         for (const comp of newVersion.components) {
@@ -412,15 +416,25 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
             {request.sampleImageUrl && (
               <div className="flex flex-col items-center gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-100">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
+<<<<<<< Updated upstream
                 <img 
                   src={request.sampleImageUrl} 
                   alt="Ảnh mẫu khách gửi" 
+=======
+                <img
+                  src={request.sampleImageUrl}
+                  alt="Ảnh mẫu khách gửi"
+>>>>>>> Stashed changes
                   className="w-16 h-16 object-cover rounded-lg shadow-sm cursor-pointer hover:scale-105 transition-transform"
                   onClick={() => window.open(request.sampleImageUrl, '_blank')}
                 />
               </div>
             )}
+<<<<<<< Updated upstream
             
+=======
+
+>>>>>>> Stashed changes
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(255,255,255,0.03)', padding: '12px 20px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{
                 width: 50, height: 50, borderRadius: '50%',
@@ -708,10 +722,17 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 <IpfsDropzone
                   size="small"
                   onCidChange={(cid) => {
+<<<<<<< Updated upstream
                     setNewVersion(prev => ({ 
                       ...prev, 
                       imageCid: cid, 
                       imageUrl: cid ? `https://gateway.pinata.cloud/ipfs/${cid}` : '' 
+=======
+                    setNewVersion(prev => ({
+                      ...prev,
+                      imageCid: cid,
+                      imageUrl: cid ? `https://gateway.pinata.cloud/ipfs/${cid}` : ''
+>>>>>>> Stashed changes
                     }));
                   }}
                 />
@@ -851,10 +872,17 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                     <div className="flex gap-2 mt-2">
                       {v.imageUrl ? (
                         <div className="flex flex-col gap-1 items-start">
+<<<<<<< Updated upstream
                           <img 
                             src={v.imageUrl} 
                             alt={`Mẻ test ${v.version}`} 
                             className="w-20 h-20 object-cover rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform" 
+=======
+                          <img
+                            src={v.imageUrl}
+                            alt={`Mẻ test ${v.version}`}
+                            className="w-20 h-20 object-cover rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform"
+>>>>>>> Stashed changes
                             onClick={() => window.open(v.imageUrl, '_blank')}
                           />
                           <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded uppercase">Ảnh mẻ test</span>

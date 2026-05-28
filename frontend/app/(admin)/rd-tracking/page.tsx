@@ -308,16 +308,22 @@ export default function RDTrackingPage() {
                 <button
                   key={f.id}
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
                   className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
                     filter === f.id
                       ? "bg-white text-blue-600 shadow-sm"
                       : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
                   }`}
+<<<<<<< Updated upstream
 =======
                   className={`px-4 py-2 rounded-md text-[13px] font-bold transition-all duration-200 ${filter === f.id
                     ? "bg-white text-blue-600 shadow-sm"
                     : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
                     }`}
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
                   onClick={() => setFilter(f.id)}
                 >

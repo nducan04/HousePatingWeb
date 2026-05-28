@@ -438,7 +438,7 @@ export default function TrackingPage() {
   });
 
   return (
-    <div className="max-w-[1300px] mx-auto px-4 py-8 animate-in fade-in duration-700 relative">
+    <div className="w-full max-w-[1300px] mx-auto px-6 md:px-12 xl:px-20 py-8 animate-in fade-in duration-700 relative">
       {/* Back Button */}
       <button
         onClick={() => router.back()}
@@ -536,7 +536,7 @@ export default function TrackingPage() {
                       </h3>
                       {/* Enhanced Order Info Cards */}
                       <div className="mt-4 space-y-6">
-
+                        
                         {/* Customer Info Card */}
                         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
                           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -830,7 +830,7 @@ export default function TrackingPage() {
                           <span className="text-[12px] font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-md border border-purple-100">
                             {req.id}
                           </span>
-                          <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5"><Calendar size={12} /> {req.date}</span>
+                          <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5"><Calendar size={12}/> {req.date}</span>
                         </div>
                         <h4 className="font-extrabold text-slate-800 text-lg mb-1">{req.colorCode}</h4>
                         <div className="flex items-center gap-2 mb-4">
@@ -862,164 +862,21 @@ export default function TrackingPage() {
                             Xem chi tiết <ChevronRight size={16} />
                           </Link>
                         </div>
-                        {selectedSample.imageUrl && (
+                        {req.imageUrl && (
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
-<<<<<<< Updated upstream
                             <img 
-                              src={selectedSample.imageUrl} 
+                              src={req.imageUrl} 
                               alt="Ảnh mẫu khách gửi" 
-=======
-                            <img
-                              src={req.imageUrl}
-                              alt="Ảnh mẫu khách gửi"
->>>>>>> Stashed changes
                               className="w-16 h-16 object-cover rounded-lg shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform"
-                              onClick={() => window.open(selectedSample.imageUrl, '_blank')}
+                              onClick={() => window.open(req.imageUrl, '_blank')}
                             />
                           </div>
                         )}
                       </div>
-<<<<<<< Updated upstream
-                    </div>
-
-                    {/* interactive 5-Step Process Timeline */}
-                    <div className="bg-white border border-slate-100 rounded-[28px] p-8 shadow-sm space-y-8">
-                      <div>
-                        <h3 className="text-lg font-black text-slate-800">Bản Đồ Lộ Trình Quy Trình Pha Chế Sơn</h3>
-                        <p className="text-xs text-slate-400 font-medium mt-1">Lịch trình pha chế R&D thời gian thực tương tác với phòng thí nghiệm</p>
-                      </div>
-
-                      {/* 5 Steps Render */}
-                      <div className="space-y-6 relative before:absolute before:left-5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-                        {(() => {
-                          const versions = selectedSample.LichSuPhienBan || [];
-                          const hasVersions = versions.length > 0;
-                          const isApproved = selectedSample.status === 'approved' || selectedSample.status === 'complete';
-                          const hasPassed = versions.some((v: any) => v.result === 'pass') || isApproved;
-                          const isProcessing = selectedSample.status === 'processing' || hasVersions;
-
-                          const steps = [
-                            {
-                              label: 'Tiếp nhận yêu cầu R&D',
-                              desc: 'Yêu cầu của bạn đã được tiếp nhận và ghi nhận thành công trên hệ thống VTSC PaintPro.',
-                              status: 'completed', // always complete
-                              time: selectedSample.date
-                            },
-                            {
-                              label: 'Phân tích Lab & Hạt màu',
-                              desc: 'Chuyên gia Lab VTSC đang phân tích đặc tính quang phổ hạt màu, độ bền và lựa chọn cấu trúc lớp nền.',
-                              status: isProcessing ? 'completed' : 'current',
-                              time: isProcessing ? selectedSample.date : null
-                            },
-                            {
-                              label: 'Pha chế mẫu thử (Lab Mixing)',
-                              desc: 'Hệ thống thiết bị R&D tiến hành pha chế các mẻ test định biên theo công thức tiêu chuẩn AkzoNobel.',
-                              status: hasVersions ? (hasPassed ? 'completed' : 'current') : 'upcoming',
-                              detail: hasVersions ? (
-                                <div className="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-4">
-                                  <div className="text-[11px] font-bold text-purple-600 uppercase tracking-widest flex items-center gap-1.5">
-                                    <Beaker size={12} /> Nhật ký test của R&D Lab ({versions.length} phiên bản)
-                                  </div>
-                                  <div className="space-y-3">
-                                    {versions.map((v: any, index: number) => (
-                                      <div key={index} className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm space-y-2.5">
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs font-black text-slate-800">Phiên bản {v.version}</span>
-                                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${v.result === 'pass'
-                                            ? 'bg-emerald-50 text-emerald-600'
-                                            : 'bg-rose-50 text-rose-600'
-                                            }`}>
-                                            {v.result === 'pass' ? 'ĐẠT CHUẨN KCS' : 'CHƯA ĐẠT - RE-TEST'}
-                                          </span>
-                                        </div>
-                                        {v.parameters && (
-                                          <div className="text-xs text-slate-500 font-medium">
-                                            <strong>Thông số: </strong>{v.parameters}
-                                          </div>
-                                        )}
-                                        {v.feedback && (
-                                          <div className="text-xs text-slate-600 font-medium bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
-                                            <strong>Phản hồi kỹ thuật: </strong>{v.feedback}
-                                          </div>
-                                        )}
-                                        {v.imageUrl && (
-                                          <div className="mt-2">
-                                            <img 
-                                              src={v.imageUrl} 
-                                              alt={`Ảnh mẻ test ${v.version}`} 
-                                              className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:scale-105 transition-transform"
-                                              onClick={() => window.open(v.imageUrl, '_blank')}
-                                            />
-                                          </div>
-                                        )}
-                                        <div className="flex flex-wrap gap-3 text-[10px] font-bold text-slate-400">
-                                          <span>Hao hụt: <strong className="text-slate-700">{(v.inputWeight && v.outputWeight) ? ((v.inputWeight - v.outputWeight) / v.inputWeight * 100).toFixed(1) : '0.0'}%</strong></span>
-                                          <span>Người test: <strong className="text-slate-700">{v.tester || 'Admin'}</strong></span>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              ) : null
-                            },
-                            {
-                              label: 'Kiểm định KCS chất lượng',
-                              desc: 'Mẫu sơn pha chế được test va đập vật lý, đo độ bóng bề mặt và sai lệch sai số màu Delta E.',
-                              status: hasPassed ? (isApproved ? 'completed' : 'current') : 'upcoming'
-                            },
-                            {
-                              label: 'Bàn giao mẫu thực tế & Duyệt',
-                              desc: 'Khách hàng nhận mẫu màu thật, thử nghiệm thực tế tại công trình để phê duyệt sản xuất hàng loạt.',
-                              status: isApproved ? 'completed' : 'upcoming'
-                            }
-                          ];
-
-                          return steps.map((s, i) => {
-                            const isComp = s.status === 'completed';
-                            const isCurr = s.status === 'current';
-                            return (
-                              <div key={i} className="relative pl-10 group">
-                                {/* Step Icon/Dot */}
-                                <div className={`absolute left-0 top-1 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center shadow-sm z-10 transition-all ${isComp
-                                  ? 'bg-emerald-500 text-white'
-                                  : isCurr
-                                    ? 'bg-purple-600 text-white animate-pulse'
-                                    : 'bg-slate-100 text-slate-400'
-                                  }`}>
-                                  {isComp ? <CheckCircle2 size={16} /> : isCurr ? <Clock size={16} /> : <span className="text-[11px] font-bold">{i + 1}</span>}
-                                </div>
-
-                                {/* Step Card */}
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-3">
-                                    <h4 className="font-extrabold text-slate-800 text-sm sm:text-base">{s.label}</h4>
-                                    {isCurr && (
-                                      <span className="text-[9px] font-black bg-purple-100 text-purple-600 px-2 py-0.5 rounded uppercase tracking-wider">Đang Xử Lý</span>
-                                    )}
-                                  </div>
-                                  <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed max-w-xl">{s.desc}</p>
-                                  {s.detail}
-                                </div>
-                              </div>
-                            );
-                          });
-                        })()}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="bg-slate-50 border border-slate-100 rounded-[28px] p-8 h-full flex flex-col items-center justify-center text-center">
-                    <Beaker size={48} className="text-slate-200 mb-4" />
-                    <h4 className="text-lg font-black text-slate-800">Chọn Một Yêu Cầu R&D</h4>
-                    <p className="text-sm text-slate-400 font-medium mt-1">Bấm vào một mẫu bên danh sách trái để theo dõi chi tiết</p>
-                  </div>
-                )}
-=======
                     ))
                   )}
                 </div>
->>>>>>> Stashed changes
               </div>
             </div>
           )}
@@ -1030,13 +887,13 @@ export default function TrackingPage() {
       {showQRModal && qrRequestId && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <button
+            <button 
               onClick={() => setShowQRModal(false)}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors cursor-pointer border-none bg-transparent"
             >
               <XCircle size={24} />
             </button>
-
+            
             <div className="text-center space-y-6">
               <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto">
                 <QrCode size={32} />
@@ -1045,21 +902,21 @@ export default function TrackingPage() {
                 <h3 className="text-xl font-black text-slate-900">Mã QR Lộ Trình</h3>
                 <p className="text-sm text-slate-500 font-medium mt-2">Quét mã dưới đây bằng điện thoại để xem lộ trình R&D.</p>
               </div>
-
+              
               <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center justify-center">
-                <QRCodeSVG
-                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking/rd/${qrRequestId}`}
-                  size={180}
-                  bgColor="#f8fafc"
-                  fgColor="#0f172a"
+                <QRCodeSVG 
+                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking/rd/${qrRequestId}`} 
+                  size={180} 
+                  bgColor="#f8fafc" 
+                  fgColor="#0f172a" 
                   level="H"
                 />
                 <div className="mt-4 font-mono font-bold text-sm text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200 shadow-sm">
                   {qrRequestId}
                 </div>
               </div>
-
-              <button
+              
+              <button 
                 onClick={() => setShowQRModal(false)}
                 className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-600/20 transition-all cursor-pointer border-none"
               >
