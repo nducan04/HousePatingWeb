@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/authStore';
 import { toast } from '@/lib/utils/notification';
 import api from '@/lib/utils/axiosAuth';
-import RouteMap from '@/app/(admin)/shipping/RouteMap';
+import RouteMap from '@/app/(admin)/van-chuyen/RouteMap';
 
 export default function TrackingPage() {
   const router = useRouter();
