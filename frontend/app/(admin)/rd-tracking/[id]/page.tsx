@@ -10,8 +10,8 @@ import {
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
-import { toast } from '@/lib/utils/notification';
 import { paintColors } from '@/lib/data/colors-data';
+import IpfsDropzone from '@/components/IpfsDropzone';
 
 export default function RDDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
@@ -36,7 +36,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
     nhietDo: '',
     hieuSuat: '',
     result: 'pending' as 'pass' | 'fail' | 'pending',
-    components: [{ materialId: '', quantity: 0 }]
+    components: [{ materialId: '', quantity: 0 }],
+    imageCid: '',
+    imageUrl: ''
   });
 
   const [isSigned, setIsSigned] = useState(false);
@@ -48,7 +50,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
   const fetchMaterials = async () => {
     try {
-      const res = await api.get('/kho/nguyen-vat-lieu');
+      const res = await api.get('/inventory/nguyen-vat-lieu');
       if (res.data.success && res.data.data.length > 0) {
         const mapped = res.data.data.map((item: any) => ({
           id: item.MaNVL,
@@ -97,7 +99,8 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 ContractID: { title: req.customer, MaHopDong: 'N/A' },
                 signedBy: req.signedBy,
                 signedAt: req.signedAt,
-                deadline: req.deadline
+                deadline: req.deadline,
+                sampleImageUrl: req.imageUrl
               });
               setIsSigned(req.status === 'approved');
             } else {
@@ -162,7 +165,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         }
 
         if (outOfStockList.length > 0) {
-          toast.error(`❌ Hiện không còn đủ hàng trong kho vui lòng nhập thêm!\nHệ thống sẽ tự động chuyển hướng bạn sang trang Nhập Kho để lập phiếu nhập.`);
+          alert(`❌ Hiện không còn đủ hàng trong kho vui lòng nhập thêm!\nHệ thống sẽ tự động chuyển hướng bạn sang trang Nhập Kho để lập phiếu nhập.`);
           const prefill = outOfStockList.join(",");
           router.push(`/kho?tab=nhapxuat&openNX=true&prefillMaterials=${prefill}`);
           return;
@@ -214,7 +217,8 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 hieuSuat: parseFloat(newVersion.hieuSuat) || 0,
                 tester: (user as any)?.name || 'Admin',
                 testerCode: (user as any)?.MaNhanVien || 'N/A',
-                components: newVersion.components
+                components: newVersion.components,
+                imageUrl: newVersion.imageUrl
               });
 
               requests[reqIndex] = req;
@@ -227,8 +231,8 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
               });
 
               setShowAddVersion(false);
-              setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }] });
-              toast.success('✅ Đã cập nhật phiên bản test mới và trừ tồn kho!');
+              setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
+              alert('✅ Đã cập nhật phiên bản test mới và trừ tồn kho!');
               return;
             }
           }
@@ -257,13 +261,13 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
           setRequest(res.data.data);
           setShowAddVersion(false);
-          setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }] });
-          toast.success('✅ Đã cập nhật phiên bản test mới!');
+          setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
+          alert('✅ Đã cập nhật phiên bản test mới!');
         }
       }
     } catch (err) {
       console.error('Failed to add version:', err);
-      toast.error('❌ Lỗi khi thêm phiên bản mới');
+      alert('❌ Lỗi khi thêm phiên bản mới');
     }
   };
 
@@ -293,7 +297,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 signedAt: req.signedAt
               });
 
-              toast.success('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
+              alert('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
               return;
             }
           }
@@ -302,13 +306,13 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         const res = await api.patch(`/rd-tracking/${id}/sign-kcs`);
         if (res.data.success) {
           setIsSigned(true);
-          toast.success('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
+          alert('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
           fetchData(); // Refresh UI
         }
       }
     } catch (err: any) {
       console.error('Failed to sign KCS:', err);
-      toast.error(err.response?.data?.message || '❌ Lỗi khi ký duyệt KCS');
+      alert(err.response?.data?.message || '❌ Lỗi khi ký duyệt KCS');
     }
   };
 
@@ -404,15 +408,29 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(255,255,255,0.03)', padding: '12px 20px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{
-              width: 50, height: 50, borderRadius: '50%',
-              background: colorInfo?.hex || contract.colorHex || '#333', border: '3px solid rgba(255,255,255,0.1)',
-              boxShadow: `0 0 20px ${colorInfo?.hex || contract.colorHex || '#00d4ff'}40`
-            }} />
-            <div>
-              <div style={{ fontWeight: 800 }}>{request.MaMauYeuCau}</div>
-              <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>HEX: {colorInfo?.hex || 'MIX'}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {request.sampleImageUrl && (
+              <div className="flex flex-col items-center gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
+                <img 
+                  src={request.sampleImageUrl} 
+                  alt="Ảnh mẫu khách gửi" 
+                  className="w-16 h-16 object-cover rounded-lg shadow-sm cursor-pointer hover:scale-105 transition-transform"
+                  onClick={() => window.open(request.sampleImageUrl, '_blank')}
+                />
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(255,255,255,0.03)', padding: '12px 20px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{
+                width: 50, height: 50, borderRadius: '50%',
+                background: colorInfo?.hex || contract.colorHex || '#333', border: '3px solid rgba(255,255,255,0.1)',
+                boxShadow: `0 0 20px ${colorInfo?.hex || contract.colorHex || '#00d4ff'}40`
+              }} />
+              <div>
+                <div style={{ fontWeight: 800 }}>{request.MaMauYeuCau}</div>
+                <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>HEX: {colorInfo?.hex || 'MIX'}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -687,12 +705,16 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 <label className="text-[13px] font-bold text-gray-500 flex items-center gap-2">
                   <ImageIcon size={14} /> Hình ảnh thực tế mẻ test
                 </label>
-                <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-blue-300 transition-all duration-300 flex flex-col items-center justify-center min-h-[110px]">
-                  <ImageIcon size={24} className="text-gray-400 mb-2" />
-                  <span className="text-xs font-medium text-gray-500">
-                    Nhấn hoặc kéo thả ảnh mẻ test vào đây (jpg, png)
-                  </span>
-                </div>
+                <IpfsDropzone
+                  size="small"
+                  onCidChange={(cid) => {
+                    setNewVersion(prev => ({ 
+                      ...prev, 
+                      imageCid: cid, 
+                      imageUrl: cid ? `https://gateway.pinata.cloud/ipfs/${cid}` : '' 
+                    }));
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -827,9 +849,21 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                     </div>
 
                     <div className="flex gap-2 mt-2">
-                      <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white hover:border-blue-100 transition-all cursor-pointer shadow-sm">
-                        <ImageIcon size={20} />
-                      </div>
+                      {v.imageUrl ? (
+                        <div className="flex flex-col gap-1 items-start">
+                          <img 
+                            src={v.imageUrl} 
+                            alt={`Mẻ test ${v.version}`} 
+                            className="w-20 h-20 object-cover rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform" 
+                            onClick={() => window.open(v.imageUrl, '_blank')}
+                          />
+                          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded uppercase">Ảnh mẻ test</span>
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white hover:border-blue-100 transition-all cursor-pointer shadow-sm">
+                          <ImageIcon size={20} />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

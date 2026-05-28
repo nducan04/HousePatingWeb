@@ -12,8 +12,38 @@ interface CustomerCreateTicketModalProps {
 export default function CustomerCreateTicketModal({ order, onClose, onSuccess }: CustomerCreateTicketModalProps) {
   const [ticketType, setTicketType] = useState('Đổi trả');
   const [description, setDescription] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/ipfs/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setImages(prev => [...prev, res.data.data.ipfsCid || res.data.data.url]);
+      }
+    } catch (err) {
+      console.error("Lỗi upload ảnh:", err);
+      alert("Lỗi upload ảnh, vui lòng thử lại.");
+    } finally {
+      setIsUploadingImage(false);
+      if (e.target) {
+        e.target.value = ''; // Reset input
+      }
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,11 +57,12 @@ export default function CustomerCreateTicketModal({ order, onClose, onSuccess }:
 
     try {
       if (ticketType === 'Bảo hành') {
-        await api.post('/bao-hanh', {
+        await api.post('/warranties', {
           KhachHang: order.KhachHang?._id || order.KhachHang,
           DonHang: order._id,
           SanPham: order.Items?.map((i: any) => i.TenSanPham || i.SanPham?.TenDongSon).join(', ') || 'Sản phẩm',
           NoiDungLoi: description,
+          HinhAnh: images,
         });
       } else {
         await api.post('/doi-tra', {
@@ -39,6 +70,7 @@ export default function CustomerCreateTicketModal({ order, onClose, onSuccess }:
           DonHang: order._id,
           LoaiYeuCau: ticketType,
           LyDo: description,
+          HinhAnh: images,
         });
       }
       onSuccess();
@@ -85,6 +117,43 @@ export default function CustomerCreateTicketModal({ order, onClose, onSuccess }:
                 placeholder="Vui lòng mô tả cụ thể vấn đề bạn đang gặp phải để chúng tôi hỗ trợ tốt nhất..."
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 resize-none"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-slate-700">Hình ảnh minh họa (nếu có)</label>
+              <div className="flex flex-wrap gap-3 mb-2">
+                {images.map((imgUrl, idx) => {
+                  const finalUrl = imgUrl.includes('ipfs://') ? imgUrl.replace('ipfs://', 'https://ipfs.io/ipfs/') : (imgUrl.startsWith('Qm') || imgUrl.startsWith('bafy')) ? `https://ipfs.io/ipfs/${imgUrl}` : imgUrl;
+                  return (
+                  <div key={idx} className="relative group w-20 h-20 rounded-lg border border-slate-200 overflow-hidden">
+                    <img src={finalUrl} alt="Upload" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )})}
+                <label className="w-20 h-20 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
+                  {isUploadingImage ? (
+                    <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                  ) : (
+                    <>
+                      <span className="text-2xl text-slate-400">+</span>
+                      <span className="text-[10px] text-slate-500">Thêm ảnh</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    disabled={isUploadingImage}
+                  />
+                </label>
+              </div>
             </div>
 
             {error && (

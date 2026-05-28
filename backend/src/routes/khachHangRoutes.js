@@ -1,6 +1,6 @@
 const express = require('express');
 const { protect, authorize } = require('../middleware/authMiddleware');
-const { getAll, getById, create, update, remove } = require('../controllers/khachHangController');
+const { getAll, getById, create, update, remove, giftVoucher } = require('../controllers/khachHangController');
 
 const router = express.Router();
 
@@ -14,5 +14,8 @@ router.route('/:id')
   .get(authorize('Admin', 'NhanVien', 'KhachHangB2B'), getById)
   .put(authorize('Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C'), update)
   .delete(authorize('Admin'), remove);
+
+router.route('/:id/gift-voucher')
+  .post(authorize('Admin', 'NhanVien'), giftVoucher);
 
 module.exports = router;

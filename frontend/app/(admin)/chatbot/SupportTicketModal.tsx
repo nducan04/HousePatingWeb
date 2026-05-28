@@ -49,10 +49,13 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
   const [error, setError] = useState<string | null>(null);
   const [rdLogs, setRdLogs] = useState<any[]>([]);
   const [isLoadingRd, setIsLoadingRd] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const handleClose = () => {
     setSelectedCustomer(''); setSelectedContract(''); setSelectedStaff('');
     setTicketType(''); setDescription(''); setDeadline(''); setError(null);
+    setImages([]);
     onClose();
   };
 
@@ -66,7 +69,7 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
       try {
         const [customersRes, staffsRes] = await Promise.all([
           api.get('/khach-hang'),
-          api.get('/nhan-vien')
+          api.get('/staff')
         ]);
         const customers = customersRes.data;
         const staffs = staffsRes.data;
@@ -232,7 +235,7 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
       const isOrder = selectedContractData?.type === 'ORDER';
 
       if (ticketType === 'Bảo hành') {
-        endpoint = '/bao-hanh';
+        endpoint = '/warranties';
         const spNames = selectedContractData?.ChiTietHopDong?.map(c => c.productName).join(', ') || 'Sản phẩm từ HĐ';
         payload = {
           MaBaoHanh: `BH-${Date.now().toString().slice(-4)}`,
@@ -244,7 +247,8 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
           KyThuatKCS: selectedStaff || null,
           HanBaoHanh: deadline || new Date(Date.now() + 7 * 86400000), // Default 7 days
           NgayMua: selectedContractData?.NgayLap || selectedContractData?.createdAt || new Date(),
-          TrangThai: 'Mở'
+          TrangThai: 'Mở',
+          HinhAnh: images
         };
       } else {
         endpoint = '/doi-tra';
@@ -257,7 +261,8 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
           DuKienDenHang: deadline || null,
           NhanVienPhuTrach: selectedStaff || null,
           GiaTriTru: 0,
-          MaDoiTra: `${ticketType === 'Khiếu nại' ? 'KN' : 'RET'}-${Date.now().toString().slice(-4)}`
+          MaDoiTra: `${ticketType === 'Khiếu nại' ? 'KN' : 'RET'}-${Date.now().toString().slice(-4)}`,
+          HinhAnh: images
         };
       }
 
@@ -271,6 +276,30 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
       setError(err.response?.data?.error || err.message || 'Có lỗi xảy ra khi tạo ticket.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/ipfs/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setImages(prev => [...prev, res.data.data.ipfsCid || res.data.data.url]);
+      }
+    } catch (err) {
+      console.error("Lỗi upload ảnh:", err);
+      alert("Lỗi upload ảnh, vui lòng thử lại.");
+    } finally {
+      setIsUploadingImage(false);
+      if (e.target) {
+        e.target.value = ''; // Reset input
+      }
     }
   };
 
@@ -488,6 +517,34 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
                     placeholder="Mô tả cụ thể vấn đề khách hàng đang gặp phải..."
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 shadow-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none transition-all"
                   />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700">Hình ảnh minh họa (nếu có)</label>
+                  <div className="flex flex-wrap gap-3 mb-2">
+                    {images.map((imgUrl, idx) => {
+                      const finalUrl = imgUrl.includes('ipfs://') ? imgUrl.replace('ipfs://', 'https://ipfs.io/ipfs/') : (imgUrl.startsWith('Qm') || imgUrl.startsWith('bafy')) ? `https://ipfs.io/ipfs/${imgUrl}` : imgUrl;
+                      return (
+                      <div key={idx} className="relative group w-20 h-20 rounded-lg border border-slate-200 overflow-hidden">
+                        <img src={finalUrl} alt="Upload" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setImages(prev => prev.filter((_, i) => i !== idx))}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )})}
+                    <label className="w-20 h-20 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
+                      {isUploadingImage ? (
+                        <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                      ) : (
+                        <span className="text-2xl text-slate-400">+</span>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isUploadingImage} />
+                    </label>
+                  </div>
                 </div>
               </div>
 

@@ -2,11 +2,13 @@
 import React, { useState } from 'react';
 import { ArrowLeft, User, Layers, CreditCard, Calendar, FileText, CheckCircle2, Clock, Package, Truck, XCircle, Thermometer } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import { paintColors } from '@/lib/data/colors-data';
 
 const STATUS_MAP: Record<string, any> = {
-    'CHO_XAC_NHAN': { label: 'Chờ xác nhận', color: 'bg-amber-50 text-amber-600 border border-amber-200' },
+    'CHO_XAC_NHAN': { label: 'Chờ xử lý', color: 'bg-amber-50 text-amber-600 border border-amber-200' },
     'DANG_XU_LY': { label: 'Đang xử lý', color: 'bg-blue-50 text-blue-600 border border-blue-200' },
-    'DANG_GIAO': { label: 'Đang vận chuyển', color: 'bg-purple-50 text-purple-600 border border-purple-200' },
+    'DA_XU_LY_XONG': { label: 'Đã xử lý xong', color: 'bg-purple-50 text-purple-600 border border-purple-200' },
+    'DANG_GIAO': { label: 'Đang vận chuyển', color: 'bg-indigo-50 text-indigo-600 border border-indigo-200' },
     'DA_GIAO': { label: 'Đã giao hàng', color: 'bg-emerald-50 text-emerald-600 border border-emerald-200' },
     'DA_HUY': { label: 'Đã hủy', color: 'bg-rose-50 text-rose-600 border border-rose-200' }
 };
@@ -91,9 +93,20 @@ export default function CustomerOrderModal({ order, onClose }: { order: any, onC
                                 <Layers size={14} /> II. Thông số kỹ thuật sơn
                             </h4>
                             <div className="space-y-2.5 text-[13px] font-medium text-slate-600">
-                                <div className="flex justify-between">
-                                    <span className="text-slate-400">Mã màu chọn:</span>
-                                    <span className="font-black text-blue-600">{order?.Items?.[0]?.MaMau || 'N/A'}</span>
+                                <div className="flex justify-between items-start">
+                                    <span className="text-slate-400 mt-0.5">Mã màu đặt hàng:</span>
+                                    <div className="flex flex-col gap-1.5 items-end">
+                                        {order?.Items?.map((item: any, idx: number) => {
+                                            const cInfo = paintColors.find(c => c.code === item.MaMau);
+                                            return (
+                                                <div key={idx} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-md border border-slate-100">
+                                                    <span className="w-3 h-3 rounded-full border border-slate-200" style={{ backgroundColor: cInfo?.hex || '#ccc' }}></span>
+                                                    <span className="font-black text-blue-600 text-xs">{item.MaMau || 'N/A'}</span>
+                                                    <span className="text-[10px] text-slate-400">x{item.SoLuong}</span>
+                                                </div>
+                                            );
+                                        }) || <span className="font-black text-slate-400">N/A</span>}
+                                    </div>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-slate-400">Loại bột:</span>

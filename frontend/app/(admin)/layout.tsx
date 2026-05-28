@@ -122,6 +122,12 @@ const allNavItems = [
         icon: Palette,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
+      {
+        href: "/import",
+        label: "Nhập dữ liệu",
+        icon: FileUp,
+        roles: ["Admin", "NhanVien"],
+      },
     ],
   },
   {
@@ -156,6 +162,12 @@ const allNavItems = [
         label: "Theo dõi hiệu suất",
         icon: SignalHigh,
         roles: ["Admin", "Director"],
+      },
+      {
+        href: "/doi-tra",
+        label: "Trung Tâm Giải Quyết Khiếu Nại",
+        icon: ReceiptRussianRuble,
+        roles: ["Admin", "NhanVien"],
       },
       {
         href: "/khuyen-mai",
@@ -281,10 +293,7 @@ export default function AdminLayout({
     let matchedItem: any = null;
     allNavItems.forEach((section) => {
       section.items.forEach((item) => {
-        if (
-          item.href &&
-          (pathname === item.href || pathname.startsWith(item.href + "/"))
-        ) {
+        if (item.href && (pathname === item.href || pathname.startsWith(item.href + "/"))) {
           if (!matchedItem || item.href.length > matchedItem.href.length) {
             matchedItem = item;
           }
@@ -336,7 +345,7 @@ export default function AdminLayout({
         : userRole === "NhanVien"
           ? "Nhân viên công ty"
           : user?.profile?.ChucVu ||
-            (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
+          (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
   const initials = displayName
     .split(" ")
     .map((w: string) => w[0])
@@ -347,20 +356,21 @@ export default function AdminLayout({
   // Map pathname to page title
   const getPageTitle = () => {
     if (pathname === "/dashboard") {
-      return userRole === "NhanVien" ? "Quản lý nghiệp vụ" : "Dashboard";
+      return userRole === "NhanVien" ? "📦 Quản lý nghiệp vụ" : "📊 Dashboard";
     }
-    if (pathname?.startsWith("/san-pham")) return "Quản lý sản phẩm sơn";
-    if (pathname?.startsWith("/kho")) return "Quản lý kho";
+    if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
+    if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
     if (pathname?.startsWith("/doi-tra"))
-      return "Trung Tâm Giải Quyết Khiếu Nại";
-    if (pathname?.startsWith("/doi-tac")) return "Quản lý khách hàng";
-    if (pathname?.startsWith("/nhan-vien")) return "Quản lý nhân sự";
-    if (pathname?.startsWith("/rd-tracking")) return "R&D Tracking";
-    if (pathname?.startsWith("/contracts")) return "Hợp đồng B2B";
-    if (pathname === "/colors") return "Tra cứu Mã Màu";
-    if (pathname === "/tracking") return "QR Tracking";
-    if (pathname === "/don-hang") return "Quản lý đơn hàng";
-    if (pathname === "/chatbot") return "AI Hỗ trợ khách hàng";
+      return "🎯 Trung Tâm Giải Quyết Khiếu Nại";
+    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
+    if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
+    if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
+    if (pathname?.startsWith("/contracts")) return "📝 Hợp đồng B2B";
+    if (pathname === "/colors") return "🎨 Tra cứu Mã Màu";
+    if (pathname === "/tracking") return "📦 QR Tracking";
+    if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
+    if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
+    if (pathname === "/import") return "📤 Nhập Dữ Liệu (Excel/CSV)";
     return "Quản lý nghiệp vụ";
   };
 
@@ -379,6 +389,7 @@ export default function AdminLayout({
         {!isCustomer && (
           <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
             {/* Logo Area */}
+<<<<<<< Updated upstream
             <div className="px-8 py-7 flex items-center gap-4">
               <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10">
                 <img
@@ -390,6 +401,12 @@ export default function AdminLayout({
               <div>
                 <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
                   VTSC
+=======
+            <div className="px-8 py-7 flex items-center justify-center">
+              <Link href="/" className="block no-underline group">
+                <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-105 px-3">
+                  <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+>>>>>>> Stashed changes
                 </div>
                 <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
                   PaintPro
@@ -422,19 +439,15 @@ export default function AdminLayout({
                           <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${
-                              isActive
+                            className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${isActive
                                 ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
                                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                            }`}
+                              }`}
                           >
                             <div
                               className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-blue-600" : "text-slate-400"}`}
                             >
-                              <Icon
-                                size={20}
-                                strokeWidth={isActive ? 2.5 : 2}
-                              />
+                              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                             </div>
                             <span className="truncate">{item.label}</span>
                             {isActive && (

@@ -60,7 +60,40 @@ exports.validateVoucher = async (req, res) => {
         const voucher = await KhuyenMai.findOne({ MaVoucher: code.toUpperCase() });
 
         if (!voucher) {
-            return res.status(404).json({ success: false, message: 'Mã giảm giá không tồn tại' });
+            // Check if it's a gifted voucher for this specific user
+            const KhachHang = require('../models/KhachHang');
+            const customer = await KhachHang.findOne({ AccountID: req.user._id });
+            if (customer && customer.Vouchers) {
+                const giftedVoucher = customer.Vouchers.find(v => v.VoucherCode.toUpperCase() === code.toUpperCase());
+                if (giftedVoucher) {
+                    if (giftedVoucher.IsUsed) {
+                        return res.status(400).json({ success: false, message: 'Mã giảm giá đã được sử dụng' });
+                    }
+                    if (new Date(giftedVoucher.ExpirationDate) < new Date()) {
+                        return res.status(400).json({ success: false, message: 'Mã giảm giá đã hết hạn' });
+                    }
+                    
+                    let discountAmount = 0;
+                    if (giftedVoucher.DiscountPercent > 0) {
+                        discountAmount = (cartTotal * giftedVoucher.DiscountPercent) / 100;
+                    } else if (giftedVoucher.DiscountAmount > 0) {
+                        discountAmount = giftedVoucher.DiscountAmount;
+                    }
+
+                    return res.status(200).json({ 
+                        success: true, 
+                        data: {
+                            _id: giftedVoucher._id || code,
+                            MaVoucher: giftedVoucher.VoucherCode,
+                            LoaiGiamGia: giftedVoucher.DiscountPercent > 0 ? 'PHAN_TRAM' : 'GIAM_THANG',
+                            DiscountAmount: discountAmount,
+                            Message: 'Áp dụng mã tặng riêng thành công!'
+                        }
+                    });
+                }
+            }
+
+            return res.status(404).json({ success: false, message: 'Mã giảm giá không tồn tại hoặc không áp dụng cho bạn' });
         }
 
         const now = new Date();

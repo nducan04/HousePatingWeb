@@ -9,10 +9,9 @@ import {
   UserCheck, ClipboardList, PenTool, Plus, UserPlus
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
-import { toast } from '@/lib/utils/notification';
-import SupportTicketModal from '../doi-tra/SupportTicketModal';
-import TicketProcessingDrawer from '../doi-tra/TicketProcessingDrawer';
-import type { Ticket, TicketStatus } from '../doi-tra/TicketProcessingDrawer';
+import SupportTicketModal from './SupportTicketModal';
+import TicketProcessingDrawer from './TicketProcessingDrawer';
+import type { Ticket, TicketStatus } from './TicketProcessingDrawer';
 
 interface Message {
   id: string;
@@ -118,13 +117,9 @@ export default function ChatbotPage() {
 
   const fetchStaffList = async () => {
     try {
-      const res = await api.get('/nhan-vien');
+      const res = await api.get('/staff');
       if (res.data.success) {
-        // Filter for Technical department (matching 'R&D Kỹ Thuật Máy' from staff records)
-        const filtered = res.data.data.filter((nv: any) =>
-          nv.BoPhan?.includes('R&D Kỹ Thuật Máy')
-        );
-        setAllStaff(filtered);
+        setAllStaff(res.data.data);
       }
     } catch (err) {
       console.error('Lỗi tải danh sách nhân viên:', err);
@@ -133,22 +128,65 @@ export default function ChatbotPage() {
 
   const fetchTickets = async () => {
     try {
-      const res = await api.get('/doi-tra');
-      if (res.data?.success && res.data.data.length > 0) {
-        const mapped: Ticket[] = res.data.data.map((item: any) => ({
-          id: item.MaDoiTra || item._id,
-          type: (item.LoaiYeuCau as Ticket['type']) || 'Đổi trả',
-          customer: item.KhachHang?.TenKhachHang || 'Khách hàng',
-          phoneOrContract: item.DonHang?.MaHopDong || item.DonHang?.MaDonHang || 'N/A',
-          description: item.LyDo || '',
-          status: (item.TrangThai === 'draft' ? 'Chờ tiếp nhận' : (item.TrangThai || 'Chờ tiếp nhận')) as TicketStatus,
-          assignee: item.NhanVienPhuTrach?.HoTen || '',
-          resolution: item.PhuongAnGiaiQuyet || '',
-          deadline: item.DuKienDenHang || '',
-          createdAt: new Date(item.createdAt).toLocaleDateString('vi-VN'),
-        }));
-        setTickets(mapped);
+      const [resDoiTra, resBaoHanh] = await Promise.all([
+        api.get('/doi-tra').catch(() => ({ data: { success: false, data: [] } })),
+        api.get('/warranties').catch(() => ({ data: { success: false, data: [] } }))
+      ]);
+
+      const allTickets: Ticket[] = [];
+
+      if (resDoiTra.data?.success) {
+        resDoiTra.data.data.forEach((item: any) => {
+          allTickets.push({
+            id: item.MaDoiTra || item._id,
+            type: (item.LoaiYeuCau as Ticket['type']) || 'Đổi trả',
+            customer: item.KhachHang?.TenKhachHang || 'Khách hàng',
+            phoneOrContract: item.DonHang?.MaHopDong || item.DonHang?.MaDonHang || 'N/A',
+            description: item.LyDo || '',
+            status: (item.TrangThai === 'draft' || item.TrangThai === 'Yêu cầu mới' ? 'Chờ tiếp nhận' :
+              ['Đã hoàn tất', 'DA_GIAO', 'Đã khắc phục', 'Đã hoàn tiền'].includes(item.TrangThai) ? 'Đã hoàn tất' :
+                item.TrangThai === 'Bị từ chối' ? 'Đã hủy yêu cầu' :
+                  'Đang xử lý') as TicketStatus,
+            assignee: item.NhanVienPhuTrach?.HoTen || '',
+            resolution: item.PhuongAnGiaiQuyet || '',
+            deadline: item.DuKienDenHang || '',
+            createdAt: new Date(item.createdAt).toLocaleDateString('vi-VN'),
+            rawCreatedAt: new Date(item.createdAt).getTime(),
+            contractId: item.HopDong || item.DonHang?._id || item.DonHang,
+            rawId: item._id,
+            images: item.HinhAnh || [],
+            source: 'doi-tra'
+          } as any);
+        });
       }
+
+      if (resBaoHanh.data?.success) {
+        resBaoHanh.data.data.forEach((item: any) => {
+          allTickets.push({
+            id: item.MaBaoHanh || item._id,
+            type: 'Bảo hành',
+            customer: item.KhachHang?.TenKhachHang || 'Khách hàng',
+            phoneOrContract: item.SanPham || 'N/A',
+            description: item.NoiDungLoi || '',
+            status: (item.TrangThai === 'Mở' ? 'Chờ tiếp nhận' :
+              ['Đã hoàn tất', 'Đã khắc phục', 'Hết hạn BH'].includes(item.TrangThai) ? 'Đã hoàn tất' :
+                item.TrangThai === 'Đóng' ? 'Đã hủy yêu cầu' :
+                  'Đang xử lý') as TicketStatus,
+            assignee: item.KyThuatKCS?.HoTen || '',
+            resolution: item.PhuongAnGiaiQuyet || '',
+            deadline: item.HanBaoHanh || '',
+            createdAt: new Date(item.createdAt).toLocaleDateString('vi-VN'),
+            rawCreatedAt: new Date(item.createdAt).getTime(),
+            contractId: item.HopDong || null,
+            rawId: item._id,
+            images: item.HinhAnh || [],
+            source: 'bao-hanh'
+          } as any);
+        });
+      }
+
+      allTickets.sort((a: any, b: any) => b.rawCreatedAt - a.rawCreatedAt);
+      setTickets(allTickets);
     } catch (err) { console.error('Lỗi fetch tickets:', err); }
   };
 
@@ -173,34 +211,74 @@ export default function ChatbotPage() {
       status: (entry.status === 'draft' ? 'Chờ tiếp nhận' :
         entry.status === 'Yêu cầu mới' ? 'Chờ tiếp nhận' :
           ['Đã hoàn tất', 'DA_GIAO', 'Đã khắc phục', 'Đã hoàn tiền'].includes(entry.status) ? 'Đã hoàn tất' :
-            'Đang xử lý') as TicketStatus,
+            ['Bị từ chối', 'Đóng'].includes(entry.status) ? 'Đã hủy yêu cầu' :
+              'Đang xử lý') as TicketStatus,
       assignee: entry.staffName !== 'N/A' ? entry.staffName : '',
       resolution: entry.phuongAn || '',
       deadline: entry.raw?.DuKienDenHang || '',
       createdAt: new Date(entry.date).toLocaleDateString('vi-VN'),
-    };
+      rawId: entry.id,
+      contractId: entry.raw?.HopDong || entry.raw?.DonHang?._id || entry.raw?.DonHang,
+      images: entry.raw?.HinhAnh || [],
+      source: entry.type === 'WARRANTY' ? 'bao-hanh' : 'doi-tra'
+    } as any;
 
     openTicketDetail(mappedTicket);
   };
 
-  const handleUpdateTicket = (updatedData: Partial<Ticket>) => {
+  const handleUpdateTicket = async (updatedData: Partial<Ticket>) => {
     if (!selectedTicket) return;
-    const updated = { ...selectedTicket, ...updatedData };
-    setTickets(prev => prev.map(t => t.id === selectedTicket.id ? updated : t));
-    setSelectedTicket(updated);
 
-    // Sync state with entries for dashboard & monitoring
-    setEntries(prev => prev.map(e => {
-      if (e.refId === selectedTicket.id || e.id === selectedTicket.id) {
-        return {
-          ...e,
-          status: updated.status,
-          staffName: updated.assignee || 'N/A',
-          phuongAn: updated.resolution || '',
-        };
+    // Determine exact backend status
+    let backendStatus: string | undefined = updatedData.status;
+    if ((selectedTicket as any).source === 'bao-hanh') {
+      if (updatedData.status === 'Chờ tiếp nhận') backendStatus = 'Mở';
+      if (updatedData.status === 'Đang xử lý') backendStatus = 'Đang khảo sát';
+      if (updatedData.status === 'Đã hoàn tất') backendStatus = 'Đã khắc phục';
+      if (updatedData.status === 'Đã hủy yêu cầu') backendStatus = 'Đóng';
+    } else {
+      if (updatedData.status === 'Chờ tiếp nhận') backendStatus = 'Yêu cầu mới';
+      if (updatedData.status === 'Đang xử lý') backendStatus = 'Đang xử lý';
+      if (updatedData.status === 'Đã hoàn tất') backendStatus = 'Đã hoàn tiền'; // Or 'Đã hoàn tất' if you want a general one, but DoiTra has 'Đã hoàn tiền'
+      if (updatedData.status === 'Đã hủy yêu cầu') backendStatus = 'Bị từ chối';
+    }
+
+    try {
+      let endpoint = '';
+      let payload: any = {
+        status: backendStatus,
+        phuongAn: updatedData.resolution
+      };
+
+      // Depending on the ticket source, route to the correct update endpoint
+      if ((selectedTicket as any).source === 'bao-hanh') {
+        endpoint = `/warranties/${selectedTicket.rawId}/status`;
+      } else {
+        endpoint = `/doi-tra/${selectedTicket.rawId}/status`;
       }
-      return e;
-    }));
+
+      await api.patch(endpoint, payload);
+
+      const updated = { ...selectedTicket, ...updatedData };
+      setTickets(prev => prev.map(t => t.id === selectedTicket.id ? updated : t));
+      setSelectedTicket(updated);
+
+      // Sync state with entries for dashboard & monitoring
+      setEntries(prev => prev.map(e => {
+        if (e.refId === selectedTicket.id || e.id === selectedTicket.id) {
+          return {
+            ...e,
+            status: updated.status || e.status,
+            staffName: updated.assignee || e.staffName,
+            phuongAn: updated.resolution || e.phuongAn,
+          };
+        }
+        return e;
+      }));
+    } catch (err) {
+      console.error('Lỗi khi cập nhật ticket:', err);
+      alert('Không thể cập nhật ticket trên máy chủ.');
+    }
   };
 
   const triggerTicketToast = () => {
@@ -213,8 +291,8 @@ export default function ChatbotPage() {
       setIsLoadingDashboard(true);
       const [returnsRes, warrantyRes, ordersRes] = await Promise.all([
         api.get('/doi-tra'),
-        api.get('/bao-hanh'),
-        api.get('/don-hang')
+        api.get('/warranties'),
+        api.get('/orders')
       ]);
 
       const unifiedEntries: SupportEntry[] = [];
@@ -297,7 +375,7 @@ export default function ChatbotPage() {
         const item = entries.find(e => e.id === id);
         // Often warranty is linked to a customer, we show their latest order or let them choose
         // For now, let's try to fetch the item's info which might contain linked order info
-        const resTicket = await api.get(`/bao-hanh/${id}`);
+        const resTicket = await api.get(`/warranties/${id}`);
         // If we don't have a direct link in model, we show the products from the ticket or latest order
         if (resTicket.data.success) {
           // Logic for warranty details...
@@ -305,7 +383,7 @@ export default function ChatbotPage() {
       }
 
       if (orderId && orderId.length > 5) {
-        const res = await api.get(`/don-hang/${orderId}`);
+        const res = await api.get(`/orders/${orderId}`);
         if (res.data.success) setOrderDetails(res.data.data);
       }
     } catch (err) {
@@ -320,7 +398,7 @@ export default function ChatbotPage() {
     setIsDetailOpen(true);
     setIsLoadingOrders(true);
     try {
-      const res = await api.get(`/don-hang`);
+      const res = await api.get(`/orders`);
       setCustomerOrders(res.data.data.filter((o: any) => o.KhachHang?._id === customerId));
     } catch (error) {
       console.error(error);
@@ -348,17 +426,17 @@ export default function ChatbotPage() {
       };
 
       if (targetEntry.type === 'RETURN') endpoint = `/doi-tra/${targetEntry.id}/status`;
-      else if (targetEntry.type === 'WARRANTY') endpoint = `/bao-hanh/${targetEntry.id}/status`;
-      else if (targetEntry.type === 'ORDER') endpoint = `/don-hang/${targetEntry.id}/status`;
+      else if (targetEntry.type === 'WARRANTY') endpoint = `/warranties/${targetEntry.id}/status`;
+      else if (targetEntry.type === 'ORDER') endpoint = `/orders/${targetEntry.id}/status`;
 
       const res = await api.patch(endpoint, payload);
       if (res.data.success) {
-        toast.success('Cập nhật trạng thái & phương án thành công!');
+        alert('Cập nhật trạng thái & phương án thành công!');
         fetchDashboardData();
         setIsActionOpen(false);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Lỗi cập nhật');
+      alert(error.response?.data?.error || 'Lỗi cập nhật');
     } finally {
       setIsUpdating(false);
     }
@@ -434,7 +512,7 @@ export default function ChatbotPage() {
             : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50 bg-transparent'
             }`}
         >
-          <ClipboardList size={16} className={mainTab === 'tickets' ? 'text-blue-600' : 'text-slate-400'} /> Quản Lý Ticket {tickets.length > 0 && `(${tickets.length})`}
+          <ClipboardList size={16} className={mainTab === 'tickets' ? 'text-blue-600' : 'text-slate-400'} /> Xét duyệt yêu cầu hỗ trợ {tickets.length > 0 && `(${tickets.length})`}
         </button>
       </div>
 
@@ -543,7 +621,7 @@ export default function ChatbotPage() {
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Phân loại</th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Mã Đơn Hàng</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Mã Yêu Cầu</th>
                     <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Khách hàng</th>
                     <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Nội dung / Khiếu nại</th>
                     <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">NV Phụ Trách</th>
@@ -584,7 +662,7 @@ export default function ChatbotPage() {
                         </td>
                         <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
                           <button
-                            onClick={() => openOrderSpecs(entry.id, entry.type)}
+                            onClick={() => handleDashboardEntryClick(entry)}
                             className="font-mono font-bold text-blue-600 hover:underline bg-transparent border-none cursor-pointer p-0 text-left"
                           >
                             #{entry.refId}
@@ -680,7 +758,7 @@ export default function ChatbotPage() {
                 onClick={() => setIsCreateModalOpen(true)}
                 className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-xl transition-all cursor-pointer"
               >
-                <Plus size={16} /> Tạo Ticket Mới
+                <Plus size={16} /> Tạo yêu cầu hỗ trợ
               </button>
             </div>
           </div>
@@ -694,7 +772,7 @@ export default function ChatbotPage() {
                     <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Khách hàng</th>
                     <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Loại</th>
                     <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Trạng thái</th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Phụ trách</th>
+
                     <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Ngày tạo</th>
                     <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider text-right">Thao tác</th>
                   </tr>
@@ -716,7 +794,8 @@ export default function ChatbotPage() {
                       const statusBadge: Record<string, string> = {
                         'Chờ tiếp nhận': 'bg-rose-100 text-rose-700',
                         'Đang xử lý': 'bg-amber-100 text-amber-700',
-                        'Đã hoàn tất': 'bg-emerald-100 text-emerald-700'
+                        'Đã hoàn tất': 'bg-emerald-100 text-emerald-700',
+                        'Đã hủy yêu cầu': 'bg-slate-100 text-slate-500'
                       };
                       return (
                         <tr
@@ -740,16 +819,7 @@ export default function ChatbotPage() {
                               {ticket.status}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 border border-slate-200">
-                                {ticket.assignee ? ticket.assignee.charAt(0) : 'U'}
-                              </div>
-                              <span className="text-sm font-medium text-slate-700">
-                                {ticket.assignee || <span className="text-slate-300 italic font-normal">Chưa phân công</span>}
-                              </span>
-                            </div>
-                          </td>
+
                           <td className="px-6 py-4 text-sm text-slate-500">{ticket.createdAt}</td>
                           <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
                             <button
@@ -768,25 +838,27 @@ export default function ChatbotPage() {
             </div>
           </div>
 
-          {/* Modals for ticket tab */}
-          <SupportTicketModal
-            isOpen={isCreateModalOpen}
-            onClose={() => setIsCreateModalOpen(false)}
-            onSuccess={() => { triggerTicketToast(); fetchTickets(); setIsCreateModalOpen(false); }}
-          />
-          <TicketProcessingDrawer
-            isOpen={isDrawerOpen}
-            ticket={selectedTicket}
-            staffList={dbStaffs}
-            onClose={() => setIsDrawerOpen(false)}
-            onUpdate={handleUpdateTicket}
-          />
-          {showTicketToast && (
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-[100]">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-              Đã tạo ticket thành công!
-            </div>
-          )}
+          {/* Removed Modals from here */}
+        </div>
+      )}
+
+      {/* Modals (Available across all tabs) */}
+      <SupportTicketModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => { triggerTicketToast(); fetchTickets(); setIsCreateModalOpen(false); }}
+      />
+      <TicketProcessingDrawer
+        isOpen={isDrawerOpen}
+        ticket={selectedTicket}
+        staffList={dbStaffs}
+        onClose={() => setIsDrawerOpen(false)}
+        onUpdate={handleUpdateTicket}
+      />
+      {showTicketToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-[100]">
+          <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+          Đã tạo ticket thành công!
         </div>
       )}
 

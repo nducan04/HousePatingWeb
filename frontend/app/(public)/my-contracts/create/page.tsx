@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
-import { toast } from '@/lib/utils/notification';
 import { paintColors } from '@/lib/data/colors-data';
 
 interface ContractDetail {
@@ -128,7 +127,7 @@ function CustomerCreateContractPage() {
       
       const html2pdf = (await import('html2pdf.js')).default;
       const opt = {
-        margin:       [10, 10, 15, 10] as [number, number, number, number], // top, left, bottom, right
+        margin:       [10, 10, 10, 10] as [number, number, number, number],
         filename:     `HopDong_NguyenTac_${contractId || 'VTSC'}.pdf`,
         image:        { type: 'jpeg' as const, quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, logging: false },
@@ -203,7 +202,7 @@ function CustomerCreateContractPage() {
       const res = await api.post('/contracts', data);
       if (res.data.success) {
         setSubmitSuccess(true);
-        toast.success('🎉 Hợp đồng nguyên tắc của bạn đã được gửi thành công đến Admin VTSC để đối soát và điền thông tin Bên bán A!');
+        alert('🎉 Hợp đồng nguyên tắc của bạn đã được gửi thành công đến Admin VTSC để đối soát và điền thông tin Bên bán A!');
         setTimeout(() => {
           router.push('/my-contracts');
         }, 1500);

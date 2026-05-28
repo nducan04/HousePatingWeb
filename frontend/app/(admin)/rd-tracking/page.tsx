@@ -15,7 +15,6 @@ import {
   Package,
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
-import { toast } from "@/lib/utils/notification";
 import Link from "next/link";
 import { paintColors } from "@/lib/data/colors-data";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -137,7 +136,7 @@ export default function RDTrackingPage() {
 
   const handleCreateLog = async () => {
     if (!selectedContract || !selectedColor) {
-      toast.warning("Vui lòng chọn hợp đồng và mã màu!");
+      alert("Vui lòng chọn hợp đồng và mã màu!");
       return;
     }
     try {
@@ -149,10 +148,10 @@ export default function RDTrackingPage() {
       if (res.data.success) {
         setIsModalOpen(false);
         fetchLogs();
-        toast.success("Đã tạo Log R&D mới thành công!");
+        alert("Đã tạo Log R&D mới thành công!");
       }
     } catch (err) {
-      toast.error("Lỗi khi tạo log mới");
+      alert("Lỗi khi tạo log mới");
     } finally {
       setCreating(false);
     }
@@ -308,11 +307,18 @@ export default function RDTrackingPage() {
               ].map((f) => (
                 <button
                   key={f.id}
+<<<<<<< Updated upstream
                   className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
                     filter === f.id
                       ? "bg-white text-blue-600 shadow-sm"
                       : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
                   }`}
+=======
+                  className={`px-4 py-2 rounded-md text-[13px] font-bold transition-all duration-200 ${filter === f.id
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                    }`}
+>>>>>>> Stashed changes
                   onClick={() => setFilter(f.id)}
                 >
                   {f.label}
@@ -556,7 +562,7 @@ export default function RDTrackingPage() {
           <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
             <FlaskConical size={18} />
           </span>
-          Nhật ký Lab Định Biên
+          Nhật ký pha chế
         </h2>
 
         <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
@@ -614,17 +620,17 @@ export default function RDTrackingPage() {
                     const wastage =
                       item.LichSuPhienBan?.length > 0
                         ? (
-                            item.LichSuPhienBan.reduce(
-                              (acc: number, cur: any) =>
-                                acc +
-                                (cur.inputWeight > 0
-                                  ? ((cur.inputWeight - cur.outputWeight) /
-                                      cur.inputWeight) *
-                                    100
-                                  : 0),
-                              0,
-                            ) / item.LichSuPhienBan.length
-                          ).toFixed(1)
+                          item.LichSuPhienBan.reduce(
+                            (acc: number, cur: any) =>
+                              acc +
+                              (cur.inputWeight > 0
+                                ? ((cur.inputWeight - cur.outputWeight) /
+                                  cur.inputWeight) *
+                                100
+                                : 0),
+                            0,
+                          ) / item.LichSuPhienBan.length
+                        ).toFixed(1)
                         : "0.0";
 
                     return (
@@ -655,14 +661,14 @@ export default function RDTrackingPage() {
                               {paintColors.find(
                                 (c) => c.code === item.MaMauYeuCau,
                               ) && (
-                                <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
-                                  {
-                                    paintColors.find(
-                                      (c) => c.code === item.MaMauYeuCau,
-                                    )?.name
-                                  }
-                                </div>
-                              )}
+                                  <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
+                                    {
+                                      paintColors.find(
+                                        (c) => c.code === item.MaMauYeuCau,
+                                      )?.name
+                                    }
+                                  </div>
+                                )}
                             </div>
                           </div>
                         </td>
