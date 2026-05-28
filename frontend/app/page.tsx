@@ -585,15 +585,15 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900 antialiased">
+    <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900 antialiased overflow-x-hidden">
       {/* ═══════ HEADER / NAVBAR ═══════ */}
       <header className="sticky top-0 z-[100] bg-white/70 backdrop-blur-xl border-b border-slate-200/40 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-        <div className="max-w-[1400px] mx-auto px-8 py-5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3.5 no-underline group">
-            <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-110 px-3">
+        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 xl:px-10 py-3 sm:py-5 flex items-center justify-between gap-2 sm:gap-4">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3.5 no-underline group flex-shrink-0">
+            <div className="w-[100px] h-[36px] sm:w-[140px] sm:h-[48px] md:w-[180px] md:h-[60px] rounded-xl sm:rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-110 px-2 sm:px-3">
               <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="font-bold text-xl text-slate-900 tracking-tight">
+            <span className="hidden sm:inline xl:hidden 2xl:inline font-bold text-lg md:text-xl text-slate-900 tracking-tight">
               VTSC PaintPro
             </span>
           </Link>
@@ -601,55 +601,55 @@ export default function HomePage() {
           <nav className="hidden xl:flex items-center gap-0.5">
             <Link
               href="/"
-              className="text-[13px] font-bold text-blue-600 no-underline px-3 py-2 rounded-xl bg-blue-50 whitespace-nowrap"
+              className="text-[13px] font-bold text-blue-600 no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl bg-blue-50 whitespace-nowrap"
             >
               Trang chủ
             </Link>
             <Link
               href="#san-pham"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Sản phẩm
             </Link>
             <Link
               href="/colors"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Bảng màu
             </Link>
             <Link
               href="/tracking"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Theo dõi & Tra cứu
             </Link>
             <Link
               href="#quy-trinh"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Quy trình
             </Link>
             <Link
               href="#tin-tuc"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Tin tức
             </Link>
             <Link
               href="#footer"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Liên hệ
             </Link>
           </nav>
 
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center w-[220px] bg-slate-100 rounded-2xl px-4 h-10 border border-slate-200/50">
-              <Search size={18} className="text-slate-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="relative hidden sm:flex xl:hidden 2xl:flex items-center w-[160px] md:w-[220px] bg-slate-100 rounded-2xl px-3 md:px-4 h-9 md:h-10 border border-slate-200/50">
+              <Search size={16} className="text-slate-400 flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Tìm sản phẩm, màu sơn..."
-                className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 ml-3 w-full placeholder:text-slate-400"
+                placeholder="Tìm sản phẩm..."
+                className="bg-transparent border-none outline-none text-xs md:text-sm font-medium text-slate-900 ml-2 md:ml-3 w-full placeholder:text-slate-400"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -679,7 +679,7 @@ export default function HomePage() {
               {/* Cart Dropdown */}
               {isCartOpen && (
                 <div
-                  className="absolute top-full right-0 mt-4 w-[350px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 z-[110]"
+                  className="absolute top-full right-0 mt-4 w-[calc(100vw-2rem)] sm:w-[350px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 z-[110]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
@@ -894,7 +894,7 @@ export default function HomePage() {
       </header>
 
       {/* ═══════ HERO BANNER (Balanced Fonts) ═══════ */}
-      <section className="relative h-[550px] sm:h-[650px] w-full overflow-hidden">
+      <section className="relative h-[400px] sm:h-[500px] md:h-[550px] lg:h-[650px] w-full overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
             src="/paint_factory_exterior_1778742118407.png"
@@ -902,34 +902,35 @@ export default function HomePage() {
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/50 to-transparent sm:from-white sm:via-white/40" />
         </div>
 
-        <div className="relative z-10 h-full max-w-[1400px] mx-auto px-10 flex flex-col justify-center items-start">
-          <div className="space-y-6 max-w-3xl animate-in fade-in slide-in-from-left-10 duration-1000">
-            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-blue-50 border border-blue-100 rounded-lg">
-              <Sparkles size={16} className="text-blue-600" />
-              <span className="text-xs font-bold uppercase tracking-widest text-blue-600">
+        <div className="relative z-10 h-full w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 xl:px-20 flex flex-col justify-center items-start">
+          <div className="space-y-4 sm:space-y-6 max-w-3xl animate-in fade-in slide-in-from-left-10 duration-1000">
+            <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-1.5 bg-blue-50 border border-blue-100 rounded-lg">
+              <Sparkles size={14} className="text-blue-600 sm:hidden" />
+              <Sparkles size={16} className="text-blue-600 hidden sm:block" />
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-blue-600">
                 Hệ thống VTSC Paint Technology
               </span>
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight uppercase text-slate-900">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight uppercase text-slate-900">
               Đại lý phân phối
               <br />
               <span className="text-blue-600">Sơn tĩnh điện</span>
               <br />
               hàng đầu Việt Nam
             </h1>
-            <p className="text-lg sm:text-xl text-slate-500 font-medium leading-relaxed max-w-2xl">
+            <p className="text-sm sm:text-lg md:text-xl text-slate-500 font-medium leading-relaxed max-w-2xl">
               Giải pháp sơn tĩnh điện AkzoNobel Interpon chuyên nghiệp. Đảm bảo
               chất lượng bền bỉ, thẩm mỹ cao cho mọi bề mặt kim loại.
             </p>
-            <div className="pt-6">
+            <div className="pt-3 sm:pt-6">
               <Link
                 href="#dich-vu"
-                className="px-10 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg no-underline shadow-xl shadow-blue-600/30 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 w-fit"
+                className="px-6 py-3 sm:px-10 sm:py-4 bg-blue-600 text-white rounded-xl font-bold text-sm sm:text-lg no-underline shadow-xl shadow-blue-600/30 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 sm:gap-3 w-fit"
               >
-                Khám phá dịch vụ <ArrowRight size={22} />
+                Khám phá dịch vụ <ArrowRight size={18} className="sm:hidden" /><ArrowRight size={22} className="hidden sm:block" />
               </Link>
             </div>
           </div>
@@ -937,7 +938,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ DỊCH VỤ & THẾ MẠNH (Uniform Typography) ═══════ */}
-      <section id="dich-vu" className="px-6 py-20 bg-white">
+      <section id="dich-vu" className="px-4 sm:px-6 md:px-12 xl:px-20 py-12 sm:py-20 bg-white w-full">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -951,7 +952,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <ServiceCard
               icon={<FlaskConical size={28} />}
               iconBg="bg-blue-50"
@@ -1007,8 +1008,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ QUY TRÌNH PHA CHẾ SƠN (Mới) ═══════ */}
-      <section id="quy-trinh" className="px-8 py-24 bg-slate-50 scroll-mt-24">
+      {/* ═══════ QUY TRÌNH HỢP TÁC (Tighter vertical spacing) ═══════ */}
+      <section id="quy-trinh" className="px-4 sm:px-6 md:px-12 xl:px-20 py-12 sm:py-24 bg-slate-50 scroll-mt-24 w-full">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
@@ -1027,7 +1028,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-8 relative">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8 relative">
             {/* Steps with Connectors (visible on desktop) */}
             <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-slate-200 -z-0" />
 
@@ -1089,7 +1090,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="mt-20 p-8 bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-blue-900/5 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="mt-10 sm:mt-20 p-5 sm:p-8 bg-white rounded-2xl sm:rounded-[40px] border border-slate-100 shadow-xl shadow-blue-900/5 flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-8">
             <div className="flex items-center gap-6">
               <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20 flex-shrink-0">
                 <MessageSquare size={28} />
@@ -1103,15 +1104,15 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <button className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-bold text-base hover:bg-blue-600 hover:-translate-y-1 transition-all shadow-xl cursor-pointer border-none">
+            <button className="w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 bg-slate-900 text-white rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base hover:bg-blue-600 hover:-translate-y-1 transition-all shadow-xl cursor-pointer border-none flex-shrink-0">
               Gửi yêu cầu R&D ngay
             </button>
           </div>
         </div>
       </section>
 
-      {/* ═══════ BẢNG MÀU XU HƯỚNG ═══════ */}
-      <section id="bang-mau" className="px-8 py-20 bg-slate-50">
+      {/* ═══════ BẢNG MÀU SƠN NỔI BẬT (Larger images) ═══════ */}
+      <section id="bang-mau" className="px-4 sm:px-6 md:px-12 xl:px-20 py-12 sm:py-20 bg-slate-50 w-full">
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
             <div>
@@ -1134,7 +1135,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-6">
             {paintColors.slice(0, 12).map((color) => (
               <div
                 onClick={() => setSelectedTrendingColor(color)}
@@ -1162,8 +1163,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ PRODUCTS SECTION (Balanced) ═══════ */}
-      <section id="san-pham" className="px-8 py-20 bg-white">
+      {/* ═══════ DANH MỤC SẢN PHẨM (Grid layout fix) ═══════ */}
+      <section id="san-pham" className="px-4 sm:px-6 md:px-12 xl:px-20 py-12 sm:py-20 bg-white w-full">
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
             <div>
@@ -1317,8 +1318,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ TIN TỨC & KHUYẾN MÃI (Uniform) ═══════ */}
-      <section id="tin-tuc" className="px-8 py-20 bg-slate-50">
+      {/* ═══════ TIN TỨC & CHUYÊN MÔN (Premium Cards) ═══════ */}
+      <section id="tin-tuc" className="px-4 sm:px-6 md:px-12 xl:px-20 py-12 sm:py-20 bg-slate-50 w-full">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -1390,9 +1391,9 @@ export default function HomePage() {
       {/* ═══════ FOOTER ═══════ */}
       <footer
         id="footer"
-        className="bg-slate-900 text-white pt-20 pb-10 scroll-mt-20"
+        className="bg-slate-900 pt-20 pb-10 text-white relative overflow-hidden w-full"
       >
-        <div className="max-w-[1300px] mx-auto px-10">
+        <div className="w-full max-w-[1300px] mx-auto px-4 sm:px-6 md:px-12 xl:px-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-16">
             {/* Column 1: Company Info */}
             <div className="lg:col-span-5">

@@ -438,7 +438,7 @@ export default function TrackingPage() {
   });
 
   return (
-    <div className="max-w-[1300px] mx-auto px-4 py-8 animate-in fade-in duration-700 relative">
+    <div className="w-full max-w-[1300px] mx-auto px-6 md:px-12 xl:px-20 py-8 animate-in fade-in duration-700 relative">
       {/* Back Button */}
       <button
         onClick={() => router.back()}
