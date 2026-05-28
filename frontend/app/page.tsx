@@ -462,7 +462,7 @@ export default function HomePage() {
         } else if (role === "Admin" || role === "Director") {
           router.push("/dashboard");
         } else if (role === "NhanVien") {
-          router.push("/san-pham");
+          router.push("/quan-ly-san-pham");
         } else {
           router.push("/");
         }
@@ -1116,7 +1116,7 @@ export default function HomePage() {
               </p>
             </div>
             <Link
-              href="/mau-sac"
+              href="/colors"
               className="text-blue-600 font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline"
             >
               Tra Cứu Toàn Bộ <ArrowRight size={18} />
@@ -1164,7 +1164,7 @@ export default function HomePage() {
               </p>
             </div>
             <Link
-              href="/san-pham"
+              href="/shop"
               className="text-blue-600 font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline"
             >
             </Link>
@@ -1305,7 +1305,7 @@ export default function HomePage() {
 
           <div className="mt-12 flex justify-center">
             <Link
-              href="/san-pham"
+              href="/shop"
               className="px-8 py-3.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-2xl font-bold text-[14px] transition-all shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center gap-2 no-underline"
             >
               Xem tất cả sản phẩm <ArrowRight size={18} />
