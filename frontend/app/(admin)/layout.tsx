@@ -117,7 +117,7 @@ const allNavItems = [
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/quan-ly-ma-mau",
+        href: "/colors",
         label: "Tra cứu mã màu",
         icon: Palette,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
@@ -274,7 +274,7 @@ export default function AdminLayout({
     // Phân quyền cho trang Dashboard
     if (pathname === "/dashboard") {
       if (userRole === "NhanVien") {
-        router.push("/san-pham");
+        router.push("/quan-ly-san-pham");
         return;
       }
       if (isCustomer) {
