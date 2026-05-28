@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
   Search, Package, CheckCircle2, Clock, Truck, MapPin, 
@@ -22,9 +22,7 @@ export default function TrackingPage() {
   const [selectedTracking, setSelectedTracking] = useState<any | null>(null);
 
   // R&D Tracking states
-  const [activeTab, setActiveTab] = useState<'shipping' | 'rd'>('shipping');
   const [selectedRDRequest, setSelectedRDRequest] = useState<any | null>(null);
-  const [sampleRequests, setSampleRequests] = useState<any[]>([]);
   const [loadingRD, setLoadingRD] = useState(false);
 
   // Live simulation states
@@ -33,7 +31,7 @@ export default function TrackingPage() {
   const [simTemp, setSimTemp] = useState(19.4);
   const [lastPing, setLastPing] = useState(0);
 
-  const { user } = useAuthStore();
+
 
   const [dbTrackingList, setDbTrackingList] = useState<any[]>([]);
 
@@ -86,7 +84,7 @@ export default function TrackingPage() {
           if (!code && !orderId && mapped.length > 0) {
             setSelectedTracking(mapped[0]);
             setTrackingCode(mapped[0].code);
-            setActiveTab('shipping');
+            setActiveTab('shipment');
           }
         }
       }
@@ -162,7 +160,7 @@ export default function TrackingPage() {
           signedBy: item.signedBy,
           signedAt: item.signedAt
         });
-        setActiveTab('rd');
+        setActiveTab('samples');
       } else {
         alert('Không tìm thấy mã nhật ký R&D hoặc mã yêu cầu.');
       }
@@ -189,7 +187,7 @@ export default function TrackingPage() {
       const tabParam = params.get('tab');
 
       if (tabParam === 'rd') {
-        setActiveTab('rd');
+        setActiveTab('samples');
       }
 
       // No more localStorage. Just rely on dbRDList and filteredTrackingData.
@@ -199,7 +197,7 @@ export default function TrackingPage() {
         if (foundShipping) {
           setTrackingCode(foundShipping.code);
           setSelectedTracking(foundShipping);
-          setActiveTab('shipping');
+          setActiveTab('shipment');
         }
       } else if (code) {
         setTrackingCode(code);
@@ -207,13 +205,13 @@ export default function TrackingPage() {
         const foundShipping = filteredTrackingData.find(t => t.code.toLowerCase() === code.toLowerCase());
         if (foundShipping) {
           setSelectedTracking(foundShipping);
-          setActiveTab('shipping');
+          setActiveTab('shipment');
         } else {
           // Check DB R&D requests
           const foundRD = dbRDList.find((r: any) => r.id === trackingCode);
           if (foundRD) {
             setSelectedRDRequest(foundRD);
-            setActiveTab('rd');
+            setActiveTab('samples');
           } else {
             // Try fetching from DB if not start with REQ
             if (!code.toLowerCase().startsWith('req-')) {
@@ -245,7 +243,6 @@ export default function TrackingPage() {
   }, []);
 
   // R&D samples states
-  const [sampleRequests, setSampleRequests] = useState<any[]>([]);
   const [selectedSample, setSelectedSample] = useState<any | null>(null);
   const [sampleSearchTerm, setSampleSearchTerm] = useState('');
 
@@ -293,7 +290,7 @@ export default function TrackingPage() {
   const handleSearch = () => {
     if (!trackingCode) return;
 
-    if (activeTab === 'shipping') {
+    if (activeTab === 'shipment') {
       const found = filteredTrackingData.find(t => t.code.toLowerCase() === trackingCode.toLowerCase());
       if (found) {
         setSelectedTracking(found);
@@ -305,7 +302,7 @@ export default function TrackingPage() {
           const foundRD = reqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
           if (foundRD) {
             setSelectedRDRequest(foundRD);
-            setActiveTab('rd');
+            setActiveTab('samples');
             setSelectedTracking(null);
             return;
           }
@@ -371,7 +368,7 @@ export default function TrackingPage() {
     'CheckCircle2': CheckCircle2,
     'Package': Package,
     'Clock': Clock,
-    'Camera': Camera,
+
   };
 
   const statusColors = {
@@ -494,7 +491,7 @@ export default function TrackingPage() {
 
               {/* Timeline */}
               <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 md:gap-2">
-                {selectedTracking.steps.map((step, i) => {
+                {selectedTracking.steps.map((step: any, i: number) => {
                   const Icon = iconMap[step.label] || Package;
                   return (
                     <div key={i} className="flex flex-col items-center gap-3 flex-1 relative text-center">
@@ -503,7 +500,7 @@ export default function TrackingPage() {
                         <div className={`hidden md:block absolute top-5 left-1/2 w-full h-0.5 z-0 ${step.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-100'}`} />
                       )}
                       {/* Dot */}
-                      <div className={`w-11 h-11 rounded-full flex items-center justify-center z-10 shadow-sm transition-all ${statusColors[step.status]}`}>
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center z-10 shadow-sm transition-all ${statusColors[step.status as keyof typeof statusColors]}`}>
                         <Icon size={18} />
                       </div>
                       <div className="space-y-1">
@@ -571,6 +568,7 @@ export default function TrackingPage() {
             </div>
           </div>
         </div>
+      )}
 
       {/* ═══════ TAB 2: R&D MIXING REQUEST TRACKING ═══════ */}
       {activeTab === 'samples' && (
