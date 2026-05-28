@@ -229,7 +229,7 @@ export default function ColorsPage() {
   }, [filteredColors]);
 
   return (
-    <div>
+    <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12 xl:px-20 py-8 min-h-screen">
       {/* Back Button */}
       <button
         onClick={() => router.back()}
