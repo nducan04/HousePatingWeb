@@ -81,7 +81,7 @@ const allNavItems = [
     section: "Quản lý danh mục",
     items: [
       {
-        href: "/san-pham",
+        href: "/quan-ly-san-pham",
         label: "Sản phẩm sơn",
         icon: Package,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
@@ -117,13 +117,13 @@ const allNavItems = [
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/colors",
+        href: "/quan-ly-ma-mau",
         label: "Tra cứu mã màu",
         icon: Palette,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
       {
-        href: "/import",
+        href: "/nhap-du-lieu",
         label: "Nhập dữ liệu",
         icon: FileUp,
         roles: ["Admin", "NhanVien"],
@@ -146,7 +146,7 @@ const allNavItems = [
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
-        href: "/thanh-toan",
+        href: "/quan-ly-thanh-toan",
         label: "Quản lý thanh toán",
         icon: QrCode,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
@@ -187,7 +187,7 @@ const allNavItems = [
     section: "Quy trình pha chế sơn",
     items: [
       {
-        href: "/contracts",
+        href: "/hop-dong-pha-che",
         label: "Hợp đồng pha chế",
         icon: FileSignature,
         roles: ["Admin", "NhanVien", "KhachHangB2B"],
@@ -435,8 +435,8 @@ export default function AdminLayout({
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${isActive
-                                ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
-                                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
+                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                               }`}
                           >
                             <div
