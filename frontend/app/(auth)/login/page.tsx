@@ -112,14 +112,7 @@ function LoginContent() {
           </button>
 
 
-          <div className="grid grid-cols-2 gap-4">
-            <button type="button" className="h-14 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer">
-              <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png" className="w-4 h-4" alt="Google" /> Google
-            </button>
-            <button type="button" className="h-14 bg-[#0f172a] text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer">
-              <img src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png" className="w-4 h-4" alt="Apple" /> Apple
-            </button>
-          </div>
+
         </form>
       </div>
     </div>
