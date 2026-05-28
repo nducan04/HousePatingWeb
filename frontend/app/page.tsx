@@ -41,6 +41,7 @@ import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useCartStore, getGuestSessionId } from "@/lib/store/cartStore";
 import { paintColors } from "@/lib/data/colors-data";
+import { resolveImageUrl } from "@/lib/utils/imageUrl";
 
 const BACKEND_URL = "http://localhost:5000";
 
@@ -566,22 +567,10 @@ export default function HomePage() {
   };
 
   const getImageUrl = (path: any) => {
-    let resolvedPath = path;
-    if (Array.isArray(path)) {
-      resolvedPath = path[0];
-    }
-    if (
-      !resolvedPath ||
-      typeof resolvedPath !== "string" ||
-      resolvedPath === "undefined" ||
-      resolvedPath === "null"
-    )
-      return "https://ui-avatars.com/api/?name=VTSC+Product&background=random";
-    if (resolvedPath.startsWith("http")) return resolvedPath;
-    if (resolvedPath.startsWith("Qm") || resolvedPath.startsWith("bafy")) {
-      return `https://gateway.pinata.cloud/ipfs/${resolvedPath}`;
-    }
-    return `${BACKEND_URL}${resolvedPath.startsWith("/") ? "" : "/"}${resolvedPath}`;
+    return resolveImageUrl(
+      path,
+      "https://ui-avatars.com/api/?name=VTSC+Product&background=random"
+    );
   };
 
   return (

@@ -48,38 +48,96 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // ═══════════════════════════════════════
 // Routes — Module 1: Hệ thống & Xác thực
 // ═══════════════════════════════════════
-app.use('/api/auth', require('./routes/authRoutes'));
+const authRouter = require('./routes/authRoutes');
+app.use('/api/auth', authRouter);
 
 // ═══════════════════════════════════════
 // Routes — Module 2: Danh mục & Hỗ trợ
 // ═══════════════════════════════════════
-app.use('/api/san-pham-son', require('./routes/sanPhamSonRoutes'));
-app.use('/api/kho', require('./routes/khoRoutes'));
-app.use('/api/khach-hang', require('./routes/khachHangRoutes'));
-app.use('/api/nhan-vien', require('./routes/nhanVienRoutes'));
-app.use('/api/nha-cung-cap', require('./routes/nhaCungCapRoutes'));
+const sanPhamSonRouter = require('./routes/sanPhamSonRoutes');
+app.use('/api/san-pham-son', sanPhamSonRouter);
+app.use('/api/products', sanPhamSonRouter);
+
+const khoRouter = require('./routes/khoRoutes');
+app.use('/api/kho', khoRouter);
+app.use('/api/inventory', khoRouter);
+
+const khachHangRouter = require('./routes/khachHangRoutes');
+app.use('/api/khach-hang', khachHangRouter);
+app.use('/api/partners', khachHangRouter);
+
+const nhanVienRouter = require('./routes/nhanVienRoutes');
+app.use('/api/nhan-vien', nhanVienRouter);
+app.use('/api/staff', nhanVienRouter);
+
+const nhaCungCapRouter = require('./routes/nhaCungCapRoutes');
+app.use('/api/nha-cung-cap', nhaCungCapRouter);
+app.use('/api/suppliers', nhaCungCapRouter);
+
 app.use('/api/chatbot', require('./routes/chatbotRoutes'));
-app.use('/api/tai-khoan', require('./routes/taiKhoanRoutes'));
+
+const taiKhoanRouter = require('./routes/taiKhoanRoutes');
+app.use('/api/tai-khoan', taiKhoanRouter);
+app.use('/api/accounts', taiKhoanRouter);
 
 // ═══════════════════════════════════════
 // Routes — Module 3: Kinh doanh & Hợp đồng
 // ═══════════════════════════════════════
 app.use('/api/contracts', require('./routes/contractRoutes'));
-app.use('/api/tin-tuc', require('./routes/tinTucRoutes'));
-app.use('/api/don-hang', require('./routes/donHangRoutes'));
-app.use('/api/khuyen-mai', require('./routes/khuyenMaiRoutes'));
-app.use('/api/gio-hang', require('./routes/gioHangRoutes'));
-app.use('/api/thanh-toan', require('./routes/paymentRoutes'));
-app.use('/api/van-chuyen', require('./routes/vanChuyenRoutes'));
-app.use('/api/hieu-suat', require('./routes/hieuSuatRoutes'));
-app.use('/api/doi-tra', require('./routes/doiTraRoutes'));
-app.use('/api/bao-hanh', require('./routes/baoHanhRoutes'));
+
+const tinTucRouter = require('./routes/tinTucRoutes');
+app.use('/api/tin-tuc', tinTucRouter);
+app.use('/api/news', tinTucRouter);
+
+const donHangRouter = require('./routes/donHangRoutes');
+app.use('/api/don-hang', donHangRouter);
+app.use('/api/orders', donHangRouter);
+
+const khuyenMaiRouter = require('./routes/khuyenMaiRoutes');
+app.use('/api/khuyen-mai', khuyenMaiRouter);
+app.use('/api/promotions', khuyenMaiRouter);
+
+const gioHangRouter = require('./routes/gioHangRoutes');
+app.use('/api/gio-hang', gioHangRouter);
+app.use('/api/cart', gioHangRouter);
+
+const paymentRouter = require('./routes/paymentRoutes');
+app.use('/api/thanh-toan', paymentRouter);
+app.use('/api/payments', paymentRouter);
+
+const vanChuyenRouter = require('./routes/vanChuyenRoutes');
+app.use('/api/van-chuyen', vanChuyenRouter);
+app.use('/api/shipping', vanChuyenRouter);
+
+const hieuSuatRouter = require('./routes/hieuSuatRoutes');
+app.use('/api/hieu-suat', hieuSuatRouter);
+app.use('/api/performance', hieuSuatRouter);
+
+const doiTraRouter = require('./routes/doiTraRoutes');
+app.use('/api/doi-tra', doiTraRouter);
+app.use('/api/returns', doiTraRouter);
+
+const baoHanhRouter = require('./routes/baoHanhRoutes');
+app.use('/api/bao-hanh', baoHanhRouter);
+app.use('/api/warranties', baoHanhRouter);
+
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
-app.use('/api/reports', require('./routes/reportRoutes'));
-app.use('/api/rd-tracking', require('./routes/rdRoutes'));
-app.use('/api/formulas', require('./routes/congThucRoutes'));
-app.use('/api/packaging', require('./routes/packagingRoutes'));
-app.use('/api/production', require('./routes/productionRoutes'));
+
+const reportRouter = require('./routes/reportRoutes');
+app.use('/api/reports', reportRouter);
+app.use('/api/bao-cao', reportRouter);
+
+const rdRouter = require('./routes/rdRoutes');
+app.use('/api/rd-tracking', rdRouter);
+
+const congThucRouter = require('./routes/congThucRoutes');
+app.use('/api/formulas', congThucRouter);
+
+const packagingRouter = require('./routes/packagingRoutes');
+app.use('/api/packaging', packagingRouter);
+
+const productionRouter = require('./routes/productionRoutes');
+app.use('/api/production', productionRouter);
 
 // ═══════════════════════════════════════
 // Routes — Legacy (giữ lại cho tương thích)
