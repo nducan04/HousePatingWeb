@@ -25,6 +25,7 @@ import {
 import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
+import { getGuestSessionId } from "@/lib/store/cartStore";
 import * as XLSX from "xlsx";
 import IPFSImage from "@/lib/components/IPFSImage";
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
@@ -245,7 +246,7 @@ export default function SanPhamPage() {
   const addToCart = async (sp: SanPham) => {
     setCartLoading(sp._id);
     try {
-      const sessionId = user?.id || "GUEST_SESSION";
+      const sessionId = user?.id || getGuestSessionId();
       const res = await api.post(`/gio-hang/${sessionId}`, {
         SanPhamId: sp._id,
         SoLuong: 1,

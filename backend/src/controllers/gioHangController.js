@@ -128,3 +128,89 @@ exports.clearCart = async (req, res) => {
     res.status(400).json({ success: false, error: error.message });
   }
 };
+
+// @desc    Gộp giỏ hàng khách vào giỏ hàng user
+// @route   POST /api/gio-hang/merge
+exports.mergeCart = async (req, res) => {
+  try {
+    const { guestSessionId } = req.body;
+    const userSessionId = req.user.id || req.user._id;
+
+    if (!guestSessionId) {
+      return res.status(400).json({ success: false, message: 'Thiếu guestSessionId' });
+    }
+
+    // Nếu guestSessionId trùng với userSessionId thì không gộp
+    if (guestSessionId === userSessionId.toString()) {
+      const currentCart = await GioHang.findOne({ SessionId: userSessionId }).populate({
+        path: 'Items.SanPham',
+        select: 'MaSanPham TenDongSon DonGiaCoSo HinhAnh TongTonKho PhanLoai'
+      });
+      return res.status(200).json({ success: true, data: currentCart || { SessionId: userSessionId, Items: [] } });
+    }
+
+    // Tìm giỏ hàng của khách (guest)
+    const guestCart = await GioHang.findOne({ SessionId: guestSessionId });
+    if (!guestCart || guestCart.Items.length === 0) {
+      // Không có gì để gộp, trả về giỏ hàng hiện tại của user hoặc giỏ hàng trống mới
+      let userCart = await GioHang.findOne({ SessionId: userSessionId }).populate({
+        path: 'Items.SanPham',
+        select: 'MaSanPham TenDongSon DonGiaCoSo HinhAnh TongTonKho PhanLoai'
+      });
+      if (!userCart) {
+        userCart = await GioHang.create({ SessionId: userSessionId, Items: [], TongTienTamTinh: 0 });
+      }
+      return res.status(200).json({ success: true, data: userCart });
+    }
+
+    // Tìm hoặc tạo giỏ hàng của user
+    let userCart = await GioHang.findOne({ SessionId: userSessionId });
+    if (!userCart) {
+      userCart = new GioHang({ SessionId: userSessionId, Items: [] });
+    }
+
+    // Gộp items từ giỏ hàng khách sang giỏ hàng user
+    for (const guestItem of guestCart.Items) {
+      if (!guestItem.SanPham) continue;
+      const guestProductStr = guestItem.SanPham.toString();
+      const guestMaMau = guestItem.MaMau || 'N/A';
+
+      const itemIndex = userCart.Items.findIndex(i => {
+        return i.SanPham.toString() === guestProductStr && (i.MaMau || 'N/A') === guestMaMau;
+      });
+
+      if (itemIndex > -1) {
+        // Cộng dồn số lượng
+        userCart.Items[itemIndex].SoLuong += guestItem.SoLuong;
+      } else {
+        // Thêm mới
+        userCart.Items.push({
+          SanPham: guestItem.SanPham,
+          MaMau: guestMaMau,
+          SoLuong: guestItem.SoLuong
+        });
+      }
+    }
+
+    // Tính toán lại tổng tiền cho giỏ hàng của user
+    const totals = await calculateTotal(userCart.Items);
+    userCart.TongTienTamTinh = totals.TongTienTamTinh;
+    userCart.TienThue = totals.TienThue;
+    userCart.TongThanhToan = totals.TongThanhToan;
+    await userCart.save();
+
+    // Xóa giỏ hàng của khách (guest) sau khi gộp
+    await GioHang.findOneAndDelete({ SessionId: guestSessionId });
+
+    // Populate và trả về giỏ hàng đã cập nhật
+    const updatedCart = await GioHang.findById(userCart._id).populate({
+      path: 'Items.SanPham',
+      select: 'MaSanPham TenDongSon DonGiaCoSo HinhAnh TongTonKho PhanLoai'
+    });
+
+    res.status(200).json({ success: true, data: updatedCart });
+  } catch (error) {
+    console.error('Merge cart error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
