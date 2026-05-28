@@ -5,13 +5,8 @@ const cookieParser = require('cookie-parser');
 const connectDB = require('./utils/db');
 // Trigger nodemon restart after port 5000 release
 
-<<<<<<< Updated upstream
 // Load env vars
-dotenv.config();
-=======
-// Trigger nodemon restart after env update
 dotenv.config({ override: true });
->>>>>>> Stashed changes
 
 // Connect to database
 connectDB();
@@ -84,7 +79,3 @@ startRiskAlertJob();
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
-<<<<<<< Updated upstream
-=======
-// Force reload
->>>>>>> Stashed changes
