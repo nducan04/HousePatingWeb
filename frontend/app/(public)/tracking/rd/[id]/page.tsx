@@ -26,6 +26,7 @@ export default function RDTrackingDetailPage() {
 
   const loadRequest = async (code: string) => {
     setLoading(true);
+<<<<<<< Updated upstream
     // 1. First check local storage (mock data)
     const stored = localStorage.getItem('sampleRequests');
     if (stored) {
@@ -35,6 +36,34 @@ export default function RDTrackingDetailPage() {
         setSelectedSample(foundRD);
         setLoading(false);
         return;
+=======
+    
+    // 1. Nếu là dạng mock từ localStorage (bắt đầu bằng REQ-)
+    if (code.startsWith('REQ-')) {
+      if (typeof window !== 'undefined') {
+        const storedRequests = localStorage.getItem('sampleRequests');
+        if (storedRequests) {
+          const requests = JSON.parse(storedRequests);
+          const req = requests.find((r: any) => r.id === code);
+          if (req) {
+            setSelectedSample({
+              id: req.id,
+              customer: req.customer,
+              colorCode: req.colorCode,
+              surface: req.surface || 'Kim loại',
+              status: req.status || 'pending',
+              deadline: req.deadline,
+              date: req.date,
+              LichSuPhienBan: req.LichSuPhienBan || [],
+              signedBy: req.signedBy,
+              signedAt: req.signedAt,
+              imageUrl: req.imageUrl
+            });
+            setLoading(false);
+            return;
+          }
+        }
+>>>>>>> Stashed changes
       }
     }
 

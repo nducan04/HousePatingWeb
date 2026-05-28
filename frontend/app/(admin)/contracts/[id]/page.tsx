@@ -34,13 +34,19 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
     fetchContractById(id);
   }, [id, fetchContractById]);
 
+  useEffect(() => {
+    if (contract?.clientAddress && !missingClientAddress) {
+      setMissingClientAddress(contract.clientAddress);
+    }
+  }, [contract]);
+
   if (loading || !contract) {
     return (
       <div style={{ textAlign: 'center', padding: '3.5rem', color: '#94a3b8' }}>
         <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
         <div>{loading ? 'Đang tải hợp đồng...' : 'Không tìm thấy hợp đồng'}</div>
         {!loading && (
-          <Link href="/contracts" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg text-xs" style={{ marginTop: '1.125rem' }}>
+          <Link href="/hop-dong-pha-che" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg text-xs" style={{ marginTop: '1.125rem' }}>
             Quay lại
           </Link>
         )}
@@ -118,7 +124,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto' }}>
-      <Link href="/contracts" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ marginBottom: '1.75rem' }}>
+      <Link href="/hop-dong-pha-che" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs" style={{ marginBottom: '1.75rem' }}>
         <ArrowLeft size={16} /> Quay lại
       </Link>
 
@@ -326,22 +332,20 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
               </div>
             ) : (
               <div>
-                {!contract.clientAddress && (
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginBottom: '0.25rem' }}>
-                      Địa chỉ ví khách hàng (Client Address) <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <input 
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
-                      value={missingClientAddress} 
-                      onChange={e => setMissingClientAddress(e.target.value)} 
-                      placeholder="Nhập địa chỉ ví MetaMask (0x...)" 
-                    />
-                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Hợp đồng này chưa có địa chỉ ví. Vui lòng bổ sung trước khi deploy.</p>
-                  </div>
-                )}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginBottom: '0.25rem' }}>
+                    Địa chỉ ví khách hàng (Client Address) <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input 
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
+                    value={missingClientAddress} 
+                    onChange={e => setMissingClientAddress(e.target.value)} 
+                    placeholder="Nhập địa chỉ ví MetaMask (0x...)" 
+                  />
+                  <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Kiểm tra kỹ địa chỉ ví trước khi deploy on-chain. Bạn có thể sửa nếu khách hàng nhập sai.</p>
+                </div>
                 <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ width: '100%' }} onClick={handleDeploy}
-                  disabled={isDeploying || !contract.ipfsCid || (!contract.clientAddress && !missingClientAddress)}>
+                  disabled={isDeploying || !contract.ipfsCid || !missingClientAddress}>
                   {isDeploying
                     ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Đang ghi Blockchain...</>
                     : <><Shield size={16} /> Deploy On-Chain (Sepolia)</>}
