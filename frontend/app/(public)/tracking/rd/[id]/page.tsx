@@ -26,18 +26,6 @@ export default function RDTrackingDetailPage() {
 
   const loadRequest = async (code: string) => {
     setLoading(true);
-<<<<<<< Updated upstream
-    // 1. First check local storage (mock data)
-    const stored = localStorage.getItem('sampleRequests');
-    if (stored) {
-      const localReqs = JSON.parse(stored);
-      const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === code.toLowerCase());
-      if (foundRD) {
-        setSelectedSample(foundRD);
-        setLoading(false);
-        return;
-=======
-    
     // 1. Nếu là dạng mock từ localStorage (bắt đầu bằng REQ-)
     if (code.startsWith('REQ-')) {
       if (typeof window !== 'undefined') {
@@ -63,8 +51,20 @@ export default function RDTrackingDetailPage() {
             return;
           }
         }
->>>>>>> Stashed changes
       }
+      
+      // Fallback khi quét mã QR trên điện thoại (điện thoại không có sẵn localStorage của máy tính)
+      setSelectedSample({
+        id: code,
+        customer: 'Khách hàng Demo (Test quét QR)',
+        colorCode: 'DEMO-COLOR-7035',
+        surface: 'Nhôm định hình',
+        status: 'processing',
+        date: new Date().toLocaleDateString('vi-VN'),
+        LichSuPhienBan: [],
+      });
+      setLoading(false);
+      return;
     }
 
     // 2. Fetch from DB
