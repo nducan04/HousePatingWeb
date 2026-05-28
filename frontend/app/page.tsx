@@ -424,7 +424,7 @@ export default function HomePage() {
 
         alert("Đặt hàng thành công!");
         if (user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C") {
-          router.push("/don-hang-cua-toi");
+          router.push("/my-orders");
         } else {
           router.push("/don-hang");
         }

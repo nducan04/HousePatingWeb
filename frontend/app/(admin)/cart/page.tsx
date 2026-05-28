@@ -144,7 +144,7 @@ export default function GioHangPage() {
 
       if (res.data.success) {
         alert(`Đặt hàng thành công! Mã đơn hàng: ${res.data.data.MaDonHang}. Kho đã được cập nhật.`);
-        router.push(isAdminOrEmployee ? '/orders' : '/my-orders');
+        router.push(isAdminOrEmployee ? '/don-hang' : '/my-orders');
       }
     } catch (error: any) {
       alert(error.response?.data?.message || 'Lỗi khi đặt hàng');
@@ -279,7 +279,7 @@ export default function GioHangPage() {
         {/* Premium Horizontal Navigation Slider */}
         <div className="flex gap-2.5 overflow-x-auto py-3 px-4 bg-slate-50/60 border border-slate-100 rounded-2xl mb-4 scrollbar-none whitespace-nowrap">
           <Link
-            href={isAdminOrEmployee ? "/orders" : "/my-orders"}
+            href={isAdminOrEmployee ? "/don-hang" : "/my-orders"}
             className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-blue-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
           >
             <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
