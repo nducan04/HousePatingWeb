@@ -585,7 +585,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900 antialiased overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900 antialiased">
       {/* ═══════ HEADER / NAVBAR ═══════ */}
       <header className="sticky top-0 z-[100] bg-white/70 backdrop-blur-xl border-b border-slate-200/40 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
         <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 xl:px-10 py-3 sm:py-5 flex items-center justify-between gap-2 sm:gap-4">
