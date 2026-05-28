@@ -424,7 +424,7 @@ export default function HomePage() {
 
         alert("Đặt hàng thành công!");
         if (user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C") {
-          router.push("/my-orders");
+          router.push("/don-hang-cua-toi");
         } else {
           router.push("/don-hang");
         }
@@ -577,12 +577,18 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900 antialiased">
       {/* ═══════ HEADER / NAVBAR ═══════ */}
       <header className="sticky top-0 z-[100] bg-white/70 backdrop-blur-xl border-b border-slate-200/40 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 xl:px-10 py-3 sm:py-5 flex items-center justify-between gap-2 sm:gap-4">
-          <Link href="/" className="flex items-center gap-2 sm:gap-3.5 no-underline group flex-shrink-0">
-            <div className="w-[100px] h-[36px] sm:w-[140px] sm:h-[48px] md:w-[180px] md:h-[60px] rounded-xl sm:rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-110 px-2 sm:px-3">
+        <div className="max-w-[1400px] mx-auto px-8 py-5 flex items-center justify-between">
+<<<<<<< Updated upstream
+          <Link href="/" className="flex items-center gap-3 no-underline">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-blue-600/20">
+              V
+=======
+          <Link href="/" className="flex items-center gap-3.5 no-underline group">
+            <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-110 px-3">
               <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+>>>>>>> Stashed changes
             </div>
-            <span className="hidden sm:inline xl:hidden 2xl:inline font-bold text-lg md:text-xl text-slate-900 tracking-tight">
+            <span className="font-bold text-xl text-slate-900 tracking-tight">
               VTSC PaintPro
             </span>
           </Link>
@@ -590,55 +596,65 @@ export default function HomePage() {
           <nav className="hidden xl:flex items-center gap-0.5">
             <Link
               href="/"
-              className="text-[13px] font-bold text-blue-600 no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl bg-blue-50 whitespace-nowrap"
+              className="text-[13px] font-bold text-blue-600 no-underline px-3 py-2 rounded-xl bg-blue-50 whitespace-nowrap"
             >
               Trang chủ
             </Link>
             <Link
               href="#san-pham"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Sản phẩm
             </Link>
             <Link
+<<<<<<< Updated upstream
               href="/colors"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+=======
+              href="/mau-sac"
               className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
+>>>>>>> Stashed changes
             >
               Bảng màu
             </Link>
             <Link
+<<<<<<< Updated upstream
               href="/tracking"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+=======
+              href="/theo-doi-don-hang"
               className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
+>>>>>>> Stashed changes
             >
               Theo dõi & Tra cứu
             </Link>
             <Link
               href="#quy-trinh"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Quy trình
             </Link>
             <Link
               href="#tin-tuc"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Tin tức
             </Link>
             <Link
               href="#footer"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Liên hệ
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative hidden sm:flex xl:hidden 2xl:flex items-center w-[160px] md:w-[220px] bg-slate-100 rounded-2xl px-3 md:px-4 h-9 md:h-10 border border-slate-200/50">
-              <Search size={16} className="text-slate-400 flex-shrink-0" />
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center w-[220px] bg-slate-100 rounded-2xl px-4 h-10 border border-slate-200/50">
+              <Search size={18} className="text-slate-400" />
               <input
                 type="text"
-                placeholder="Tìm sản phẩm..."
-                className="bg-transparent border-none outline-none text-xs md:text-sm font-medium text-slate-900 ml-2 md:ml-3 w-full placeholder:text-slate-400"
+                placeholder="Tìm sản phẩm, màu sơn..."
+                className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 ml-3 w-full placeholder:text-slate-400"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -668,7 +684,7 @@ export default function HomePage() {
               {/* Cart Dropdown */}
               {isCartOpen && (
                 <div
-                  className="absolute top-full right-0 mt-4 w-[calc(100vw-2rem)] sm:w-[350px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 z-[110]"
+                  className="absolute top-full right-0 mt-4 w-[350px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 z-[110]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
@@ -684,13 +700,13 @@ export default function HomePage() {
                   {/* Premium Horizontal Navigation */}
                   <div className="grid grid-cols-4 gap-2 py-3 px-4 bg-slate-50/60 border-b border-slate-100">
                     <Link
-                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/don-hang"}
+                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/my-orders"}
                       className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-blue-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
                       onClick={(e) => {
                         setIsCartOpen(false);
                         if (!isAuthenticated) {
                           e.preventDefault();
-                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/don-hang");
+                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/my-orders");
                         }
                       }}
                     >
@@ -701,7 +717,7 @@ export default function HomePage() {
                     </Link>
 
                     <Link
-                      href="/tracking"
+                      href="/theo-doi-don-hang"
                       className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-emerald-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
                       onClick={(e) => {
                         setIsCartOpen(false);
@@ -735,13 +751,13 @@ export default function HomePage() {
                     </Link>
 
                     <Link
-                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/tracking?tab=rd" : "/rd-tracking"}
+                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/theo-doi-don-hang?tab=rd" : "/rd-tracking"}
                       className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-purple-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
                       onClick={(e) => {
                         setIsCartOpen(false);
                         if (!isAuthenticated) {
                           e.preventDefault();
-                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/tracking?tab=rd" : "/rd-tracking");
+                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/theo-doi-don-hang?tab=rd" : "/rd-tracking");
                         }
                       }}
                     >
@@ -789,7 +805,7 @@ export default function HomePage() {
                             </div>
                             <div className="flex justify-between items-center mt-1">
                               <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
-                                <button 
+                                <button
                                   onClick={() => handleUpdateCartItemQuantity(item.SanPham?._id, item.SoLuong - 1)}
                                   className="w-5 h-5 rounded-md bg-white text-slate-600 hover:text-blue-600 flex items-center justify-center font-bold shadow-sm text-xs"
                                 >
@@ -798,7 +814,7 @@ export default function HomePage() {
                                 <span className="text-[11px] font-bold text-blue-600 w-4 text-center">
                                   {item.SoLuong}
                                 </span>
-                                <button 
+                                <button
                                   onClick={() => handleUpdateCartItemQuantity(item.SanPham?._id, item.SoLuong + 1)}
                                   className="w-5 h-5 rounded-md bg-white text-slate-600 hover:text-blue-600 flex items-center justify-center font-bold shadow-sm text-xs"
                                 >
@@ -883,7 +899,7 @@ export default function HomePage() {
       </header>
 
       {/* ═══════ HERO BANNER (Balanced Fonts) ═══════ */}
-      <section className="relative h-[400px] sm:h-[500px] md:h-[550px] lg:h-[650px] w-full overflow-hidden">
+      <section className="relative h-[550px] sm:h-[650px] w-full overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
             src="/paint_factory_exterior_1778742118407.png"
@@ -891,35 +907,34 @@ export default function HomePage() {
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/50 to-transparent sm:from-white sm:via-white/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent" />
         </div>
 
-        <div className="relative z-10 h-full w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 xl:px-20 flex flex-col justify-center items-start">
-          <div className="space-y-4 sm:space-y-6 max-w-3xl animate-in fade-in slide-in-from-left-10 duration-1000">
-            <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-1.5 bg-blue-50 border border-blue-100 rounded-lg">
-              <Sparkles size={14} className="text-blue-600 sm:hidden" />
-              <Sparkles size={16} className="text-blue-600 hidden sm:block" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-blue-600">
+        <div className="relative z-10 h-full max-w-[1400px] mx-auto px-10 flex flex-col justify-center items-start">
+          <div className="space-y-6 max-w-3xl animate-in fade-in slide-in-from-left-10 duration-1000">
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-blue-50 border border-blue-100 rounded-lg">
+              <Sparkles size={16} className="text-blue-600" />
+              <span className="text-xs font-bold uppercase tracking-widest text-blue-600">
                 Hệ thống VTSC Paint Technology
               </span>
             </div>
-            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight uppercase text-slate-900">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight uppercase text-slate-900">
               Đại lý phân phối
               <br />
               <span className="text-blue-600">Sơn tĩnh điện</span>
               <br />
               hàng đầu Việt Nam
             </h1>
-            <p className="text-sm sm:text-lg md:text-xl text-slate-500 font-medium leading-relaxed max-w-2xl">
+            <p className="text-lg sm:text-xl text-slate-500 font-medium leading-relaxed max-w-2xl">
               Giải pháp sơn tĩnh điện AkzoNobel Interpon chuyên nghiệp. Đảm bảo
               chất lượng bền bỉ, thẩm mỹ cao cho mọi bề mặt kim loại.
             </p>
-            <div className="pt-3 sm:pt-6">
+            <div className="pt-6">
               <Link
                 href="#dich-vu"
-                className="px-6 py-3 sm:px-10 sm:py-4 bg-blue-600 text-white rounded-xl font-bold text-sm sm:text-lg no-underline shadow-xl shadow-blue-600/30 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 sm:gap-3 w-fit"
+                className="px-10 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg no-underline shadow-xl shadow-blue-600/30 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 w-fit"
               >
-                Khám phá dịch vụ <ArrowRight size={18} className="sm:hidden" /><ArrowRight size={22} className="hidden sm:block" />
+                Khám phá dịch vụ <ArrowRight size={22} />
               </Link>
             </div>
           </div>
@@ -927,7 +942,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ DỊCH VỤ & THẾ MẠNH (Uniform Typography) ═══════ */}
-      <section id="dich-vu" className="px-4 sm:px-6 md:px-12 xl:px-20 py-12 sm:py-20 bg-white w-full">
+      <section id="dich-vu" className="px-6 py-20 bg-white">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -941,7 +956,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <ServiceCard
               icon={<FlaskConical size={28} />}
               iconBg="bg-blue-50"
@@ -967,7 +982,7 @@ export default function HomePage() {
               desc="Tạo và ký kết hợp đồng nguyên tắc mua bán sơn với VTSC."
               ctaText="Quản lý hợp đồng"
               ctaColor="text-red-600"
-              href="/my-contracts"
+              href="/hop-dong-cua-toi"
               onClick={(e: any) => {
                 e.preventDefault();
                 handleServiceClick("/my-contracts");
@@ -981,7 +996,7 @@ export default function HomePage() {
               desc="Theo dõi lộ trình giao nhận hàng minh bạch, đảm bảo tiến độ công trình của bạn."
               ctaText="Tra cứu"
               ctaColor="text-emerald-600"
-              href="/tracking"
+              href="/theo-doi-don-hang"
             />
             <ServiceCard
               icon={<ShieldCheck size={28} />}
@@ -991,14 +1006,14 @@ export default function HomePage() {
               desc="Hỗ trợ kỹ thuật 24/7 từ các chuyên gia sơn tĩnh điện hàng đầu Việt Nam."
               ctaText="Chi tiết"
               ctaColor="text-amber-600"
-              href="#"
+              href="my-warranties"
             />
           </div>
         </div>
       </section>
 
-      {/* ═══════ QUY TRÌNH HỢP TÁC (Tighter vertical spacing) ═══════ */}
-      <section id="quy-trinh" className="px-4 sm:px-6 md:px-12 xl:px-20 py-12 sm:py-24 bg-slate-50 scroll-mt-24 w-full">
+      {/* ═══════ QUY TRÌNH PHA CHẾ SƠN (Mới) ═══════ */}
+      <section id="quy-trinh" className="px-8 py-24 bg-slate-50 scroll-mt-24">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
@@ -1017,7 +1032,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8 relative">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8 relative">
             {/* Steps with Connectors (visible on desktop) */}
             <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-slate-200 -z-0" />
 
@@ -1079,7 +1094,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="mt-10 sm:mt-20 p-5 sm:p-8 bg-white rounded-2xl sm:rounded-[40px] border border-slate-100 shadow-xl shadow-blue-900/5 flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-8">
+          <div className="mt-20 p-8 bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-blue-900/5 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex items-center gap-6">
               <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20 flex-shrink-0">
                 <MessageSquare size={28} />
@@ -1093,15 +1108,15 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <button className="w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 bg-slate-900 text-white rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base hover:bg-blue-600 hover:-translate-y-1 transition-all shadow-xl cursor-pointer border-none flex-shrink-0">
+            <button className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-bold text-base hover:bg-blue-600 hover:-translate-y-1 transition-all shadow-xl cursor-pointer border-none">
               Gửi yêu cầu R&D ngay
             </button>
           </div>
         </div>
       </section>
 
-      {/* ═══════ BẢNG MÀU SƠN NỔI BẬT (Larger images) ═══════ */}
-      <section id="bang-mau" className="px-4 sm:px-6 md:px-12 xl:px-20 py-12 sm:py-20 bg-slate-50 w-full">
+      {/* ═══════ BẢNG MÀU XU HƯỚNG ═══════ */}
+      <section id="bang-mau" className="px-8 py-20 bg-slate-50">
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
             <div>
@@ -1117,14 +1132,14 @@ export default function HomePage() {
               </p>
             </div>
             <Link
-              href="/colors"
+              href="/mau-sac"
               className="text-blue-600 font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline"
             >
               Tra Cứu Toàn Bộ <ArrowRight size={18} />
             </Link>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
             {paintColors.slice(0, 12).map((color) => (
               <div
                 onClick={() => setSelectedTrendingColor(color)}
@@ -1152,8 +1167,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ DANH MỤC SẢN PHẨM (Grid layout fix) ═══════ */}
-      <section id="san-pham" className="px-4 sm:px-6 md:px-12 xl:px-20 py-12 sm:py-20 bg-white w-full">
+      {/* ═══════ PRODUCTS SECTION (Balanced) ═══════ */}
+      <section id="san-pham" className="px-8 py-20 bg-white">
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
             <div>
@@ -1168,7 +1183,6 @@ export default function HomePage() {
               href="/san-pham"
               className="text-blue-600 font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline"
             >
-              Xem tất cả <ArrowRight size={18} />
             </Link>
           </div>
 
@@ -1304,11 +1318,20 @@ export default function HomePage() {
                 ))
             )}
           </div>
+
+          <div className="mt-12 flex justify-center">
+            <Link
+              href="/san-pham"
+              className="px-8 py-3.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-2xl font-bold text-[14px] transition-all shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center gap-2 no-underline"
+            >
+              Xem tất cả sản phẩm <ArrowRight size={18} />
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* ═══════ TIN TỨC & CHUYÊN MÔN (Premium Cards) ═══════ */}
-      <section id="tin-tuc" className="px-4 sm:px-6 md:px-12 xl:px-20 py-12 sm:py-20 bg-slate-50 w-full">
+      {/* ═══════ TIN TỨC & KHUYẾN MÃI (Uniform) ═══════ */}
+      <section id="tin-tuc" className="px-8 py-20 bg-slate-50">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -1380,15 +1403,20 @@ export default function HomePage() {
       {/* ═══════ FOOTER ═══════ */}
       <footer
         id="footer"
-        className="bg-slate-900 pt-20 pb-10 text-white relative overflow-hidden w-full"
+        className="bg-slate-900 text-white pt-20 pb-10 scroll-mt-20"
       >
-        <div className="w-full max-w-[1300px] mx-auto px-4 sm:px-6 md:px-12 xl:px-20">
+        <div className="max-w-[1300px] mx-auto px-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-16">
             {/* Column 1: Company Info */}
             <div className="lg:col-span-5">
               <div className="flex items-center gap-4 mb-8">
+<<<<<<< Updated upstream
+                <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-2xl text-white shadow-lg shadow-blue-600/20">
+                  V
+=======
                 <div className="w-[200px] h-[68px] flex-shrink-0 rounded-[16px] bg-white flex items-center justify-center shadow-lg shadow-black/20 overflow-hidden px-4">
                   <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+>>>>>>> Stashed changes
                 </div>
                 <span className="font-bold text-xl tracking-tight uppercase text-white">
                   CÔNG TY CP TMDV VOSCO (VTSC)
@@ -1456,7 +1484,7 @@ export default function HomePage() {
               <ul className="space-y-4 text-slate-300 font-medium text-sm">
                 <li>
                   <Link
-                    href="/tracking"
+                    href="/theo-doi-don-hang"
                     className="hover:text-blue-400 transition-colors no-underline text-slate-300"
                   >
                     - Theo dõi đơn hàng
@@ -1963,7 +1991,41 @@ export default function HomePage() {
                   </p>
                 </div>
 
+                <div className="relative py-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-100"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-slate-400 font-bold">
+                      Hoặc
+                    </span>
+                  </div>
+                </div>
 
+                <div className="space-y-3 pt-4">
+                  <button
+                    type="button"
+                    className="w-full h-12 bg-[#0f172a] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer"
+                  >
+                    <img
+                      src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png"
+                      className="w-4 h-4"
+                      alt="Apple"
+                    />
+                    Đăng nhập bằng Apple
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full h-12 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer"
+                  >
+                    <img
+                      src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png"
+                      className="w-4 h-4"
+                      alt="Google"
+                    />
+                    Đăng nhập bằng Google
+                  </button>
+                </div>
               </form>
             ) : (
               <form onSubmit={handlePageRegister} className="space-y-4">
