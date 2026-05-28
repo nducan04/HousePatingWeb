@@ -1,32 +1,31 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { useRouter } from 'next/navigation';
-import {
-  Search, Package, CheckCircle2, Clock, Truck, MapPin,
-  Beaker, FlaskConical, AlertCircle, Eye, ArrowRight, ArrowLeft,
-  ShieldCheck, User, Calendar, Layers, Scale, Lock,
-  MessageSquare, Image as ImageIcon, Sparkles, LogIn, ChevronRight, XCircle, Camera, Circle, QrCode
+import { 
+  Search, Package, CheckCircle2, Clock, Truck, MapPin, 
+  Beaker, FlaskConical, AlertCircle, Eye, ArrowRight, 
+  ShieldCheck, User, Calendar, Layers, Scale, 
+  MessageSquare, Image as ImageIcon, Sparkles, LogIn, ChevronRight, XCircle
 } from 'lucide-react';
-import Link from 'next/link';
+import { trackingData, paintColors } from '@/lib/data/colors-data';
 import { useAuthStore } from '@/lib/store/authStore';
-import { toast } from '@/lib/utils/notification';
 import api from '@/lib/utils/axiosAuth';
 import RouteMap from '@/app/(admin)/van-chuyen/RouteMap';
 
 export default function TrackingPage() {
-  const router = useRouter();
   const { isAuthenticated, user, loginState } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<'shipment' | 'samples'>('shipment');
 
+  // Shipment states
   const [trackingCode, setTrackingCode] = useState('');
   const [selectedTracking, setSelectedTracking] = useState<any | null>(null);
 
-  const [loadingRD, setLoadingRD] = useState(false);
+  // R&D Tracking states
+  const [activeTab, setActiveTab] = useState<'shipping' | 'rd'>('shipping');
+  const [selectedRDRequest, setSelectedRDRequest] = useState<any | null>(null);
   const [sampleRequests, setSampleRequests] = useState<any[]>([]);
-  const [selectedSample, setSelectedSample] = useState<any | null>(null);
-  const [sampleSearchTerm, setSampleSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'shipment' | 'samples'>('shipment');
+  const [loadingRD, setLoadingRD] = useState(false);
 
   // Live simulation states
   const [simProgress, setSimProgress] = useState(0.45);
@@ -34,17 +33,9 @@ export default function TrackingPage() {
   const [simTemp, setSimTemp] = useState(19.4);
   const [lastPing, setLastPing] = useState(0);
 
+  const { user } = useAuthStore();
 
   const [dbTrackingList, setDbTrackingList] = useState<any[]>([]);
-
-  // Inline login states
-  const [loginUsername, setLoginUsername] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-
-  const [showQRModal, setShowQRModal] = useState(false);
-  const [qrRequestId, setQrRequestId] = useState<string | null>(null);
 
   const mapDBTrackingToUI = (item: any) => {
     const donHang = item.DonHang || {};
@@ -52,11 +43,9 @@ export default function TrackingPage() {
 
     let product = 'Sơn tĩnh điện AkzoNobel';
     let qtyStr = 'N/A';
-    let allProducts: any[] = [];
     if (donHang.Items && donHang.Items.length > 0) {
       product = donHang.Items[0].TenSanPham || product;
       qtyStr = `${donHang.Items[0].SoLuong} Thùng`;
-      allProducts = donHang.Items;
     }
 
     const isDelivered = item.TrangThaiTongQuat === 'Giao hàng thành công';
@@ -71,29 +60,20 @@ export default function TrackingPage() {
       { label: 'Chờ lấy hàng', status: 'current' as const, time: new Date().toLocaleDateString('vi-VN') }
     ];
 
-    const getReceiverPhone = (ghiChu: string) => {
-      if (!ghiChu) return "N/A";
-      const match = ghiChu.match(/SĐT nhận:\s*([\d.\s]+)/);
-      return match ? match[1].trim() : "";
-    };
-
     return {
       code: item.MaVanChuyen || `DEL-${donHang.MaDonHang || 'DH'}`,
-      customer: donHang.TenNguoiNhan || khachHang.TenKhachHang || 'Khách hàng',
-      phone: donHang.SDTNguoiNhan || khachHang.SDT || getReceiverPhone(donHang.GhiChu) || 'N/A',
-      address: donHang.DiaChiGiaoHang || khachHang.DiaChi || 'Chưa cập nhật',
+      customer: khachHang.TenKhachHang || 'Khách hàng',
       product: product,
       quantity: qtyStr,
-      allProducts: allProducts,
       steps: steps,
       isRealDB: true,
-      dbRecord: item,
+      dbRecord: item
     };
   };
 
   const fetchDBTracking = async () => {
     try {
-      const res = await api.get('/shipping');
+      const res = await api.get('/van-chuyen');
       if (res.data.success) {
         const mapped = res.data.data.map(mapDBTrackingToUI);
         setDbTrackingList(mapped);
@@ -106,7 +86,7 @@ export default function TrackingPage() {
           if (!code && !orderId && mapped.length > 0) {
             setSelectedTracking(mapped[0]);
             setTrackingCode(mapped[0].code);
-            setActiveTab('shipment');
+            setActiveTab('shipping');
           }
         }
       }
@@ -118,12 +98,13 @@ export default function TrackingPage() {
   const [dbRDList, setDbRDList] = useState<any[]>([]);
 
   const mapDBRDToUI = (item: any) => {
-    const itemCustomer = item.ContractID?.title || 'Khách hàng';
+    const itemCustomer = item.ContractID?.title || item.customerName || 'Khách hàng';
     return {
       id: item.MaNhatKy || item._id,
       customer: itemCustomer,
       colorCode: item.MaMauYeuCau || 'RAL-MIX',
-      surface: item.ContractID?.surface || 'Kim loại',
+      colorName: item.colorName,
+      surface: item.ContractID?.surface || item.surface || 'Kim loại',
       status: item.TrangThai || 'pending',
       date: new Date(item.createdAt).toLocaleDateString('vi-VN'),
       LichSuPhienBan: item.LichSuPhienBan || [],
@@ -150,8 +131,8 @@ export default function TrackingPage() {
   }, [dbTrackingList]);
 
   const filteredSampleRequests = useMemo(() => {
-    return [...dbRDList, ...sampleRequests];
-  }, [dbRDList, sampleRequests]);
+    return [...dbRDList];
+  }, [dbRDList]);
 
   const fetchDBRDRequest = async (code: string) => {
     setLoadingRD(true);
@@ -165,13 +146,12 @@ export default function TrackingPage() {
           const belongsToMe = itemCustomer.toLowerCase().includes(customerName.toLowerCase()) ||
             customerName.toLowerCase().includes(itemCustomer.toLowerCase());
           if (!belongsToMe) {
-            toast.error('Bạn không có quyền truy cập dữ liệu pha chế này.');
+            alert('Bạn không có quyền truy cập dữ liệu pha chế này.');
             setLoadingRD(false);
             return;
           }
         }
-        setTrackingCode(item._id);
-        setSelectedSample({
+        setSelectedRDRequest({
           id: item.MaNhatKy || code,
           customer: itemCustomer,
           colorCode: item.MaMauYeuCau || 'RAL-MIX',
@@ -182,13 +162,13 @@ export default function TrackingPage() {
           signedBy: item.signedBy,
           signedAt: item.signedAt
         });
-        setActiveTab('samples');
+        setActiveTab('rd');
       } else {
-        toast.error('Không tìm thấy mã nhật ký R&D hoặc mã yêu cầu.');
+        alert('Không tìm thấy mã nhật ký R&D hoặc mã yêu cầu.');
       }
     } catch (e) {
       console.error('Failed to load R&D from DB:', e);
-      toast.error('Không tìm thấy mã nhật ký R&D. Thử: REQ-001 hoặc REQ-002');
+      alert('Không tìm thấy mã nhật ký R&D. Thử: REQ-001 hoặc REQ-002');
     } finally {
       setLoadingRD(false);
     }
@@ -209,45 +189,31 @@ export default function TrackingPage() {
       const tabParam = params.get('tab');
 
       if (tabParam === 'rd') {
-        setActiveTab('samples');
+        setActiveTab('rd');
       }
 
-      // Load sample requests from localstorage
-      const stored = localStorage.getItem('sampleRequests');
-      let localReqs = [];
-      if (stored) {
-        localReqs = JSON.parse(stored);
-        setSampleRequests(localReqs);
-      } else {
-        const defaultRequests = [
-          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
-          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026', LichSuPhienBan: [] },
-        ];
-        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
-        setSampleRequests(defaultRequests);
-        localReqs = defaultRequests;
-      }
+      // No more localStorage. Just rely on dbRDList and filteredTrackingData.
 
       if (orderId) {
-        const foundShipping = filteredTrackingData.find((t: any) => t.dbRecord?.DonHang?._id === orderId || t.dbRecord?.DonHang === orderId);
+        const foundShipping = filteredTrackingData.find(t => t.dbRecord?.DonHang?._id === orderId || t.dbRecord?.DonHang === orderId);
         if (foundShipping) {
           setTrackingCode(foundShipping.code);
           setSelectedTracking(foundShipping);
-          setActiveTab('shipment');
+          setActiveTab('shipping');
         }
       } else if (code) {
         setTrackingCode(code);
         // Try searching in shippingData
-        const foundShipping = filteredTrackingData.find((t: any) => t.code.toLowerCase() === code.toLowerCase());
+        const foundShipping = filteredTrackingData.find(t => t.code.toLowerCase() === code.toLowerCase());
         if (foundShipping) {
           setSelectedTracking(foundShipping);
-          setActiveTab('shipment');
+          setActiveTab('shipping');
         } else {
-          // Check local R&D requests
-          const foundRD = customerRequests.find((r: any) => r.id === trackingCode);
+          // Check DB R&D requests
+          const foundRD = dbRDList.find((r: any) => r.id === trackingCode);
           if (foundRD) {
-            setSelectedSample(foundRD);
-            setActiveTab('samples');
+            setSelectedRDRequest(foundRD);
+            setActiveTab('rd');
           } else {
             // Try fetching from DB if not start with REQ
             if (!code.toLowerCase().startsWith('req-')) {
@@ -278,6 +244,17 @@ export default function TrackingPage() {
     };
   }, []);
 
+  // R&D samples states
+  const [sampleRequests, setSampleRequests] = useState<any[]>([]);
+  const [selectedSample, setSelectedSample] = useState<any | null>(null);
+  const [sampleSearchTerm, setSampleSearchTerm] = useState('');
+
+  // Inline login states
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -296,39 +273,19 @@ export default function TrackingPage() {
 
   const loadSampleRequests = () => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('sampleRequests');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setSampleRequests(parsed);
+      const parsed = dbRDList;
+      
+      // Find user display name
+      const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
+      const myReqs = parsed.filter((r: any) =>
+        r.customer === displayName ||
+        (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
+      );
 
-        // Find user display name
-        const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-        const myReqs = parsed.filter((r: any) =>
-          r.customer === displayName ||
-          (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
-        );
-
-        if (myReqs.length > 0) {
-          setSelectedSample(myReqs[0]);
-        } else {
-          setSelectedSample(null);
-        }
+      if (myReqs.length > 0) {
+        setSelectedSample(myReqs[0]);
       } else {
-        const defaultRequests = [
-          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
-          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026', LichSuPhienBan: [] },
-        ];
-        setSampleRequests(defaultRequests);
-        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
-
-        const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-        const myReqs = defaultRequests.filter((r: any) =>
-          r.customer === displayName ||
-          (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
-        );
-        if (myReqs.length > 0) {
-          setSelectedSample(myReqs[0]);
-        }
+        setSelectedSample(null);
       }
     }
   };
@@ -336,8 +293,8 @@ export default function TrackingPage() {
   const handleSearch = () => {
     if (!trackingCode) return;
 
-    if (activeTab === 'shipment') {
-      const found = filteredTrackingData.find((t: any) => t.code.toLowerCase() === trackingCode.toLowerCase());
+    if (activeTab === 'shipping') {
+      const found = filteredTrackingData.find(t => t.code.toLowerCase() === trackingCode.toLowerCase());
       if (found) {
         setSelectedTracking(found);
       } else {
@@ -347,8 +304,8 @@ export default function TrackingPage() {
           const reqs = JSON.parse(stored);
           const foundRD = reqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
           if (foundRD) {
-            setSelectedSample(foundRD);
-            setActiveTab('samples');
+            setSelectedRDRequest(foundRD);
+            setActiveTab('rd');
             setSelectedTracking(null);
             return;
           }
@@ -360,24 +317,19 @@ export default function TrackingPage() {
           return;
         }
 
-        toast.error('Không tìm thấy mã tracking vận chuyển. Thử: VTSC-240601-001 hoặc VTSC-240610-002');
+        alert('Không tìm thấy mã tracking vận chuyển. Thử: VTSC-240601-001 hoặc VTSC-240610-002');
       }
     } else {
       // Searching under RD tab
-      const stored = localStorage.getItem('sampleRequests');
-      let localReqs = [];
-      if (stored) {
-        localReqs = JSON.parse(stored);
-      }
-
-      const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
+      const reqs = dbRDList;
+      const foundRD = reqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
       if (foundRD) {
-        setSelectedSample(foundRD);
+        setSelectedRDRequest(foundRD);
         setSelectedTracking(null);
       } else if (!trackingCode.toLowerCase().startsWith('req-')) {
         fetchDBRDRequest(trackingCode);
       } else {
-        toast.error('Không tìm thấy yêu cầu R&D. Thử: REQ-001 hoặc REQ-002');
+        alert('Không tìm thấy yêu cầu R&D. Thử: REQ-001 hoặc REQ-002');
       }
     }
   };
@@ -430,42 +382,36 @@ export default function TrackingPage() {
 
   // Filter requests for the current customer
   const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-  const customerRequests = sampleRequests.filter(req => {
+  const customerRequests = dbRDList.filter(req => {
     const isMine = req.customer === displayName || (req.customer && req.customer.toLowerCase() === displayName.toLowerCase());
     const matchSearch = req.id.toLowerCase().includes(sampleSearchTerm.toLowerCase()) ||
-      req.colorCode.toLowerCase().includes(sampleSearchTerm.toLowerCase());
+                        req.colorCode.toLowerCase().includes(sampleSearchTerm.toLowerCase());
     return isMine && matchSearch;
   });
 
   return (
-    <div className="w-full max-w-[1300px] mx-auto px-6 md:px-12 xl:px-20 py-8 animate-in fade-in duration-700 relative">
-      {/* Back Button */}
-      <button
-        onClick={() => router.back()}
-        className="absolute top-8 left-4 lg:left-8 flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all z-10 shadow-sm cursor-pointer"
-      >
-        <ArrowLeft size={16} /> Quay lại
-      </button>
-
+    <div className="max-w-[1300px] mx-auto px-4 py-8 animate-in fade-in duration-700">
       {/* ═══════ NAV TABS SECTION ═══════ */}
-      <div className="flex justify-center mb-10 mt-14 lg:mt-0">
+      <div className="flex justify-center mb-10">
         <div className="flex p-1.5 bg-slate-100 rounded-3xl border border-slate-200/50 shadow-inner">
           <button
             onClick={() => setActiveTab('shipment')}
-            className={`px-8 py-3.5 rounded-2xl text-[14px] font-bold tracking-tight transition-all duration-300 flex items-center gap-2.5 border-none cursor-pointer ${activeTab === 'shipment'
-              ? 'bg-white text-blue-600 shadow-lg shadow-blue-100/50'
-              : 'text-slate-500 hover:text-slate-800'
-              }`}
+            className={`px-8 py-3.5 rounded-2xl text-[14px] font-bold tracking-tight transition-all duration-300 flex items-center gap-2.5 border-none cursor-pointer ${
+              activeTab === 'shipment'
+                ? 'bg-white text-blue-600 shadow-lg shadow-blue-100/50'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
           >
             <Package size={18} />
             Theo dõi Đơn Hàng
           </button>
           <button
             onClick={() => setActiveTab('samples')}
-            className={`px-8 py-3.5 rounded-2xl text-[14px] font-bold tracking-tight transition-all duration-300 flex items-center gap-2.5 border-none cursor-pointer ${activeTab === 'samples'
-              ? 'bg-white text-purple-600 shadow-lg shadow-purple-100/50'
-              : 'text-slate-500 hover:text-slate-800'
-              }`}
+            className={`px-8 py-3.5 rounded-2xl text-[14px] font-bold tracking-tight transition-all duration-300 flex items-center gap-2.5 border-none cursor-pointer ${
+              activeTab === 'samples'
+                ? 'bg-white text-purple-600 shadow-lg shadow-purple-100/50'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
           >
             <FlaskConical size={18} />
             Theo dõi Pha Chế R&D
@@ -510,249 +456,145 @@ export default function TrackingPage() {
 
           {/* Tracking Result */}
           {selectedTracking && (
-            <div className="bg-white border border-slate-100 rounded-[32px] shadow-xl overflow-hidden mb-8">
-              <div className="grid grid-cols-1 lg:grid-cols-3">
-                {/* Left Side: Tall Map */}
-                <div className="relative h-[500px] lg:h-[800px] lg:col-span-2 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50">
-                  <RouteMap
-                    origin="Số 215 Lạch Tray, Gia Viên, Hải Phòng"
-                    destination={selectedTracking.address || ''}
-                    isDelivered={selectedTracking.dbRecord?.TrangThaiTongQuat === 'Giao hàng thành công'}
+            <div className="bg-white border border-slate-100 rounded-[32px] shadow-xl p-8 mb-8">
+              <div className="flex justify-between items-start flex-wrap gap-8 mb-10 pb-8 border-b border-slate-100">
+                <div>
+                  <span className="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-lg">Mã đơn hàng</span>
+                  <h3 className="text-3xl font-black text-slate-900 mt-2 mb-4">
+                    {selectedTracking.code}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2 mt-4 text-[14px]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 font-semibold">Khách hàng:</span>
+                      <strong className="text-slate-900">{selectedTracking.customer}</strong>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 font-semibold">Sản phẩm:</span>
+                      <strong className="text-slate-900">{selectedTracking.product}</strong>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 sm:col-span-2">
+                      <span className="text-slate-400 font-semibold">Khối lượng:</span>
+                      <strong className="text-amber-600 font-bold bg-amber-50 px-2.5 py-0.5 rounded-lg text-xs">{selectedTracking.quantity}</strong>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center">
+                  <QRCodeSVG
+                    value={`https://vtsc.vn/tracking/${selectedTracking.code}`}
+                    size={110}
+                    bgColor="#ffffff"
+                    fgColor="#0a0e27"
+                    level="H"
                   />
-                  <div className={`absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black shadow-lg z-[400] pointer-events-none ${selectedTracking.dbRecord?.TrangThaiTongQuat === 'Giao hàng thành công' ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
-                    {selectedTracking.dbRecord?.TrangThaiTongQuat === 'Giao hàng thành công' ? <CheckCircle2 size={13} /> : <Truck size={13} />}
-                    {selectedTracking.dbRecord?.TrangThaiTongQuat === 'Giao hàng thành công' ? 'Đã giao thành công' : 'Đang trên đường giao'}
-                  </div>
-                </div>
-
-                {/* Right Side: Info & Timeline */}
-                <div className="p-8 flex flex-col h-[500px] lg:h-[800px] overflow-y-auto">
-                  {/* Order Info Header */}
-                  <div className="flex justify-between items-start flex-wrap gap-6 mb-8 pb-8 border-b border-slate-100 shrink-0">
-                    <div className="flex-1">
-                      <span className="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-lg">Mã đơn hàng</span>
-                      <h3 className="text-2xl font-black text-slate-900 mt-2 mb-4">
-                        {selectedTracking.code}
-                      </h3>
-                      {/* Enhanced Order Info Cards */}
-                      <div className="mt-4 space-y-6">
-                        
-                        {/* Customer Info Card */}
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <User size={12} className="text-blue-500" /> Thông tin người nhận
-                          </h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-start">
-                              <span className="text-slate-500 text-xs font-semibold">Khách hàng:</span>
-                              <strong className="text-slate-900 text-sm">{selectedTracking.customer}</strong>
-                            </div>
-                            <div className="flex justify-between items-start">
-                              <span className="text-slate-500 text-xs font-semibold">Số điện thoại:</span>
-                              <strong className="text-slate-900 text-sm">{selectedTracking.phone}</strong>
-                            </div>
-                            <div className="flex justify-between items-start pt-2 border-t border-slate-200/60 mt-1">
-                              <span className="text-slate-500 text-xs font-semibold shrink-0 mt-0.5">Địa chỉ:</span>
-                              <strong className="text-slate-800 text-[13px] text-right leading-tight ml-4">{selectedTracking.address}</strong>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Product List Card */}
-                        <div>
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2 px-1">
-                            <Package size={12} className="text-amber-500" /> Sản phẩm ({selectedTracking.allProducts?.length || 1})
-                          </h4>
-                          <div className="space-y-2.5">
-                            {selectedTracking.allProducts && selectedTracking.allProducts.length > 0 ? (
-                              selectedTracking.allProducts.map((p: any, idx: number) => (
-                                <div key={idx} className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all group">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
-                                      <Package size={16} />
-                                    </div>
-                                    <span className="text-sm font-bold text-slate-800 line-clamp-2">{p.TenSanPham || p.name}</span>
-                                  </div>
-                                  <span className="text-blue-700 font-bold bg-blue-50 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border border-blue-100/50 shrink-0 ml-3">
-                                    {p.SoLuong ? `${p.SoLuong} Thùng` : p.quantity}
-                                  </span>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all group">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
-                                    <Package size={16} />
-                                  </div>
-                                  <span className="text-sm font-bold text-slate-800 line-clamp-2">{selectedTracking.product}</span>
-                                </div>
-                                <span className="text-blue-700 font-bold bg-blue-50 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border border-blue-100/50 shrink-0 ml-3">
-                                  {selectedTracking.quantity}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center shrink-0 hidden sm:flex">
-                      <QRCodeSVG
-                        value={`https://vtsc.vn/tracking/${selectedTracking.code}`}
-                        size={80}
-                        bgColor="#ffffff"
-                        fgColor="#0a0e27"
-                        level="H"
-                      />
-                      <div className="text-center mt-2 text-[9px] text-slate-400 font-mono font-bold">
-                        {selectedTracking.code}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Timeline */}
-                  <div className="flex-1 mt-8">
-                    {selectedTracking.isRealDB ? (
-                      <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                          <Truck size={12} className="text-emerald-500" /> Lịch sử lộ trình
-                        </h4>
-                        <div className="relative space-y-6 pl-2">
-                          <div className="absolute left-[72px] top-1 bottom-1 w-px bg-slate-100"></div>
-                          {selectedTracking.dbRecord?.LoTrinh?.map((log: any, idx: number) => {
-                            const isComplete = log.Status === "COMPLETE";
-                            const isProcessing = log.Status === "PROCESSING";
-                            return (
-                              <div key={idx} className="flex items-start gap-6 relative">
-                                <div className={`w-[60px] text-right shrink-0 pt-0.5 ${isComplete ? 'text-slate-900' : 'text-slate-300'}`}>
-                                  <div className="text-sm font-bold">
-                                    {log.ThoiGian ? new Date(log.ThoiGian).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                                  </div>
-                                  <div className="text-[10px] font-medium text-slate-400 mt-0.5">
-                                    {log.ThoiGian ? new Date(log.ThoiGian).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}
-                                  </div>
-                                </div>
-                                <div className="relative z-10 bg-slate-50 pt-0.5">
-                                  {isComplete
-                                    ? <CheckCircle2 size={16} className="text-emerald-500" />
-                                    : isProcessing
-                                      ? <div className="w-[16px] h-[16px] rounded-full bg-blue-600 border-4 border-blue-100"></div>
-                                      : <Circle size={16} className="text-slate-200" />}
-                                </div>
-                                <p className={`text-[13px] pt-0.5 ${(isComplete || isProcessing) ? 'font-semibold text-slate-900' : 'text-slate-400'}`}>
-                                  {log.NoiDung}
-                                </p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 md:gap-2">
-                        {selectedTracking.steps.map((step: any, i: number) => {
-                          const Icon = iconMap[step.label] || Package;
-                          return (
-                            <div key={i} className="flex flex-col items-center gap-3 flex-1 relative text-center">
-                              {/* Connector line */}
-                              {i < selectedTracking.steps.length - 1 && (
-                                <div className={`hidden md:block absolute top-5 left-1/2 w-full h-0.5 z-0 ${step.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-100'}`} />
-                              )}
-                              {/* Dot */}
-                              <div className={`w-11 h-11 rounded-full flex items-center justify-center z-10 shadow-sm transition-all ${statusColors[step.status as keyof typeof statusColors]}`}>
-                                <Icon size={18} />
-                              </div>
-                              <div className="space-y-1">
-                                <span className="text-sm font-bold text-slate-800 block">{step.label}</span>
-                                {step.time && <span className="text-[11px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md inline-block">{step.time}</span>}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                  <div className="text-center mt-3 text-[10px] text-slate-400 font-mono font-bold">
+                    {selectedTracking.code}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* List of Shipments */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-end">
-              <div>
-                <h3 className="text-xl font-black text-slate-900">Danh Sách Kiện Hàng Của Bạn</h3>
-                <p className="text-sm text-slate-400 font-medium mt-0.5">Click để xem chi tiết lộ trình vận chuyển</p>
-              </div>
-            </div>
-            {filteredTrackingData.length === 0 ? (
-              <div className="bg-slate-50 border border-slate-100 rounded-3xl p-8 text-center text-slate-500">
-                <Package size={32} className="mx-auto mb-3 text-slate-300" />
-                <p>Bạn chưa có đơn hàng nào đang được vận chuyển.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredTrackingData.map(t => {
-                  const currentStep = t.steps.find((s: any) => s.status === 'current');
-                  const completedSteps = t.steps.filter((s: any) => s.status === 'completed').length;
-                  const totalSteps = t.steps.length;
+              {/* Timeline */}
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 md:gap-2">
+                {selectedTracking.steps.map((step, i) => {
+                  const Icon = iconMap[step.label] || Package;
                   return (
-                    <div
-                      key={t.code}
-                      className="bg-white border border-slate-100 rounded-3xl p-6 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 hover:border-blue-200 group flex justify-between items-center"
-                      onClick={() => {
-                        setSelectedTracking(t);
-                        setTrackingCode(t.code);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                    >
-                      <div className="space-y-3 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-blue-600 text-sm">{t.code}</span>
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                          <span className="text-xs font-bold text-slate-400 uppercase">{t.customer}</span>
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-slate-800 text-[15px]">{t.product}</h4>
-                          <div className="flex items-center gap-2 mt-3">
-                            <div className="w-28 h-2 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${(completedSteps / totalSteps) * 100}%` }} />
-                            </div>
-                            <span className="text-[11px] font-bold text-slate-400">{completedSteps}/{totalSteps} chặng</span>
-                          </div>
-                        </div>
-                        {currentStep && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 rounded-lg text-[11px] font-black uppercase tracking-wider">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            {currentStep.label}
-                          </span>
-                        )}
+                    <div key={i} className="flex flex-col items-center gap-3 flex-1 relative text-center">
+                      {/* Connector line */}
+                      {i < selectedTracking.steps.length - 1 && (
+                        <div className={`hidden md:block absolute top-5 left-1/2 w-full h-0.5 z-0 ${step.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-100'}`} />
+                      )}
+                      {/* Dot */}
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center z-10 shadow-sm transition-all ${statusColors[step.status]}`}>
+                        <Icon size={18} />
                       </div>
-                      <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 group-hover:bg-white transition-colors">
-                        <QRCodeSVG value={`https://vtsc.vn/tracking/${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
+                      <div className="space-y-1">
+                        <span className="text-sm font-bold text-slate-800 block">{step.label}</span>
+                        {step.time && <span className="text-[11px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md inline-block">{step.time}</span>}
                       </div>
                     </div>
                   );
                 })}
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Demo Cards */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-end">
+              <div>
+                <h3 className="text-xl font-black text-slate-900">Kiện Hàng Mới Nhất</h3>
+                <p className="text-sm text-slate-400 font-medium mt-0.5">Click để xem chi tiết lộ trình vận chuyển</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {trackingData.map(t => {
+                const currentStep = t.steps.find(s => s.status === 'current');
+                const completedSteps = t.steps.filter(s => s.status === 'completed').length;
+                const totalSteps = t.steps.length;
+                return (
+                  <div
+                    key={t.code}
+                    className="bg-white border border-slate-100 rounded-3xl p-6 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 hover:border-blue-200 group flex justify-between items-center"
+                    onClick={() => { 
+                      setSelectedTracking(t); 
+                      setTrackingCode(t.code); 
+                      window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                    }}
+                  >
+                    <div className="space-y-3 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-blue-600 text-sm">{t.code}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                        <span className="text-xs font-bold text-slate-400 uppercase">{t.customer}</span>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-[15px]">{t.product}</h4>
+                        <div className="flex items-center gap-2 mt-3">
+                          <div className="w-28 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${(completedSteps / totalSteps) * 100}%` }} />
+                          </div>
+                          <span className="text-[11px] font-bold text-slate-400">{completedSteps}/{totalSteps} chặng</span>
+                        </div>
+                      </div>
+                      {currentStep && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 rounded-lg text-[11px] font-black uppercase tracking-wider">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          {currentStep.label}
+                        </span>
+                      )}
+                    </div>
+                    <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 group-hover:bg-white transition-colors">
+                      <QRCodeSVG value={`https://vtsc.vn/tracking/${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
-      )}
 
-      {/* ═══════ TAB 2: R&D TRACKING (PRIVATE) ═══════ */}
+      {/* ═══════ TAB 2: R&D MIXING REQUEST TRACKING ═══════ */}
       {activeTab === 'samples' && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
+        <div className="space-y-8">
           {!isAuthenticated ? (
-            <div className="max-w-md mx-auto bg-white border border-slate-100 rounded-[32px] p-8 shadow-xl text-center">
-              <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Lock size={32} />
+            /* ═══════ sleEK GLASSMORPHIC INLINE LOGIN CARD ═══════ */
+            <div className="max-w-md mx-auto bg-white border border-slate-100 rounded-[32px] shadow-2xl p-10 animate-in zoom-in-95 duration-500">
+              <div className="text-center mb-8">
+                <div className="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+                  <FlaskConical size={26} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Theo dõi R&D Yêu cầu Mẫu</h3>
+                <p className="text-sm font-medium text-slate-400 mt-2 leading-relaxed">
+                  Vui lòng đăng nhập tài khoản Khách hàng để theo dõi tiến trình pha chế mẻ thử và xem logs KCS phòng thí nghiệm.
+                </p>
               </div>
-              <h3 className="text-xl font-black text-slate-900 mb-2">Đăng Nhập Quản Trị</h3>
-              <p className="text-sm text-slate-500 mb-8 font-medium">Vui lòng đăng nhập để xem thông tin R&D và pha chế.</p>
+
               {loginError && (
                 <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-center gap-3 text-rose-600 text-xs font-bold mb-6">
                   <AlertCircle size={16} /> {loginError}
                 </div>
-              )}  <form onSubmit={handleInlineLogin} className="space-y-4">
+              )}
+
+              <form onSubmit={handleInlineLogin} className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Tên đăng nhập</label>
                   <input
@@ -786,12 +628,13 @@ export default function TrackingPage() {
                   Đăng Nhập Ngay
                 </button>
               </form>
-            </div >
+            </div>
           ) : (
             /* ═══════ AUTHENTICATED R&D DASHBOARD ═══════ */
-            <div className="max-w-5xl mx-auto space-y-6">
-              <div className="bg-white border border-slate-100 rounded-[28px] p-8 shadow-sm space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+              {/* Left Column: Your Sample Requests List */}
+              <div className="lg:col-span-1 space-y-6">
+                <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-6">
                   <div>
                     <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
                       <span className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
@@ -801,8 +644,9 @@ export default function TrackingPage() {
                     </h3>
                     <p className="text-xs text-slate-400 font-medium mt-1">Danh sách mẫu pha chế bạn đã gửi</p>
                   </div>
+
                   {/* Quick Search */}
-                  <div className="relative group w-full sm:w-72 shrink-0">
+                  <div className="relative group">
                     <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
@@ -812,118 +656,215 @@ export default function TrackingPage() {
                       onChange={e => setSampleSearchTerm(e.target.value)}
                     />
                   </div>
-                </div>
 
-                {/* List Container */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {customerRequests.length === 0 ? (
-                    <div className="col-span-full text-center py-10 text-slate-400 font-medium italic text-sm">
-                      Không tìm thấy yêu cầu pha chế nào.
-                    </div>
-                  ) : (
-                    customerRequests.map(req => (
-                      <div
-                        key={req.id}
-                        className="bg-white border border-slate-100 p-5 rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col group"
-                      >
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-[12px] font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-md border border-purple-100">
-                            {req.id}
-                          </span>
-                          <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5"><Calendar size={12}/> {req.date}</span>
-                        </div>
-                        <h4 className="font-extrabold text-slate-800 text-lg mb-1">{req.colorCode}</h4>
-                        <div className="flex items-center gap-2 mb-4">
-                          <Layers size={14} className="text-slate-400" />
-                          <span className="text-xs text-slate-500 font-medium">{req.surface}</span>
-                          <span className={`ml-auto status-badge text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider ${req.status === 'approved'
-                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                            : req.status === 'processing'
-                              ? 'bg-orange-50 text-orange-600 animate-pulse border border-orange-100'
-                              : 'bg-amber-50 text-amber-600 border border-amber-100'
-                            }`}>
-                            {req.status === 'approved' ? 'APPROVED' : req.status}
-                          </span>
-                        </div>
-                        <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                          <button
-                            onClick={() => {
-                              setQrRequestId(req.id);
-                              setShowQRModal(true);
-                            }}
-                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all cursor-pointer"
-                          >
-                            <QrCode size={16} /> QR Code
-                          </button>
-                          <Link
-                            href={`/tracking/rd/${req.id}`}
-                            className="flex-1 flex justify-center items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-600/20 hover:-translate-y-0.5 transition-all"
-                          >
-                            Xem chi tiết <ChevronRight size={16} />
-                          </Link>
-                        </div>
-                        {req.imageUrl && (
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
-                            <img 
-                              src={req.imageUrl} 
-                              alt="Ảnh mẫu khách gửi" 
-                              className="w-16 h-16 object-cover rounded-lg shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform"
-                              onClick={() => window.open(req.imageUrl, '_blank')}
-                            />
-                          </div>
-                        )}
+                  {/* List Container */}
+                  <div className="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                    {customerRequests.length === 0 ? (
+                      <div className="text-center py-10 text-slate-400 font-medium italic text-sm">
+                        Không tìm thấy yêu cầu pha chế nào.
                       </div>
-                    ))
-                  )}
+                    ) : (
+                      customerRequests.map(req => {
+                        const isSelected = selectedSample?.id === req.id;
+                        return (
+                          <div
+                            key={req.id}
+                            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-purple-50/50 border-purple-200'
+                                : 'bg-white border-slate-100 hover:bg-slate-50'
+                            }`}
+                            onClick={() => setSelectedSample(req)}
+                          >
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-[12px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+                                {req.id}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400">{req.date}</span>
+                            </div>
+                            <h4 className="font-extrabold text-slate-800 text-sm">{req.colorCode}</h4>
+                            <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-50">
+                              <span className="text-[11px] text-slate-400 font-medium">{req.surface}</span>
+                              <span className={`status-badge text-[10px] font-black px-2 py-0.5 rounded-md ${
+                                req.status === 'approved' 
+                                  ? 'bg-emerald-50 text-emerald-600' 
+                                  : req.status === 'processing' 
+                                    ? 'bg-orange-50 text-orange-600 animate-pulse' 
+                                    : 'bg-amber-50 text-amber-600'
+                              }`}>
+                                {req.status.toUpperCase()}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
+              </div>
+
+              {/* Right Column: Visual R&D Process Timeline Roadmap */}
+              <div className="lg:col-span-2 space-y-6">
+                {selectedSample ? (
+                  <>
+                    {/* Header Detail Card */}
+                    <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-purple-600/5 rounded-full blur-2xl" />
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-purple-600 bg-purple-50 px-3 py-1 rounded-lg">
+                              ID Yêu cầu: {selectedSample.id}
+                            </span>
+                            <span className={`status-badge text-xs font-black px-2.5 py-1 rounded-lg ${
+                              selectedSample.status === 'approved' 
+                                ? 'bg-emerald-50 text-emerald-600' 
+                                : selectedSample.status === 'processing' 
+                                  ? 'bg-orange-50 text-orange-600' 
+                                  : 'bg-amber-50 text-amber-600'
+                            }`}>
+                              {selectedSample.status === 'approved' ? 'APPROVED KCS' : selectedSample.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <h2 className="text-2xl font-black text-slate-900 mt-3 mb-2">{selectedSample.colorCode}</h2>
+                          <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-400">
+                            <span className="flex items-center gap-1.5"><Calendar size={14} /> Ngày tạo: <span className="text-slate-800">{selectedSample.date}</span></span>
+                            {selectedSample.deadline && (
+                              <span className="flex items-center gap-1.5"><Clock size={14} /> Hạn R&D: <span className="text-rose-600 font-bold">{selectedSample.deadline}</span></span>
+                            )}
+                            <span className="flex items-center gap-1.5"><Layers size={14} /> Bề mặt: <span className="text-slate-800">{selectedSample.surface}</span></span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* interactive 5-Step Process Timeline */}
+                    <div className="bg-white border border-slate-100 rounded-[28px] p-8 shadow-sm space-y-8">
+                      <div>
+                        <h3 className="text-lg font-black text-slate-800">Bản Đồ Lộ Trình Quy Trình Pha Chế Sơn</h3>
+                        <p className="text-xs text-slate-400 font-medium mt-1">Lịch trình pha chế R&D thời gian thực tương tác với phòng thí nghiệm</p>
+                      </div>
+
+                      {/* 5 Steps Render */}
+                      <div className="space-y-6 relative before:absolute before:left-5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                        {(() => {
+                          const versions = selectedSample.LichSuPhienBan || [];
+                          const hasVersions = versions.length > 0;
+                          const isApproved = selectedSample.status === 'approved' || selectedSample.status === 'complete';
+                          const hasPassed = versions.some((v: any) => v.result === 'pass') || isApproved;
+                          const isProcessing = selectedSample.status === 'processing' || hasVersions;
+
+                          const steps = [
+                            {
+                              label: 'Tiếp nhận yêu cầu R&D',
+                              desc: 'Yêu cầu của bạn đã được tiếp nhận và ghi nhận thành công trên hệ thống VTSC PaintPro.',
+                              status: 'completed', // always complete
+                              time: selectedSample.date
+                            },
+                            {
+                              label: 'Phân tích Lab & Hạt màu',
+                              desc: 'Chuyên gia Lab VTSC đang phân tích đặc tính quang phổ hạt màu, độ bền và lựa chọn cấu trúc lớp nền.',
+                              status: isProcessing ? 'completed' : 'current',
+                              time: isProcessing ? selectedSample.date : null
+                            },
+                            {
+                              label: 'Pha chế mẫu thử (Lab Mixing)',
+                              desc: 'Hệ thống thiết bị R&D tiến hành pha chế các mẻ test định biên theo công thức tiêu chuẩn AkzoNobel.',
+                              status: hasVersions ? (hasPassed ? 'completed' : 'current') : 'upcoming',
+                              detail: hasVersions ? (
+                                <div className="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-4">
+                                  <div className="text-[11px] font-bold text-purple-600 uppercase tracking-widest flex items-center gap-1.5">
+                                    <Beaker size={12} /> Nhật ký test của R&D Lab ({versions.length} phiên bản)
+                                  </div>
+                                  <div className="space-y-3">
+                                    {versions.map((v: any, index: number) => (
+                                      <div key={index} className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm space-y-2.5">
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs font-black text-slate-800">Phiên bản {v.version}</span>
+                                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                                            v.result === 'pass' 
+                                              ? 'bg-emerald-50 text-emerald-600' 
+                                              : 'bg-rose-50 text-rose-600'
+                                          }`}>
+                                            {v.result === 'pass' ? 'ĐẠT CHUẨN KCS' : 'CHƯA ĐẠT - RE-TEST'}
+                                          </span>
+                                        </div>
+                                        {v.parameters && (
+                                          <div className="text-xs text-slate-500 font-medium">
+                                            <strong>Thông số: </strong>{v.parameters}
+                                          </div>
+                                        )}
+                                        {v.feedback && (
+                                          <div className="text-xs text-slate-600 font-medium bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
+                                            <strong>Phản hồi kỹ thuật: </strong>{v.feedback}
+                                          </div>
+                                        )}
+                                        <div className="flex flex-wrap gap-3 text-[10px] font-bold text-slate-400">
+                                          <span>Hao hụt: <strong className="text-slate-700">{(v.inputWeight && v.outputWeight) ? ((v.inputWeight - v.outputWeight) / v.inputWeight * 100).toFixed(1) : '0.0'}%</strong></span>
+                                          <span>Người test: <strong className="text-slate-700">{v.tester || 'Admin'}</strong></span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null
+                            },
+                            {
+                              label: 'Kiểm định KCS chất lượng',
+                              desc: 'Mẫu sơn pha chế được test va đập vật lý, đo độ bóng bề mặt và sai lệch sai số màu Delta E.',
+                              status: hasPassed ? (isApproved ? 'completed' : 'current') : 'upcoming'
+                            },
+                            {
+                              label: 'Bàn giao mẫu thực tế & Duyệt',
+                              desc: 'Khách hàng nhận mẫu màu thật, thử nghiệm thực tế tại công trình để phê duyệt sản xuất hàng loạt.',
+                              status: isApproved ? 'completed' : 'upcoming'
+                            }
+                          ];
+
+                          return steps.map((s, i) => {
+                            const isComp = s.status === 'completed';
+                            const isCurr = s.status === 'current';
+                            return (
+                              <div key={i} className="relative pl-10 group">
+                                {/* Step Icon/Dot */}
+                                <div className={`absolute left-0 top-1 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center shadow-sm z-10 transition-all ${
+                                  isComp 
+                                    ? 'bg-emerald-500 text-white' 
+                                    : isCurr 
+                                      ? 'bg-purple-600 text-white animate-pulse' 
+                                      : 'bg-slate-100 text-slate-400'
+                                }`}>
+                                  {isComp ? <CheckCircle2 size={16} /> : isCurr ? <Clock size={16} /> : <span className="text-[11px] font-bold">{i + 1}</span>}
+                                </div>
+
+                                {/* Step Card */}
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-3">
+                                    <h4 className="font-extrabold text-slate-800 text-sm sm:text-base">{s.label}</h4>
+                                    {isCurr && (
+                                      <span className="text-[9px] font-black bg-purple-100 text-purple-600 px-2 py-0.5 rounded uppercase tracking-wider">Đang Xử Lý</span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed max-w-xl">{s.desc}</p>
+                                  {s.detail}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-24 bg-white border border-slate-100 rounded-[28px] shadow-sm">
+                    <FlaskConical size={48} className="mx-auto mb-4 text-slate-300" />
+                    <h4 className="font-bold text-slate-700">Chưa chọn yêu cầu pha chế</h4>
+                    <p className="text-xs text-slate-400 mt-1">Vui lòng chọn một mã yêu cầu ở danh sách bên trái để theo dõi</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* QR Code Modal */}
-      {showQRModal && qrRequestId && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <button 
-              onClick={() => setShowQRModal(false)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors cursor-pointer border-none bg-transparent"
-            >
-              <XCircle size={24} />
-            </button>
-            
-            <div className="text-center space-y-6">
-              <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto">
-                <QrCode size={32} />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-slate-900">Mã QR Lộ Trình</h3>
-                <p className="text-sm text-slate-500 font-medium mt-2">Quét mã dưới đây bằng điện thoại để xem lộ trình R&D.</p>
-              </div>
-              
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center justify-center">
-                <QRCodeSVG 
-                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking/rd/${qrRequestId}`} 
-                  size={180} 
-                  bgColor="#f8fafc" 
-                  fgColor="#0f172a" 
-                  level="H"
-                />
-                <div className="mt-4 font-mono font-bold text-sm text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200 shadow-sm">
-                  {qrRequestId}
-                </div>
-              </div>
-              
-              <button 
-                onClick={() => setShowQRModal(false)}
-                className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-600/20 transition-all cursor-pointer border-none"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

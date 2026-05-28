@@ -5,7 +5,7 @@ import { ShoppingCart, Search, Eye, Trash2, Box, AlertCircle, CheckCircle2, Tag,
 import { useRouter } from 'next/navigation';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useCartStore, CartItem } from '@/lib/store/cartStore';
+import { useCartStore, CartItem, getGuestSessionId } from '@/lib/store/cartStore';
 import Link from 'next/link';
 import { resolveImageUrl } from '@/lib/utils/imageUrl';
 
@@ -20,7 +20,7 @@ interface KhachHang {
 export default function GioHangPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { cartItems, cartTotal, fetchCart, updateQuantity: updateQuantityStore, clearCart: clearCartStore } = useCartStore();
+  const { cartItems, cartTotal, fetchCart, updateQuantity: updateQuantityStore, clearCart: clearCartStore, initializeCart } = useCartStore();
   const [products, setProducts] = useState<any[]>([]);
   const [customers, setCustomers] = useState<KhachHang[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,7 +32,7 @@ export default function GioHangPage() {
   const [applyingDiscount, setApplyingDiscount] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const sessionId = useMemo(() => user?.id || 'GUEST_SESSION', [user]);
+  const sessionId = useMemo(() => user?.id || getGuestSessionId(), [user]);
   const isAdminOrEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
 
   const getImageUrl = (path: any) => {
@@ -55,7 +55,7 @@ export default function GioHangPage() {
 
   const fetchCartItems = async () => {
     try {
-      await fetchCart(sessionId);
+      await initializeCart(user?.id);
     } catch (err) {
       console.error('Lỗi tải giỏ hàng', err);
     }
@@ -299,7 +299,7 @@ export default function GioHangPage() {
           </Link>
 
           <Link
-            href="/payments"
+            href={isAdminOrEmployee ? "/quan-ly-thanh-toan" : (user?.role === 'KhachHangB2B' ? "/my-contracts" : "/my-orders")}
             className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
           >
             <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">

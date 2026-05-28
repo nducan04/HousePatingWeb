@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
-import { useCartStore } from "@/lib/store/cartStore";
+import { useCartStore, getGuestSessionId } from "@/lib/store/cartStore";
 import { paintColors } from "@/lib/data/colors-data";
 
 const BACKEND_URL = "http://localhost:5000";
@@ -84,6 +84,7 @@ export default function HomePage() {
     addToCart: addToCartStore,
     removeFromCart: removeFromCartStore,
     updateQuantity: updateQuantityStore,
+    initializeCart,
   } = useCartStore();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartLoading, setIsCartLoading] = useState(false);
@@ -236,8 +237,7 @@ export default function HomePage() {
       }
 
       try {
-        const sessionId = user?.id || "GUEST_SESSION";
-        await fetchCart(sessionId);
+        await initializeCart(user?.id);
       } catch (err) {
         // Ignore errors if cart doesn't exist yet
       }
@@ -273,7 +273,7 @@ export default function HomePage() {
     setSendingChat(true);
 
     try {
-      const sessionId = user?.id || "GUEST_SESSION";
+      const sessionId = user?.id || getGuestSessionId();
       const res = await api.post("/chatbot/message", { sessionId, message: userMsg });
       if (res.data.success) {
         setChatHistory((prev) => [
@@ -354,7 +354,7 @@ export default function HomePage() {
 
     setCartLoading(sp._id);
     try {
-      const sessionId = user?.id || "GUEST_SESSION";
+      const sessionId = user?.id || getGuestSessionId();
       await addToCartStore(sessionId, sp._id, newQty);
       setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
@@ -370,7 +370,7 @@ export default function HomePage() {
 
   const removeFromCart = async (sanPhamId: string) => {
     try {
-      const sessionId = user?.id || "GUEST_SESSION";
+      const sessionId = user?.id || getGuestSessionId();
       await removeFromCartStore(sessionId, sanPhamId);
     } catch (err) {
       console.error("Error removing from cart:", err);
@@ -380,7 +380,7 @@ export default function HomePage() {
   const handleUpdateCartItemQuantity = async (sanPhamId: string, soLuong: number) => {
     if (soLuong < 1) return;
     try {
-      const sessionId = user?.id || "GUEST_SESSION";
+      const sessionId = user?.id || getGuestSessionId();
       await updateQuantityStore(sessionId, sanPhamId, soLuong);
     } catch (err) {
       console.error("Error updating quantity:", err);
@@ -661,7 +661,7 @@ export default function HomePage() {
                 setIsCartOpen(nextState);
                 if (nextState) {
                   // Refresh cart when opening
-                  const sessionId = user?.id || "GUEST_SESSION";
+                  const sessionId = user?.id || getGuestSessionId();
                   fetchCart(sessionId);
                 }
               }}
@@ -729,13 +729,13 @@ export default function HomePage() {
                     </Link>
 
                     <Link
-                      href="/thanh-toan"
+                      href={user ? ((user.role === 'Admin' || user.role === 'NhanVien' || user.role === 'Director') ? "/quan-ly-thanh-toan" : (user.role === 'KhachHangB2B' ? "/my-contracts" : "/my-orders")) : "/my-orders"}
                       className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
                       onClick={(e) => {
                         setIsCartOpen(false);
                         if (!isAuthenticated) {
                           e.preventDefault();
-                          handleServiceClick("/thanh-toan");
+                          handleServiceClick("/my-orders");
                         }
                       }}
                     >

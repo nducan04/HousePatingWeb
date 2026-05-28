@@ -1,6 +1,16 @@
 import { create } from 'zustand';
 import api from '@/lib/utils/axiosAuth';
 
+export const getGuestSessionId = (): string => {
+  if (typeof window === 'undefined') return 'GUEST_SESSION';
+  let guestId = localStorage.getItem('guestSessionId');
+  if (!guestId) {
+    guestId = 'GUEST_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('guestSessionId', guestId);
+  }
+  return guestId;
+};
+
 export interface CartItem {
   _id: string;
   SanPham: {
@@ -27,6 +37,7 @@ interface CartState {
   updateQuantity: (sessionId: string, sanPhamId: string, soLuong: number, maMau?: string) => Promise<void>;
   removeFromCart: (sessionId: string, sanPhamId: string, maMau?: string) => Promise<void>;
   clearCart: (sessionId: string) => Promise<void>;
+  initializeCart: (userId?: string) => Promise<void>;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -137,6 +148,21 @@ export const useCartStore = create<CartState>((set, get) => ({
     } catch (err) {
       console.error('Error clearing cart:', err);
       throw err;
+    }
+  },
+
+  initializeCart: async (userId?: string) => {
+    const guestId = getGuestSessionId();
+    if (userId) {
+      try {
+        // Gộp giỏ hàng khách vào giỏ hàng user nếu có
+        await api.post('/gio-hang/merge', { guestSessionId: guestId });
+      } catch (err) {
+        console.error('Error merging cart:', err);
+      }
+      await get().fetchCart(userId);
+    } else {
+      await get().fetchCart(guestId);
     }
   },
 }));

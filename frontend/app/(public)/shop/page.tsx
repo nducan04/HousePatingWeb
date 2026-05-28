@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
-import { useCartStore } from "@/lib/store/cartStore";
+import { useCartStore, getGuestSessionId } from "@/lib/store/cartStore";
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
 import CustomerProductModal from "@/components/CustomerProductModal";
 import ProductImageCarousel from "@/components/ProductImageCarousel";
@@ -102,7 +102,7 @@ export default function ShopPage() {
 
     setCartLoading(sp._id);
     try {
-      const sessionId = user?.id || "GUEST_SESSION";
+      const sessionId = user?.id || getGuestSessionId();
       await addToCartStore(sessionId, sp._id, qtyToAdd, sp.DanhSachMaMau?.[0] || 'N/A');
       setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
