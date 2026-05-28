@@ -11,6 +11,7 @@ import {
 import { trackingData, paintColors } from '@/lib/data/colors-data';
 import { useAuthStore } from '@/lib/store/authStore';
 import api from '@/lib/utils/axiosAuth';
+import RouteMap from '@/app/(admin)/van-chuyen/RouteMap';
 
 export default function TrackingPage() {
   const { isAuthenticated, user, loginState } = useAuthStore();
@@ -208,13 +209,8 @@ export default function TrackingPage() {
           setSelectedTracking(foundShipping);
           setActiveTab('shipping');
         } else {
-<<<<<<< Updated upstream
-          // Check local R&D requests
-          const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === code.toLowerCase());
-=======
           // Check DB R&D requests
           const foundRD = dbRDList.find((r: any) => r.id === trackingCode);
->>>>>>> Stashed changes
           if (foundRD) {
             setSelectedRDRequest(foundRD);
             setActiveTab('rd');
@@ -277,41 +273,6 @@ export default function TrackingPage() {
 
   const loadSampleRequests = () => {
     if (typeof window !== 'undefined') {
-<<<<<<< Updated upstream
-      const stored = localStorage.getItem('sampleRequests');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setSampleRequests(parsed);
-        
-        // Find user display name
-        const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-        const myReqs = parsed.filter((r: any) => 
-          r.customer === displayName || 
-          (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
-        );
-        
-        if (myReqs.length > 0) {
-          setSelectedSample(myReqs[0]);
-        } else {
-          setSelectedSample(null);
-        }
-      } else {
-        const defaultRequests = [
-          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
-          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026', LichSuPhienBan: [] },
-        ];
-        setSampleRequests(defaultRequests);
-        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
-        
-        const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-        const myReqs = defaultRequests.filter((r: any) => 
-          r.customer === displayName || 
-          (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
-        );
-        if (myReqs.length > 0) {
-          setSelectedSample(myReqs[0]);
-        }
-=======
       const parsed = dbRDList;
       
       // Find user display name
@@ -325,7 +286,6 @@ export default function TrackingPage() {
         setSelectedSample(myReqs[0]);
       } else {
         setSelectedSample(null);
->>>>>>> Stashed changes
       }
     }
   };

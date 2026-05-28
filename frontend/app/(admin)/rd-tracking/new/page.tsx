@@ -9,7 +9,7 @@
 //  5. Render <img> preview + nút X để reset
 // ═══════════════════════════════════════════════════════════
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -26,8 +26,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/authStore";
+import { toast } from "@/lib/utils/notification";
 import { paintColors } from "@/lib/data/colors-data";
-import api from "@/lib/utils/axiosAuth";
 
 // ─── IPFS Gateway công khai ──────────────────────────────
 const IPFS_GATEWAY = "https://gateway.pinata.cloud/ipfs";
@@ -251,7 +251,7 @@ function IpfsDropzone({
 // ═══════════════════════════════════════════════════════════
 //  Main Page: Form Tạo Yêu cầu R&D
 // ═══════════════════════════════════════════════════════════
-export default function NewRDRequestPage() {
+function NewRDRequestPage() {
   const { user } = useAuthStore();
   const isCustomer =
     user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C";
@@ -322,39 +322,64 @@ export default function NewRDRequestPage() {
     };
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      const payload = {
-        customerName: formData.customer,
-        MaMauYeuCau: formData.colorCode,
+    // Lưu vào localStorage kèm CID ảnh
+    if (typeof window !== "undefined") {
+      const storedRequests = localStorage.getItem("sampleRequests");
+      let requests = [];
+      if (storedRequests) {
+        requests = JSON.parse(storedRequests);
+      } else {
+        requests = [
+          {
+            id: "REQ-001",
+            customer: "NCC Aluminium",
+            colorCode: "INT-D2525",
+            surface: "Nhôm định hình",
+            status: "pending",
+            date: "12/05/2026",
+          },
+          {
+            id: "REQ-002",
+            customer: "VPIC Steel",
+            colorCode: "RAL-9005",
+            surface: "Thép tấm",
+            status: "processing",
+            date: "11/05/2026",
+          },
+        ];
+      }
+
+      const now = new Date();
+      const dateStr = `${String(now.getDate()).padStart(2, "0")}/${String(
+        now.getMonth() + 1
+      ).padStart(2, "0")}/${now.getFullYear()}`;
+
+      const nextId = `REQ-${String(requests.length + 1).padStart(3, "0")}`;
+      const newRequest = {
+        id: nextId,
+        customer: formData.customer,
+        colorCode: formData.colorCode,
         colorName: formData.colorName,
         surface: formData.surface,
         substrate: formData.substrate,
-        requirements: formData.requirements,
+        status: "pending",
+        date: dateStr,
         deadline: formData.deadline,
+        // ── Lưu CID ảnh IPFS vào request ─────────────────
+        imageCid: imageCid || null,
         imageUrl: imageCid ? `${IPFS_GATEWAY}/${imageCid}` : null,
       };
 
-      const res = await api.post('/rd-tracking', payload);
-      
-      if (res.data.success) {
-        toast.success("✅ Yêu cầu R&D đã được tạo thành công! (Version 1.0)");
-        router.push(isCustomer ? "/tracking?tab=samples" : "/rd-tracking");
-      } else {
-        toast.error("Tạo yêu cầu thất bại: " + (res.data.message || 'Lỗi không xác định'));
-      }
-    } catch (error: any) {
-      console.error("Lỗi khi tạo yêu cầu R&D:", error);
-      toast.error("Đã xảy ra lỗi khi tạo yêu cầu. Vui lòng thử lại sau.");
+      requests.push(newRequest);
+      localStorage.setItem("sampleRequests", JSON.stringify(requests));
     }
-<<<<<<< Updated upstream
 
-    alert("✅ Yêu cầu R&D đã được tạo thành công! (Version 1.0)");
+    toast.success("✅ Yêu cầu R&D đã được tạo thành công! (Version 1.0)");
     router.push(isCustomer ? "/tracking?tab=samples" : "/rd-tracking");
-=======
->>>>>>> Stashed changes
+ develop
   };
 
   return (
@@ -609,5 +634,13 @@ export default function NewRDRequestPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-purple-600" size={32} /></div>}>
+      <NewRDRequestPage />
+    </Suspense>
   );
 }
