@@ -390,133 +390,160 @@ exports.generatePreviewPDF = async (req, res) => {
       const customerCode = contract.CustomerID?.MaKH || 'N/A';
 
       // ========== HEADER ==========
-      doc.font(fontBold).fontSize(14)
+      doc.font(fontBold).fontSize(13).fillColor('#333333')
         .text('CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', { align: 'center' });
-      doc.font(fontBold).fontSize(12)
+      doc.font(fontBold).fontSize(13)
         .text('Độc lập — Tự do — Hạnh phúc', { align: 'center' });
       doc.moveDown(0.3);
-      doc.font(font).fontSize(9)
-        .text('————————————————', { align: 'center' });
-      doc.moveDown(1.2);
-
-      // ========== COMPANY INFO ==========
-      doc.font(fontBold).fontSize(13)
-        .text('CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)', { align: 'center' });
-      doc.moveDown(0.2);
-      doc.font(font).fontSize(9)
-        .text('Đại lý cấp 1 Sơn bột tĩnh điện AkzoNobel (Thương hiệu Interpon)', { align: 'center' });
+      doc.font(font).fontSize(11)
+        .text('--- o0o ---', { align: 'center' });
       doc.moveDown(1.5);
 
       // ========== TITLE ==========
-      doc.font(fontBold).fontSize(18)
-        .text('HỢP ĐỒNG NGUYÊN TẮC MUA BÁN', { align: 'center' });
+      doc.font(fontBold).fontSize(20).fillColor('#003399')
+        .text('HỢP ĐỒNG NGUYÊN TẮC MUA BÁN SƠN', { align: 'center' });
       doc.moveDown(0.3);
-      doc.font(font).fontSize(11)
-        .text(`Số: ${contract.MaHopDong}`, { align: 'center' });
-      doc.font(font).fontSize(9)
-        .text(`Ngày lập: ${new Date(contract.NgayLap || contract.createdAt).toLocaleDateString('vi-VN')}`, { align: 'center' });
+      doc.font(font).fontSize(11).fillColor('#666666')
+        .text(`Mã số (Smart Contract ID): ${contract.MaHopDong}`, { align: 'center' });
       doc.moveDown(1.5);
 
+      // ========== NGÀY THÁNG ==========
+      const createdAt = new Date(contract.createdAt || Date.now());
+      doc.font(font).fontSize(11).fillColor('#000000')
+        .text(`Hôm nay, ngày ${createdAt.getDate()} tháng ${createdAt.getMonth() + 1} năm ${createdAt.getFullYear()}, chúng tôi gồm có:`);
+      doc.moveDown(1);
+
       // ========== BÊN A (VTSC) ==========
-      doc.font(fontBold).fontSize(12).text('BÊN BÁN / BÊN CUNG CẤP (BÊN A)');
-      doc.font(font).fontSize(10)
-        .text('Tên tổ chức: CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)')
-        .text('Địa chỉ: Số 215 phố Lạch Tray, Quận Ngô Quyền, TP. Hải Phòng')
-        .text('Mã số thuế: 0201137068')
-        .text('Đại diện: Phí Bình Minh — Chức vụ: Trưởng phòng kinh doanh sơn')
-        .text(`Địa chỉ ví Blockchain đại diện: ${contract.vtscAddress || '0x0201020304050607080910111213141516171819'}`);
-      doc.moveDown(0.8);
+      doc.font(fontBold).fontSize(15).fillColor('#003399').text('BÊN BÁN / BÊN CUNG CẤP (BÊN A)');
+      doc.moveTo(doc.x, doc.y - 2).lineTo(doc.x + 250, doc.y - 2).strokeColor('#003399').lineWidth(1).stroke();
+      doc.moveDown(0.5);
+
+      doc.font(font).fontSize(11).fillColor('#000000');
+      doc.text('Tên tổ chức: ', { continued: true }).font(fontBold).text('CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)');
+      doc.font(font).text('Địa chỉ: ', { continued: true }).font(fontBold).text('Số 215 phố Lạch Tray, Quận Ngô Quyền, TP. Hải Phòng');
+      doc.font(font).text('Mã số thuế: ', { continued: true }).font(fontBold).text('0201137068');
+      doc.font(font).text('Người đại diện: ', { continued: true }).font(fontBold).text('Ông Phí Bình Minh ', { continued: true }).font(font).text('— ', { continued: true }).font(fontBold).text('Chức vụ: ', { continued: true }).font(font).text('Trưởng phòng kinh doanh sơn');
+      doc.font(font).fontSize(10).fillColor('#444444').text('Ví Blockchain xác thực: ', { continued: true }).font(fontBold).text(contract.vtscAddress || '0x0201020304050607080910111213141516171819');
+      doc.moveDown(1.2);
 
       // ========== BÊN B (Khách hàng) ==========
       const repName = contract.partyBRepresentative || customerName;
-      doc.font(fontBold).fontSize(12).text('BÊN MUA (BÊN B)');
-      doc.font(font).fontSize(10)
-        .text(`Tên khách hàng: ${repName}`)
-        .text(`Điện thoại: ${contract.partyBPhoneNumber || '................................'}`)
-        .text(`Địa chỉ: ${contract.partyBAddress || '................................'}`)
-        .text(`Đại diện: ${repName} — Chức vụ: ${contract.partyBPosition || '................................'}`);
-      if (contract.partyBBankAccount) {
-        doc.text(`Tài khoản: ${contract.partyBBankAccount} tại ${contract.partyBBankName || '................'}`);
+      doc.font(fontBold).fontSize(15).fillColor('#003399').text('BÊN MUA (BÊN B)');
+      doc.moveTo(doc.x, doc.y - 2).lineTo(doc.x + 130, doc.y - 2).strokeColor('#003399').lineWidth(1).stroke();
+      doc.moveDown(0.5);
+
+      doc.font(font).fontSize(11).fillColor('#000000');
+      doc.text('Tên khách hàng: ', { continued: true }).font(fontBold).text(repName || '...................................................');
+      doc.font(font).text('Địa chỉ: ', { continued: true }).font(fontBold).text(contract.partyBAddress || '......................................................................................');
+      doc.font(font).text('Mã số thuế: ', { continued: true }).font(fontBold).text(contract.CustomerID?.MaKH || '................................');
+      doc.font(font).text('Điện thoại: ', { continued: true }).font(fontBold).text(contract.partyBPhoneNumber || '................................');
+      doc.font(font).text('Người đại diện: ', { continued: true }).font(fontBold).text(repName || '................................', { continued: true }).font(font).text(' — ', { continued: true }).font(fontBold).text('Chức vụ: ', { continued: true }).font(font).text(contract.partyBPosition || '................................');
+      if (contract.partyBBankAccount || contract.partyBBankName) {
+        doc.font(font).text('Tài khoản: ', { continued: true }).font(fontBold).text(contract.partyBBankAccount || '................', { continued: true }).font(font).text(' tại ', { continued: true }).font(fontBold).text(contract.partyBBankName || '................');
       }
       doc.moveDown(1.2);
 
-      doc.font(fontBold).fontSize(10).text('Hai bên cùng thống nhất ký kết các điều khoản mua bán sau đây:');
-      doc.moveDown(0.5);
+      doc.font(fontBold).fontSize(11).fillColor('#000000').text('Sau khi bàn bạc, hai bên thống nhất ký kết hợp đồng với các điều khoản kèm theo Mã hash (IPFS/Blockchain) bên dưới:');
+      doc.moveDown(1);
 
       // ========== ĐIỀU 1: Hàng hóa và Giá cả ==========
-      doc.font(fontBold).fontSize(12).text('Điều 1: Hàng hóa và Giá cả');
+      doc.font(fontBold).fontSize(12).fillColor('#003399').text('Điều 1: Hàng hóa và Giá cả');
       doc.moveDown(0.3);
-      doc.font(font).fontSize(10);
+      doc.font(font).fontSize(11).fillColor('#000000');
       if (contract.articles && contract.articles.article1) {
         doc.text(contract.articles.article1);
-        doc.moveDown(0.5);
+        doc.moveDown(0.8);
       }
 
       if (contract.ChiTietHopDong && contract.ChiTietHopDong.length > 0) {
-        // Table header
+        // Table parameters
         const tableTop = doc.y;
-        const col1 = 50, col2 = 180, col3 = 280, col4 = 370, col5 = 460;
+        const col1 = 50, col2 = 180, col3 = 260, col4 = 340, col5 = 440;
+        const rowHeight = 25;
 
-        doc.font(fontBold).fontSize(9);
-        doc.text('Sản phẩm', col1, tableTop);
-        doc.text('Mã màu', col2, tableTop);
-        doc.text('Khối lượng (Kg)', col3, tableTop);
-        doc.text('Đơn giá (VNĐ)', col4, tableTop);
-        doc.text('Thành tiền', col5, tableTop);
+        // Draw Table Header Background
+        doc.rect(50, tableTop, 495, rowHeight).fill('#f8faff');
 
-        doc.moveTo(50, tableTop + 14).lineTo(545, tableTop + 14).stroke();
+        doc.font(fontBold).fontSize(10).fillColor('#000000');
+        doc.text('Sản phẩm / Dòng sơn', col1 + 5, tableTop + 7);
+        doc.text('Mã màu', col2 + 5, tableTop + 7);
+        doc.text('Số lượng', col3 + 5, tableTop + 7);
+        doc.text('Đơn giá', col4 + 5, tableTop + 7);
+        doc.text('Thành tiền', col5 + 5, tableTop + 7);
 
-        let y = tableTop + 20;
-        doc.font(font).fontSize(9);
+        // Draw Table Header Borders
+        doc.rect(50, tableTop, 495, rowHeight).strokeColor('#003399').lineWidth(1.5).stroke();
+        doc.lineWidth(1);
+        doc.moveTo(col2, tableTop).lineTo(col2, tableTop + rowHeight).strokeColor('#003399').stroke();
+        doc.moveTo(col3, tableTop).lineTo(col3, tableTop + rowHeight).strokeColor('#003399').stroke();
+        doc.moveTo(col4, tableTop).lineTo(col4, tableTop + rowHeight).strokeColor('#003399').stroke();
+        doc.moveTo(col5, tableTop).lineTo(col5, tableTop + rowHeight).strokeColor('#003399').stroke();
 
+        let y = tableTop + rowHeight;
+        
         contract.ChiTietHopDong.forEach((item) => {
           const lineTotal = item.quantity * item.unitPrice;
-          // Calculate max height for this row (in case productName is long)
-          const nameHeight = doc.heightOfString(item.productName || '', { width: 125, align: 'left' });
-          const rowHeight = Math.max(nameHeight, 18);
+          const nameHeight = doc.heightOfString(item.productName || '', { width: 120 });
+          const itemHeight = Math.max(nameHeight + 10, rowHeight);
 
-          doc.text(item.productName, col1, y, { width: 125, align: 'left' });
-          doc.text(item.colorCode || '—', col2, y, { width: 90, align: 'center' });
-          doc.text(item.quantity.toLocaleString('vi-VN'), col3, y, { width: 80, align: 'center' });
-          doc.text(item.unitPrice.toLocaleString('vi-VN'), col4, y, { width: 80, align: 'right' });
-          doc.text(lineTotal.toLocaleString('vi-VN'), col5, y, { width: 85, align: 'right' });
+          // Draw row borders
+          doc.rect(50, y, 495, itemHeight).strokeColor('#003399').stroke();
+          doc.moveTo(col2, y).lineTo(col2, y + itemHeight).strokeColor('#003399').stroke();
+          doc.moveTo(col3, y).lineTo(col3, y + itemHeight).strokeColor('#003399').stroke();
+          doc.moveTo(col4, y).lineTo(col4, y + itemHeight).strokeColor('#003399').stroke();
+          doc.moveTo(col5, y).lineTo(col5, y + itemHeight).strokeColor('#003399').stroke();
+
+          doc.font(font).fontSize(10).fillColor('#000000');
+          doc.text(item.productName, col1 + 5, y + 7, { width: 120 });
+          doc.font(fontBold).text(item.colorCode || '—', col2, y + 7, { width: 70, align: 'center' });
+          doc.font(font).text(item.quantity.toLocaleString('vi-VN') + ' Kg', col3, y + 7, { width: 70, align: 'center' });
+          doc.text(item.unitPrice.toLocaleString('vi-VN') + 'đ', col4 - 5, y + 7, { width: 95, align: 'right' });
+          doc.font(fontBold).text(lineTotal.toLocaleString('vi-VN') + 'đ', col5 - 5, y + 7, { width: 95, align: 'right' });
           
-          y += rowHeight + 5;
+          y += itemHeight;
         });
 
-        doc.moveTo(50, y).lineTo(545, y).stroke();
-        y += 10;
-        doc.font(fontBold).fontSize(10);
-        doc.text(`TỔNG GIÁ TRỊ HỢP ĐỒNG: ${contract.TongGiaTri.toLocaleString('vi-VN')} VNĐ`, col3, y, { width: 265, align: 'right' });
+        // Draw Table Footer
+        doc.rect(50, y, 495, rowHeight).fillAndStroke('#f8faff', '#003399');
+        doc.rect(50, y, 495, rowHeight).strokeColor('#003399').stroke();
+        doc.moveTo(col5, y).lineTo(col5, y + rowHeight).strokeColor('#003399').stroke();
         
-        // Reset tọa độ X về lề trái và cập nhật tọa độ Y xuống dưới bảng
+        doc.font(fontBold).fontSize(10).fillColor('#000000');
+        doc.text('Tổng giá trị:', col4 - 50, y + 7, { width: 140, align: 'right' });
+        doc.fillColor('#003399').text(contract.TongGiaTri.toLocaleString('vi-VN') + 'đ', col5 - 5, y + 7, { width: 95, align: 'right' });
+        
         doc.x = 50;
-        doc.y = y + 25;
-        doc.moveDown(1);
+        doc.y = y + rowHeight + 20;
+        doc.fillColor('#000000'); // Reset color
       }
 
       // ========== Các Điều khoản khác (2 - 11) ==========
       if (contract.articles) {
         for (let num = 2; num <= 11; num++) {
           if (contract.articles[`article${num}`]) {
-            doc.font(fontBold).fontSize(12).text(`Điều ${num}:`);
-            doc.moveDown(0.2);
-            doc.font(font).fontSize(10).text(contract.articles[`article${num}`]);
-            doc.moveDown(0.8);
+            doc.font(fontBold).fontSize(12).fillColor('#003399').text(`Điều ${num}:`);
+            doc.moveDown(0.3);
+            doc.font(font).fontSize(11).fillColor('#000000').text(contract.articles[`article${num}`]);
+            doc.moveDown(1);
           }
         }
       }
 
       // ========== CHỮ KÝ ==========
-      doc.font(fontBold).fontSize(11);
+      doc.moveDown(1);
       const sigY = doc.y;
-      doc.text('ĐẠI DIỆN BÊN A (VTSC)', 80, sigY);
-      doc.text('ĐẠI DIỆN BÊN B', 360, sigY);
-      doc.moveDown(3);
-      doc.font(font).fontSize(9);
-      const sigNoteY = doc.y;
-      doc.text('(Ký số qua ví MetaMask)', 80, sigNoteY);
-      doc.text('(Ký số qua ví MetaMask)', 360, sigNoteY);
+      
+      doc.font(fontBold).fontSize(12).fillColor('#003399');
+      doc.text('ĐẠI DIỆN BÊN A', 50, sigY, { width: 240, align: 'center' });
+      doc.text('ĐẠI DIỆN BÊN B', 300, sigY, { width: 240, align: 'center' });
+      
+      doc.font(font).fontSize(10).fillColor('#666666');
+      doc.text('(Đã xác nhận on-chain)', 50, sigY + 15, { width: 240, align: 'center' });
+      doc.text('(Ký trực tiếp)', 300, sigY + 15, { width: 240, align: 'center' });
+      
+      doc.font(fontBold).fontSize(14).fillColor('#003399');
+      doc.text('Phí Bình Minh', 50, sigY + 90, { width: 240, align: 'center' });
+      doc.text(repName || '................................', 300, sigY + 90, { width: 240, align: 'center' });
 
       // ========== FOOTER ==========
       doc.moveDown(4);
@@ -547,15 +574,23 @@ exports.generatePreviewPDF = async (req, res) => {
     contract.IPFSCID = ipfsResult.ipfsCid;
     await contract.save();
 
-    // Cleanup temp file
-    if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+    // Nếu Pinata chưa được cấu hình (mock upload), ta giữ lại file ở folder /uploads 
+    // và trả về URL local để frontend vẫn xem được PDF.
+    let finalPdfUrl = ipfsResult.url;
+    if (ipfsResult.mock) {
+      const hostUrl = req.protocol + '://' + req.get('host');
+      finalPdfUrl = `${hostUrl}/uploads/contract_${contract.MaHopDong}.pdf`;
+    } else {
+      // Nếu đã upload IPFS thật, xóa file temp local
+      if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+    }
 
     res.status(200).json({
       success: true,
       data: {
         documentHash,
         ipfsCid: ipfsResult.ipfsCid,
-        pdfUrl: ipfsResult.url,
+        pdfUrl: finalPdfUrl,
         mock: ipfsResult.mock || false
       }
     });

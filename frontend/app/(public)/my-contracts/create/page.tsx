@@ -74,6 +74,7 @@ function CustomerCreateContractPage() {
   const [partyBBankAccount, setPartyBBankAccount] = useState('');
   const [partyBBankName, setPartyBBankName] = useState('');
   const [partyBBankAddress, setPartyBBankAddress] = useState('');
+  const [clientAddress, setClientAddress] = useState('');
   const [slaDeadline, setSlaDeadline] = useState(deadline);
 
   // Chi tiết sản phẩm
@@ -196,6 +197,7 @@ function CustomerCreateContractPage() {
         partyBBankName,
         partyBRepresentative,
         partyBPosition,
+        clientAddress,
         articles
       };
 
@@ -220,8 +222,8 @@ function CustomerCreateContractPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <Link href="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold text-sm transition-all mb-6 no-underline">
-          <ArrowLeft size={16} /> Quay lại Trang chủ
+        <Link href="/hop-dong-pha-che" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold text-sm transition-all mb-6 no-underline">
+          <ArrowLeft size={16} /> Quay lại Quản lý Hợp đồng
         </Link>
 
         {/* Stepper */}
@@ -303,7 +305,14 @@ function CustomerCreateContractPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-500 uppercase ml-1">Địa chỉ ngân hàng</label>
-                  <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBBankAddress} onChange={e => setPartyBBankAddress(e.target.value)} placeholder="Techcombank" />
+                  <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBBankAddress} onChange={e => setPartyBBankAddress(e.target.value)} placeholder="Chi nhánh ngân hàng..." />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-black text-slate-500 uppercase ml-1 flex items-center gap-1">
+                    <Wallet size={12} className="text-blue-500"/> Địa chỉ ví MetaMask (Client Address)
+                  </label>
+                  <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={clientAddress} onChange={e => setClientAddress(e.target.value)} placeholder="0x..." />
+                  <p className="text-[10px] text-slate-400 font-medium ml-1">Bắt buộc để hệ thống có thể triển khai hợp đồng trên mạng lưới Blockchain (Sepolia)</p>
                 </div>
               </div>
             </div>

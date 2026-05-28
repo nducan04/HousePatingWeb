@@ -536,7 +536,7 @@ export default function TrackingPage() {
                       </h3>
                       {/* Enhanced Order Info Cards */}
                       <div className="mt-4 space-y-6">
-                        
+
                         {/* Customer Info Card */}
                         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
                           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -830,7 +830,7 @@ export default function TrackingPage() {
                           <span className="text-[12px] font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-md border border-purple-100">
                             {req.id}
                           </span>
-                          <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5"><Calendar size={12}/> {req.date}</span>
+                          <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5"><Calendar size={12} /> {req.date}</span>
                         </div>
                         <h4 className="font-extrabold text-slate-800 text-lg mb-1">{req.colorCode}</h4>
                         <div className="flex items-center gap-2 mb-4">
@@ -865,9 +865,9 @@ export default function TrackingPage() {
                         {req.imageUrl && (
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
-                            <img 
-                              src={req.imageUrl} 
-                              alt="Ảnh mẫu khách gửi" 
+                            <img
+                              src={req.imageUrl}
+                              alt="Ảnh mẫu khách gửi"
                               className="w-16 h-16 object-cover rounded-lg shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform"
                               onClick={() => window.open(req.imageUrl, '_blank')}
                             />
@@ -887,13 +887,13 @@ export default function TrackingPage() {
       {showQRModal && qrRequestId && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <button 
+            <button
               onClick={() => setShowQRModal(false)}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors cursor-pointer border-none bg-transparent"
             >
               <XCircle size={24} />
             </button>
-            
+
             <div className="text-center space-y-6">
               <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto">
                 <QrCode size={32} />
@@ -902,21 +902,21 @@ export default function TrackingPage() {
                 <h3 className="text-xl font-black text-slate-900">Mã QR Lộ Trình</h3>
                 <p className="text-sm text-slate-500 font-medium mt-2">Quét mã dưới đây bằng điện thoại để xem lộ trình R&D.</p>
               </div>
-              
+
               <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center justify-center">
-                <QRCodeSVG 
-                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking/rd/${qrRequestId}`} 
-                  size={180} 
-                  bgColor="#f8fafc" 
-                  fgColor="#0f172a" 
+                <QRCodeSVG
+                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking/rd/${qrRequestId}`}
+                  size={180}
+                  bgColor="#f8fafc"
+                  fgColor="#0f172a"
                   level="H"
                 />
                 <div className="mt-4 font-mono font-bold text-sm text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200 shadow-sm">
                   {qrRequestId}
                 </div>
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => setShowQRModal(false)}
                 className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-600/20 transition-all cursor-pointer border-none"
               >
