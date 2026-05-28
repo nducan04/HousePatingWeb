@@ -1471,7 +1471,7 @@ export default function HomePage() {
                 </li>
                 <li>
                   <Link
-                    href="/admin/contracts"
+                    href="/my-contracts"
                     className="hover:text-blue-400 transition-colors no-underline text-slate-300"
                   >
                     - Tra cứu hợp đồng

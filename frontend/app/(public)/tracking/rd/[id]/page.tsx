@@ -26,12 +26,53 @@ export default function RDTrackingDetailPage() {
 
   const loadRequest = async (code: string) => {
     setLoading(true);
-    // Fetch from DB
+<<<<<<< Updated upstream
+    // 1. First check local storage (mock data)
+    const stored = localStorage.getItem('sampleRequests');
+    if (stored) {
+      const localReqs = JSON.parse(stored);
+      const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === code.toLowerCase());
+      if (foundRD) {
+        setSelectedSample(foundRD);
+        setLoading(false);
+        return;
+=======
+    
+    // 1. Nếu là dạng mock từ localStorage (bắt đầu bằng REQ-)
+    if (code.startsWith('REQ-')) {
+      if (typeof window !== 'undefined') {
+        const storedRequests = localStorage.getItem('sampleRequests');
+        if (storedRequests) {
+          const requests = JSON.parse(storedRequests);
+          const req = requests.find((r: any) => r.id === code);
+          if (req) {
+            setSelectedSample({
+              id: req.id,
+              customer: req.customer,
+              colorCode: req.colorCode,
+              surface: req.surface || 'Kim loại',
+              status: req.status || 'pending',
+              deadline: req.deadline,
+              date: req.date,
+              LichSuPhienBan: req.LichSuPhienBan || [],
+              signedBy: req.signedBy,
+              signedAt: req.signedAt,
+              imageUrl: req.imageUrl
+            });
+            setLoading(false);
+            return;
+          }
+        }
+>>>>>>> Stashed changes
+      }
+    }
+
+    // 2. Fetch from DB
     try {
       const res = await api.get(`/rd-tracking/${code}`);
       if (res.data.success) {
         const item = res.data.data;
-        const itemCustomer = item.ContractID?.title || item.customerName || 'Khách hàng';
+        const itemCustomer = item.ContractID?.title || 'Khách hàng';
         
         if (user && user.role !== 'Admin' && user.role !== 'NhanVien') {
           const customerName = user.profile?.TenKhachHang || '';
@@ -48,15 +89,12 @@ export default function RDTrackingDetailPage() {
           id: item.MaNhatKy || code,
           customer: itemCustomer,
           colorCode: item.MaMauYeuCau || 'RAL-MIX',
-          colorName: item.colorName,
-          surface: item.ContractID?.surface || item.surface || 'Kim loại',
+          surface: item.ContractID?.surface || 'Kim loại',
           status: item.TrangThai || 'pending',
-          deadline: item.deadline ? new Date(item.deadline).toLocaleDateString('vi-VN') : undefined,
           date: new Date(item.createdAt).toLocaleDateString('vi-VN'),
           LichSuPhienBan: item.LichSuPhienBan || [],
           signedBy: item.signedBy,
-          signedAt: item.signedAt,
-          imageUrl: item.imageUrl
+          signedAt: item.signedAt
         });
       } else {
         toast.error('Không tìm thấy dữ liệu yêu cầu.');

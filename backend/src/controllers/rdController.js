@@ -37,7 +37,15 @@ exports.getRDLogs = async (req, res) => {
 // @route   GET /api/rd-tracking/:id
 exports.getRDLogById = async (req, res) => {
   try {
-    const log = await NhatKyTestMau.findById(req.params.id)
+    const id = req.params.id;
+    let query = {};
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      query = { _id: id };
+    } else {
+      query = { MaNhatKy: id };
+    }
+
+    const log = await NhatKyTestMau.findOne(query)
       .populate('ContractID', 'MaHopDong title CustomerID ChiTietHopDong');
     
     if (!log) {
