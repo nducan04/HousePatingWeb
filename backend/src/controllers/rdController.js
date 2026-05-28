@@ -59,11 +59,14 @@ exports.getRDLogById = async (req, res) => {
   }
 };
 
-// @desc    Create new R&D process for a contract
+// @desc    Create new R&D process for a contract or standalone request
 // @route   POST /api/rd-tracking
 exports.createRDLog = async (req, res) => {
   try {
-    const { ContractID, MaMauYeuCau } = req.body;
+    const { 
+      ContractID, MaMauYeuCau, customerName, colorName, 
+      surface, substrate, deadline, requirements, imageUrl 
+    } = req.body;
     
     // Generate unique ID
     const count = await NhatKyTestMau.countDocuments();
@@ -72,8 +75,15 @@ exports.createRDLog = async (req, res) => {
     const payload = {
       MaNhatKy,
       MaMauYeuCau,
-      TrangThai: 'testing',
-      LichSuPhienBan: []
+      TrangThai: ContractID ? 'testing' : 'pending',
+      LichSuPhienBan: [],
+      customerName,
+      colorName,
+      surface,
+      substrate,
+      deadline,
+      requirements,
+      imageUrl
     };
     if (ContractID) payload.ContractID = ContractID;
     

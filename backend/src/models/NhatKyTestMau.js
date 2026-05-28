@@ -22,6 +22,15 @@ const nhatKyTestMauSchema = new mongoose.Schema({
     ref: 'HopDong'
   },
   MaMauYeuCau: { type: String, required: true },
+  // ── Các trường mở rộng cho Yêu cầu R&D độc lập (chưa có Hợp đồng) ──
+  customerName: { type: String },
+  colorName: { type: String },
+  surface: { type: String },
+  substrate: { type: String },
+  deadline: { type: Date },
+  requirements: { type: String },
+  imageUrl: { type: String },
+  // ──────────────────────────────────────────────────────────────
   TrangThai: { 
     type: String, 
     enum: ['pending', 'testing', 'approved', 'rejected', 'complete', 'completed'], 

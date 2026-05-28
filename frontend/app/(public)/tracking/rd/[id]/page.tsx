@@ -26,24 +26,12 @@ export default function RDTrackingDetailPage() {
 
   const loadRequest = async (code: string) => {
     setLoading(true);
-    // 1. First check local storage (mock data)
-    const stored = localStorage.getItem('sampleRequests');
-    if (stored) {
-      const localReqs = JSON.parse(stored);
-      const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === code.toLowerCase());
-      if (foundRD) {
-        setSelectedSample(foundRD);
-        setLoading(false);
-        return;
-      }
-    }
-
-    // 2. Fetch from DB
+    // Fetch from DB
     try {
       const res = await api.get(`/rd-tracking/${code}`);
       if (res.data.success) {
         const item = res.data.data;
-        const itemCustomer = item.ContractID?.title || 'Khách hàng';
+        const itemCustomer = item.ContractID?.title || item.customerName || 'Khách hàng';
         
         if (user && user.role !== 'Admin' && user.role !== 'NhanVien') {
           const customerName = user.profile?.TenKhachHang || '';
@@ -60,12 +48,15 @@ export default function RDTrackingDetailPage() {
           id: item.MaNhatKy || code,
           customer: itemCustomer,
           colorCode: item.MaMauYeuCau || 'RAL-MIX',
-          surface: item.ContractID?.surface || 'Kim loại',
+          colorName: item.colorName,
+          surface: item.ContractID?.surface || item.surface || 'Kim loại',
           status: item.TrangThai || 'pending',
+          deadline: item.deadline ? new Date(item.deadline).toLocaleDateString('vi-VN') : undefined,
           date: new Date(item.createdAt).toLocaleDateString('vi-VN'),
           LichSuPhienBan: item.LichSuPhienBan || [],
           signedBy: item.signedBy,
-          signedAt: item.signedAt
+          signedAt: item.signedAt,
+          imageUrl: item.imageUrl
         });
       } else {
         toast.error('Không tìm thấy dữ liệu yêu cầu.');
