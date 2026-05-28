@@ -79,6 +79,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
   const fetchData = async () => {
     try {
       setLoading(true);
+<<<<<<< Updated upstream
       if (id.startsWith('REQ-')) {
         // Load from localStorage
         if (typeof window !== 'undefined') {
@@ -121,10 +122,18 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
               if (matchedReq) customerName = matchedReq.customer;
             }
           }
+=======
+      const res = await api.get(`/rd-tracking/${id}`);
+      if (res.data.success) {
+        const data = res.data.data;
+        const fixedLichSu = (data.LichSuPhienBan || []).map((v: any) => ({
+          ...v,
+          tester: v.tester === 'Unknown Tester' || !v.tester ? ((user as any)?.name || 'Phi Binh Minh') : v.tester
+        }));
+>>>>>>> Stashed changes
 
-          setRequest({ ...data, LichSuPhienBan: fixedLichSu, sampleCustomer: customerName });
-          setIsSigned(data.TrangThai === 'approved' || data.TrangThai === 'complete');
-        }
+        setRequest({ ...data, LichSuPhienBan: fixedLichSu, sampleCustomer: data.ContractID?.title || data.customerName || 'Khách hàng' });
+        setIsSigned(data.TrangThai === 'approved' || data.TrangThai === 'complete');
       }
     } catch (err) {
       console.error('Failed to fetch R&D details:', err);
@@ -170,6 +179,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
     }
 
     try {
+<<<<<<< Updated upstream
       if (id.startsWith('REQ-')) {
         // Handle in localStorage
         if (typeof window !== 'undefined') {
@@ -229,36 +239,41 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
               setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }] });
               alert('✅ Đã cập nhật phiên bản test mới và trừ tồn kho!');
               return;
+=======
+      const res = await api.post(`/rd-tracking/${id}/versions`, {
+        ...newVersion,
+        result,
+        tester: (user as any)?.name || 'Admin',
+        testerCode: (user as any)?.MaNhanVien || 'N/A'
+      });
+      if (res.data.success) {
+        // Deduct stock locally upon success to keep the inventory synced
+        const storedMaterials = localStorage.getItem('rdMaterials');
+        if (storedMaterials) {
+          const materialsList = JSON.parse(storedMaterials);
+          newVersion.components.forEach((comp: any) => {
+            const matIndex = materialsList.findIndex((m: any) => m.id === comp.materialId);
+            if (matIndex !== -1) {
+              materialsList[matIndex].stock -= parseFloat(comp.quantity || 0);
+>>>>>>> Stashed changes
             }
-          }
+          });
+          localStorage.setItem('rdMaterials', JSON.stringify(materialsList));
+          setMaterials(materialsList);
         }
-      } else {
-        const res = await api.post(`/rd-tracking/${id}/versions`, {
-          ...newVersion,
-          result,
-          tester: (user as any)?.name || 'Admin',
-          testerCode: (user as any)?.MaNhanVien || 'N/A'
-        });
-        if (res.data.success) {
-          // Deduct stock locally upon success to keep the inventory synced
-          const storedMaterials = localStorage.getItem('rdMaterials');
-          if (storedMaterials) {
-            const materialsList = JSON.parse(storedMaterials);
-            newVersion.components.forEach((comp: any) => {
-              const matIndex = materialsList.findIndex((m: any) => m.id === comp.materialId);
-              if (matIndex !== -1) {
-                materialsList[matIndex].stock -= parseFloat(comp.quantity || 0);
-              }
-            });
-            localStorage.setItem('rdMaterials', JSON.stringify(materialsList));
-            setMaterials(materialsList);
-          }
 
+<<<<<<< Updated upstream
           setRequest(res.data.data);
           setShowAddVersion(false);
           setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }] });
           alert('✅ Đã cập nhật phiên bản test mới!');
         }
+=======
+        setRequest(res.data.data);
+        setShowAddVersion(false);
+        setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
+        alert('✅ Đã cập nhật phiên bản test mới!');
+>>>>>>> Stashed changes
       }
     } catch (err) {
       console.error('Failed to add version:', err);
@@ -268,42 +283,11 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
   const handleSignKCS = async () => {
     try {
-      if (id.startsWith('REQ-')) {
-        // Handle in localStorage
-        if (typeof window !== 'undefined') {
-          const storedRequests = localStorage.getItem('sampleRequests');
-          if (storedRequests) {
-            const requests = JSON.parse(storedRequests);
-            const reqIndex = requests.findIndex((r: any) => r.id === id);
-            if (reqIndex !== -1) {
-              const req = requests[reqIndex];
-              req.status = 'approved';
-              req.signedBy = (user as any)?.name || 'Admin';
-              req.signedAt = new Date().toISOString();
-
-              requests[reqIndex] = req;
-              localStorage.setItem('sampleRequests', JSON.stringify(requests));
-
-              setIsSigned(true);
-              setRequest({
-                ...request,
-                TrangThai: 'approved',
-                signedBy: req.signedBy,
-                signedAt: req.signedAt
-              });
-
-              alert('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
-              return;
-            }
-          }
-        }
-      } else {
-        const res = await api.patch(`/rd-tracking/${id}/sign-kcs`);
-        if (res.data.success) {
-          setIsSigned(true);
-          alert('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
-          fetchData(); // Refresh UI
-        }
+      const res = await api.patch(`/rd-tracking/${id}/sign-kcs`);
+      if (res.data.success) {
+        setIsSigned(true);
+        alert('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
+        fetchData(); // Refresh UI
       }
     } catch (err: any) {
       console.error('Failed to sign KCS:', err);

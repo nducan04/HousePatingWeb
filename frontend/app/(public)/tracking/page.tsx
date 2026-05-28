@@ -97,12 +97,13 @@ export default function TrackingPage() {
   const [dbRDList, setDbRDList] = useState<any[]>([]);
 
   const mapDBRDToUI = (item: any) => {
-    const itemCustomer = item.ContractID?.title || 'Khách hàng';
+    const itemCustomer = item.ContractID?.title || item.customerName || 'Khách hàng';
     return {
       id: item.MaNhatKy || item._id,
       customer: itemCustomer,
       colorCode: item.MaMauYeuCau || 'RAL-MIX',
-      surface: item.ContractID?.surface || 'Kim loại',
+      colorName: item.colorName,
+      surface: item.ContractID?.surface || item.surface || 'Kim loại',
       status: item.TrangThai || 'pending',
       date: new Date(item.createdAt).toLocaleDateString('vi-VN'),
       LichSuPhienBan: item.LichSuPhienBan || [],
@@ -129,8 +130,8 @@ export default function TrackingPage() {
   }, [dbTrackingList]);
 
   const filteredSampleRequests = useMemo(() => {
-    return [...dbRDList, ...sampleRequests];
-  }, [dbRDList, sampleRequests]);
+    return [...dbRDList];
+  }, [dbRDList]);
 
   const fetchDBRDRequest = async (code: string) => {
     setLoadingRD(true);
@@ -190,21 +191,7 @@ export default function TrackingPage() {
         setActiveTab('rd');
       }
 
-      // Load sample requests from localstorage
-      const stored = localStorage.getItem('sampleRequests');
-      let localReqs = [];
-      if (stored) {
-        localReqs = JSON.parse(stored);
-        setSampleRequests(localReqs);
-      } else {
-        const defaultRequests = [
-          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
-          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026', LichSuPhienBan: [] },
-        ];
-        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
-        setSampleRequests(defaultRequests);
-        localReqs = defaultRequests;
-      }
+      // No more localStorage. Just rely on dbRDList and filteredTrackingData.
 
       if (orderId) {
         const foundShipping = filteredTrackingData.find(t => t.dbRecord?.DonHang?._id === orderId || t.dbRecord?.DonHang === orderId);
@@ -221,8 +208,13 @@ export default function TrackingPage() {
           setSelectedTracking(foundShipping);
           setActiveTab('shipping');
         } else {
+<<<<<<< Updated upstream
           // Check local R&D requests
           const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === code.toLowerCase());
+=======
+          // Check DB R&D requests
+          const foundRD = dbRDList.find((r: any) => r.id === trackingCode);
+>>>>>>> Stashed changes
           if (foundRD) {
             setSelectedRDRequest(foundRD);
             setActiveTab('rd');
@@ -285,6 +277,7 @@ export default function TrackingPage() {
 
   const loadSampleRequests = () => {
     if (typeof window !== 'undefined') {
+<<<<<<< Updated upstream
       const stored = localStorage.getItem('sampleRequests');
       if (stored) {
         const parsed = JSON.parse(stored);
@@ -318,6 +311,21 @@ export default function TrackingPage() {
         if (myReqs.length > 0) {
           setSelectedSample(myReqs[0]);
         }
+=======
+      const parsed = dbRDList;
+      
+      // Find user display name
+      const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
+      const myReqs = parsed.filter((r: any) =>
+        r.customer === displayName ||
+        (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
+      );
+
+      if (myReqs.length > 0) {
+        setSelectedSample(myReqs[0]);
+      } else {
+        setSelectedSample(null);
+>>>>>>> Stashed changes
       }
     }
   };
@@ -353,13 +361,8 @@ export default function TrackingPage() {
       }
     } else {
       // Searching under RD tab
-      const stored = localStorage.getItem('sampleRequests');
-      let localReqs = [];
-      if (stored) {
-        localReqs = JSON.parse(stored);
-      }
-
-      const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
+      const reqs = dbRDList;
+      const foundRD = reqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
       if (foundRD) {
         setSelectedRDRequest(foundRD);
         setSelectedTracking(null);
@@ -419,7 +422,7 @@ export default function TrackingPage() {
 
   // Filter requests for the current customer
   const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-  const customerRequests = sampleRequests.filter(req => {
+  const customerRequests = dbRDList.filter(req => {
     const isMine = req.customer === displayName || (req.customer && req.customer.toLowerCase() === displayName.toLowerCase());
     const matchSearch = req.id.toLowerCase().includes(sampleSearchTerm.toLowerCase()) ||
                         req.colorCode.toLowerCase().includes(sampleSearchTerm.toLowerCase());

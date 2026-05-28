@@ -47,40 +47,21 @@ export default function RDTrackingPage() {
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
 
-  const [sampleRequests, setSampleRequests] = useState<any[]>([]);
+  // Compute sample requests (standalone R&D logs without ContractID)
+  const sampleRequests = useMemo(() => {
+    return data.filter(d => !d.ContractID).map(item => ({
+      id: item.MaNhatKy || item._id,
+      customer: item.customerName || 'Khách hàng',
+      colorCode: item.MaMauYeuCau,
+      surface: item.surface || 'Chưa cập nhật',
+      status: item.TrangThai || 'pending',
+      date: new Date(item.createdAt).toLocaleDateString('vi-VN')
+    }));
+  }, [data]);
 
   useEffect(() => {
     fetchLogs();
     fetchContracts();
-
-    // Load sample requests from localStorage
-    if (typeof window !== "undefined") {
-      const storedRequests = localStorage.getItem("sampleRequests");
-      if (storedRequests) {
-        setSampleRequests(JSON.parse(storedRequests));
-      } else {
-        const defaultRequests = [
-          {
-            id: "REQ-001",
-            customer: "NCC Aluminium",
-            colorCode: "INT-D2525",
-            surface: "Nhôm định hình",
-            status: "pending",
-            date: "12/05/2026",
-          },
-          {
-            id: "REQ-002",
-            customer: "VPIC Steel",
-            colorCode: "RAL-9005",
-            surface: "Thép tấm",
-            status: "processing",
-            date: "11/05/2026",
-          },
-        ];
-        setSampleRequests(defaultRequests);
-        localStorage.setItem("sampleRequests", JSON.stringify(defaultRequests));
-      }
-    }
   }, []);
 
   const fetchLogs = async () => {
@@ -103,17 +84,6 @@ export default function RDTrackingPage() {
       if (res.data.success) {
         const fetchedContracts = res.data.data;
         setContracts(fetchedContracts);
-
-        // Khôi phục dữ liệu từ localStorage (Yêu cầu mẫu thử được tạo qua form /rd-tracking/new)
-        let localRequests: any[] = [];
-        try {
-          const stored = localStorage.getItem('sampleRequests');
-          if (stored) localRequests = JSON.parse(stored);
-        } catch (e) {
-          console.error('Error parsing local sample requests', e);
-        }
-
-        setSampleRequests(localRequests);
       }
     } catch (err) {
       console.error("Failed to fetch contracts:", err);
@@ -171,6 +141,7 @@ export default function RDTrackingPage() {
 
   const filteredData = useMemo(() => {
     return data.filter((item) => {
+      if (!item.ContractID) return false;
       const colorInfo = paintColors.find((c) => c.code === item.MaMauYeuCau);
       const matchSearch =
         String(item.MaMauYeuCau || "")
