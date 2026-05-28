@@ -41,6 +41,7 @@ interface MaMauItem {
   TonKhoTamGiu: number;
   NguongCanhBao: number;
   TrangThai: boolean;
+  HinhAnh?: string;
 }
 
 interface KhoItem {
