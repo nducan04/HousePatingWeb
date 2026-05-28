@@ -7,25 +7,23 @@ import {
   Edit,
   Trash2,
   Package,
+  QrCodeIcon,
   Layers,
   Droplet,
   Box,
-  ShoppingCart,
   ChevronLeft,
   ChevronRight,
+  QrCode,
+  FileText,
   Download,
   Eye,
-  Star,
   Image as ImageIcon,
   X,
   Upload,
-  QrCode,
-  FileText,
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
-import { getGuestSessionId } from "@/lib/store/cartStore";
 import * as XLSX from "xlsx";
 import IPFSImage from "@/lib/components/IPFSImage";
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
@@ -243,26 +241,7 @@ export default function SanPhamPage() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, filterType, currentPage]);
 
-  const addToCart = async (sp: SanPham) => {
-    setCartLoading(sp._id);
-    try {
-      const sessionId = user?.id || getGuestSessionId();
-      const res = await api.post(`/gio-hang/${sessionId}`, {
-        SanPhamId: sp._id,
-        SoLuong: 1,
-      });
-      if (res.data.success) {
-        setCartMessage({ id: sp._id, text: "Đã thêm!" });
-        setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
-      }
-    } catch (err) {
-      console.error(err);
-      setCartMessage({ id: sp._id, text: "Lỗi!" });
-      setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
-    } finally {
-      setCartLoading("");
-    }
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

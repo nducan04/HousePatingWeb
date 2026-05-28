@@ -84,7 +84,7 @@ const allNavItems = [
         href: "/quan-ly-san-pham",
         label: "Sản phẩm sơn",
         icon: Package,
-        roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
+        roles: ["Admin", "NhanVien"],
       },
       {
         href: "/gia-thanh",
@@ -117,11 +117,12 @@ const allNavItems = [
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/colors",
+        href: "/quan-ly-ma-mau",
         label: "Tra cứu mã màu",
         icon: Palette,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
+
     ],
   },
   {
@@ -143,7 +144,7 @@ const allNavItems = [
         href: "/quan-ly-thanh-toan",
         label: "Quản lý thanh toán",
         icon: QrCode,
-        roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
+        roles: ["Admin", "NhanVien"],
       },
       {
         href: "/van-chuyen",
@@ -155,7 +156,7 @@ const allNavItems = [
         href: "/hieu-suat",
         label: "Theo dõi hiệu suất",
         icon: SignalHigh,
-        roles: ["Admin", "Director"],
+        roles: ["Admin", "NhanVien"],
       },
       {
         href: "/doi-tra",
@@ -352,19 +353,21 @@ export default function AdminLayout({
     if (pathname === "/dashboard") {
       return userRole === "NhanVien" ? "📦 Quản lý nghiệp vụ" : "📊 Dashboard";
     }
-    if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
+    if (pathname?.startsWith("/quan-ly-san-pham")) return "📦 Quản lý Sản phẩm Sơn";
     if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
     if (pathname?.startsWith("/doi-tra"))
       return "🎯 Trung Tâm Giải Quyết Khiếu Nại";
     if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
     if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
-    if (pathname?.startsWith("/contracts")) return "📝 Hợp đồng B2B";
+    if (pathname?.startsWith("/hop-dong-pha-che")) return "📝 Hợp đồng B2B";
     if (pathname === "/colors") return "🎨 Tra cứu Mã Màu";
-    if (pathname === "/tracking") return "📦 QR Tracking";
+    if (pathname === "/van-chuyen") return "📦 Theo dõi vận chuyển";
     if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
     if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
-    if (pathname === "/import") return "📤 Nhập Dữ Liệu (Excel/CSV)";
+    if (pathname === "/quan-ly-thanh-toan") return "💳 Quản lý thanh toán";
+    if (pathname === "/hieu-suat") return "📈 Theo dõi hiệu suất";
+    if (pathname === "/khuyen-mai") return "🏷️ Quản lý khuyến mãi";
     return "Quản lý nghiệp vụ";
   };
 
