@@ -125,10 +125,21 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
               if (matchedReq) customerName = matchedReq.customer;
             }
           }
+      const res = await api.get(`/rd-tracking/${id}`);
+      if (res.data.success) {
+        const data = res.data.data;
+        const fixedLichSu = (data.LichSuPhienBan || []).map((v: any) => ({
+          ...v,
+          tester: v.tester === 'Unknown Tester' || !v.tester ? ((user as any)?.name || 'Phi Binh Minh') : v.tester
+        }));
+
+        setRequest({ ...data, LichSuPhienBan: fixedLichSu, sampleCustomer: data.ContractID?.title || data.customerName || 'Khách hàng' });
+        setIsSigned(data.TrangThai === 'approved' || data.TrangThai === 'complete');
 
           setRequest({ ...data, LichSuPhienBan: fixedLichSu, sampleCustomer: customerName });
           setIsSigned(data.TrangThai === 'approved' || data.TrangThai === 'complete');
         }
+develop
       }
     } catch (err) {
       console.error('Failed to fetch R&D details:', err);
@@ -231,6 +242,32 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
               });
 
               setShowAddVersion(false);
+      const res = await api.post(`/rd-tracking/${id}/versions`, {
+        ...newVersion,
+        result,
+        tester: (user as any)?.name || 'Admin',
+        testerCode: (user as any)?.MaNhanVien || 'N/A'
+      });
+      if (res.data.success) {
+        // Deduct stock locally upon success to keep the inventory synced
+        const storedMaterials = localStorage.getItem('rdMaterials');
+        if (storedMaterials) {
+          const materialsList = JSON.parse(storedMaterials);
+          newVersion.components.forEach((comp: any) => {
+            const matIndex = materialsList.findIndex((m: any) => m.id === comp.materialId);
+            if (matIndex !== -1) {
+              materialsList[matIndex].stock -= parseFloat(comp.quantity || 0);
+            }
+          });
+          localStorage.setItem('rdMaterials', JSON.stringify(materialsList));
+          setMaterials(materialsList);
+        }
+
+        setRequest(res.data.data);
+        setShowAddVersion(false);
+        setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
+        alert('✅ Đã cập nhật phiên bản test mới!');
+=======
               setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
               alert('✅ Đã cập nhật phiên bản test mới và trừ tồn kho!');
               return;
@@ -264,6 +301,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
           alert('✅ Đã cập nhật phiên bản test mới!');
         }
+ develop
       }
     } catch (err) {
       console.error('Failed to add version:', err);
