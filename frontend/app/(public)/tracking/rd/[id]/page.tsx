@@ -26,30 +26,45 @@ export default function RDTrackingDetailPage() {
 
   const loadRequest = async (code: string) => {
     setLoading(true);
-    // 1. Check local storage (mock data)
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('sampleRequests');
-      if (stored) {
-        const localReqs = JSON.parse(stored);
-        const req = localReqs.find((r: any) => r.id.toLowerCase() === code.toLowerCase());
-        if (req) {
-          setSelectedSample({
-            id: req.id,
-            customer: req.customer,
-            colorCode: req.colorCode,
-            surface: req.surface || 'Kim loại',
-            status: req.status || 'pending',
-            deadline: req.deadline,
-            date: req.date,
-            LichSuPhienBan: req.LichSuPhienBan || [],
-            signedBy: req.signedBy,
-            signedAt: req.signedAt,
-            imageUrl: req.imageUrl
-          });
-          setLoading(false);
-          return;
+    // 1. Nếu là dạng mock từ localStorage (bắt đầu bằng REQ-)
+    if (code.startsWith('REQ-')) {
+      if (typeof window !== 'undefined') {
+        const storedRequests = localStorage.getItem('sampleRequests');
+        if (storedRequests) {
+          const requests = JSON.parse(storedRequests);
+          const req = requests.find((r: any) => r.id.toLowerCase() === code.toLowerCase());
+          if (req) {
+            setSelectedSample({
+              id: req.id,
+              customer: req.customer,
+              colorCode: req.colorCode,
+              surface: req.surface || 'Kim loại',
+              status: req.status || 'pending',
+              deadline: req.deadline,
+              date: req.date,
+              LichSuPhienBan: req.LichSuPhienBan || [],
+              signedBy: req.signedBy,
+              signedAt: req.signedAt,
+              imageUrl: req.imageUrl
+            });
+            setLoading(false);
+            return;
+          }
         }
       }
+      
+      // Fallback khi quét mã QR trên điện thoại (điện thoại không có sẵn localStorage của máy tính)
+      setSelectedSample({
+        id: code,
+        customer: 'Khách hàng Demo (Test quét QR)',
+        colorCode: 'DEMO-COLOR-7035',
+        surface: 'Nhôm định hình',
+        status: 'processing',
+        date: new Date().toLocaleDateString('vi-VN'),
+        LichSuPhienBan: [],
+      });
+      setLoading(false);
+      return;
     }
 
     // 2. Fetch from DB
