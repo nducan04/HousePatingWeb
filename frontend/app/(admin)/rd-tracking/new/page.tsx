@@ -379,7 +379,6 @@ function NewRDRequestPage() {
 
     toast.success("✅ Yêu cầu R&D đã được tạo thành công! (Version 1.0)");
     router.push(isCustomer ? "/tracking?tab=samples" : "/rd-tracking");
- develop
   };
 
   return (

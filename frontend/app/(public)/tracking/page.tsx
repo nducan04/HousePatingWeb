@@ -22,6 +22,8 @@ export default function TrackingPage() {
   const [trackingCode, setTrackingCode] = useState('');
   const [selectedTracking, setSelectedTracking] = useState<any | null>(null);
 
+  // R&D Tracking states
+  const [selectedRDRequest, setSelectedRDRequest] = useState<any | null>(null);
   const [loadingRD, setLoadingRD] = useState(false);
   const [sampleRequests, setSampleRequests] = useState<any[]>([]);
   const [selectedSample, setSelectedSample] = useState<any | null>(null);
@@ -33,6 +35,7 @@ export default function TrackingPage() {
   const [simSpeed, setSimSpeed] = useState(72);
   const [simTemp, setSimTemp] = useState(19.4);
   const [lastPing, setLastPing] = useState(0);
+
 
 
   const [dbTrackingList, setDbTrackingList] = useState<any[]>([]);
@@ -246,7 +249,7 @@ export default function TrackingPage() {
           // Check local R&D requests
           const foundRD = customerRequests.find((r: any) => r.id === trackingCode);
           if (foundRD) {
-            setSelectedSample(foundRD);
+            setSelectedRDRequest(foundRD);
             setActiveTab('samples');
           } else {
             // Try fetching from DB if not start with REQ
@@ -277,6 +280,16 @@ export default function TrackingPage() {
       clearInterval(pingInterval);
     };
   }, []);
+
+  // R&D samples states
+  const [selectedSample, setSelectedSample] = useState<any | null>(null);
+  const [sampleSearchTerm, setSampleSearchTerm] = useState('');
+
+  // Inline login states
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -337,7 +350,7 @@ export default function TrackingPage() {
     if (!trackingCode) return;
 
     if (activeTab === 'shipment') {
-      const found = filteredTrackingData.find((t: any) => t.code.toLowerCase() === trackingCode.toLowerCase());
+      const found = filteredTrackingData.find(t => t.code.toLowerCase() === trackingCode.toLowerCase());
       if (found) {
         setSelectedTracking(found);
       } else {
@@ -347,7 +360,7 @@ export default function TrackingPage() {
           const reqs = JSON.parse(stored);
           const foundRD = reqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
           if (foundRD) {
-            setSelectedSample(foundRD);
+            setSelectedRDRequest(foundRD);
             setActiveTab('samples');
             setSelectedTracking(null);
             return;
@@ -419,7 +432,7 @@ export default function TrackingPage() {
     'CheckCircle2': CheckCircle2,
     'Package': Package,
     'Clock': Clock,
-    'Camera': Camera,
+
   };
 
   const statusColors = {
@@ -525,74 +538,19 @@ export default function TrackingPage() {
                   </div>
                 </div>
 
-                {/* Right Side: Info & Timeline */}
-                <div className="p-8 flex flex-col h-[500px] lg:h-[800px] overflow-y-auto">
-                  {/* Order Info Header */}
-                  <div className="flex justify-between items-start flex-wrap gap-6 mb-8 pb-8 border-b border-slate-100 shrink-0">
-                    <div className="flex-1">
-                      <span className="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-lg">Mã đơn hàng</span>
-                      <h3 className="text-2xl font-black text-slate-900 mt-2 mb-4">
-                        {selectedTracking.code}
-                      </h3>
-                      {/* Enhanced Order Info Cards */}
-                      <div className="mt-4 space-y-6">
-
-                        {/* Customer Info Card */}
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <User size={12} className="text-blue-500" /> Thông tin người nhận
-                          </h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-start">
-                              <span className="text-slate-500 text-xs font-semibold">Khách hàng:</span>
-                              <strong className="text-slate-900 text-sm">{selectedTracking.customer}</strong>
-                            </div>
-                            <div className="flex justify-between items-start">
-                              <span className="text-slate-500 text-xs font-semibold">Số điện thoại:</span>
-                              <strong className="text-slate-900 text-sm">{selectedTracking.phone}</strong>
-                            </div>
-                            <div className="flex justify-between items-start pt-2 border-t border-slate-200/60 mt-1">
-                              <span className="text-slate-500 text-xs font-semibold shrink-0 mt-0.5">Địa chỉ:</span>
-                              <strong className="text-slate-800 text-[13px] text-right leading-tight ml-4">{selectedTracking.address}</strong>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Product List Card */}
-                        <div>
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2 px-1">
-                            <Package size={12} className="text-amber-500" /> Sản phẩm ({selectedTracking.allProducts?.length || 1})
-                          </h4>
-                          <div className="space-y-2.5">
-                            {selectedTracking.allProducts && selectedTracking.allProducts.length > 0 ? (
-                              selectedTracking.allProducts.map((p: any, idx: number) => (
-                                <div key={idx} className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all group">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
-                                      <Package size={16} />
-                                    </div>
-                                    <span className="text-sm font-bold text-slate-800 line-clamp-2">{p.TenSanPham || p.name}</span>
-                                  </div>
-                                  <span className="text-blue-700 font-bold bg-blue-50 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border border-blue-100/50 shrink-0 ml-3">
-                                    {p.SoLuong ? `${p.SoLuong} Thùng` : p.quantity}
-                                  </span>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all group">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
-                                    <Package size={16} />
-                                  </div>
-                                  <span className="text-sm font-bold text-slate-800 line-clamp-2">{selectedTracking.product}</span>
-                                </div>
-                                <span className="text-blue-700 font-bold bg-blue-50 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border border-blue-100/50 shrink-0 ml-3">
-                                  {selectedTracking.quantity}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+              {/* Timeline */}
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 md:gap-2">
+                {selectedTracking.steps.map((step: any, i: number) => {
+                  const Icon = iconMap[step.label] || Package;
+                  return (
+                    <div key={i} className="flex flex-col items-center gap-3 flex-1 relative text-center">
+                      {/* Connector line */}
+                      {i < selectedTracking.steps.length - 1 && (
+                        <div className={`hidden md:block absolute top-5 left-1/2 w-full h-0.5 z-0 ${step.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-100'}`} />
+                      )}
+                      {/* Dot */}
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center z-10 shadow-sm transition-all ${statusColors[step.status as keyof typeof statusColors]}`}>
+                        <Icon size={18} />
                       </div>
                     </div>
                     <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center shrink-0 hidden sm:flex">
@@ -865,15 +823,9 @@ export default function TrackingPage() {
                         {req.imageUrl && (
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
-<<<<<<< Updated upstream
-                            <img 
-                              src={req.imageUrl} 
-                              alt="Ảnh mẫu khách gửi" 
-=======
                             <img
                               src={req.imageUrl}
                               alt="Ảnh mẫu khách gửi"
->>>>>>> Stashed changes
                               className="w-16 h-16 object-cover rounded-lg shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform"
                               onClick={() => window.open(req.imageUrl, '_blank')}
                             />
