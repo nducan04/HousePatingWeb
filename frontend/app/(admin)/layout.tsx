@@ -81,10 +81,10 @@ const allNavItems = [
     section: "Quản lý danh mục",
     items: [
       {
-        href: "/san-pham",
+        href: "/quan-ly-san-pham",
         label: "Sản phẩm sơn",
         icon: Package,
-        roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
+        roles: ["Admin", "NhanVien"],
       },
       {
         href: "/gia-thanh",
@@ -122,12 +122,7 @@ const allNavItems = [
         icon: Palette,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
-      {
-        href: "/import",
-        label: "Nhập dữ liệu",
-        icon: FileUp,
-        roles: ["Admin", "NhanVien"],
-      },
+
     ],
   },
   {
@@ -146,10 +141,10 @@ const allNavItems = [
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
-        href: "/thanh-toan",
+        href: "/quan-ly-thanh-toan",
         label: "Quản lý thanh toán",
         icon: QrCode,
-        roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
+        roles: ["Admin", "NhanVien"],
       },
       {
         href: "/van-chuyen",
@@ -161,7 +156,7 @@ const allNavItems = [
         href: "/hieu-suat",
         label: "Theo dõi hiệu suất",
         icon: SignalHigh,
-        roles: ["Admin", "Director"],
+        roles: ["Admin", "NhanVien"],
       },
       {
         href: "/doi-tra",
@@ -187,7 +182,7 @@ const allNavItems = [
     section: "Quy trình pha chế sơn",
     items: [
       {
-        href: "/contracts",
+        href: "/hop-dong-pha-che",
         label: "Hợp đồng pha chế",
         icon: FileSignature,
         roles: ["Admin", "NhanVien", "KhachHangB2B"],
@@ -279,7 +274,7 @@ export default function AdminLayout({
     // Phân quyền cho trang Dashboard
     if (pathname === "/dashboard") {
       if (userRole === "NhanVien") {
-        router.push("/san-pham");
+        router.push("/quan-ly-san-pham");
         return;
       }
       if (isCustomer) {
@@ -358,19 +353,21 @@ export default function AdminLayout({
     if (pathname === "/dashboard") {
       return userRole === "NhanVien" ? "📦 Quản lý nghiệp vụ" : "📊 Dashboard";
     }
-    if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
+    if (pathname?.startsWith("/quan-ly-san-pham")) return "📦 Quản lý Sản phẩm Sơn";
     if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
     if (pathname?.startsWith("/doi-tra"))
       return "🎯 Trung Tâm Giải Quyết Khiếu Nại";
     if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
     if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
-    if (pathname?.startsWith("/contracts")) return "📝 Hợp đồng B2B";
+    if (pathname?.startsWith("/hop-dong-pha-che")) return "📝 Hợp đồng B2B";
     if (pathname === "/colors") return "🎨 Tra cứu Mã Màu";
-    if (pathname === "/tracking") return "📦 QR Tracking";
+    if (pathname === "/van-chuyen") return "📦 Theo dõi vận chuyển";
     if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
     if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
-    if (pathname === "/import") return "📤 Nhập Dữ Liệu (Excel/CSV)";
+    if (pathname === "/quan-ly-thanh-toan") return "💳 Quản lý thanh toán";
+    if (pathname === "/hieu-suat") return "📈 Theo dõi hiệu suất";
+    if (pathname === "/khuyen-mai") return "🏷️ Quản lý khuyến mãi";
     return "Quản lý nghiệp vụ";
   };
 
@@ -389,29 +386,24 @@ export default function AdminLayout({
         {!isCustomer && (
           <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
             {/* Logo Area */}
-<<<<<<< Updated upstream
-            <div className="px-8 py-7 flex items-center gap-4">
-              <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10">
-                <img
-                  src="/vtsc.png"
-                  alt="Logo"
-                  className="w-full h-full object-contain brightness-110"
-                />
-              </div>
-              <div>
-                <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
-                  VTSC
-=======
-            <div className="px-8 py-7 flex items-center justify-center">
-              <Link href="/" className="block no-underline group">
-                <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-105 px-3">
-                  <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
->>>>>>> Stashed changes
+            <div className="px-8 py-7">
+              <Link href="/" className="flex items-center gap-4 no-underline group">
+                <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10 transition-transform group-hover:scale-105">
+                  <img
+                    src="/vtsc.png"
+                    alt="Logo"
+                    className="w-full h-full object-contain brightness-110"
+                  />
                 </div>
-                <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
-                  PaintPro
+                <div>
+                  <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
+                    VTSC
+                  </div>
+                  <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
+                    PaintPro
+                  </div>
                 </div>
-              </div>
+              </Link>
             </div>
 
             {/* Navigation */}
@@ -440,8 +432,8 @@ export default function AdminLayout({
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${isActive
-                                ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
-                                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
+                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                               }`}
                           >
                             <div

@@ -5,7 +5,7 @@ import { ShoppingCart, Search, Eye, Trash2, Box, AlertCircle, CheckCircle2, Tag,
 import { useRouter } from 'next/navigation';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useCartStore, CartItem } from '@/lib/store/cartStore';
+import { useCartStore, CartItem, getGuestSessionId } from '@/lib/store/cartStore';
 import Link from 'next/link';
 import { resolveImageUrl } from '@/lib/utils/imageUrl';
 
@@ -20,7 +20,7 @@ interface KhachHang {
 export default function GioHangPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { cartItems, cartTotal, fetchCart, updateQuantity: updateQuantityStore, clearCart: clearCartStore } = useCartStore();
+  const { cartItems, cartTotal, fetchCart, updateQuantity: updateQuantityStore, clearCart: clearCartStore, initializeCart } = useCartStore();
   const [products, setProducts] = useState<any[]>([]);
   const [customers, setCustomers] = useState<KhachHang[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,7 +32,7 @@ export default function GioHangPage() {
   const [applyingDiscount, setApplyingDiscount] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const sessionId = useMemo(() => user?.id || 'GUEST_SESSION', [user]);
+  const sessionId = useMemo(() => user?.id || getGuestSessionId(), [user]);
   const isAdminOrEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
 
   const getImageUrl = (path: any) => {
@@ -55,7 +55,7 @@ export default function GioHangPage() {
 
   const fetchCartItems = async () => {
     try {
-      await fetchCart(sessionId);
+      await initializeCart(user?.id);
     } catch (err) {
       console.error('Lỗi tải giỏ hàng', err);
     }
@@ -144,7 +144,7 @@ export default function GioHangPage() {
 
       if (res.data.success) {
         alert(`Đặt hàng thành công! Mã đơn hàng: ${res.data.data.MaDonHang}. Kho đã được cập nhật.`);
-        router.push(isAdminOrEmployee ? '/orders' : '/my-orders');
+        router.push(isAdminOrEmployee ? '/don-hang' : '/my-orders');
       }
     } catch (error: any) {
       alert(error.response?.data?.message || 'Lỗi khi đặt hàng');
@@ -279,7 +279,7 @@ export default function GioHangPage() {
         {/* Premium Horizontal Navigation Slider */}
         <div className="flex gap-2.5 overflow-x-auto py-3 px-4 bg-slate-50/60 border border-slate-100 rounded-2xl mb-4 scrollbar-none whitespace-nowrap">
           <Link
-            href={isAdminOrEmployee ? "/orders" : "/my-orders"}
+            href={isAdminOrEmployee ? "/don-hang" : "/my-orders"}
             className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-blue-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
           >
             <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -299,7 +299,7 @@ export default function GioHangPage() {
           </Link>
 
           <Link
-            href="/payments"
+            href={isAdminOrEmployee ? "/quan-ly-thanh-toan" : (user?.role === 'KhachHangB2B' ? "/my-contracts" : "/my-orders")}
             className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm shrink-0 group"
           >
             <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">

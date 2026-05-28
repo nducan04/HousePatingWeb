@@ -44,14 +44,14 @@ export default function AuthNav({ onOpenLogin }: AuthNavProps) {
 
   if (isAuthenticated && user) {
     return (
-      <div className="flex items-center gap-4 border-l border-slate-200 pl-4 ml-2">
+      <div className="flex items-center gap-2 sm:gap-4 ml-1 sm:ml-2">
         {["Admin", "Director", "NhanVien"].includes(user.role) && (
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 text-[14px] font-bold text-slate-500 hover:text-blue-600 transition-all no-underline px-4 py-2 rounded-xl hover:bg-blue-50"
+            className="flex items-center gap-2 text-[14px] font-bold text-slate-500 hover:text-blue-600 transition-all no-underline px-2.5 sm:px-4 py-2 rounded-xl hover:bg-blue-50 flex-shrink-0"
           >
             <LayoutDashboard className="w-4 h-4" />
-            <span>{user.role === "NhanVien" ? "Quản lý nghiệp vụ" : "Dashboard"}</span>
+            <span className="hidden sm:inline xl:hidden 2xl:inline">{user.role === "NhanVien" ? "Quản lý nghiệp vụ" : "Dashboard"}</span>
           </Link>
         )}
         <div className="relative user-menu-container">
@@ -80,7 +80,7 @@ export default function AuthNav({ onOpenLogin }: AuthNavProps) {
 
               <div className="p-2 space-y-1">
                 <Link
-                  href="/profile"
+                  href="/thongtin"
                   onClick={() => setIsMenuOpen(false)}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-700 hover:bg-slate-50 transition-all font-bold text-[13px] no-underline cursor-pointer"
                 >

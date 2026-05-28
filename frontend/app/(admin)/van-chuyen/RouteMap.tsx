@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface RouteMapProps {
   origin: string;
@@ -17,11 +17,10 @@ async function geocode(address: string): Promise<[number, number] | null> {
     return [20.8369, 106.6960];
   }
   try {
-    const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=1`);
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=vn&accept-language=vi&email=contact@vtsc.vn`);
     const data = await res.json();
-    if (data && data.features && data.features.length > 0) {
-      const [lon, lat] = data.features[0].geometry.coordinates;
-      return [lat, lon];
+    if (data && data.length > 0) {
+      return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
     }
   } catch (e) {
     console.error("Geocode error:", e);
@@ -32,6 +31,7 @@ async function geocode(address: string): Promise<[number, number] | null> {
 export default function RouteMap({ origin, destination, currentLocation, isDelivered = false, onMapClick }: RouteMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const [showZoomHint, setShowZoomHint] = useState(false);
 
   useEffect(() => {
     if (!mapRef.current || !origin || !destination) return;
@@ -68,7 +68,7 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
       // Create map with bright OpenStreetMap tiles
       const map = L.map(mapRef.current, {
         zoomControl: true,
-        scrollWheelZoom: false,
+        scrollWheelZoom: false, // Will be enabled dynamically on Ctrl+Scroll
         attributionControl: true,
       });
       mapInstanceRef.current = map;
@@ -83,7 +83,8 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
       // Bright, standard Google Maps tiles
       L.tileLayer("https://mt1.google.com/vt/lyrs=m&hl=vi&x={x}&y={y}&z={z}", {
         attribution: "Dữ liệu bản đồ ©2026 Google",
-        maxZoom: 18,
+        maxZoom: 22,
+        maxNativeZoom: 20,
       }).addTo(map);
 
       // Add Map Click Listener for setting new waypoint
@@ -266,9 +267,6 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
       isMounted = false;
       if (cleanup) cleanup();
 
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -276,24 +274,48 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
     };
   }, [origin, destination, currentLocation, isDelivered, onMapClick]);
 
-  // Handlers for Ctrl + Scroll
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Control' && mapInstanceRef.current) {
-      mapInstanceRef.current.scrollWheelZoom.enable();
-    }
-  };
-
-  const handleKeyUp = (e: KeyboardEvent) => {
-    if (e.key === 'Control' && mapInstanceRef.current) {
-      mapInstanceRef.current.scrollWheelZoom.disable();
-    }
-  };
-
+  // Robust handler to require Ctrl/Meta key to zoom
   useEffect(() => {
+    const el = mapRef.current;
+    if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        // Prevent browser from scaling the page
+        e.preventDefault();
+        
+        // Ensure map zooming is enabled when holding Ctrl
+        if (mapInstanceRef.current && !mapInstanceRef.current.scrollWheelZoom.enabled()) {
+          mapInstanceRef.current.scrollWheelZoom.enable();
+        }
+      } else {
+        // Disable map zooming if Ctrl is not held, allowing normal page scroll
+        if (mapInstanceRef.current && mapInstanceRef.current.scrollWheelZoom.enabled()) {
+          mapInstanceRef.current.scrollWheelZoom.disable();
+        }
+      }
+    };
+
+    // Add passive: false so we can call preventDefault()
+    el.addEventListener('wheel', handleWheel, { passive: false });
+
+    // Also listen for key events as a fallback
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Control' || e.key === 'Meta') && mapInstanceRef.current) {
+        mapInstanceRef.current.scrollWheelZoom.enable();
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if ((e.key === 'Control' || e.key === 'Meta') && mapInstanceRef.current) {
+        mapInstanceRef.current.scrollWheelZoom.disable();
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
     return () => {
+      el.removeEventListener('wheel', handleWheel);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
@@ -303,13 +325,20 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
     <div
       className="relative w-full h-full group"
       onWheelCapture={(e) => {
-        if (!e.ctrlKey) {
-          // If they scroll without Ctrl, we can let the page scroll.
-          // But to be helpful, we could show a tooltip saying "Use Ctrl + Scroll to zoom"
+        if (!e.ctrlKey && !e.metaKey) {
+          setShowZoomHint(true);
+          setTimeout(() => setShowZoomHint(false), 1500);
         }
       }}
     >
-      <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
+      <div ref={mapRef} style={{ width: "100%", height: "100%", zIndex: 1 }} />
+      {showZoomHint && (
+        <div className="absolute inset-0 z-[1000] bg-black/30 flex items-center justify-center transition-all duration-300 pointer-events-none">
+          <div className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-xl">
+            Giữ phím <kbd className="bg-slate-700 px-2 py-0.5 rounded text-white mx-1">Ctrl</kbd> + lăn chuột để phóng to/thu nhỏ
+          </div>
+        </div>
+      )}
     </div>
   );
 }

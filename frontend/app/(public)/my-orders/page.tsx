@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Package, Truck, CheckCircle2, Clock, XCircle, ChevronRight, ArrowLeft, MapPin, RefreshCw, ShoppingBag, Circle, Plus, X, FileCheck, AlertCircle } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import { toast } from '@/lib/utils/notification';
 import CustomerOrderModal from '@/components/CustomerOrderModal';
 
 const STATUS_CONFIG: Record<string, { label: string, color: string, icon: React.ReactNode }> = {
@@ -37,6 +38,24 @@ export default function CustomerOrderPage() {
   const [requestForm, setRequestForm] = useState<{ LoaiYeuCau: string, LyDo: string, HinhAnh: string[] }>({ LoaiYeuCau: 'Đổi trả', LyDo: '', HinhAnh: [] });
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handlePayWithMomo = async (order: any) => {
+    try {
+      const res = await api.post('/thanh-toan/momo/create', {
+        type: 'ORDER',
+        id: order._id,
+        amount: order.TongTien,
+      });
+      if (res.data.success && res.data.payUrl) {
+        window.location.href = res.data.payUrl;
+      } else {
+        toast.error('Lỗi tạo link thanh toán MoMo: ' + (res.data.message || 'Không xác định'));
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi tạo thanh toán MoMo');
+    }
+  };
 
   const handleExpand = async (order: any) => {
     if (expandedId === order._id) {
@@ -90,10 +109,10 @@ export default function CustomerOrderPage() {
       if (res.data.success) {
         setOrders(prev => prev.map(o => o._id === orderId ? { ...o, ...editForm } : o));
         setEditingInfoId(null);
-        alert('Cập nhật thông tin thành công!');
+        toast.success('Cập nhật thông tin thành công!');
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật!');
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật!');
     } finally {
       setSavingInfo(false);
     }
@@ -105,10 +124,10 @@ export default function CustomerOrderPage() {
       const res = await api.patch(`/orders/${orderId}/cancel`);
       if (res.data.success) {
         setOrders(prev => prev.map(o => o._id === orderId ? { ...o, TrangThai: 'DA_HUY' } : o));
-        alert('Hủy đơn hàng thành công!');
+        toast.success('Hủy đơn hàng thành công!');
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra khi hủy đơn hàng!');
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi hủy đơn hàng!');
     }
   };
 
@@ -129,7 +148,7 @@ export default function CustomerOrderPage() {
       }
     } catch (err) {
       console.error('Lỗi upload ảnh:', err);
-      alert('Không thể tải ảnh lên. Vui lòng thử lại sau.');
+      toast.error('Không thể tải ảnh lên. Vui lòng thử lại sau.');
     } finally {
       setIsUploadingImage(false);
     }
@@ -137,7 +156,7 @@ export default function CustomerOrderPage() {
 
   const handleSubmitRequest = async () => {
     if (!requestForm.LyDo) {
-      alert('Vui lòng nhập lý do');
+      toast.warning('Vui lòng nhập lý do');
       return;
     }
     setIsSubmittingRequest(true);
@@ -150,12 +169,12 @@ export default function CustomerOrderPage() {
         HinhAnh: requestForm.HinhAnh
       });
       if (res.data.success) {
-        alert('Gửi yêu cầu thành công! Yêu cầu của bạn đã được chuyển đến bộ phận CSKH.');
+        toast.success('Gửi yêu cầu thành công! Yêu cầu của bạn đã được chuyển đến bộ phận CSKH.');
         setRequestModalOrder(null);
         setRequestForm({ LoaiYeuCau: 'Đổi trả', LyDo: '', HinhAnh: [] });
       }
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Có lỗi xảy ra');
+      toast.error(e.response?.data?.error || 'Có lỗi xảy ra');
     } finally {
       setIsSubmittingRequest(false);
     }
@@ -245,9 +264,24 @@ export default function CustomerOrderPage() {
                     {new Date(order.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                 </div>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${st.color}`}>
-                  {st.icon} {st.label}
-                </span>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${st.color}`}>
+                    {st.icon} {st.label}
+                  </span>
+                  <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
+                    order.TrangThaiThanhToan === 'DA_THANH_TOAN'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : order.TrangThaiThanhToan === 'THANH_TOAN_MOT_PHAN'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                  }`}>
+                    {order.TrangThaiThanhToan === 'DA_THANH_TOAN'
+                      ? 'Đã thanh toán'
+                      : order.TrangThaiThanhToan === 'THANH_TOAN_MOT_PHAN'
+                        ? 'Thanh toán một phần'
+                        : 'Chưa thanh toán'}
+                  </span>
+                </div>
               </div>
 
               {/* Items preview */}
@@ -399,6 +433,15 @@ export default function CustomerOrderPage() {
                       className="px-4 py-2 rounded-2xl text-xs font-bold border border-amber-200 text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-all cursor-pointer"
                     >
                       Yêu cầu hỗ trợ (Đổi trả/Bảo hành)
+                    </button>
+                  )}
+                  {order.TrangThai !== 'DA_HUY' && order.TrangThaiThanhToan !== 'DA_THANH_TOAN' && (
+                    <button
+                      onClick={() => handlePayWithMomo(order)}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-black bg-[#A50064] text-white hover:bg-[#850050] transition-all cursor-pointer border-none shadow-sm shadow-[#A50064]/20"
+                    >
+                      <div className="w-4 h-4 rounded bg-white flex items-center justify-center text-[8px] font-black text-[#A50064]">M</div>
+                      Thanh toán MoMo
                     </button>
                   )}
                   <button

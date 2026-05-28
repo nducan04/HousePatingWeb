@@ -97,15 +97,11 @@ const LocationInput = ({ value, onChange, placeholder, icon: Icon, iconColor, ri
     const timer = setTimeout(async () => {
       if (value.length >= 3 && isOpen) {
         try {
-          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(value)}&limit=5&lat=16.0&lon=108.0`); // bias towards Vietnam
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value)}&format=json&addressdetails=1&countrycodes=vn&limit=5&accept-language=vi&email=contact@vtsc.vn`);
           const data = await res.json();
-          const parsedSuggestions = data.features.map((f: any) => {
-            const p = f.properties;
-            // Build a readable address string without duplicates
-            return [p.name, p.street, p.district, p.city, p.state, p.country]
-              .filter(Boolean)
-              .filter((v, i, a) => a.indexOf(v) === i)
-              .join(', ');
+          const parsedSuggestions = data.map((f: any) => {
+            // Remove 'Việt Nam' at the end to make it cleaner like local Google Maps usage
+            return f.display_name.replace(/, Việt Nam$/, '');
           });
           setSuggestions(parsedSuggestions);
         } catch (e) {

@@ -185,7 +185,7 @@ export default function ContractsPage() {
 
       const html2pdf = (await import('html2pdf.js')).default;
       const opt = {
-        margin: [10, 10, 15, 10],
+        margin: [10, 10, 15, 10] as [number, number, number, number],
         filename: `HopDong_NguyenTac_${formData.contractId || 'VTSC'}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
@@ -422,7 +422,7 @@ export default function ContractsPage() {
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Link href={`/contracts/${item._id}`} className="w-9 h-9 rounded-md bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="Đến trang xử lý Blockchain"><Eye size={16} /></Link>
+                      <Link href={`/hop-dong-pha-che/${item._id}`} className="w-9 h-9 rounded-md bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="Đến trang xử lý Blockchain"><Eye size={16} /></Link>
                       <button className="w-9 h-9 rounded-md bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-slate-100 transition-all shadow-sm" title="In hợp đồng (Bản in thử)" onClick={() => viewContract(item)}><Printer size={16} /></button>
                     </div>
                   </td>

@@ -3,51 +3,42 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./utils/db');
+// Trigger nodemon restart after port 5000 release
 
-// Trigger nodemon restart after env update
-dotenv.config();
+// Load env vars
+dotenv.config({ override: true });
 
 // Connect to database
 connectDB();
 
 const app = express();
 
+// Middleware
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:3002',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:3001',
-  'http://127.0.0.1:3002',
-  'https://house-pating-web.vercel.app'
+  'https://house-pating-web.vercel.app',
 ];
-
 if (process.env.FRONTEND_URL) {
-  const envOrigins = process.env.FRONTEND_URL.split(',').map(url => url.trim());
-  envOrigins.forEach(origin => {
-    if (origin && !allowedOrigins.includes(origin)) {
-      allowedOrigins.push(origin);
-    }
-  });
+  allowedOrigins.push(process.env.FRONTEND_URL);
 }
 
 app.use(cors({
   origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    // Allow any localhost, 127.0.0.1, configured origins, or vercel.app domains
     if (
       allowedOrigins.includes(origin) ||
-      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-      /\.vercel\.app$/.test(origin)
+      origin.endsWith('.vercel.app') ||
+      origin.startsWith('http://localhost:')
     ) {
-      return callback(null, true);
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-    return callback(new Error('Not allowed by CORS'), false);
   },
   credentials: true,
 }));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json());
 app.use(cookieParser());
 
 // Serve static files from 'uploads' directory
@@ -57,53 +48,96 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // ═══════════════════════════════════════
 // Routes — Module 1: Hệ thống & Xác thực
 // ═══════════════════════════════════════
-app.use('/api/auth', require('./routes/authRoutes'));
+const authRouter = require('./routes/authRoutes');
+app.use('/api/auth', authRouter);
 
 // ═══════════════════════════════════════
 // Routes — Module 2: Danh mục & Hỗ trợ
 // ═══════════════════════════════════════
-app.use('/api/san-pham-son', require('./routes/sanPhamSonRoutes'));
-app.use('/api/products', require('./routes/sanPhamSonRoutes')); // Alias
-app.use('/api/kho', require('./routes/khoRoutes'));
-app.use('/api/inventory', require('./routes/khoRoutes')); // Alias
-app.use('/api/khach-hang', require('./routes/khachHangRoutes'));
-app.use('/api/customers', require('./routes/khachHangRoutes')); // Alias
-app.use('/api/nhan-vien', require('./routes/nhanVienRoutes'));
-app.use('/api/staff', require('./routes/nhanVienRoutes')); // Alias
-app.use('/api/nha-cung-cap', require('./routes/nhaCungCapRoutes'));
-app.use('/api/suppliers', require('./routes/nhaCungCapRoutes')); // Alias
+const sanPhamSonRouter = require('./routes/sanPhamSonRoutes');
+app.use('/api/san-pham-son', sanPhamSonRouter);
+app.use('/api/products', sanPhamSonRouter);
+
+const khoRouter = require('./routes/khoRoutes');
+app.use('/api/kho', khoRouter);
+app.use('/api/inventory', khoRouter);
+
+const khachHangRouter = require('./routes/khachHangRoutes');
+app.use('/api/khach-hang', khachHangRouter);
+app.use('/api/partners', khachHangRouter);
+
+const nhanVienRouter = require('./routes/nhanVienRoutes');
+app.use('/api/nhan-vien', nhanVienRouter);
+app.use('/api/staff', nhanVienRouter);
+
+const nhaCungCapRouter = require('./routes/nhaCungCapRoutes');
+app.use('/api/nha-cung-cap', nhaCungCapRouter);
+app.use('/api/suppliers', nhaCungCapRouter);
+
 app.use('/api/chatbot', require('./routes/chatbotRoutes'));
-app.use('/api/tai-khoan', require('./routes/taiKhoanRoutes'));
-app.use('/api/accounts', require('./routes/taiKhoanRoutes')); // Alias
+
+const taiKhoanRouter = require('./routes/taiKhoanRoutes');
+app.use('/api/tai-khoan', taiKhoanRouter);
+app.use('/api/accounts', taiKhoanRouter);
 
 // ═══════════════════════════════════════
 // Routes — Module 3: Kinh doanh & Hợp đồng
 // ═══════════════════════════════════════
 app.use('/api/contracts', require('./routes/contractRoutes'));
-app.use('/api/tin-tuc', require('./routes/tinTucRoutes'));
-app.use('/api/news', require('./routes/tinTucRoutes')); // Alias
-app.use('/api/don-hang', require('./routes/donHangRoutes'));
-app.use('/api/orders', require('./routes/donHangRoutes')); // Alias
-app.use('/api/khuyen-mai', require('./routes/khuyenMaiRoutes'));
-app.use('/api/promotions', require('./routes/khuyenMaiRoutes')); // Alias
-app.use('/api/gio-hang', require('./routes/gioHangRoutes'));
-app.use('/api/cart', require('./routes/gioHangRoutes')); // Alias
-app.use('/api/thanh-toan', require('./routes/paymentRoutes'));
-app.use('/api/payments', require('./routes/paymentRoutes')); // Alias
-app.use('/api/van-chuyen', require('./routes/vanChuyenRoutes'));
-app.use('/api/shipping', require('./routes/vanChuyenRoutes')); // Alias
-app.use('/api/hieu-suat', require('./routes/hieuSuatRoutes'));
-app.use('/api/performance', require('./routes/hieuSuatRoutes')); // Alias
-app.use('/api/doi-tra', require('./routes/doiTraRoutes'));
-app.use('/api/returns', require('./routes/doiTraRoutes')); // Alias
-app.use('/api/bao-hanh', require('./routes/baoHanhRoutes'));
-app.use('/api/warranties', require('./routes/baoHanhRoutes')); // Alias
+
+const tinTucRouter = require('./routes/tinTucRoutes');
+app.use('/api/tin-tuc', tinTucRouter);
+app.use('/api/news', tinTucRouter);
+
+const donHangRouter = require('./routes/donHangRoutes');
+app.use('/api/don-hang', donHangRouter);
+app.use('/api/orders', donHangRouter);
+
+const khuyenMaiRouter = require('./routes/khuyenMaiRoutes');
+app.use('/api/khuyen-mai', khuyenMaiRouter);
+app.use('/api/promotions', khuyenMaiRouter);
+
+const gioHangRouter = require('./routes/gioHangRoutes');
+app.use('/api/gio-hang', gioHangRouter);
+app.use('/api/cart', gioHangRouter);
+
+const paymentRouter = require('./routes/paymentRoutes');
+app.use('/api/thanh-toan', paymentRouter);
+app.use('/api/payments', paymentRouter);
+
+const vanChuyenRouter = require('./routes/vanChuyenRoutes');
+app.use('/api/van-chuyen', vanChuyenRouter);
+app.use('/api/shipping', vanChuyenRouter);
+
+const hieuSuatRouter = require('./routes/hieuSuatRoutes');
+app.use('/api/hieu-suat', hieuSuatRouter);
+app.use('/api/performance', hieuSuatRouter);
+
+const doiTraRouter = require('./routes/doiTraRoutes');
+app.use('/api/doi-tra', doiTraRouter);
+app.use('/api/returns', doiTraRouter);
+
+const baoHanhRouter = require('./routes/baoHanhRoutes');
+app.use('/api/bao-hanh', baoHanhRouter);
+app.use('/api/warranties', baoHanhRouter);
+
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
-app.use('/api/reports', require('./routes/reportRoutes'));
-app.use('/api/rd-tracking', require('./routes/rdRoutes'));
-app.use('/api/formulas', require('./routes/congThucRoutes'));
-app.use('/api/packaging', require('./routes/packagingRoutes'));
-app.use('/api/production', require('./routes/productionRoutes'));
+
+const reportRouter = require('./routes/reportRoutes');
+app.use('/api/reports', reportRouter);
+app.use('/api/bao-cao', reportRouter);
+
+const rdRouter = require('./routes/rdRoutes');
+app.use('/api/rd-tracking', rdRouter);
+
+const congThucRouter = require('./routes/congThucRoutes');
+app.use('/api/formulas', congThucRouter);
+
+const packagingRouter = require('./routes/packagingRoutes');
+app.use('/api/packaging', packagingRouter);
+
+const productionRouter = require('./routes/productionRoutes');
+app.use('/api/production', productionRouter);
 
 // ═══════════════════════════════════════
 // Routes — Legacy (giữ lại cho tương thích)

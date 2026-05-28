@@ -116,7 +116,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
             ...v,
             tester: v.tester === 'Unknown Tester' || !v.tester ? ((user as any)?.name || 'Phi Binh Minh') : v.tester
           }));
-          let customerName = null;
+          let customerName = data.ContractID?.title || data.customerName || 'Khách hàng';
           if (!data.ContractID && typeof window !== 'undefined') {
             const storedRequests = localStorage.getItem('sampleRequests');
             if (storedRequests) {
@@ -125,7 +125,6 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
               if (matchedReq) customerName = matchedReq.customer;
             }
           }
-
           setRequest({ ...data, LichSuPhienBan: fixedLichSu, sampleCustomer: customerName });
           setIsSigned(data.TrangThai === 'approved' || data.TrangThai === 'complete');
         }
@@ -143,7 +142,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
       const storedMaterials = localStorage.getItem('rdMaterials');
       if (storedMaterials) {
         const materialsList = JSON.parse(storedMaterials);
-        
+
         // Sum up quantities by materialId to handle potential duplicate selections
         const sumQuantities: { [key: string]: number } = {};
         for (const comp of newVersion.components) {
@@ -412,15 +411,15 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
             {request.sampleImageUrl && (
               <div className="flex flex-col items-center gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-100">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
-                <img 
-                  src={request.sampleImageUrl} 
-                  alt="Ảnh mẫu khách gửi" 
+                <img
+                  src={request.sampleImageUrl}
+                  alt="Ảnh mẫu khách gửi"
                   className="w-16 h-16 object-cover rounded-lg shadow-sm cursor-pointer hover:scale-105 transition-transform"
                   onClick={() => window.open(request.sampleImageUrl, '_blank')}
                 />
               </div>
             )}
-            
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(255,255,255,0.03)', padding: '12px 20px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{
                 width: 50, height: 50, borderRadius: '50%',
@@ -708,10 +707,10 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 <IpfsDropzone
                   size="small"
                   onCidChange={(cid) => {
-                    setNewVersion(prev => ({ 
-                      ...prev, 
-                      imageCid: cid, 
-                      imageUrl: cid ? `https://gateway.pinata.cloud/ipfs/${cid}` : '' 
+                    setNewVersion(prev => ({
+                      ...prev,
+                      imageCid: cid,
+                      imageUrl: cid ? `https://gateway.pinata.cloud/ipfs/${cid}` : ''
                     }));
                   }}
                 />
@@ -851,10 +850,10 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                     <div className="flex gap-2 mt-2">
                       {v.imageUrl ? (
                         <div className="flex flex-col gap-1 items-start">
-                          <img 
-                            src={v.imageUrl} 
-                            alt={`Mẻ test ${v.version}`} 
-                            className="w-20 h-20 object-cover rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform" 
+                          <img
+                            src={v.imageUrl}
+                            alt={`Mẻ test ${v.version}`}
+                            className="w-20 h-20 object-cover rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform"
                             onClick={() => window.open(v.imageUrl, '_blank')}
                           />
                           <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded uppercase">Ảnh mẻ test</span>

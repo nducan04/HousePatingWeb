@@ -1263,7 +1263,8 @@ export default function OrderManagementPage() {
 
     const STATUS_MAP = {
         'CHO_XAC_NHAN': { label: 'Chờ xác nhận', color: '#d97706', icon: Clock },
-        'DANG_XU_LY': { label: 'Đã xử lý xong', color: '#2563eb', icon: Package },
+        'DANG_XU_LY': { label: 'Đang xử lý', color: '#3b82f6', icon: Package },
+        'DA_XU_LY_XONG': { label: 'Đã xử lý xong', color: '#2563eb', icon: Package },
         'DANG_GIAO': { label: 'Đang vận chuyển', color: '#7c3aed', icon: Truck },
         'DA_GIAO': { label: 'Đã giao hàng', color: '#059669', icon: CheckCircle },
         'DA_HUY': { label: 'Đã hủy', color: '#e11d48', icon: XCircle },

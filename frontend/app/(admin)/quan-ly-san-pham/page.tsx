@@ -7,20 +7,19 @@ import {
   Edit,
   Trash2,
   Package,
+  QrCodeIcon,
   Layers,
   Droplet,
   Box,
-  ShoppingCart,
   ChevronLeft,
   ChevronRight,
+  QrCode,
+  FileText,
   Download,
   Eye,
-  Star,
   Image as ImageIcon,
   X,
   Upload,
-  QrCode,
-  FileText,
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/utils/axiosAuth";
@@ -242,26 +241,7 @@ export default function SanPhamPage() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, filterType, currentPage]);
 
-  const addToCart = async (sp: SanPham) => {
-    setCartLoading(sp._id);
-    try {
-      const sessionId = user?.id || "GUEST_SESSION";
-      const res = await api.post(`/gio-hang/${sessionId}`, {
-        SanPhamId: sp._id,
-        SoLuong: 1,
-      });
-      if (res.data.success) {
-        setCartMessage({ id: sp._id, text: "Đã thêm!" });
-        setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
-      }
-    } catch (err) {
-      console.error(err);
-      setCartMessage({ id: sp._id, text: "Lỗi!" });
-      setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
-    } finally {
-      setCartLoading("");
-    }
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -407,7 +387,7 @@ export default function SanPhamPage() {
   const handleColorImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    
+
     try {
       const fileFormData = new FormData();
       fileFormData.append("image", files[0]);
@@ -428,7 +408,7 @@ export default function SanPhamPage() {
   const handleHoaDonUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    
+
     try {
       const fileFormData = new FormData();
       fileFormData.append("image", files[0]);
@@ -911,15 +891,15 @@ export default function SanPhamPage() {
                         {/* Cột 1: Hình Ảnh và Màu Hex */}
                         <div className="flex flex-col items-center gap-2">
                           <label className="w-12 h-12 rounded overflow-hidden border border-slate-300 relative cursor-pointer group flex-shrink-0 bg-slate-100 flex items-center justify-center">
-                             {mau.HinhAnh ? (
-                               <img src={getAvatarUrl(mau.HinhAnh)} alt="Màu" className="w-full h-full object-cover" />
-                             ) : (
-                               <ImageIcon size={18} className="text-slate-400" />
-                             )}
-                             <input type="file" accept="image/*" className="hidden" onChange={(e) => handleColorImageUpload(index, e)} />
-                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                               <Upload size={14} className="text-white" />
-                             </div>
+                            {mau.HinhAnh ? (
+                              <img src={getAvatarUrl(mau.HinhAnh)} alt="Màu" className="w-full h-full object-cover" />
+                            ) : (
+                              <ImageIcon size={18} className="text-slate-400" />
+                            )}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleColorImageUpload(index, e)} />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Upload size={14} className="text-white" />
+                            </div>
                           </label>
                           <div className="flex flex-col items-center gap-1">
                             <input
@@ -947,7 +927,7 @@ export default function SanPhamPage() {
                                 </span>
                                 <span className="text-[10px] text-slate-400 pointer-events-none absolute right-3">▼</span>
                               </button>
-                              
+
                               {openColorDropdownIdx === index && (
                                 <>
                                   <div className="fixed inset-0 z-40" onClick={() => setOpenColorDropdownIdx(null)} />
@@ -1033,7 +1013,7 @@ export default function SanPhamPage() {
                         {formData.TruyXuatNguonGoc.HoaDonMuaSon ? (
                           <div className="flex items-center justify-between w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
                             <a href={resolveImageUrl(formData.TruyXuatNguonGoc.HoaDonMuaSon)} target="_blank" rel="noreferrer" className="text-blue-600 font-bold text-sm underline truncate hover:text-blue-800 flex items-center gap-1"><FileText size={16} /> Xem Hóa Đơn</a>
-                            <button type="button" onClick={() => setFormData({...formData, TruyXuatNguonGoc: {...formData.TruyXuatNguonGoc, HoaDonMuaSon: ""}})} className="text-rose-500 hover:text-rose-700 text-xs font-bold px-2">Xóa</button>
+                            <button type="button" onClick={() => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, HoaDonMuaSon: "" } })} className="text-rose-500 hover:text-rose-700 text-xs font-bold px-2">Xóa</button>
                           </div>
                         ) : (
                           <input
