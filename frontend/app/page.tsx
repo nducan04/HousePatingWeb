@@ -1970,41 +1970,6 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                <div className="relative py-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-100"></div>
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-slate-400 font-bold">
-                      Hoặc
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-4">
-                  <button
-                    type="button"
-                    className="w-full h-12 bg-[#0f172a] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer"
-                  >
-                    <img
-                      src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png"
-                      className="w-4 h-4"
-                      alt="Apple"
-                    />
-                    Đăng nhập bằng Apple
-                  </button>
-                  <button
-                    type="button"
-                    className="w-full h-12 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer"
-                  >
-                    <img
-                      src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png"
-                      className="w-4 h-4"
-                      alt="Google"
-                    />
-                    Đăng nhập bằng Google
-                  </button>
-                </div>
               </form>
             ) : (
               <form onSubmit={handlePageRegister} className="space-y-4">
