@@ -52,13 +52,13 @@ const allNavItems = [
     section: "Quản lý hệ thống",
     items: [
       {
-        href: "/accounts",
+        href: "/taikhoan",
         label: "Quản lý tài khoản",
         icon: User,
         roles: ["Admin"],
       },
       {
-        href: "/profile",
+        href: "/thongtin",
         label: "Thông tin cá nhân",
         icon: Users,
         roles: [
@@ -70,7 +70,7 @@ const allNavItems = [
         ],
       },
       {
-        href: "/roles",
+        href: "/phanquyen",
         label: "Quản lý phân quyền",
         icon: Users,
         roles: ["Admin"],
@@ -81,37 +81,37 @@ const allNavItems = [
     section: "Quản lý danh mục",
     items: [
       {
-        href: "/products",
+        href: "/san-pham",
         label: "Sản phẩm sơn",
         icon: Package,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
       {
-        href: "/cost-analysis",
+        href: "/gia-thanh",
         label: "Quản lý giá thành",
         icon: DollarSign,
         roles: ["Admin"],
       },
       {
-        href: "/inventory",
+        href: "/kho",
         label: "Quản lý kho",
         icon: ClipboardList,
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/staff",
+        href: "/nhan-vien",
         label: "Quản lý nhân viên",
         icon: User,
         roles: ["Admin"],
       },
       {
-        href: "/partners",
+        href: "/doi-tac",
         label: "Quản lý khách hàng",
         icon: User,
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/suppliers",
+        href: "/nha-cung-cap",
         label: "Quản lý nhà cung cấp",
         icon: User,
         roles: ["Admin", "NhanVien"],
@@ -134,37 +134,43 @@ const allNavItems = [
     section: "Quản lý kinh doanh sơn",
     items: [
       {
-        href: "/news",
+        href: "/tin-tuc",
         label: "Quảng bá sản phẩm",
         icon: Package,
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/orders",
+        href: "/don-hang",
         label: "Quản lý đơn hàng",
         icon: ListOrdered,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
-        href: "/payments",
+        href: "/thanh-toan",
         label: "Quản lý thanh toán",
         icon: QrCode,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
-        href: "/shipping",
+        href: "/van-chuyen",
         label: "Theo dõi vận chuyển",
         icon: TrainFront,
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
       },
       {
-        href: "/performance",
+        href: "/hieu-suat",
         label: "Theo dõi hiệu suất",
         icon: SignalHigh,
         roles: ["Admin", "Director"],
       },
       {
-        href: "/promotions",
+        href: "/doi-tra",
+        label: "Trung Tâm Giải Quyết Khiếu Nại",
+        icon: ReceiptRussianRuble,
+        roles: ["Admin", "NhanVien"],
+      },
+      {
+        href: "/khuyen-mai",
         label: "Quản lý khuyến mãi",
         icon: PanelsRightBottom,
         roles: ["Admin", "NhanVien"],
@@ -199,7 +205,7 @@ const allNavItems = [
         roles: ["KhachHangB2B", "KhachHangB2C"],
       },
       {
-        href: "/contract-payments",
+        href: "/thanh-toan-hd",
         label: "Thanh toán và công nợ HĐ",
         icon: DollarSign,
         roles: ["Admin", "NhanVien", "KhachHangB2B"],
@@ -210,13 +216,13 @@ const allNavItems = [
     section: "BÁO CÁO & THỐNG KÊ",
     items: [
       {
-        href: "/reports",
+        href: "/bao-cao",
         label: "Báo cáo",
         icon: FileSignature,
         roles: ["Admin", "Director"],
       },
       {
-        href: "/statistics",
+        href: "/thong-ke",
         label: "Thống kê",
         icon: FlaskConical,
         roles: ["Admin", "Director"],
@@ -273,7 +279,7 @@ export default function AdminLayout({
     // Phân quyền cho trang Dashboard
     if (pathname === "/dashboard") {
       if (userRole === "NhanVien") {
-        router.push("/products");
+        router.push("/san-pham");
         return;
       }
       if (isCustomer) {
@@ -352,17 +358,17 @@ export default function AdminLayout({
     if (pathname === "/dashboard") {
       return userRole === "NhanVien" ? "📦 Quản lý nghiệp vụ" : "📊 Dashboard";
     }
-    if (pathname?.startsWith("/products")) return "📦 Quản lý Sản phẩm Sơn";
-    if (pathname?.startsWith("/inventory")) return "🏭 Quản lý Kho";
+    if (pathname?.startsWith("/san-pham")) return "📦 Quản lý Sản phẩm Sơn";
+    if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
     if (pathname?.startsWith("/doi-tra"))
       return "🎯 Trung Tâm Giải Quyết Khiếu Nại";
-    if (pathname?.startsWith("/partners")) return "🤝 Quản lý Khách Hàng";
-    if (pathname?.startsWith("/staff")) return "👥 Quản lý Nhân sự";
+    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
+    if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
     if (pathname?.startsWith("/contracts")) return "📝 Hợp đồng B2B";
     if (pathname === "/colors") return "🎨 Tra cứu Mã Màu";
     if (pathname === "/tracking") return "📦 QR Tracking";
-    if (pathname === "/orders") return "📋 Quản lý Đơn hàng";
+    if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
     if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
     if (pathname === "/import") return "📤 Nhập Dữ Liệu (Excel/CSV)";
     return "Quản lý nghiệp vụ";
@@ -383,12 +389,29 @@ export default function AdminLayout({
         {!isCustomer && (
           <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
             {/* Logo Area */}
+<<<<<<< Updated upstream
+            <div className="px-8 py-7 flex items-center gap-4">
+              <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10">
+                <img
+                  src="/vtsc.png"
+                  alt="Logo"
+                  className="w-full h-full object-contain brightness-110"
+                />
+              </div>
+              <div>
+                <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
+                  VTSC
+=======
             <div className="px-8 py-7 flex items-center justify-center">
               <Link href="/" className="block no-underline group">
                 <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-105 px-3">
-                  <img src="/images/vosco-logo.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+                  <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+>>>>>>> Stashed changes
                 </div>
-              </Link>
+                <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
+                  PaintPro
+                </div>
+              </div>
             </div>
 
             {/* Navigation */}
@@ -417,8 +440,8 @@ export default function AdminLayout({
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${isActive
-                              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
-                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                                ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
+                                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                               }`}
                           >
                             <div
