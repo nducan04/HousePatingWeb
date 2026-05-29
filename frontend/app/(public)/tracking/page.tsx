@@ -430,10 +430,10 @@ export default function TrackingPage() {
 
   // Filter requests for the current customer
   const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-  const customerRequests = sampleRequests.filter(req => {
+  const customerRequests = filteredSampleRequests.filter(req => {
     const isMine = req.customer === displayName || (req.customer && req.customer.toLowerCase() === displayName.toLowerCase());
     const matchSearch = req.id.toLowerCase().includes(sampleSearchTerm.toLowerCase()) ||
-      req.colorCode.toLowerCase().includes(sampleSearchTerm.toLowerCase());
+      (req.colorCode && req.colorCode.toLowerCase().includes(sampleSearchTerm.toLowerCase()));
     return isMine && matchSearch;
   });
 
@@ -674,7 +674,7 @@ export default function TrackingPage() {
                   <div className="mt-8 flex justify-center">
                     <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center shrink-0">
                       <QRCodeSVG
-                        value={`https://vtsc.vn/tracking?code=${selectedTracking.code}`}
+                        value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking?code=${selectedTracking.code}`}
                         size={100}
                         bgColor="#ffffff"
                         fgColor="#0a0e27"
@@ -744,7 +744,7 @@ export default function TrackingPage() {
                         )}
                       </div>
                       <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 group-hover:bg-white transition-colors">
-                        <QRCodeSVG value={`https://vtsc.vn/tracking?code=${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
+                        <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking?code=${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
                       </div>
                     </div>
                   );
