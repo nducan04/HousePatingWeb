@@ -54,6 +54,16 @@ export default function HomePage() {
   const [loadingNews, setLoadingNews] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
+  // Achievement slider state
+  const [activeAchievement, setActiveAchievement] = useState(0);
+  const achievements = [
+    { title: "Tòa nhà hành chính mới Hải Phòng", img: "/images/tthanhchinh" },
+    { title: "Phố Nam", img: "/images/phonam.jpg" },
+    { title: "Trung tâm tổ chức tiệc cưới và sự kiện Pandora", img: "/images/pandora.jpg" },
+    { title: "Phố Bắc", img: "/images/phobac.jpg" },
+    { title: "Dự án tương lai", img: "/images/gemini.jpg" },
+  ];
+
   // Chat state
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
@@ -212,6 +222,14 @@ export default function HomePage() {
   const [productQuantities, setProductQuantities] = useState<
     Record<string, number>
   >({});
+
+  // Auto-slide achievements every 5s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveAchievement((prev) => (prev + 1) % achievements.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [achievements.length]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -644,239 +662,20 @@ export default function HomePage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div
-              className="relative group cursor-pointer"
-              onClick={async () => {
-                const nextState = !isCartOpen;
-                setIsCartOpen(nextState);
-                if (nextState) {
-                  // Refresh cart when opening
-                  const sessionId = user?.id || getGuestSessionId();
-                  fetchCart(sessionId);
-                }
-              }}
+            <Link
+              href="/cart"
+              className="relative group cursor-pointer no-underline"
             >
               <ShoppingCart
                 size={22}
-                className={`transition-colors ${isCartOpen ? "text-blue-600" : "text-slate-400 hover:text-blue-600"}`}
+                className="transition-colors text-slate-400 group-hover:text-blue-600"
               />
               {cartItemCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white">
                   {cartItemCount}
                 </span>
               )}
-
-              {/* Cart Dropdown */}
-              {isCartOpen && (
-                <div
-                  className="absolute top-full right-0 mt-4 w-[350px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 z-[110]"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                    <h4 className="font-bold text-slate-900 flex items-center gap-2">
-                      <ShoppingCart size={18} className="text-blue-600" /> Giỏ
-                      hàng của bạn
-                    </h4>
-                    <span className="text-[10px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full uppercase tracking-widest">
-                      {cartItemCount} món
-                    </span>
-                  </div>
-
-                  {/* Premium Horizontal Navigation */}
-                  <div className="grid grid-cols-4 gap-2 py-3 px-4 bg-slate-50/60 border-b border-slate-100">
-                    <Link
-                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/my-orders"}
-                      className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-blue-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
-                      onClick={(e) => {
-                        setIsCartOpen(false);
-                        if (!isAuthenticated) {
-                          e.preventDefault();
-                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/my-orders" : "/my-orders");
-                        }
-                      }}
-                    >
-                      <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <Package size={14} />
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-700 leading-tight">Đơn hàng</span>
-                    </Link>
-
-                    <Link
-                      href="/theo-doi-don-hang"
-                      className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-emerald-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
-                      onClick={(e) => {
-                        setIsCartOpen(false);
-                        if (!isAuthenticated) {
-                          e.preventDefault();
-                          handleServiceClick("/tracking");
-                        }
-                      }}
-                    >
-                      <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <Truck size={14} />
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-700 leading-tight">Tracking</span>
-                    </Link>
-
-                    <Link
-                      href={user ? ((user.role === 'Admin' || user.role === 'NhanVien' || user.role === 'Director') ? "/quan-ly-thanh-toan" : (user.role === 'KhachHangB2B' ? "/my-contracts" : "/my-orders")) : "/my-orders"}
-                      className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
-                      onClick={(e) => {
-                        setIsCartOpen(false);
-                        if (!isAuthenticated) {
-                          e.preventDefault();
-                          handleServiceClick("/my-orders");
-                        }
-                      }}
-                    >
-                      <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <QrCode size={14} />
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-700 leading-tight">Thanh toán</span>
-                    </Link>
-
-                    <Link
-                      href={user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/theo-doi-don-hang?tab=rd" : "/rd-tracking"}
-                      className="flex flex-col items-center gap-1.5 px-1 py-2 bg-white border border-slate-100 rounded-2xl hover:border-purple-300 hover:shadow-sm transition-all text-center no-underline cursor-pointer shadow-sm group"
-                      onClick={(e) => {
-                        setIsCartOpen(false);
-                        if (!isAuthenticated) {
-                          e.preventDefault();
-                          handleServiceClick(user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C') ? "/theo-doi-don-hang?tab=rd" : "/rd-tracking");
-                        }
-                      }}
-                    >
-                      <div className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <Beaker size={14} />
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-700 leading-tight">R&D</span>
-                    </Link>
-                  </div>
-
-                  <div className="max-h-[350px] overflow-y-auto p-4 space-y-4">
-                    {cartItems.length === 0 ? (
-                      <div className="py-12 text-center">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-                          <Package size={32} />
-                        </div>
-                        <p className="text-sm text-slate-400 font-medium">
-                          Giỏ hàng đang trống
-                        </p>
-                      </div>
-                    ) : (
-                      cartItems.map((item: any, idx: number) => (
-                        <div
-                          key={item._id || idx}
-                          className="flex gap-4 p-2 rounded-2xl hover:bg-slate-50 transition-colors group"
-                        >
-                          <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
-                            <img
-                              src={getImageUrl(item.SanPham?.HinhAnh)}
-                              alt={item.SanPham?.TenDongSon}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <h5 className="text-[13px] font-bold text-slate-900 truncate mb-0.5">
-                              {item.SanPham?.TenDongSon}
-                            </h5>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                {item.SanPham?.MaSanPham}
-                              </span>
-                              <span className="text-[10px] font-bold text-blue-600/70 uppercase tracking-tighter bg-blue-50 px-1.5 rounded">
-                                {item.SanPham?.PhanLoai}
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-center mt-1">
-                              <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
-                                <button
-                                  onClick={() => handleUpdateCartItemQuantity(item.SanPham?._id, item.SoLuong - 1)}
-                                  className="w-5 h-5 rounded-md bg-white text-slate-600 hover:text-blue-600 flex items-center justify-center font-bold shadow-sm text-xs"
-                                >
-                                  -
-                                </button>
-                                <span className="text-[11px] font-bold text-blue-600 w-4 text-center">
-                                  {item.SoLuong}
-                                </span>
-                                <button
-                                  onClick={() => handleUpdateCartItemQuantity(item.SanPham?._id, item.SoLuong + 1)}
-                                  className="w-5 h-5 rounded-md bg-white text-slate-600 hover:text-blue-600 flex items-center justify-center font-bold shadow-sm text-xs"
-                                >
-                                  +
-                                </button>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className="text-[12px] font-bold text-slate-900">
-                                  {(
-                                    item.SanPham?.DonGiaCoSo * item.SoLuong
-                                  )?.toLocaleString()}{" "}
-                                  ₫
-                                </span>
-                                <button
-                                  onClick={() =>
-                                    removeFromCart(item.SanPham?._id)
-                                  }
-                                  className="text-slate-300 hover:text-red-500 transition-colors p-1"
-                                  title="Xóa khỏi giỏ hàng"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  {cartItems.length > 0 && (
-                    <div className="p-6 bg-slate-50 border-t border-slate-100">
-                      <div className="space-y-3 mb-6">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                            Tạm tính
-                          </span>
-                          <span className="text-sm font-bold text-slate-600">
-                            {cartItems
-                              .reduce(
-                                (acc, item) =>
-                                  acc + item.SanPham?.DonGiaCoSo * item.SoLuong,
-                                0,
-                              )
-                              .toLocaleString()}{" "}
-                            ₫
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                            Thuế VAT (8%)
-                          </span>
-                          <span className="text-sm font-bold text-slate-600">
-                            {((cartItems.reduce((acc, item) => acc + item.SanPham?.DonGiaCoSo * item.SoLuong, 0)) >= 5000000 ? (cartItems.reduce((acc, item) => acc + item.SanPham?.DonGiaCoSo * item.SoLuong, 0) * 0.08) : 0).toLocaleString()} ₫
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center pt-3 border-t border-slate-200">
-                          <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">
-                            Tổng cộng
-                          </span>
-                          <span className="text-lg font-bold text-blue-600">
-                            {((cartItems.reduce((acc, item) => acc + item.SanPham?.DonGiaCoSo * item.SoLuong, 0)) >= 5000000 ? (cartItems.reduce((acc, item) => acc + item.SanPham?.DonGiaCoSo * item.SoLuong, 0) * 1.08) : cartItems.reduce((acc, item) => acc + item.SanPham?.DonGiaCoSo * item.SoLuong, 0)).toLocaleString()} ₫
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={handleDirectCheckout}
-                        disabled={isCheckingOut}
-                        className="w-full h-12 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 cursor-pointer border-none"
-                      >
-                        {isCheckingOut ? 'Đang xử lý...' : 'Đặt hàng ngay'} <ArrowRight size={16} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            </Link>
             <div className="h-6 w-px bg-slate-200"></div>
             <AuthNav onOpenLogin={() => setIsLoginOpen(true)} />
           </div>
@@ -1312,6 +1111,54 @@ export default function HomePage() {
               Xem tất cả sản phẩm <ArrowRight size={18} />
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ═══════ THÀNH TỰU NỔI BẬT (SLIDER) ═══════ */}
+      <section id="thanh-tuu" className="relative w-full h-[80vh] min-h-[500px] overflow-hidden bg-slate-900 group">
+        {achievements.map((project, idx) => (
+          <div
+            key={idx}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeAchievement === idx ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+              }`}
+          >
+            <div className="absolute inset-0 bg-black/40 z-10"></div>
+            <img
+              src={project.img}
+              alt={project.title}
+              className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-linear ${activeAchievement === idx ? "scale-110" : "scale-100"
+                }`}
+            />
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-20 text-center px-4">
+              <h2
+                className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-5 uppercase tracking-wide"
+                style={{ textShadow: '2px 4px 8px rgba(0,0,0,0.6)' }}
+              >
+                {project.title}
+              </h2>
+              <p
+                className="text-base md:text-lg text-white font-medium max-w-2xl mb-10 tracking-wide"
+                style={{ textShadow: '1px 2px 4px rgba(0,0,0,0.8)' }}
+              >
+                Nơi Nghệ Thuật Giao Thoa Cùng Chất Lượng Vượt Trội
+              </p>
+              <button className="px-8 py-3.5 bg-[#c49a45] hover:bg-[#b0883b] text-white font-bold text-sm uppercase tracking-wider shadow-[0_4px_14px_rgba(0,0,0,0.3)] transition-all hover:scale-105 cursor-pointer">
+                Khám phá ngay
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {/* Pagination Dots */}
+        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 z-30">
+          {achievements.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveAchievement(idx)}
+              className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${activeAchievement === idx ? "w-8 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" : "w-4 bg-white/40 hover:bg-white/80"
+                }`}
+            />
+          ))}
         </div>
       </section>
 
