@@ -143,12 +143,7 @@ export default function GioHangPage() {
     }
   }, [user, sessionId]);
 
-  // Tự động chọn tất cả sản phẩm khi tải trang để hiển thị tổng tiền ngay lập tức
-  useEffect(() => {
-    if (cartItems.length > 0 && selectedItems.size === 0) {
-      setSelectedItems(new Set(cartItems.map((item: any) => item.SanPham?._id)));
-    }
-  }, [cartItems, selectedItems.size]);
+  // No longer auto-selecting all items on load as requested by user.
 
   const handleSelectAll = () => {
     if (selectedItems.size === cartItems.length) {
