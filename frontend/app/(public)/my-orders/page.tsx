@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Package, Truck, CheckCircle2, Clock, XCircle, ChevronRight, ArrowLeft, MapPin, RefreshCw, ShoppingBag, Circle, Plus, X, FileCheck, AlertCircle } from 'lucide-react';
+import { Package, Truck, CheckCircle2, Clock, XCircle, ChevronRight, ArrowLeft, MapPin, RefreshCw, ShoppingBag, Circle, Plus, X, FileCheck, AlertCircle, CreditCard } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
 import { toast } from '@/lib/utils/notification';
@@ -268,13 +268,12 @@ export default function CustomerOrderPage() {
                   <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${st.color}`}>
                     {st.icon} {st.label}
                   </span>
-                  <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
-                    order.TrangThaiThanhToan === 'DA_THANH_TOAN'
+                  <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-lg border ${order.TrangThaiThanhToan === 'DA_THANH_TOAN'
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       : order.TrangThaiThanhToan === 'THANH_TOAN_MOT_PHAN'
                         ? 'bg-blue-50 text-blue-700 border-blue-200'
                         : 'bg-slate-100 text-slate-600 border-slate-200'
-                  }`}>
+                    }`}>
                     {order.TrangThaiThanhToan === 'DA_THANH_TOAN'
                       ? 'Đã thanh toán'
                       : order.TrangThaiThanhToan === 'THANH_TOAN_MOT_PHAN'
@@ -437,11 +436,11 @@ export default function CustomerOrderPage() {
                   )}
                   {order.TrangThai !== 'DA_HUY' && order.TrangThaiThanhToan !== 'DA_THANH_TOAN' && (
                     <button
-                      onClick={() => handlePayWithMomo(order)}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-black bg-[#A50064] text-white hover:bg-[#850050] transition-all cursor-pointer border-none shadow-sm shadow-[#A50064]/20"
+                      onClick={() => router.push(`/checkout?orderId=${order._id}`)}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-black bg-blue-600 text-white hover:bg-blue-700 transition-all cursor-pointer border-none shadow-sm shadow-blue-600/20"
                     >
-                      <div className="w-4 h-4 rounded bg-white flex items-center justify-center text-[8px] font-black text-[#A50064]">M</div>
-                      Thanh toán MoMo
+                      <CreditCard size={14} />
+                      Thanh toán
                     </button>
                   )}
                   <button

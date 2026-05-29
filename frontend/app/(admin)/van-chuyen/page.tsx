@@ -97,7 +97,7 @@ const LocationInput = ({ value, onChange, placeholder, icon: Icon, iconColor, ri
     const timer = setTimeout(async () => {
       if (value.length >= 3 && isOpen) {
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value)}&format=json&addressdetails=1&countrycodes=vn&limit=5&accept-language=vi&email=contact@vtsc.vn`);
+          const res = await fetch(`/api/geocode?q=${encodeURIComponent(value)}&limit=5`);
           const data = await res.json();
           const parsedSuggestions = data.map((f: any) => {
             // Remove 'Việt Nam' at the end to make it cleaner like local Google Maps usage
@@ -175,7 +175,11 @@ export default function VanChuyenPage() {
 
   useEffect(() => {
     if (selectedTracking) {
-      setMapDestination(selectedTracking.DonHang?.DiaChiGiaoHang || '');
+      let dest = selectedTracking.DonHang?.DiaChiGiaoHang;
+      if (!dest || dest === "Địa chỉ mặc định") {
+        dest = (selectedTracking.DonHang?.KhachHang as any)?.DiaChi || '';
+      }
+      setMapDestination(dest || '');
     }
   }, [selectedTracking]);
 
@@ -267,7 +271,7 @@ export default function VanChuyenPage() {
         try {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
+          const res = await fetch(`/api/reverse-geocode?lat=${lat}&lon=${lon}`);
           const data = await res.json();
           if (data && data.display_name) {
             setNewWaypoint(data.display_name);
@@ -518,6 +522,17 @@ export default function VanChuyenPage() {
               <RouteMap
                 origin={mapOrigin}
                 destination={mapDestination}
+                currentLocation={
+                  selectedTracking.LoTrinh
+                    ?.filter(log => log.Icon === 'MapPin')
+                    .slice(-1)[0]?.NoiDung.split(': ')[1]
+                }
+                waypoints={
+                  selectedTracking.LoTrinh
+                    ?.filter(log => log.Icon === 'MapPin')
+                    .map(log => log.NoiDung.split(': ')[1])
+                    .slice(0, -1)
+                }
                 isDelivered={isDelivered}
                 onMapClick={setNewWaypoint}
               />

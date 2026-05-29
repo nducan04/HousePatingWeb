@@ -32,7 +32,7 @@ export default function RDTrackingDetailPage() {
         const storedRequests = localStorage.getItem('sampleRequests');
         if (storedRequests) {
           const requests = JSON.parse(storedRequests);
-          const req = requests.find((r: any) => r.id === code);
+          const req = requests.find((r: any) => r.id.toLowerCase() === code.toLowerCase());
           if (req) {
             setSelectedSample({
               id: req.id,
