@@ -12,7 +12,7 @@ let pinata = null;
 function initPinata() {
   try {
     const apiKey = process.env.PINATA_API_KEY;
-    const secretKey = process.env.PINATA_SECRET_KEY;
+    const secretKey = process.env.PINATA_SECRET_KEY || process.env.PINATA_API_SECRET;
 
     if (!apiKey || !secretKey || apiKey === 'your_pinata_api_key') {
       console.log('[IPFS] Pinata not configured — uploads will return mock CIDs. Set PINATA_API_KEY and PINATA_SECRET_KEY in .env');

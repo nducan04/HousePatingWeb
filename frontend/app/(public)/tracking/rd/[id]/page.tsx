@@ -54,15 +54,37 @@ export default function RDTrackingDetailPage() {
       }
       
       // Fallback khi quét mã QR trên điện thoại (điện thoại không có sẵn localStorage của máy tính)
-      setSelectedSample({
-        id: code,
-        customer: 'Khách hàng Demo (Test quét QR)',
-        colorCode: 'DEMO-COLOR-7035',
-        surface: 'Nhôm định hình',
-        status: 'processing',
-        date: new Date().toLocaleDateString('vi-VN'),
-        LichSuPhienBan: [],
-      });
+      if (code.toUpperCase() === 'REQ-001') {
+        setSelectedSample({
+          id: code,
+          customer: 'NCC Aluminium',
+          colorCode: 'INT-D2525',
+          surface: 'Nhôm định hình',
+          status: 'pending',
+          date: '12/05/2026',
+          LichSuPhienBan: [],
+        });
+      } else if (code.toUpperCase() === 'REQ-002') {
+        setSelectedSample({
+          id: code,
+          customer: 'VPIC Steel',
+          colorCode: 'RAL-9005',
+          surface: 'Thép tấm',
+          status: 'processing',
+          date: '11/05/2026',
+          LichSuPhienBan: [],
+        });
+      } else {
+        setSelectedSample({
+          id: code,
+          customer: `Khách hàng Demo (${code})`,
+          colorCode: `DEMO-COLOR-${code.split('-')[1] || '7035'}`,
+          surface: 'Nhôm định hình',
+          status: 'processing',
+          date: new Date().toLocaleDateString('vi-VN'),
+          LichSuPhienBan: [],
+        });
+      }
       setLoading(false);
       return;
     }

@@ -513,7 +513,7 @@ export default function TrackingPage() {
             <div className="bg-white border border-slate-100 rounded-[32px] shadow-xl overflow-hidden mb-8">
               <div className="grid grid-cols-1 lg:grid-cols-3">
                 {/* Left Side: Tall Map */}
-                <div className="relative h-[500px] lg:h-[800px] lg:col-span-2 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50">
+                <div className="relative h-[500px] lg:h-[800px] lg:col-span-2 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50 order-last lg:order-first">
                   <RouteMap
                     origin="Số 215 Lạch Tray, Gia Viên, Hải Phòng"
                     destination={selectedTracking.address || ''}
@@ -537,7 +537,7 @@ export default function TrackingPage() {
                 </div>
 
                 {/* Right Side: Info & Timeline */}
-                <div className="p-8 flex flex-col h-[500px] lg:h-[800px] overflow-y-auto">
+                <div className="p-8 flex flex-col h-[500px] lg:h-[800px] overflow-y-auto order-first lg:order-last">
                   {/* Order Info Header */}
                   <div className="flex justify-between items-start flex-wrap gap-6 mb-8 pb-8 border-b border-slate-100 shrink-0">
                     <div className="flex-1">
@@ -606,18 +606,6 @@ export default function TrackingPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center shrink-0 hidden sm:flex">
-                      <QRCodeSVG
-                        value={`https://vtsc.vn/tracking/${selectedTracking.code}`}
-                        size={80}
-                        bgColor="#ffffff"
-                        fgColor="#0a0e27"
-                        level="H"
-                      />
-                      <div className="text-center mt-2 text-[9px] text-slate-400 font-mono font-bold">
-                        {selectedTracking.code}
-                      </div>
-                    </div>
                   </div>
 
                   {/* Timeline */}
@@ -681,6 +669,24 @@ export default function TrackingPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* QR Code at bottom */}
+                  <div className="mt-8 flex justify-center">
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center shrink-0">
+                      <QRCodeSVG
+                        value={`https://vtsc.vn/tracking?code=${selectedTracking.code}`}
+                        size={100}
+                        bgColor="#ffffff"
+                        fgColor="#0a0e27"
+                        level="H"
+                      />
+                      <div className="text-center mt-3 text-[10px] text-slate-400 font-mono font-bold">
+                        Quét mã để theo dõi
+                        <br />
+                        {selectedTracking.code}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -738,7 +744,7 @@ export default function TrackingPage() {
                         )}
                       </div>
                       <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 group-hover:bg-white transition-colors">
-                        <QRCodeSVG value={`https://vtsc.vn/tracking/${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
+                        <QRCodeSVG value={`https://vtsc.vn/tracking?code=${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
                       </div>
                     </div>
                   );
