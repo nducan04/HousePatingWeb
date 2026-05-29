@@ -26,10 +26,11 @@ exports.protect = async (req, res, next) => {
 
       next();
     } catch (error) {
-      console.error('Error with token verification', error);
       if (error.name === 'TokenExpiredError') {
+        // Silently return 401 so frontend can trigger refresh token logic without spamming backend logs
         return res.status(401).json({ success: false, error: 'TokenExpired' });
       }
+      console.error('Error with token verification:', error.message);
       return res.status(401).json({ success: false, error: 'Token không hợp lệ' });
     }
   }

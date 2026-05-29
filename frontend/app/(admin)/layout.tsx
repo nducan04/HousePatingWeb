@@ -122,16 +122,12 @@ const allNavItems = [
         icon: Palette,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
-<<<<<<< Updated upstream
       {
         href: "/nhap-du-lieu",
         label: "Nhập dữ liệu",
         icon: FileUp,
         roles: ["Admin", "NhanVien"],
       },
-=======
-
->>>>>>> Stashed changes
     ],
   },
   {

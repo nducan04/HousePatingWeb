@@ -23,30 +23,30 @@ const {
 const router = express.Router();
 
 // API Lấy danh sách tồn kho
-router.get('/', protect, authorize('Admin', 'NhanVien'), getTonKho);
+router.get('/', protect, authorize('Admin', 'Director', 'NhanVien'), getTonKho);
 
 // API Danh sách Phiếu kiểm
-router.get('/kiem-kho', protect, authorize('Admin', 'NhanVien'), getDanhSachPhieu);
+router.get('/kiem-kho', protect, authorize('Admin', 'Director', 'NhanVien'), getDanhSachPhieu);
 
 // API Nhập kho (Tạo biến động số lượng dương)
-router.post('/nhap', protect, authorize('Admin', 'NhanVien'), nhapKho);
+router.post('/nhap', protect, authorize('Admin', 'Director', 'NhanVien'), nhapKho);
 
 // API Lưu nháp phiếu kiểm kho
-router.post('/kiem-kho', protect, authorize('Admin', 'NhanVien'), luuPhieuKiemKho);
+router.post('/kiem-kho', protect, authorize('Admin', 'Director', 'NhanVien'), luuPhieuKiemKho);
 
 // API Chốt phiếu kiểm kho (Thực hiện cân bằng tồn thực tế)
-router.post('/kiem-kho/:MaPhieu/hoan-thanh', protect, authorize('Admin', 'NhanVien'), hoanThanhKiemKho);
+router.post('/kiem-kho/:MaPhieu/hoan-thanh', protect, authorize('Admin', 'Director', 'NhanVien'), hoanThanhKiemKho);
 
 // --- QUẢN LÝ NGUYÊN VẬT LIÊU ---
-router.get('/nguyen-vat-lieu', protect, authorize('Admin', 'NhanVien'), getNguyenVatLieu);
-router.post('/nguyen-vat-lieu', protect, authorize('Admin', 'NhanVien'), createNguyenVatLieu);
-router.put('/nguyen-vat-lieu/:id', protect, authorize('Admin', 'NhanVien'), updateNguyenVatLieu);
-router.delete('/nguyen-vat-lieu/:id', protect, authorize('Admin', 'NhanVien'), deleteNguyenVatLieu);
+router.get('/nguyen-vat-lieu', protect, authorize('Admin', 'Director', 'NhanVien'), getNguyenVatLieu);
+router.post('/nguyen-vat-lieu', protect, authorize('Admin', 'Director', 'NhanVien'), createNguyenVatLieu);
+router.put('/nguyen-vat-lieu/:id', protect, authorize('Admin', 'Director', 'NhanVien'), updateNguyenVatLieu);
+router.delete('/nguyen-vat-lieu/:id', protect, authorize('Admin', 'Director', 'NhanVien'), deleteNguyenVatLieu);
 
 // ═══ QUẢN LÝ PHIẾU NHẬP / XUẤT KHO — APPROVAL WORKFLOW ═══
-router.get('/nhap-xuat', protect, authorize('Admin', 'NhanVien'), getPhieuNhapXuat);
-router.post('/nhap-xuat', protect, authorize('Admin', 'NhanVien'), createPhieuNhapXuat);
-router.put('/nhap-xuat/:id', protect, authorize('Admin', 'NhanVien'), updatePhieuNhapXuat);
+router.get('/nhap-xuat', protect, authorize('Admin', 'Director', 'NhanVien'), getPhieuNhapXuat);
+router.post('/nhap-xuat', protect, authorize('Admin', 'Director', 'NhanVien'), createPhieuNhapXuat);
+router.put('/nhap-xuat/:id', protect, authorize('Admin', 'Director', 'NhanVien'), updatePhieuNhapXuat);
 router.delete('/nhap-xuat/:id', protect, authorize('Admin'), deletePhieuNhapXuat);
 
 // ★ DUYỆT / TỪ CHỐI PHIẾU (Chỉ Admin mới có quyền duyệt)

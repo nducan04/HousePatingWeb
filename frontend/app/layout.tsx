@@ -23,6 +23,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" className={inter.className}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('unhandledrejection', function(event) {
+                if (event.reason && String(event.reason).includes('MetaMask')) {
+                  event.preventDefault();
+                }
+              });
+            `,
+          }}
+        />
+      </head>
       <body>
         <AuthProvider>
           <AlertOverride />

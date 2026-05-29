@@ -197,7 +197,7 @@ exports.hoanThanhKiemKho = async (req, res) => {
       if (!sku) {
         throw new Error(
           `Mã màu "${item.MaMau}" không tồn tại trong "${sp.TenDongSon}". ` +
-            `Phiếu kiểm kê có thể đã lỗi thời.`,
+          `Phiếu kiểm kê có thể đã lỗi thời.`,
         );
       }
 
@@ -276,7 +276,7 @@ exports.truKhoKhiXuatBan = async (items, MaDonHang, session, nguoiThucHien) => {
     if (sku.TonKhoKhaDung < soLuong) {
       throw new Error(
         `⛔ "${sku.TenMau} (${sku.MaMau})" chỉ còn ${sku.TonKhoKhaDung} ${sp.DonViTinh}, ` +
-          `không thể xuất ${soLuong} ${sp.DonViTinh}.`,
+        `không thể xuất ${soLuong} ${sp.DonViTinh}.`,
       );
     }
 
@@ -521,151 +521,146 @@ exports.createPhieuNhapXuat = async (req, res) => {
  *   3. Đánh dấu phiếu 'DA_DUYET', ghi NguoiDuyet + NgayDuyet
  */
 exports.duyetPhieuNhapXuat = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
   try {
-    const phieu = await PhieuNhapXuatKho.findById(req.params.id).session(
-      session,
+    // ═══ BƯỚC 1: ATOMIC LOCK — Chỉ 1 request có thể "win" ═══
+    // Tìm phiếu đang CHO_DUYET và set ngay thành DA_DUYET trong 1 operation.
+    // Request thứ 2 sẽ không tìm được (TrangThai đã đổi) → bail ngay lập tức.
+    const phieu = await PhieuNhapXuatKho.findOneAndUpdate(
+      { _id: req.params.id, TrangThai: "CHO_DUYET" },
+      { $set: { TrangThai: "DA_DUYET", NgayDuyet: new Date(), NguoiDuyet: req.user ? req.user._id : null } },
+      { new: true }
     );
-    if (!phieu) throw new Error("Không tìm thấy phiếu");
-    if (phieu.TrangThai !== "CHO_DUYET") {
-      throw new Error(
-        `Phiếu này đã ở trạng thái "${phieu.TrangThai}", không thể duyệt lại.`,
-      );
+
+    if (!phieu) {
+      const existing = await PhieuNhapXuatKho.findById(req.params.id);
+      if (!existing) return res.status(404).json({ success: false, message: "Không tìm thấy phiếu" });
+      return res.status(400).json({ success: false, message: `Phiếu này đã ở trạng thái "${existing.TrangThai}", không thể duyệt lại.` });
     }
 
-    // ════════════════════════════════════════════
-    //  XỬ LÝ TỪNG DÒNG SẢN PHẨM TRONG PHIẾU
-    // ════════════════════════════════════════════
+    // Ghi tên người duyệt
+    if (req.user) {
+      const NhanVien = require("../models/NhanVien");
+      const nv = await NhanVien.findOne({ AccountID: req.user._id });
+      await PhieuNhapXuatKho.findByIdAndUpdate(phieu._id, {
+        TenNguoiDuyet: nv ? `${nv.MaNV} - ${nv.HoTen}` : "Admin"
+      });
+    }
+
+    // ═══ BƯỚC 2: CẬP NHẬT TỒN KHO (ATOMIC — Không có VersionError) ═══
+    const affectedProductIds = new Set();
+
     if (phieu.LoaiHang === "SAN_PHAM" && phieu.ChiTiet.length > 0) {
       for (const item of phieu.ChiTiet) {
-        if (!item.ItemId || !item.MaMau) {
-          throw new Error(
-            `Dòng "${item.TenItem || item.MaItem}" thiếu thông tin ItemId hoặc MaMau.`,
-          );
-        }
+        if (!item.ItemId || !item.MaMau) continue;
+        const maMauUpper = item.MaMau.toUpperCase();
+        const delta = phieu.LoaiPhieu === "NHAP" ? item.SoLuong : -item.SoLuong;
 
-        // Lấy document sản phẩm (PHẢI dùng find + save, KHÔNG dùng $inc)
-        const sanPham = await SanPhamSon.findById(item.ItemId).session(session);
-        if (!sanPham) {
-          throw new Error(
-            `Không tìm thấy sản phẩm "${item.TenItem}" (ID: ${item.ItemId})`,
-          );
-        }
-
-        // Tìm đúng SKU (mã màu) trong mảng DanhSachMaMau
-        let sku = sanPham.DanhSachMaMau.find(
-          (m) => m.MaMau.toUpperCase() === item.MaMau.toUpperCase(),
-        );
-        if (!sku) {
-          if (phieu.LoaiPhieu === "NHAP") {
-            sanPham.DanhSachMaMau.push({
-              MaMau: item.MaMau.toUpperCase(),
-              TenMau: item.TenMau || `Màu ${item.MaMau.toUpperCase()}`,
-              TonKhoKhaDung: 0,
-              TonKhoTamGiu: 0,
-              NguongCanhBao: 10,
-              TrangThai: true,
-            });
-            sku = sanPham.DanhSachMaMau.find(
-              (m) => m.MaMau.toUpperCase() === item.MaMau.toUpperCase(),
-            );
-          } else {
-            throw new Error(
-              `Mã màu "${item.MaMau}" không tồn tại trong sản phẩm "${sanPham.TenDongSon}". ` +
-                `Các mã có sẵn: ${sanPham.DanhSachMaMau.map((m) => m.MaMau).join(", ")}`,
-            );
-          }
-        }
-
-        if (phieu.LoaiPhieu === "NHAP") {
-          // ═══ NHẬP KHO: Cộng tồn ═══
-          sku.TonKhoKhaDung += item.SoLuong;
-        } else if (phieu.LoaiPhieu === "XUAT") {
-          // ═══ XUẤT KHO: Kiểm tra rồi mới trừ (Chống bán khống!) ═══
+        // Kiểm tra tồn kho trước khi XUẤT
+        if (phieu.LoaiPhieu === "XUAT") {
+          const sanPham = await SanPhamSon.findOne({
+            _id: item.ItemId,
+            "DanhSachMaMau.MaMau": maMauUpper
+          });
+          if (!sanPham) throw new Error(`Không tìm thấy sản phẩm "${item.TenItem}"`);
+          const sku = sanPham.DanhSachMaMau.find(m => m.MaMau.toUpperCase() === maMauUpper);
+          if (!sku) throw new Error(`Mã màu "${item.MaMau}" không tồn tại trong sản phẩm "${sanPham.TenDongSon}"`);
           if (sku.TonKhoKhaDung < item.SoLuong) {
             throw new Error(
-              `⛔ KHO KHÔNG ĐỦ: Mã màu "${sku.TenMau} (${sku.MaMau})" ` +
-                `của sản phẩm "${sanPham.TenDongSon}" chỉ còn ${sku.TonKhoKhaDung} ${sanPham.DonViTinh}, ` +
-                `nhưng phiếu yêu cầu xuất ${item.SoLuong} ${sanPham.DonViTinh}.`,
+              `⛔ KHO KHÔNG ĐỦ: Màu "${sku.TenMau} (${sku.MaMau})" chỉ còn ${sku.TonKhoKhaDung}, yêu cầu xuất ${item.SoLuong}.`
             );
           }
-          sku.TonKhoKhaDung -= item.SoLuong;
         }
 
-        // ★ GỌI .save() → trigger pre('save') → TongTonKho tự cập nhật!
-        await sanPham.save({ session });
+        // Kiểm tra mã màu có tồn tại không (dành cho NHAP)
+        const existing = await SanPhamSon.findOne({
+          _id: item.ItemId,
+          "DanhSachMaMau.MaMau": maMauUpper
+        });
 
-        // Ghi lịch sử biến động kho
-        const giaoDich = new GiaoDichKho({
+        if (!existing && phieu.LoaiPhieu === "NHAP") {
+          // Thêm SKU mới (NHAP mã màu chưa có trong kho)
+          await SanPhamSon.findByIdAndUpdate(item.ItemId, {
+            $push: {
+              DanhSachMaMau: {
+                MaMau: maMauUpper,
+                TenMau: item.TenMau || `Màu ${maMauUpper}`,
+                TonKhoKhaDung: item.SoLuong,
+                TonKhoTamGiu: 0,
+                NguongCanhBao: 10,
+                TrangThai: true,
+              }
+            }
+          });
+        } else {
+          // Atomic $inc — KHÔNG dùng .save(), KHÔNG có VersionError
+          await SanPhamSon.findOneAndUpdate(
+            { _id: item.ItemId, "DanhSachMaMau.MaMau": maMauUpper },
+            { $inc: { "DanhSachMaMau.$.TonKhoKhaDung": delta } }
+          );
+        }
+
+        affectedProductIds.add(item.ItemId.toString());
+
+        // Ghi lịch sử biến động kho (đọc tồn mới sau update)
+        const spAfter = await SanPhamSon.findOne(
+          { _id: item.ItemId, "DanhSachMaMau.MaMau": maMauUpper },
+          { "DanhSachMaMau.$": 1 }
+        );
+        const tonKhoSau = spAfter?.DanhSachMaMau?.[0]?.TonKhoKhaDung ?? 0;
+
+        await GiaoDichKho.create({
           LoaiGiaoDich: phieu.LoaiPhieu === "NHAP" ? "NHAP_HANG" : "XUAT_BAN",
-          MaSanPham: sanPham._id,
-          SoLuongThayDoi:
-            phieu.LoaiPhieu === "NHAP" ? item.SoLuong : -item.SoLuong,
-          TonKhoSauGiaoDich: sku.TonKhoKhaDung,
+          MaSanPham: item.ItemId,
+          SoLuongThayDoi: delta,
+          TonKhoSauGiaoDich: tonKhoSau,
           MaChungTu: phieu.MaPhieu,
           NguoiThucHien: req.user ? req.user._id : null,
-          GhiChu: `${phieu.LoaiPhieu} | Mã màu: ${item.MaMau} | Phiếu: ${phieu.MaPhieu}`,
+          GhiChu: `${phieu.LoaiPhieu} | Mã màu: ${maMauUpper} | Phiếu: ${phieu.MaPhieu}`,
         });
-        await giaoDich.save({ session });
       }
     }
 
-    // Xử lý Nguyên Vật Liệu (đơn giản hơn — không có SKU)
+    // Xử lý Nguyên Vật Liệu
     if (phieu.LoaiHang === "NGUYEN_VAT_LIEU" && phieu.ChiTiet.length > 0) {
       for (const item of phieu.ChiTiet) {
         if (!item.ItemId) continue;
         const multiplier = phieu.LoaiPhieu === "NHAP" ? 1 : -1;
 
         if (phieu.LoaiPhieu === "XUAT") {
-          const nvl = await NguyenVatLieu.findById(item.ItemId).session(
-            session,
-          );
-          if (!nvl)
-            throw new Error(`Nguyên vật liệu "${item.TenItem}" không tồn tại`);
+          const nvl = await NguyenVatLieu.findById(item.ItemId);
+          if (!nvl) throw new Error(`Nguyên vật liệu "${item.TenItem}" không tồn tại`);
           if ((nvl.TonKho || 0) < item.SoLuong) {
-            throw new Error(
-              `NVL "${nvl.TenNVL}" chỉ còn ${nvl.TonKho}, không thể xuất ${item.SoLuong}`,
-            );
+            throw new Error(`NVL "${nvl.TenNVL}" chỉ còn ${nvl.TonKho}, không thể xuất ${item.SoLuong}`);
           }
         }
-
         await NguyenVatLieu.findByIdAndUpdate(
           item.ItemId,
-          { $inc: { TonKho: item.SoLuong * multiplier } },
-          { session },
+          { $inc: { TonKho: item.SoLuong * multiplier } }
         );
       }
     }
 
-    // ═══ CẬP NHẬT TRẠNG THÁI PHIẾU ═══
-    phieu.TrangThai = "DA_DUYET";
-    phieu.NguoiDuyet = req.user ? req.user._id : null;
-    phieu.NgayDuyet = new Date();
-
-    // Lấy tên người duyệt
-    if (req.user) {
-      const NhanVien = require("../models/NhanVien");
-      const nv = await NhanVien.findOne({ AccountID: req.user._id });
-      phieu.TenNguoiDuyet = nv ? `${nv.MaNV} - ${nv.HoTen}` : "Admin";
+    // ═══ BƯỚC 3: RECALCULATE TongTonKho (tổng mọi SKU) ═══
+    for (const productId of affectedProductIds) {
+      const sp = await SanPhamSon.findById(productId);
+      if (sp) {
+        const tongTonKho = sp.DanhSachMaMau.reduce((sum, m) => sum + (m.TonKhoKhaDung || 0), 0);
+        await SanPhamSon.findByIdAndUpdate(productId, { TongTonKho: tongTonKho });
+      }
     }
 
-    await phieu.save({ session });
-
-    await session.commitTransaction();
-    session.endSession();
-
+    const phieuFinal = await PhieuNhapXuatKho.findById(phieu._id);
     res.status(200).json({
       success: true,
       message: `✅ Phiếu ${phieu.MaPhieu} đã được duyệt. Tồn kho đã cập nhật.`,
-      data: phieu,
+      data: phieuFinal,
     });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+
 
 /**
  * ══════════════════════════════════════════════════

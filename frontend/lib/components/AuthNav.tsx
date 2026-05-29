@@ -80,7 +80,7 @@ export default function AuthNav({ onOpenLogin }: AuthNavProps) {
 
               <div className="p-2 space-y-1">
                 <Link
-                  href="/profile"
+                  href="/thongtin"
                   onClick={() => setIsMenuOpen(false)}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-700 hover:bg-slate-50 transition-all font-bold text-[13px] no-underline cursor-pointer"
                 >

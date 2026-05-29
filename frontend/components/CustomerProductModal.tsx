@@ -8,7 +8,7 @@ interface CustomerProductModalProps {
   product: any;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (sp: any, quantity: number) => void;
+  onAddToCart: (sp: any, quantity: number, colorCode: string) => void;
   cartLoading: string;
 }
 
@@ -22,6 +22,15 @@ export default function CustomerProductModal({
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [successMsg, setSuccessMsg] = useState("");
+  const [selectedColorCode, setSelectedColorCode] = useState<string>("");
+
+  React.useEffect(() => {
+    if (product?.DanhSachMaMau?.length > 0) {
+      setSelectedColorCode(product.DanhSachMaMau[0].MaMau);
+    } else {
+      setSelectedColorCode("");
+    }
+  }, [product]);
 
   if (!isOpen || !product) return null;
 
@@ -70,7 +79,8 @@ export default function CustomerProductModal({
       alert(`Trong kho chỉ còn ${product.TongTonKho} sản phẩm!`);
       return;
     }
-    onAddToCart(product, quantity);
+    const colorToPass = selectedColorCode || (product.DanhSachMaMau?.[0]?.MaMau) || 'N/A';
+    onAddToCart(product, quantity, colorToPass);
     setSuccessMsg("Đã thêm vào giỏ!");
     setTimeout(() => setSuccessMsg(""), 3000);
   };
@@ -177,6 +187,40 @@ export default function CustomerProductModal({
                 <p className="text-white font-medium">{product.TongTonKho} {product.DonViTinh}</p>
              </div>
           </div>
+
+          {product.DanhSachMaMau && product.DanhSachMaMau.length > 0 && (
+            <div className="mb-6">
+              <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-3">Chọn Màu Sắc</p>
+              <div className="bg-slate-800/30 rounded-lg border border-white/5 overflow-hidden max-h-[180px] overflow-y-auto custom-scrollbar">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-800/50 text-slate-400 text-xs">
+                    <tr>
+                      <th className="py-2 px-3 font-medium">Màu</th>
+                      <th className="py-2 px-3 font-medium">Mã Màu</th>
+                      <th className="py-2 px-3 font-medium">Tên Màu</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {product.DanhSachMaMau.map((c: any) => (
+                      <tr 
+                        key={c.MaMau} 
+                        onClick={() => setSelectedColorCode(c.MaMau)}
+                        className={`cursor-pointer transition-colors hover:bg-white/5 ${selectedColorCode === c.MaMau ? 'bg-blue-600/20' : ''}`}
+                      >
+                        <td className="py-2 px-3">
+                          <div className="w-6 h-6 rounded-full shadow-inner border border-white/10 flex items-center justify-center" style={{ backgroundColor: c.HexCode || '#ccc' }}>
+                            {selectedColorCode === c.MaMau && <CheckCircle2 size={12} className="text-white drop-shadow-md" />}
+                          </div>
+                        </td>
+                        <td className="py-2 px-3 text-white font-medium">{c.MaMau}</td>
+                        <td className="py-2 px-3 text-slate-300">{c.TenMau}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Action Area */}
           <div className="mt-auto pt-6 border-t border-white/5 flex flex-col gap-4">

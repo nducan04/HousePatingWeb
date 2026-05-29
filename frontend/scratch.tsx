@@ -81,7 +81,7 @@ export default function TrackingPage() {
       code: item.MaVanChuyen || `DEL-${donHang.MaDonHang || 'DH'}`,
       customer: donHang.TenNguoiNhan || khachHang.TenKhachHang || 'Khách hàng',
       phone: donHang.SDTNguoiNhan || khachHang.SDT || getReceiverPhone(donHang.GhiChu) || 'N/A',
-      address: (!donHang.DiaChiGiaoHang || donHang.DiaChiGiaoHang === "Địa chỉ mặc định") ? (khachHang.DiaChi || 'Chưa cập nhật') : donHang.DiaChiGiaoHang,
+      address: donHang.DiaChiGiaoHang || khachHang.DiaChi || 'Chưa cập nhật',
       product: product,
       quantity: qtyStr,
       allProducts: allProducts,
@@ -517,17 +517,6 @@ export default function TrackingPage() {
                   <RouteMap
                     origin="Số 215 Lạch Tray, Gia Viên, Hải Phòng"
                     destination={selectedTracking.address || ''}
-                    currentLocation={
-                      selectedTracking.dbRecord?.LoTrinh
-                        ?.filter((log: any) => log.Icon === 'MapPin')
-                        .slice(-1)[0]?.NoiDung.split(': ')[1]
-                    }
-                    waypoints={
-                      selectedTracking.dbRecord?.LoTrinh
-                        ?.filter((log: any) => log.Icon === 'MapPin')
-                        .map((log: any) => log.NoiDung.split(': ')[1])
-                        .slice(0, -1)
-                    }
                     isDelivered={selectedTracking.dbRecord?.TrangThaiTongQuat === 'Giao hàng thành công'}
                   />
                   <div className={`absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black shadow-lg z-[400] pointer-events-none ${selectedTracking.dbRecord?.TrangThaiTongQuat === 'Giao hàng thành công' ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
