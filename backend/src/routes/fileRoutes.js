@@ -55,7 +55,7 @@ const uploadToPinata = async (req, res) => {
       headers: {
         'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
         'pinata_api_key': process.env.PINATA_API_KEY,
-        'pinata_secret_api_key': process.env.PINATA_SECRET_KEY,
+        'pinata_secret_api_key': process.env.PINATA_SECRET_KEY || process.env.PINATA_API_SECRET,
       },
     });
 

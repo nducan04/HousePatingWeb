@@ -22,10 +22,10 @@ const formatTextToHTML = (text: string) => {
     if (!line.trim()) return <br key={index} />;
     const isHeading = line.trim() === line.trim().toUpperCase() && line.trim().length > 8 && !line.includes('–') && !line.includes('-');
     const isListItem = line.trim().startsWith('-') || line.trim().startsWith('–') || line.trim().startsWith('(*)') || line.trim().startsWith('+');
-    
+
     return (
-      <span 
-        key={index} 
+      <span
+        key={index}
         className={`block ${isHeading ? 'font-bold text-slate-800 mt-3 mb-1 text-[13px]' : 'mb-1'} ${isListItem ? 'pl-3 relative before:content-[""] before:absolute before:left-0 before:top-2 before:w-1 before:h-1 before:bg-slate-400 before:rounded-full' : ''}`}
       >
         {line}
@@ -163,14 +163,14 @@ export default function TruyXuatNguonGocPage() {
               <FileText className="text-purple-500 shrink-0 mt-0.5" size={20} />
               <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Chứng từ / Hóa đơn</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Chứng nhận xuất xứ sản phẩm</p>
                   <p className="text-sm text-slate-700">
                     {truyXuat.HoaDonMuaSon ? "Đã đính kèm chứng từ hợp lệ" : "Chưa có chứng từ đính kèm"}
                   </p>
                 </div>
                 {truyXuat.HoaDonMuaSon && (
                   <a
-                    href={truyXuat.HoaDonMuaSon}
+                    href={getAvatarUrl(truyXuat.HoaDonMuaSon)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 rounded-lg text-sm font-semibold transition-colors text-center"

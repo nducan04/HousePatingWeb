@@ -7,9 +7,10 @@ dotenv.config();
 // Try to initialize Pinata, but don't crash if keys are missing (allow local testing)
 let pinata;
 try {
-  if (process.env.PINATA_API_KEY && process.env.PINATA_SECRET_KEY
+  const secretKey = process.env.PINATA_SECRET_KEY || process.env.PINATA_API_SECRET;
+  if (process.env.PINATA_API_KEY && secretKey
       && process.env.PINATA_API_KEY !== 'your_pinata_api_key') {
-    pinata = new pinataSDK(process.env.PINATA_API_KEY, process.env.PINATA_SECRET_KEY);
+    pinata = new pinataSDK(process.env.PINATA_API_KEY, secretKey);
   }
 } catch (e) {
   console.log("Pinata not fully configured. IPFS uploads will return mock CIDs.");
