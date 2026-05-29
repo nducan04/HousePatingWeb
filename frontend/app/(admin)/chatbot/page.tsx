@@ -12,6 +12,7 @@ import api from '@/lib/utils/axiosAuth';
 import SupportTicketModal from './SupportTicketModal';
 import TicketProcessingDrawer from './TicketProcessingDrawer';
 import type { Ticket, TicketStatus } from './TicketProcessingDrawer';
+import AICopilotPanel from './AICopilotPanel';
 
 interface Message {
   id: string;
@@ -85,6 +86,7 @@ export default function ChatbotPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [selectedTicketForAI, setSelectedTicketForAI] = useState<Ticket | null>(null);
   const [showTicketToast, setShowTicketToast] = useState(false);
   const [dbStaffs, setDbStaffs] = useState<any[]>([]);
 
@@ -459,6 +461,58 @@ export default function ChatbotPage() {
     normal: entries.filter(e => e.type === 'ORDER').length
   }), [entries]);
 
+  const getAIInsightsForTicket = (ticket: Ticket): any => {
+    if (!ticket) return null;
+    
+    const contentLower = ticket.description.toLowerCase();
+    let sentiment: 'negative' | 'neutral' | 'positive' = 'neutral';
+    let aiAnalysis = 'AI đang phân tích yêu cầu này...';
+    let aiDraft = '';
+    let aiTag = ['Tiêu chuẩn'];
+    let highRisk = false;
+    let isVIP = ticket.customer.toLowerCase().includes('vip') || ticket.customer.toLowerCase().includes('đại lý') || ticket.customer.toLowerCase().includes('nhà thầu');
+
+    if (ticket.type === 'Khiếu nại') {
+      sentiment = 'negative';
+      highRisk = true;
+      aiTag = ['Rủi ro cao', 'Ưu tiên'];
+      aiAnalysis = `Phát hiện mức độ tức giận cao từ khách hàng liên quan đến chất lượng sơn/dịch vụ. Yêu cầu bồi thường thiệt hại và phản hồi khẩn cấp. Khuyến nghị CSKH gọi điện hỗ trợ trực tiếp ngay lập tức.`;
+      aiDraft = `Kính gửi quý khách hàng ${ticket.customer},\n\nVTSC PaintPro chân thành xin lỗi về sự cố ngoài ý muốn liên quan đến đơn hàng/hợp đồng ${ticket.phoneOrContract}. Chúng tôi đang tiến hành kiểm tra chéo mẫu lưu trữ tại phòng KCS để xác định nguyên nhân.\n\nTrong vòng 2 giờ tới, trưởng bộ phận CSKH của chúng tôi sẽ gọi điện trực tiếp để thống nhất phương án đền bù thỏa đáng nhất cho quý khách.\n\nTrân trọng cảm ơn sự thông cảm của quý khách!`;
+    } else if (ticket.type === 'Đổi trả') {
+      sentiment = 'negative';
+      aiTag = ticket.images && ticket.images.length > 0 ? ['Có ảnh', 'Ưu tiên'] : ['Ưu tiên'];
+      aiAnalysis = `Khách hàng yêu cầu đổi trả hàng hóa do móp méo/hỏng hóc trong quá trình logistics. Khuyến nghị duyệt tạo phiếu nhập kho thu hồi và xuất bù hàng mới miễn phí để đảm bảo uy tín thương hiệu.`;
+      aiDraft = `Chào quý khách ${ticket.customer},\n\nVTSC đã tiếp nhận yêu cầu đổi trả liên quan đến đơn hàng/hợp đồng ${ticket.phoneOrContract}. Chúng tôi đang tạo vận đơn thu hồi hàng lỗi về kho và sẽ xuất bù lô hàng mới miễn phí cho quý khách ngay trong ngày hôm nay.\n\nXin cảm ơn quý khách!`;
+    } else if (ticket.type === 'Bảo hành') {
+      sentiment = 'neutral';
+      aiTag = ['Kỹ thuật', 'Cần khảo sát'];
+      aiAnalysis = `Yêu cầu bảo hành liên quan đến chất lượng màng sơn sau khi sấy (bong tróc diện rộng). Sự cố này thường do nhiệt độ sấy buồng sấy chưa đạt chuẩn 180-200°C hoặc xử lý phôi chưa sạch. Khuyến nghị cử chuyên viên kỹ thuật KCS xuống đo hiện trường trước khi kết luận.`;
+      aiDraft = `Kính gửi quý khách ${ticket.customer},\n\nVTSC đã nhận được yêu cầu bảo hành kỹ thuật đối với sản phẩm ${ticket.phoneOrContract}. Bộ phận kỹ thuật R&D của chúng tôi đang sắp xếp lịch và sẽ cử chuyên viên KCS xuống tận nơi đo đạc thông số nhiệt độ buồng sấy trong ngày mai để cùng quý khách tìm ra giải pháp xử lý triệt để.\n\nTrân trọng!`;
+    }
+
+    if (isVIP) {
+      aiTag.unshift('Khách VIP');
+    }
+
+    return {
+      id: ticket.id,
+      type: ticket.type,
+      customer: ticket.customer,
+      contract: ticket.phoneOrContract,
+      description: ticket.description,
+      status: ticket.status,
+      createdAt: ticket.createdAt,
+      assignee: ticket.assignee,
+      hasImage: ticket.images && ticket.images.length > 0,
+      isVIP,
+      highRisk,
+      aiTag,
+      sentiment,
+      aiAnalysis,
+      aiDraft
+    };
+  };
+
   const handleSubmitChat = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isChatLoading) return;
@@ -741,8 +795,8 @@ export default function ChatbotPage() {
 
       {/* ── TICKET TAB ── */}
       {mainTab === 'tickets' && (
-        <div>
-          <div className="flex items-center justify-between mb-6">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Trung Tâm Xử Lý Khiếu Nại</h2>
               <p className="text-sm text-slate-500 mt-1">Quản lý và xử lý tất cả yêu cầu hỗ trợ khách hàng</p>
@@ -763,82 +817,93 @@ export default function ChatbotPage() {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Mã Ticket</th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Khách hàng</th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Loại</th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Trạng thái</th>
-
-                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Ngày tạo</th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tickets.length === 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            {/* Left side: Ticket table */}
+            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
-                      <td colSpan={7} className="text-center py-16 text-slate-400 italic">
-                        Chưa có ticket nào. Hãy tạo ticket mới!
-                      </td>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Mã Ticket</th>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Khách hàng</th>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Loại</th>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Trạng thái</th>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider">Ngày tạo</th>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500 tracking-wider text-right">Thao tác</th>
                     </tr>
-                  ) : (
-                    tickets.map((ticket) => {
-                      const typeBadge: Record<string, string> = {
-                        'Bảo hành': 'bg-blue-100 text-blue-700',
-                        'Khiếu nại': 'bg-rose-100 text-rose-700',
-                        'Đổi trả': 'bg-orange-100 text-orange-700'
-                      };
-                      const statusBadge: Record<string, string> = {
-                        'Chờ tiếp nhận': 'bg-rose-100 text-rose-700',
-                        'Đang xử lý': 'bg-amber-100 text-amber-700',
-                        'Đã hoàn tất': 'bg-emerald-100 text-emerald-700',
-                        'Đã hủy yêu cầu': 'bg-slate-100 text-slate-500'
-                      };
-                      return (
-                        <tr
-                          key={ticket.id}
-                          onClick={() => openTicketDetail(ticket)}
-                          className="border-b border-slate-100 hover:bg-slate-50/80 cursor-pointer transition-colors"
-                        >
-                          <td className="px-6 py-4 font-mono font-semibold text-slate-900">{ticket.id}</td>
-                          <td className="px-6 py-4">
-                            <div className="font-semibold text-slate-800">{ticket.customer}</div>
-                            <div className="text-xs text-slate-400 mt-0.5">{ticket.phoneOrContract}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${typeBadge[ticket.type] || 'bg-slate-100 text-slate-600'}`}>
-                              {ticket.type}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusBadge[ticket.status] || 'bg-slate-100 text-slate-600'}`}>
-                              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
-                              {ticket.status}
-                            </span>
-                          </td>
+                  </thead>
+                  <tbody>
+                    {tickets.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="text-center py-16 text-slate-400 italic">
+                          Chưa có ticket nào. Hãy tạo ticket mới!
+                        </td>
+                      </tr>
+                    ) : (
+                      tickets.map((ticket) => {
+                        const typeBadge: Record<string, string> = {
+                          'Bảo hành': 'bg-blue-100 text-blue-700',
+                          'Khiếu nại': 'bg-rose-100 text-rose-700',
+                          'Đổi trả': 'bg-orange-100 text-orange-700'
+                        };
+                        const statusBadge: Record<string, string> = {
+                          'Chờ tiếp nhận': 'bg-rose-100 text-rose-700',
+                          'Đang xử lý': 'bg-amber-100 text-amber-700',
+                          'Đã hoàn tất': 'bg-emerald-100 text-emerald-700',
+                          'Đã hủy yêu cầu': 'bg-slate-100 text-slate-500'
+                        };
+                        const isSelected = selectedTicketForAI?.id === ticket.id;
+                        return (
+                          <tr
+                            key={ticket.id}
+                            onClick={() => setSelectedTicketForAI(ticket)}
+                            className={`border-b border-slate-100 hover:bg-slate-50/80 cursor-pointer transition-colors ${
+                              isSelected ? 'bg-indigo-50/40 hover:bg-indigo-50/60 border-l-4 border-l-indigo-600' : ''
+                            }`}
+                          >
+                            <td className="px-6 py-4 font-mono font-semibold text-slate-900">{ticket.id}</td>
+                            <td className="px-6 py-4">
+                              <div className="font-semibold text-slate-800">{ticket.customer}</div>
+                              <div className="text-xs text-slate-400 mt-0.5">{ticket.phoneOrContract}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${typeBadge[ticket.type] || 'bg-slate-100 text-slate-600'}`}>
+                                {ticket.type}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusBadge[ticket.status] || 'bg-slate-100 text-slate-600'}`}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                                {ticket.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-500">{ticket.createdAt}</td>
+                            <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
+                              <button
+                                className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition-colors"
+                                onClick={() => openTicketDetail(ticket)}
+                                title="Quản lý &amp; Giải quyết"
+                              >
+                                <UserPlus size={16} strokeWidth={1.5} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-                          <td className="px-6 py-4 text-sm text-slate-500">{ticket.createdAt}</td>
-                          <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
-                            <button
-                              className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition-colors"
-                              onClick={() => openTicketDetail(ticket)}
-                            >
-                              <UserPlus size={16} strokeWidth={1.5} />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+            {/* Right side: AI Copilot Panel */}
+            <div className="bg-white border border-slate-200 rounded-[28px] shadow-sm overflow-hidden h-[680px] flex flex-col">
+              <AICopilotPanel
+                ticket={selectedTicketForAI ? getAIInsightsForTicket(selectedTicketForAI) : null}
+                onClose={() => setSelectedTicketForAI(null)}
+              />
             </div>
           </div>
-
-          {/* Removed Modals from here */}
         </div>
       )}
 
