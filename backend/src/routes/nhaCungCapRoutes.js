@@ -29,7 +29,7 @@ router.put('/my-materials/:materialId', authorize('Admin', 'NhaCungCap'), update
 router.post('/:id/create-account', authorize('Admin'), createAccount);
 
 // Các API quản lý chung dành cho Admin & NhanVien
-router.use(authorize('Admin', 'NhanVien'));
+router.use(authorize('Admin', 'Director', 'NhanVien'));
 
 router.route('/')
   .get(getAll)

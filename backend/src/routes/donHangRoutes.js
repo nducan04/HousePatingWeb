@@ -26,7 +26,7 @@ router.patch('/:id/cancel', cancelOrder); // Allow customers to cancel their own
 router.patch('/:id/rate', rateOrder); // Allow customers to rate their order
 
 // 2. Administrative routes (Admin & NhanVien only)
-router.use(authorize('Admin', 'NhanVien'));
+router.use(authorize('Admin', 'Director', 'NhanVien'));
 router.post('/', createOrder);
 router.patch('/:id/status', updateStatus);
 router.patch('/:id/payment', updatePaymentStatus);

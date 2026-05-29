@@ -187,6 +187,20 @@ exports.createOrder = async (req, res) => {
         const { khuyenMaiId, ...rest } = req.body;
         const orderData = { ...rest };
 
+        // Đồng bộ địa chỉ, thông tin khách hàng nếu thiếu hoặc để mặc định
+        if (orderData.KhachHang) {
+            const isMissingAddress = !orderData.DiaChiGiaoHang || orderData.DiaChiGiaoHang === "Địa chỉ mặc định" || orderData.DiaChiGiaoHang === "Chưa cập nhật";
+            if (isMissingAddress || !orderData.TenNguoiNhan || !orderData.SDTNguoiNhan) {
+                const KhachHang = require('../models/KhachHang');
+                const kh = await KhachHang.findById(orderData.KhachHang);
+                if (kh) {
+                    if (isMissingAddress) orderData.DiaChiGiaoHang = kh.DiaChi;
+                    if (!orderData.TenNguoiNhan) orderData.TenNguoiNhan = kh.TenKhachHang;
+                    if (!orderData.SDTNguoiNhan) orderData.SDTNguoiNhan = kh.SDT;
+                }
+            }
+        }
+
         if (khuyenMaiId) {
             const voucher = await KhuyenMai.findById(khuyenMaiId);
             if (voucher && voucher.TrangThai === 'DANG_DIEN_RA') {
@@ -386,7 +400,7 @@ exports.deleteOrder = async (req, res) => {
 exports.updateOrderInfo = async (req, res) => {
     try {
         const { id } = req.params;
-        const { tenNguoiNhan, sdtNguoiNhan, DiaChiGiaoHang } = req.body;
+        const { tenNguoiNhan, sdtNguoiNhan, DiaChiGiaoHang, PhuongThucThanhToan } = req.body;
 
         const order = await DonHang.findById(id);
         if (!order) return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
@@ -413,6 +427,7 @@ exports.updateOrderInfo = async (req, res) => {
         // If the model supports these:
         if (tenNguoiNhan !== undefined) order.TenNguoiNhan = tenNguoiNhan;
         if (sdtNguoiNhan !== undefined) order.SDTNguoiNhan = sdtNguoiNhan;
+        if (PhuongThucThanhToan !== undefined) order.PhuongThucThanhToan = PhuongThucThanhToan;
 
         await order.save();
         res.status(200).json({ success: true, message: 'Đã cập nhật thông tin nhận hàng thành công', data: order });

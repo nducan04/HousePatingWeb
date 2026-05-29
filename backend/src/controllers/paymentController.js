@@ -66,6 +66,65 @@ exports.getAllFinancialRecords = async (req, res) => {
     }
 };
 
+// @desc    Get financial records for logged in customer
+// @route   GET /api/thanh-toan/my-payments
+exports.getMyFinancialRecords = async (req, res) => {
+    try {
+        if (!req.user || !req.user.profile) {
+            return res.status(401).json({ success: false, message: 'Not authorized' });
+        }
+        
+        const customerId = req.user.profile._id;
+
+        const [orders, contracts] = await Promise.all([
+            DonHang.find({ KhachHang: customerId }).populate('KhachHang', 'MaKH TenKhachHang PhanLoai').sort({ createdAt: -1 }),
+            HopDong.find({ CustomerID: customerId }).populate('CustomerID', 'MaKH TenKhachHang PhanLoai').sort({ createdAt: -1 })
+        ]);
+
+        // Normalize Orders
+        const normalizedOrders = orders.map(o => {
+            const total = o.TongTien || 0;
+            const paid = o.TrangThaiThanhToan === 'DA_THANH_TOAN' ? total : (o.DaCoc || 0);
+            return {
+                _id: o._id,
+                type: 'ORDER',
+                code: o.MaDonHang,
+                totalAmount: total,
+                paidAmount: paid,
+                debtAmount: total - paid,
+                status: o.TrangThaiThanhToan,
+                date: o.createdAt
+            };
+        });
+
+        // Normalize Contracts
+        const normalizedContracts = contracts.map(c => {
+            const total = c.TongGiaTri || 0;
+            const paid = c.DaThanhToan || 0;
+            return {
+                _id: c._id,
+                type: 'CONTRACT',
+                code: c.MaHopDong,
+                totalAmount: total,
+                paidAmount: paid,
+                debtAmount: total - paid,
+                status: c.TrangThai === 'completed' ? 'DA_THANH_TOAN' : (paid > 0 ? 'CALLED_PARTIAL' : 'CHUA_THANH_TOAN'),
+                date: c.createdAt
+            };
+        });
+
+        const allRecords = [...normalizedOrders, ...normalizedContracts].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        res.status(200).json({
+            success: true,
+            count: allRecords.length,
+            data: allRecords
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // @desc    Update paid amount for a contract
 // @route   PATCH /api/thanh-toan/contract/:id
 exports.updateContractPayment = async (req, res) => {

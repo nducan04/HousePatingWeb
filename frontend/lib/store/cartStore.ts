@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '@/lib/utils/axiosAuth';
+import { useAuthStore } from '@/lib/store/authStore';
 
 export const getGuestSessionId = (): string => {
   if (typeof window === 'undefined') return 'GUEST_SESSION';
@@ -154,11 +155,14 @@ export const useCartStore = create<CartState>((set, get) => ({
   initializeCart: async (userId?: string) => {
     const guestId = getGuestSessionId();
     if (userId) {
-      try {
-        // Gộp giỏ hàng khách vào giỏ hàng user nếu có
-        await api.post('/gio-hang/merge', { guestSessionId: guestId });
-      } catch (err) {
-        console.error('Error merging cart:', err);
+      // Only attempt merge if we have a valid access token to avoid 401 noise
+      const { accessToken } = useAuthStore.getState();
+      if (accessToken) {
+        try {
+          await api.post('/gio-hang/merge', { guestSessionId: guestId });
+        } catch (err) {
+          console.error('Error merging cart:', err);
+        }
       }
       await get().fetchCart(userId);
     } else {

@@ -290,6 +290,29 @@ export default function SanPhamPage() {
     });
   };
 
+  const handleAddAllColors = () => {
+    const currentCodes = new Set(formData.DanhSachMaMau.map(m => m.MaMau));
+    const newColors = paintColors.filter(p => !currentCodes.has(p.code)).map(p => ({
+      MaMau: p.code,
+      TenMau: p.name,
+      HexCode: p.hex,
+      TonKhoKhaDung: 0,
+      TonKhoTamGiu: 0,
+      NguongCanhBao: 200,
+      TrangThai: true,
+    }));
+    
+    if (newColors.length === 0) {
+      alert("Tất cả màu đã có trong danh sách!");
+      return;
+    }
+    
+    setFormData({
+      ...formData,
+      DanhSachMaMau: [...formData.DanhSachMaMau, ...newColors]
+    });
+  };
+
   const handleRemoveColor = (index: number) => {
     const newList = [...formData.DanhSachMaMau];
     newList.splice(index, 1);
@@ -876,13 +899,22 @@ export default function SanPhamPage() {
                     <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                       <Layers size={18} className="text-blue-500" /> Danh sách Biến thể Màu sắc (SKU)
                     </h3>
-                    <button
-                      type="button"
-                      onClick={handleAddColor}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"
-                    >
-                      <Plus size={14} strokeWidth={2} /> Thêm Màu
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAddAllColors}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors"
+                      >
+                        <Layers size={14} strokeWidth={2} /> Thêm Tất Cả Màu
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddColor}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"
+                      >
+                        <Plus size={14} strokeWidth={2} /> Thêm Màu
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-3">
