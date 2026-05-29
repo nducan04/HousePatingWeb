@@ -430,10 +430,10 @@ export default function TrackingPage() {
 
   // Filter requests for the current customer
   const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-  const customerRequests = sampleRequests.filter(req => {
+  const customerRequests = filteredSampleRequests.filter(req => {
     const isMine = req.customer === displayName || (req.customer && req.customer.toLowerCase() === displayName.toLowerCase());
     const matchSearch = req.id.toLowerCase().includes(sampleSearchTerm.toLowerCase()) ||
-      req.colorCode.toLowerCase().includes(sampleSearchTerm.toLowerCase());
+      (req.colorCode && req.colorCode.toLowerCase().includes(sampleSearchTerm.toLowerCase()));
     return isMine && matchSearch;
   });
 
@@ -663,7 +663,7 @@ export default function TrackingPage() {
                   <div className="mt-8 flex justify-center">
                     <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center shrink-0">
                       <QRCodeSVG
-                        value={`https://vtsc.vn/tracking?code=${selectedTracking.code}`}
+                        value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/theo-doi-don-hang?code=${selectedTracking.code}`}
                         size={100}
                         bgColor="#ffffff"
                         fgColor="#0a0e27"
@@ -733,7 +733,7 @@ export default function TrackingPage() {
                         )}
                       </div>
                       <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 group-hover:bg-white transition-colors">
-                        <QRCodeSVG value={`https://vtsc.vn/tracking?code=${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
+                        <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/theo-doi-don-hang?code=${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
                       </div>
                     </div>
                   );
@@ -862,7 +862,7 @@ export default function TrackingPage() {
                             <QrCode size={16} /> QR Code
                           </button>
                           <Link
-                            href={`/tracking/rd/${req.id}`}
+                            href={`/theo-doi-don-hang/rd/${req.id}`}
                             className="flex-1 flex justify-center items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-600/20 hover:-translate-y-0.5 transition-all"
                           >
                             Xem chi tiết <ChevronRight size={16} />
@@ -911,7 +911,7 @@ export default function TrackingPage() {
 
               <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center justify-center">
                 <QRCodeSVG
-                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking/rd/${qrRequestId}`}
+                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/theo-doi-don-hang/rd/${qrRequestId}`}
                   size={180}
                   bgColor="#f8fafc"
                   fgColor="#0f172a"
