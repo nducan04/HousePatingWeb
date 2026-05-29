@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getAllFinancialRecords, updateContractPayment, createMomoPayment, momoIPN, momoConfirm } = require('../controllers/paymentController');
+const { getAllFinancialRecords, updateContractPayment, createMomoPayment, momoIPN, momoConfirm, getMyFinancialRecords } = require('../controllers/paymentController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.get('/all', protect, authorize('Admin', 'NhanVien'), getAllFinancialRecords);
+router.get('/my-payments', protect, getMyFinancialRecords);
 router.patch('/contract/:id', protect, authorize('Admin', 'NhanVien'), updateContractPayment);
 
 // MoMo Integration routes

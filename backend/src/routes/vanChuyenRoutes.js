@@ -13,8 +13,8 @@ router.use(protect);
 
 router.get('/', getAllTracking);
 router.get('/order/:orderId', getTrackingByOrder);
-router.post('/', authorize('Admin', 'NhanVien'), createTracking);
-router.patch('/:id/log', authorize('Admin', 'NhanVien'), updateTrackingLog);
-router.patch('/:id', authorize('Admin', 'NhanVien'), updateTracking);
+router.post('/', authorize('Admin', 'Director', 'NhanVien'), createTracking);
+router.patch('/:id/log', authorize('Admin', 'Director', 'NhanVien'), updateTrackingLog);
+router.patch('/:id', authorize('Admin', 'Director', 'NhanVien'), updateTracking);
 
 module.exports = router;

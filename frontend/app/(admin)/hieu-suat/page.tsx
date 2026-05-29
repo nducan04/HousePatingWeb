@@ -186,7 +186,7 @@ export default function PerformanceDashboard() {
                                 </h3>
                                 <span className="text-xs text-slate-400 font-light mt-1">Top 5 nhân viên kinh doanh (Triệu VNĐ)</span>
                             </div>
-                            <ResponsiveContainer width="100%" height="80%">
+                            <ResponsiveContainer width="100%" height={300}>
                                 <BarChart data={topSalesData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 300 }} />
@@ -209,7 +209,7 @@ export default function PerformanceDashboard() {
                                 </h3>
                                 <span className="text-xs text-slate-400 font-light mt-1">Phân tích kết quả test mẫu theo chuyên viên R&D</span>
                             </div>
-                            <ResponsiveContainer width="100%" height="80%">
+                            <ResponsiveContainer width="100%" height={300}>
                                 <BarChart data={charts.mixingStats} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 300 }} />
@@ -239,7 +239,7 @@ export default function PerformanceDashboard() {
                             </h3>
                             <span className="text-xs text-slate-400 font-light mt-1">Phân tích chuyên sâu top 5 nhân sự kinh doanh (Triệu VNĐ)</span>
                         </div>
-                        <ResponsiveContainer width="100%" height="80%">
+                        <ResponsiveContainer width="100%" height={360}>
                             <BarChart data={topSalesData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 300 }} />
@@ -262,7 +262,7 @@ export default function PerformanceDashboard() {
                             </h3>
                             <span className="text-xs text-slate-400 font-light mt-1">Phân tích kết quả kiểm định KCS R&D theo nhân sự</span>
                         </div>
-                        <ResponsiveContainer width="100%" height="80%">
+                        <ResponsiveContainer width="100%" height={360}>
                             <BarChart data={charts.mixingStats} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 300 }} />

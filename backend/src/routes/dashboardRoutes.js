@@ -4,7 +4,7 @@ const dashboardController = require('../controllers/dashboardController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
-router.use(authorize('Admin', 'Director'));
+router.use(authorize('Admin', 'Director', 'NhanVien'));
 
 // @route   GET /api/dashboard/stats
 router.get('/stats', dashboardController.getDashboardStats);

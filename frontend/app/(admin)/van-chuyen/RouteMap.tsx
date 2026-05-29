@@ -8,6 +8,7 @@ interface RouteMapProps {
   currentLocation?: string;
   isDelivered?: boolean;
   onMapClick?: (address: string) => void;
+  waypoints?: string[];
 }
 
 // Geocode an address string to [lat, lng] using Photon (OpenStreetMap)
@@ -17,7 +18,7 @@ async function geocode(address: string): Promise<[number, number] | null> {
     return [20.8369, 106.6960];
   }
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=vn&accept-language=vi&email=contact@vtsc.vn`);
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(address)}&limit=1`);
     const data = await res.json();
     if (data && data.length > 0) {
       return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
@@ -28,7 +29,7 @@ async function geocode(address: string): Promise<[number, number] | null> {
   return null;
 }
 
-export default function RouteMap({ origin, destination, currentLocation, isDelivered = false, onMapClick }: RouteMapProps) {
+export default function RouteMap({ origin, destination, currentLocation, isDelivered = false, onMapClick, waypoints = [] }: RouteMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [showZoomHint, setShowZoomHint] = useState(false);
@@ -91,10 +92,7 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
       if (onMapClick) {
         map.on('click', async (e: any) => {
           try {
-            const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&zoom=18&addressdetails=1`,
-              { headers: { "Accept-Language": "vi", "User-Agent": "VTSC-PaintPro/1.0" } }
-            );
+            const res = await fetch(`/api/reverse-geocode?lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
             const data = await res.json();
             if (data && data.display_name) {
               onMapClick(data.display_name);
@@ -105,12 +103,25 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
         });
       }
 
-      // Geocode both addresses concurrently
-      const [originCoords, destCoords, currentCoords] = await Promise.all([
+      // Geocode both addresses concurrently along with waypoints
+      const geocodePromises = [
         geocode(origin),
         geocode(destination),
         currentLocation ? geocode(currentLocation) : Promise.resolve(null),
-      ]);
+      ];
+
+      // Add waypoints to geocoding (limit to 5 to avoid long loading)
+      const validWaypoints = waypoints.slice(-5);
+      for (const wp of validWaypoints) {
+        geocodePromises.push(geocode(wp));
+      }
+
+      const results = await Promise.all(geocodePromises);
+      
+      const originCoords = results[0];
+      const destCoords = results[1];
+      const currentCoords = results[2];
+      const waypointCoords = results.slice(3).filter(c => c !== null) as [number, number][];
 
       if (!isMounted) return;
 
@@ -156,30 +167,40 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
         .addTo(map)
         .bindPopup(`<div style="font-family:sans-serif;font-weight:bold;font-size:13px;">${origin.split(',')[0]}</div>`, { closeButton: false, autoClose: false, closeOnClick: false });
 
-      // Force routing through Vietnam coast (QL1A) to avoid going through Laos/Cambodia
-      const controlPoints: [number, number][] = [
-        [18.6734, 105.6813], // Vinh
-        [16.0544, 108.2022], // Da Nang
-        [12.2388, 109.1967], // Nha Trang
-      ];
-
-      let waypoints = [originCoords];
-
-      // Determine if North to South
-      if (originCoords[0] > 19 && destCoords[0] < 13) {
-        waypoints.push(...controlPoints);
-      }
-      // Determine if South to North
-      else if (originCoords[0] < 13 && destCoords[0] > 19) {
-        waypoints.push(...[...controlPoints].reverse());
+      let routePoints = [originCoords];
+      if (waypointCoords.length > 0) {
+        routePoints.push(...waypointCoords);
       }
 
-      if (currentCoords) {
-        waypoints.push(currentCoords);
+      // -- BẮT ĐẦU: ÉP ĐIỀU HƯỚNG DỌC QUỐC LỘ 1A ĐỂ TRÁNH BIÊN GIỚI --
+      // Kiểm tra nếu là chuyến hàng Bắc - Nam (hoặc Nam - Bắc)
+      const isNorth = (c: [number, number]) => c[0] > 18.0; // Vĩ độ miền Bắc (từ Nghệ An trở ra)
+      const isSouth = (c: [number, number]) => c[0] < 12.5; // Vĩ độ miền Nam (từ Khánh Hòa trở vào)
+      
+      const hiddenAnchors: [number, number][] = [];
+      if (
+        (isNorth(originCoords) && isSouth(destCoords)) ||
+        (isSouth(originCoords) && isNorth(destCoords))
+      ) {
+        // Tọa độ Đà Nẵng và Nha Trang để neo đường đi dọc bờ biển
+        const daNang: [number, number] = [16.0544, 108.2022];
+        const nhaTrang: [number, number] = [12.2388, 109.1967];
+        
+        if (isNorth(originCoords)) {
+          hiddenAnchors.push(daNang, nhaTrang);
+        } else {
+          hiddenAnchors.push(nhaTrang, daNang);
+        }
       }
-      waypoints.push(destCoords);
+      
+      // Thêm anchor points vào route để ép OSRM vẽ đường
+      routePoints.push(...hiddenAnchors);
+      // -- KẾT THÚC --
 
-      const coordString = waypoints.map(c => `${c[1]},${c[0]}`).join(';');
+      if (currentCoords) routePoints.push(currentCoords);
+      routePoints.push(destCoords);
+
+      const coordString = routePoints.map(c => `${c[1]},${c[0]}`).join(';');
 
       // Fetch route from OSRM (free, no API key needed)
       try {
@@ -203,6 +224,20 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
             lineCap: "round",
             lineJoin: "round",
           }).addTo(map);
+
+          // Draw markers for intermediate waypoints
+          const waypointIcon = L.divIcon({
+            html: `<div style="width:12px;height:12px;background:#f59e0b;border:2px solid white;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>`,
+            className: "",
+            iconSize: [12, 12],
+            iconAnchor: [6, 6],
+          });
+
+          waypointCoords.forEach((wp, idx) => {
+            L.marker(wp, { icon: waypointIcon })
+              .addTo(map)
+              .bindPopup(`<div style="font-family:sans-serif;font-size:12px;font-weight:bold;">Trạm trung chuyển ${idx + 1}</div>`, { closeButton: false });
+          });
 
           // Fit map to show entire route FIRST
           map.fitBounds(routeLine.getBounds(), { padding: [60, 60], animate: false });
@@ -242,7 +277,7 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
         }
 
         // Draw fallback dashed line
-        L.polyline(waypoints, {
+        L.polyline(routePoints, {
           color: "#64748b", // slate-500
           weight: 4,
           dashArray: '10, 10',
@@ -283,7 +318,7 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
       if (e.ctrlKey || e.metaKey) {
         // Prevent browser from scaling the page
         e.preventDefault();
-        
+
         // Ensure map zooming is enabled when holding Ctrl
         if (mapInstanceRef.current && !mapInstanceRef.current.scrollWheelZoom.enabled()) {
           mapInstanceRef.current.scrollWheelZoom.enable();

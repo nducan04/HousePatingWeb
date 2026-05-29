@@ -11,7 +11,13 @@ import {
   Loader2,
   Package,
   Plus,
-  Star
+  Star,
+  Facebook,
+  Twitter,
+  Instagram,
+  MapPin,
+  Phone,
+  Mail
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -19,6 +25,21 @@ import { useCartStore, getGuestSessionId } from "@/lib/store/cartStore";
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
 import CustomerProductModal from "@/components/CustomerProductModal";
 import ProductImageCarousel from "@/components/ProductImageCarousel";
+
+const ContactItem = ({ icon, text }: { icon: React.ReactNode, text: string }) => (
+  <div className="flex items-start gap-4 group">
+    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-900 group-hover:scale-110 transition-all duration-300">
+      {icon}
+    </div>
+    <span className="text-slate-300 font-medium text-sm pt-2 group-hover:text-blue-400 transition-colors">{text}</span>
+  </div>
+);
+
+const SocialLink = ({ icon, href }: { icon: React.ReactNode, href: string }) => (
+  <Link href={href} className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white hover:-translate-y-1 transition-all duration-300">
+    {icon}
+  </Link>
+);
 
 export default function ShopPage() {
   const router = useRouter();
@@ -43,6 +64,10 @@ export default function ShopPage() {
       }
       return { ...prev, [id]: next };
     });
+  };
+
+  const handleOpenPolicy = (type: string) => {
+    alert("Vui lòng xem chính sách chi tiết tại trang chủ VTSC.");
   };
 
   const handleQuantityChange = (id: string, value: string, maxQuantity?: number) => {
@@ -87,7 +112,7 @@ export default function ShopPage() {
     fetchProducts();
   }, []);
 
-  const addToCart = async (sp: any) => {
+  const addToCart = async (sp: any, colorCode?: string) => {
     if (!isAuthenticated) {
       alert("Vui lòng đăng nhập để mua hàng");
       return;
@@ -103,7 +128,7 @@ export default function ShopPage() {
     setCartLoading(sp._id);
     try {
       const sessionId = user?.id || getGuestSessionId();
-      await addToCartStore(sessionId, sp._id, qtyToAdd, sp.DanhSachMaMau?.[0] || 'N/A');
+      await addToCartStore(sessionId, sp._id, qtyToAdd, colorCode || sp.DanhSachMaMau?.[0]?.MaMau || 'N/A');
       setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
     } catch (err: any) {
@@ -122,6 +147,7 @@ export default function ShopPage() {
     : products;
 
   return (
+    <>
     <div
       className="min-h-screen bg-transparent font-sans relative pb-20 text-white"
       style={{
@@ -189,7 +215,7 @@ export default function ShopPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredProducts.map((sp) => (
                   <div key={sp._id} className="bg-slate-800/60 rounded-xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 border border-white/10 group flex flex-col h-full">
-                    <div 
+                    <div
                       className="relative aspect-square w-full rounded-lg overflow-hidden mb-4 bg-slate-900/50 cursor-pointer"
                       onClick={() => setSelectedProduct(sp)}
                     >
@@ -202,7 +228,7 @@ export default function ShopPage() {
                     </div>
                     <div className="flex flex-col flex-1 px-1">
                       <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">{sp.PhanLoai}</div>
-                      <h3 
+                      <h3
                         className="font-bold text-white text-base mb-1 line-clamp-1 hover:text-blue-400 transition-colors cursor-pointer"
                         onClick={() => setSelectedProduct(sp)}
                       >
@@ -260,7 +286,7 @@ export default function ShopPage() {
                             </button>
                           </div>
                           <button
-                            onClick={() => addToCart(sp)}
+                            onClick={() => (sp.DanhSachMaMau?.length > 0 ? setSelectedProduct(sp) : addToCart(sp))}
                             disabled={cartLoading === sp._id}
                             className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500 text-white" : "bg-red-500 text-white text-[10px]") : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
                           >
@@ -284,17 +310,149 @@ export default function ShopPage() {
           </div>
         </div>
       </div>
-      
-      <CustomerProductModal 
-        product={selectedProduct} 
-        isOpen={!!selectedProduct} 
-        onClose={() => setSelectedProduct(null)} 
-        onAddToCart={(sp, qty) => {
+
+      <CustomerProductModal
+        product={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onAddToCart={(sp, qty, colorCode) => {
           handleQuantityChange(sp._id, qty.toString(), sp.TongTonKho);
-          addToCart(sp);
-        }} 
-        cartLoading={cartLoading} 
+          addToCart(sp, colorCode);
+        }}
+        cartLoading={cartLoading}
       />
     </div>
+
+    <footer
+      id="footer"
+      className="bg-slate-900 text-white pt-20 pb-10 scroll-mt-20 relative overflow-hidden"
+      style={{
+        backgroundImage: "url('/login-illustration.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      <div className="absolute inset-0 bg-slate-900/90 z-0"></div>
+    <div className="max-w-[1300px] mx-auto px-10 relative z-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-16">
+        {/* Column 1: Company Info */}
+        <div className="lg:col-span-5">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-[200px] h-[68px] flex-shrink-0 rounded-[16px] bg-white flex items-center justify-center shadow-lg shadow-black/20 overflow-hidden px-4">
+              <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+            </div>
+            <span className="font-bold text-xl tracking-tight uppercase text-white">
+              CÔNG TY CP TMDV VOSCO (VTSC)
+            </span>
+          </div>
+          <div className="space-y-5">
+            <ContactItem
+              icon={<MapPin size={20} className="text-blue-400" />}
+              text="215 Lạch Tray, Phường Gia Viên, Thành phố Hải Phòng"
+            />
+            <ContactItem
+              icon={<Phone size={20} className="text-blue-400" />}
+              text="+84 (028) 3888 9999"
+            />
+            <ContactItem
+              icon={<Mail size={20} className="text-blue-400" />}
+              text="contact@vtscpaint.com"
+            />
+          </div>
+          <div className="flex gap-4 mt-10">
+            <SocialLink icon={<Facebook size={20} />} href="#" />
+            <SocialLink icon={<Twitter size={20} />} href="#" />
+            <SocialLink icon={<Instagram size={20} />} href="#" />
+          </div>
+        </div>
+
+        {/* Column 2: Policies */}
+        <div className="lg:col-span-3">
+          <h4 className="text-sm font-bold mb-8 uppercase tracking-widest text-slate-400">
+            CHÍNH SÁCH
+          </h4>
+          <ul className="space-y-4 text-slate-300 font-medium text-sm">
+            <li>
+              <button
+                onClick={() => handleOpenPolicy("return")}
+                className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left"
+              >
+                - Chính sách đổi trả
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => handleOpenPolicy("warranty")}
+                className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left"
+              >
+                - Chính sách bảo hành
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => handleOpenPolicy("shipping")}
+                className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left"
+              >
+                - Chính sách vận chuyển
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        {/* Column 3: Quick Links */}
+        <div className="lg:col-span-4">
+          <h4 className="text-sm font-bold mb-8 uppercase tracking-widest text-slate-400">
+            LIÊN KẾT NHANH
+          </h4>
+          <ul className="space-y-4 text-slate-300 font-medium text-sm">
+            <li>
+              <Link
+                href="/theo-doi-don-hang"
+                className="hover:text-blue-400 transition-colors no-underline text-slate-300"
+              >
+                - Theo dõi đơn hàng
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/admin/contracts"
+                className="hover:text-blue-400 transition-colors no-underline text-slate-300"
+              >
+                - Tra cứu hợp đồng
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/admin/rd-tracking"
+                className="hover:text-blue-400 transition-colors no-underline text-slate-300"
+              >
+                - Gửi yêu cầu R&D
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="border-t border-white/10 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-slate-500 text-xs font-medium">
+        <p>© 2026 VTSC. Bản quyền thuộc về Nhóm dự án.</p>
+        <div className="flex gap-8">
+          <Link
+            href="#"
+            className="hover:text-white transition-colors no-underline text-slate-500"
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            href="#"
+            className="hover:text-white transition-colors no-underline text-slate-500"
+          >
+            Terms of Service
+          </Link>
+        </div>
+      </div>
+      </div>
+    </footer>
+    </>
   );
 }
