@@ -290,8 +290,6 @@ export default function SanPhamPage() {
     });
   };
 
-<<<<<<< Updated upstream
-=======
   const handleAddAllColors = () => {
     const currentCodes = new Set(formData.DanhSachMaMau.map(m => m.MaMau));
     const newColors = paintColors.filter(p => !currentCodes.has(p.code)).map(p => ({
@@ -314,8 +312,6 @@ export default function SanPhamPage() {
       DanhSachMaMau: [...formData.DanhSachMaMau, ...newColors]
     });
   };
-
->>>>>>> Stashed changes
   const handleRemoveColor = (index: number) => {
     const newList = [...formData.DanhSachMaMau];
     newList.splice(index, 1);

@@ -9,7 +9,7 @@ interface CustomerProductModalProps {
   product: any;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (sp: any, quantity: number) => void;
+  onAddToCart: (sp: any, quantity: number, colorCode?: string) => void;
   cartLoading: string;
 }
 
@@ -23,6 +23,15 @@ export default function CustomerProductModal({
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [successMsg, setSuccessMsg] = useState("");
+  const [selectedColorCode, setSelectedColorCode] = useState<string>("");
+
+  React.useEffect(() => {
+    if (product && product.DanhSachMaMau && product.DanhSachMaMau.length > 0) {
+      setSelectedColorCode(product.DanhSachMaMau[0].MaMau);
+    } else {
+      setSelectedColorCode("");
+    }
+  }, [product]);
 
   if (!isOpen || !product) return null;
 
@@ -71,7 +80,7 @@ export default function CustomerProductModal({
       alert(`Trong kho chỉ còn ${product.TongTonKho} sản phẩm!`);
       return;
     }
-    onAddToCart(product, quantity);
+    onAddToCart(product, quantity, selectedColorCode);
     setSuccessMsg("Đã thêm vào giỏ!");
     setTimeout(() => setSuccessMsg(""), 3000);
   };
@@ -179,8 +188,6 @@ export default function CustomerProductModal({
              </div>
           </div>
 
-<<<<<<< Updated upstream
-=======
           {product.DanhSachMaMau && product.DanhSachMaMau.length > 0 && (
             <div className="mb-6">
               <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-3">Chọn Màu Sắc</p>
@@ -244,8 +251,6 @@ export default function CustomerProductModal({
               </a>
             </div>
           </div>
-
->>>>>>> Stashed changes
           {/* Action Area */}
           <div className="mt-auto pt-6 border-t border-white/5 flex flex-col gap-4">
             {product.TongTonKho > 0 ? (
