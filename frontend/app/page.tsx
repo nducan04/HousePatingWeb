@@ -42,6 +42,7 @@ import { useAuthStore } from "@/lib/store/authStore";
 import { useCartStore, getGuestSessionId } from "@/lib/store/cartStore";
 import { paintColors } from "@/lib/data/colors-data";
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
+import { QRCodeCanvas } from "qrcode.react";
 
 const BACKEND_URL = "http://localhost:5000";
 
@@ -1510,6 +1511,7 @@ export default function HomePage() {
       </footer>
 
       {/* ═══════ PRODUCT DETAIL MODAL (Refined Fonts) ═══════ */}
+<<<<<<< Updated upstream
       {isViewOpen && selectedProduct && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row max-h-[90vh] relative">
@@ -1526,6 +1528,181 @@ export default function HomePage() {
                   alt={selectedProduct.TenDongSon}
                   className="w-full h-full object-cover"
                 />
+=======
+      {
+        isViewOpen && selectedProduct && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+            <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row max-h-[90vh] relative">
+              <button
+                onClick={() => setIsViewOpen(false)}
+                className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center text-slate-950"
+              >
+                <X size={24} />
+              </button>
+              <div className="md:w-5/12 bg-slate-50 p-10 flex items-center justify-center">
+                <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-xl bg-white border-8 border-white">
+                  <img
+                    src={getImageUrl(selectedProduct.HinhAnh)}
+                    alt={selectedProduct.TenDongSon}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+              <div className="md:w-7/12 p-10 sm:p-14 overflow-y-auto">
+                <div className="space-y-8">
+                  <div>
+                    <div className="inline-flex items-center px-4 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 text-white uppercase tracking-widest mb-4">
+                      {selectedProduct.PhanLoai}
+                    </div>
+                    <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-2">
+                      {selectedProduct.TenDongSon}
+                    </h2>
+                    <p className="text-lg text-slate-400 font-bold uppercase tracking-wider">
+                      {selectedProduct.ThuongHieu}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-8 py-6 border-y border-slate-100">
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">
+                        Giá đề xuất
+                      </p>
+                      <p className="text-3xl font-bold text-emerald-600">
+                        {selectedProduct.DonGiaCoSo?.toLocaleString()} ₫
+                      </p>
+                    </div>
+                    <div className="h-12 w-px bg-slate-100"></div>
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">
+                        Quy cách
+                      </p>
+                      <p className="text-2xl font-bold text-slate-800">
+                        {selectedProduct.DonViTinh || "Kg"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">
+                      Mô tả sản phẩm
+                    </h4>
+                    <p className="text-slate-500 text-base leading-relaxed font-medium">
+                      {selectedProduct.MoTa ||
+                        "Dòng sơn tĩnh điện AkzoNobel cao cấp..."}
+                    </p>
+                  </div>
+                  {selectedProduct.DanhSachMaMau &&
+                    selectedProduct.DanhSachMaMau.length > 0 && (
+                      <div className="space-y-4">
+                        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">
+                          Màu sắc sẵn có ({selectedProduct.DanhSachMaMau.length})
+                        </h4>
+                        <div className="flex flex-wrap gap-3">
+                          {selectedProduct.DanhSachMaMau.map(
+                            (m: any, i: number) => (
+                              <div key={i} className="group/item relative">
+                                <div
+                                  className="w-10 h-10 rounded-xl border border-slate-200 shadow-sm transition-all hover:scale-110"
+                                  style={{ background: m.HexCode }}
+                                />
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/item:opacity-100 transition-all whitespace-nowrap pointer-events-none">
+                                  {m.MaMau} — {m.TenMau}
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                  {/* QR Code Truy xuất nguồn gốc */}
+                  <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-start gap-4">
+                    <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm shrink-0">
+                      <QRCodeCanvas
+                        value={`${typeof window !== 'undefined' ? window.location.origin : ''}/trace/${selectedProduct._id}`}
+                        size={70}
+                        bgColor={"#ffffff"}
+                        fgColor={"#0f172a"}
+                        level={"Q"}
+                      />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mb-1">
+                        <QrCode size={16} className="text-blue-500" />
+                        Truy xuất nguồn gốc
+                      </h4>
+                      <p className="text-xs text-slate-500 leading-relaxed mb-2">
+                        Khách hàng có thể quét mã QR này để xem thông tin hóa đơn, ngày sản xuất, hạn sử dụng và quy trình.
+                      </p>
+                      <a
+                        href={`/trace/${selectedProduct._id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline"
+                      >
+                        Xem trước trang truy xuất ↗
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="pt-6 space-y-4">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+                        Số lượng
+                      </span>
+                      <div className="flex items-center bg-slate-100 rounded-xl p-1 w-32">
+                        <button
+                          onClick={() => updateQuantity(selectedProduct._id, -1, selectedProduct.TongTonKho)}
+                          className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          value={productQuantities[selectedProduct._id] || 1}
+                          onChange={(e) =>
+                            handleQuantityChange(
+                              selectedProduct._id,
+                              e.target.value,
+                              selectedProduct.TongTonKho
+                            )
+                          }
+                          onBlur={() => handleQuantityBlur(selectedProduct._id)}
+                          className="w-12 text-center bg-transparent border-none text-base font-bold text-slate-900 outline-none appearance-none"
+                        />
+                        <button
+                          onClick={() => updateQuantity(selectedProduct._id, 1, selectedProduct.TongTonKho)}
+                          className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => addToCart(selectedProduct)}
+                      disabled={cartLoading === selectedProduct._id}
+                      className={`w-full h-16 text-white rounded-2xl font-bold text-lg shadow-xl transition-all flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer ${cartMessage.id === selectedProduct._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500" : "bg-red-500 text-sm") : "bg-blue-600 hover:bg-blue-700 hover:-translate-y-1"}`}
+                    >
+                      {cartLoading === selectedProduct._id ? (
+                        <Loader2 className="animate-spin" size={24} />
+                      ) : cartMessage.id === selectedProduct._id ? (
+                        cartMessage.text === "Đã thêm vào giỏ!" ? (
+                          <>
+                            <ShoppingCart size={24} />
+                            Đã vào giỏ!
+                          </>
+                        ) : (
+                          <span>{cartMessage.text}</span>
+                        )
+                      ) : (
+                        <>
+                          <ShoppingCart size={24} />
+                          Thêm vào giỏ hàng
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+>>>>>>> Stashed changes
               </div>
             </div>
             <div className="md:w-7/12 p-10 sm:p-14 overflow-y-auto">

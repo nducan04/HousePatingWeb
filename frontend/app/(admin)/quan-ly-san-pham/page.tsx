@@ -290,6 +290,32 @@ export default function SanPhamPage() {
     });
   };
 
+<<<<<<< Updated upstream
+=======
+  const handleAddAllColors = () => {
+    const currentCodes = new Set(formData.DanhSachMaMau.map(m => m.MaMau));
+    const newColors = paintColors.filter(p => !currentCodes.has(p.code)).map(p => ({
+      MaMau: p.code,
+      TenMau: p.name,
+      HexCode: p.hex,
+      TonKhoKhaDung: 0,
+      TonKhoTamGiu: 0,
+      NguongCanhBao: 200,
+      TrangThai: true,
+    }));
+
+    if (newColors.length === 0) {
+      alert("Tất cả màu đã có trong danh sách!");
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      DanhSachMaMau: [...formData.DanhSachMaMau, ...newColors]
+    });
+  };
+
+>>>>>>> Stashed changes
   const handleRemoveColor = (index: number) => {
     const newList = [...formData.DanhSachMaMau];
     newList.splice(index, 1);
@@ -1008,11 +1034,11 @@ export default function SanPhamPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-500 uppercase">Hóa đơn mua hàng / Chứng từ</label>
+                      <label className="text-xs font-semibold text-slate-500 uppercase">CHỨNG NHẬN XUẤT XỨ SẢN PHẨM</label>
                       <div className="flex items-center gap-2 mt-1">
                         {formData.TruyXuatNguonGoc.HoaDonMuaSon ? (
                           <div className="flex items-center justify-between w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-                            <a href={resolveImageUrl(formData.TruyXuatNguonGoc.HoaDonMuaSon)} target="_blank" rel="noreferrer" className="text-blue-600 font-bold text-sm underline truncate hover:text-blue-800 flex items-center gap-1"><FileText size={16} /> Xem Hóa Đơn</a>
+                            <a href={resolveImageUrl(formData.TruyXuatNguonGoc.HoaDonMuaSon)} target="_blank" rel="noreferrer" className="text-blue-600 font-bold text-sm underline truncate hover:text-blue-800 flex items-center gap-1"><FileText size={16} /> Xem Chứng Từ</a>
                             <button type="button" onClick={() => setFormData({ ...formData, TruyXuatNguonGoc: { ...formData.TruyXuatNguonGoc, HoaDonMuaSon: "" } })} className="text-rose-500 hover:text-rose-700 text-xs font-bold px-2">Xóa</button>
                           </div>
                         ) : (
@@ -1201,7 +1227,7 @@ export default function SanPhamPage() {
                   <div className="mt-4 pt-4 border-t border-slate-100 flex items-start gap-4">
                     <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm shrink-0">
                       <QRCodeCanvas
-                        value={`${typeof window !== 'undefined' ? window.location.origin : ''}/truy-xuat/${selectedProduct._id}`}
+                        value={`${typeof window !== 'undefined' ? window.location.origin : ''}/trace/${selectedProduct._id}`}
                         size={80}
                         bgColor={"#ffffff"}
                         fgColor={"#0f172a"}

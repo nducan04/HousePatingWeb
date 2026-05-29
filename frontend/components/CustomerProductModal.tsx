@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Star, ShoppingCart, Loader2, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
+import { X, Star, ShoppingCart, Loader2, ChevronLeft, ChevronRight, CheckCircle2, QrCode } from "lucide-react";
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
+import { QRCodeCanvas } from "qrcode.react";
 
 interface CustomerProductModalProps {
   product: any;
@@ -178,6 +179,73 @@ export default function CustomerProductModal({
              </div>
           </div>
 
+<<<<<<< Updated upstream
+=======
+          {product.DanhSachMaMau && product.DanhSachMaMau.length > 0 && (
+            <div className="mb-6">
+              <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-3">Chọn Màu Sắc</p>
+              <div className="bg-slate-800/30 rounded-lg border border-white/5 overflow-hidden max-h-[180px] overflow-y-auto custom-scrollbar">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-800/50 text-slate-400 text-xs">
+                    <tr>
+                      <th className="py-2 px-3 font-medium">Màu</th>
+                      <th className="py-2 px-3 font-medium">Mã Màu</th>
+                      <th className="py-2 px-3 font-medium">Tên Màu</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {product.DanhSachMaMau.map((c: any) => (
+                      <tr 
+                        key={c.MaMau} 
+                        onClick={() => setSelectedColorCode(c.MaMau)}
+                        className={`cursor-pointer transition-colors hover:bg-white/5 ${selectedColorCode === c.MaMau ? 'bg-blue-600/20' : ''}`}
+                      >
+                        <td className="py-2 px-3">
+                          <div className="w-6 h-6 rounded-full shadow-inner border border-white/10 flex items-center justify-center" style={{ backgroundColor: c.HexCode || '#ccc' }}>
+                            {selectedColorCode === c.MaMau && <CheckCircle2 size={12} className="text-white drop-shadow-md" />}
+                          </div>
+                        </td>
+                        <td className="py-2 px-3 text-white font-medium">{c.MaMau}</td>
+                        <td className="py-2 px-3 text-slate-300">{c.TenMau}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* QR Code Truy xuất nguồn gốc */}
+          <div className="mb-6 p-4 bg-slate-800/30 rounded-lg border border-white/5 flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm shrink-0">
+              <QRCodeCanvas
+                value={`${typeof window !== 'undefined' ? window.location.origin : ''}/trace/${product._id}`}
+                size={70}
+                bgColor={"#ffffff"}
+                fgColor={"#0f172a"}
+                level={"Q"}
+              />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white flex items-center gap-1.5 mb-1">
+                <QrCode size={16} className="text-blue-400" />
+                Truy xuất nguồn gốc
+              </h4>
+              <p className="text-xs text-slate-400 leading-relaxed mb-2">
+                Khách hàng có thể quét mã QR này để xem thông tin hóa đơn, ngày sản xuất, hạn sử dụng và quy trình.
+              </p>
+              <a
+                href={`/trace/${product._id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-semibold text-blue-400 hover:text-blue-300 underline"
+              >
+                Xem trước trang truy xuất ↗
+              </a>
+            </div>
+          </div>
+
+>>>>>>> Stashed changes
           {/* Action Area */}
           <div className="mt-auto pt-6 border-t border-white/5 flex flex-col gap-4">
             {product.TongTonKho > 0 ? (
