@@ -37,7 +37,15 @@ exports.getRDLogs = async (req, res) => {
 // @route   GET /api/rd-tracking/:id
 exports.getRDLogById = async (req, res) => {
   try {
-    const log = await NhatKyTestMau.findById(req.params.id)
+    const id = req.params.id || '';
+    let query = {};
+    if (id.length === 24 && id.match(/^[0-9a-fA-F]{24}$/)) {
+      query = { _id: id };
+    } else {
+      query = { MaNhatKy: id };
+    }
+
+    const log = await NhatKyTestMau.findOne(query)
       .populate('ContractID', 'MaHopDong title CustomerID ChiTietHopDong');
     
     if (!log) {
@@ -48,14 +56,19 @@ exports.getRDLogById = async (req, res) => {
     if (req.user && (req.user.VaiTro === 'KhachHangB2C' || req.user.VaiTro === 'KhachHangB2B')) {
       const KhachHang = require('../models/KhachHang');
       const kh = await KhachHang.findOne({ AccountID: req.user._id });
-      if (!kh || !log.ContractID || log.ContractID.CustomerID?.toString() !== kh._id.toString()) {
+      
+      const customerId = log.ContractID?.CustomerID?.toString();
+      const khId = kh?._id?.toString();
+      
+      if (!kh || !log.ContractID || customerId !== khId) {
         return res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập dữ liệu pha chế này.' });
       }
     }
     
     res.status(200).json({ success: true, data: log });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('getRDLogById error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Internal Server Error' });
   }
 };
 

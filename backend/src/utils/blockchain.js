@@ -141,10 +141,13 @@ async function createContractOnChain(contractId, clientAddress, valueVnd, slaTim
 
     // Chuyển giá trị VNĐ sang Wei (1 VNĐ = 1 Wei cho mục đích ghi nhận)
     const valueWei = ethers.parseUnits(String(valueVnd), 0);
+    
+    // Lowercase address to bypass ethers.js strict checksum validation for mixed-case user inputs
+    const formattedClientAddress = clientAddress ? clientAddress.toLowerCase() : clientAddress;
 
     const tx = await contractWithSigner.createContract(
       contractId,
-      clientAddress,
+      formattedClientAddress,
       valueWei,
       slaTimestamp,
       documentHash || ''

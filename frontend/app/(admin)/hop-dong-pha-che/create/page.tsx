@@ -94,7 +94,7 @@ export default function CreateContractPage() {
     const result = await createContract(data);
     if (result) {
       setSubmitSuccess(true);
-      setTimeout(() => router.push(`/contracts/${result._id}`), 1500);
+      setTimeout(() => router.push(`/hop-dong-pha-che/${result._id}`), 1500);
     } else {
       setSubmitError(useContractStore.getState().error || 'Lỗi không xác định');
     }

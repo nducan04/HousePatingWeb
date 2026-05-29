@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface RouteMapProps {
   origin: string;
@@ -32,6 +32,7 @@ async function geocode(address: string): Promise<[number, number] | null> {
 export default function RouteMap({ origin, destination, currentLocation, isDelivered = false, onMapClick, waypoints = [] }: RouteMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const [showZoomHint, setShowZoomHint] = useState(false);
 
   useEffect(() => {
     if (!mapRef.current || !origin || !destination) return;
@@ -356,14 +357,23 @@ export default function RouteMap({ origin, destination, currentLocation, isDeliv
   }, []);
 
   return (
-    <div className="relative w-full h-full group">
-      {/* Tooltip hint when hovering without Ctrl */}
-      <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="bg-black/60 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm transform -translate-y-4">
-          Giữ phím Ctrl (hoặc Cmd) và Cuộn chuột để Thu/Phóng
-        </div>
-      </div>
+    <div
+      className="relative w-full h-full group"
+      onWheelCapture={(e) => {
+        if (!e.ctrlKey && !e.metaKey) {
+          setShowZoomHint(true);
+          setTimeout(() => setShowZoomHint(false), 1500);
+        }
+      }}
+    >
       <div ref={mapRef} style={{ width: "100%", height: "100%", zIndex: 1 }} />
+      {showZoomHint && (
+        <div className="absolute inset-0 z-[1000] bg-black/30 flex items-center justify-center transition-all duration-300 pointer-events-none">
+          <div className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-xl">
+            Giữ phím <kbd className="bg-slate-700 px-2 py-0.5 rounded text-white mx-1">Ctrl</kbd> + lăn chuột để phóng to/thu nhỏ
+          </div>
+        </div>
+      )}
     </div>
   );
 }
