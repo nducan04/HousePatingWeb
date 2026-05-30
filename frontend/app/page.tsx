@@ -601,9 +601,7 @@ export default function HomePage() {
             <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-110 px-3">
               <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="font-bold text-xl text-slate-900 tracking-tight">
-              VTSC PaintPro
-            </span>
+
           </Link>
 
           <nav className="hidden xl:flex items-center gap-0.5">
@@ -620,7 +618,7 @@ export default function HomePage() {
               Sản phẩm
             </Link>
             <Link
-              href="/colors"
+              href="#bang-mau"
               className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Bảng màu
@@ -797,7 +795,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ QUY TRÌNH PHA CHẾ SƠN (Mới) ═══════ */}
-      <section id="quy-trinh" className="px-8 py-24 bg-slate-50 scroll-mt-24">
+      <section id="quy-trinh" className="px-8 py-24 bg-slate-50 scroll-mt-[25px]">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
@@ -900,7 +898,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ BẢNG MÀU XU HƯỚNG ═══════ */}
-      <section id="bang-mau" className="px-8 py-20 bg-slate-50">
+      <section id="bang-mau" className="px-8 py-20 bg-slate-50 scroll-mt-[40px]">
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
             <div>
@@ -952,7 +950,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ PRODUCTS SECTION (Balanced) ═══════ */}
-      <section id="san-pham" className="px-8 py-20 bg-white">
+      <section id="san-pham" className="px-8 py-20 bg-white scroll-mt-[40px]">
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
             <div>
@@ -1163,7 +1161,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ TIN TỨC & KHUYẾN MÃI (Uniform) ═══════ */}
-      <section id="tin-tuc" className="px-8 py-20 bg-slate-50">
+      <section id="tin-tuc" className="px-8 py-20 bg-slate-50 scroll-mt-[40px]">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -1235,7 +1233,10 @@ export default function HomePage() {
       {/* ═══════ FOOTER ═══════ */}
       <footer
         id="footer"
-        className="bg-slate-900 text-white pt-20 pb-10 scroll-mt-20"
+        className="relative text-white pt-20 pb-10 scroll-mt-[40px] bg-cover bg-center overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.94)), url('/login-illustration.png')`
+        }}
       >
         <div className="max-w-[1300px] mx-auto px-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-16">
