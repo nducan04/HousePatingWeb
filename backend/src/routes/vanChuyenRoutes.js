@@ -4,10 +4,13 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 const {
     getAllTracking,
     getTrackingByOrder,
+    getTrackingByCode,
     createTracking,
     updateTrackingLog,
     updateTracking
 } = require('../controllers/vanChuyenController');
+
+router.get('/track/:code', getTrackingByCode);
 
 router.use(protect);
 
