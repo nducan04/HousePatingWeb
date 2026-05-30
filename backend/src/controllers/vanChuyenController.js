@@ -31,6 +31,27 @@ exports.getAllTracking = async (req, res) => {
   }
 };
 
+// @desc    Get tracking by tracking code (Public)
+// @route   GET /api/van-chuyen/track/:code
+exports.getTrackingByCode = async (req, res) => {
+  try {
+    const tracking = await VanChuyen.findOne({ MaVanChuyen: req.params.code })
+      .populate({
+        path: 'DonHang',
+        populate: { path: 'KhachHang' }
+      })
+      .populate('VanChuyenInfo.NhanVien');
+
+    if (!tracking) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy thông tin vận chuyển cho mã này' });
+    }
+
+    res.status(200).json({ success: true, data: tracking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // @desc    Get tracking by Order ID
 // @route   GET /api/van-chuyen/order/:orderId
 exports.getTrackingByOrder = async (req, res) => {

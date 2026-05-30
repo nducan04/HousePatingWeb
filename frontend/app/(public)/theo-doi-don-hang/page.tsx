@@ -115,6 +115,22 @@ export default function TrackingPage() {
     }
   };
 
+  const fetchSingleTracking = async (code: string) => {
+    try {
+      const res = await api.get(`/shipping/track/${code}`);
+      if (res.data.success && res.data.data) {
+        const mapped = mapDBTrackingToUI(res.data.data);
+        setSelectedTracking(mapped);
+        setTrackingCode(mapped.code);
+        setActiveTab('shipment');
+        return true;
+      }
+    } catch (e) {
+      console.error('Error fetching single tracking:', e);
+    }
+    return false;
+  };
+
   const [dbRDList, setDbRDList] = useState<any[]>([]);
 
   const mapDBRDToUI = (item: any) => {
@@ -201,11 +217,10 @@ export default function TrackingPage() {
   }, []);
 
   useEffect(() => {
-    // Read pre-filled query param if exists
-    if (typeof window !== 'undefined' && filteredTrackingData.length > 0) {
+    // Đọc URL độc lập khi mount (không phụ thuộc filteredTrackingData)
+    if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
-      const orderId = params.get('orderId');
       const tabParam = params.get('tab');
 
       if (tabParam === 'rd') {
@@ -214,10 +229,8 @@ export default function TrackingPage() {
 
       // Load sample requests from localstorage
       const stored = localStorage.getItem('sampleRequests');
-      let localReqs = [];
       if (stored) {
-        localReqs = JSON.parse(stored);
-        setSampleRequests(localReqs);
+        setSampleRequests(JSON.parse(stored));
       } else {
         const defaultRequests = [
           { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
@@ -225,9 +238,24 @@ export default function TrackingPage() {
         ];
         localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
         setSampleRequests(defaultRequests);
-        localReqs = defaultRequests;
       }
 
+      if (code) {
+        setTrackingCode(code);
+        if (!code.toLowerCase().startsWith('req-')) {
+          fetchSingleTracking(code);
+        } else {
+          fetchDBRDRequest(code);
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    // Xử lý orderId khi có filteredTrackingData
+    if (typeof window !== 'undefined' && filteredTrackingData.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get('orderId');
       if (orderId) {
         const foundShipping = filteredTrackingData.find((t: any) => t.dbRecord?.DonHang?._id === orderId || t.dbRecord?.DonHang === orderId);
         if (foundShipping) {
@@ -235,29 +263,9 @@ export default function TrackingPage() {
           setSelectedTracking(foundShipping);
           setActiveTab('shipment');
         }
-      } else if (code) {
-        setTrackingCode(code);
-        // Try searching in shippingData
-        const foundShipping = filteredTrackingData.find((t: any) => t.code.toLowerCase() === code.toLowerCase());
-        if (foundShipping) {
-          setSelectedTracking(foundShipping);
-          setActiveTab('shipment');
-        } else {
-          // Check local R&D requests
-          const foundRD = customerRequests.find((r: any) => r.id === trackingCode);
-          if (foundRD) {
-            setSelectedSample(foundRD);
-            setActiveTab('samples');
-          } else {
-            // Try fetching from DB if not start with REQ
-            if (!code.toLowerCase().startsWith('req-')) {
-              fetchDBRDRequest(code);
-            }
-          }
-        }
       }
     }
-  }, [filteredTrackingData, user]);
+  }, [filteredTrackingData]);
 
   // Simulating live package metrics ticking
   useEffect(() => {
@@ -333,7 +341,7 @@ export default function TrackingPage() {
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!trackingCode) return;
 
     if (activeTab === 'shipment') {
@@ -341,6 +349,10 @@ export default function TrackingPage() {
       if (found) {
         setSelectedTracking(found);
       } else {
+        // Gọi API tìm kiếm đơn lẻ
+        const success = await fetchSingleTracking(trackingCode);
+        if (success) return;
+
         // Try searching in local R&D in case they entered R&D code under shipping tab
         const stored = localStorage.getItem('sampleRequests');
         if (stored) {
