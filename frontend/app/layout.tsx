@@ -40,8 +40,8 @@ export default function RootLayout({
         <AuthProvider>
           <AlertOverride />
           {children}
-          <Toaster 
-            position="top-center" 
+          <Toaster
+            position="top-center"
             toastOptions={{
               className: 'font-bold text-sm',
               duration: 4000,
