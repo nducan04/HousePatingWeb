@@ -11,7 +11,7 @@ router.route('/')
   .post(authorize('Admin', 'NhanVien'), create);
 
 router.route('/:id')
-  .get(authorize('Admin', 'NhanVien', 'KhachHangB2B'), getById)
+  .get(authorize('Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C'), getById)
   .put(authorize('Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C'), update)
   .delete(authorize('Admin'), remove);
 

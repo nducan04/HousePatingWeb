@@ -201,17 +201,7 @@ export default function TrackingPage() {
   }, []);
 
   useEffect(() => {
-    // Read pre-filled query param if exists
-    if (typeof window !== 'undefined' && filteredTrackingData.length > 0) {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-      const orderId = params.get('orderId');
-      const tabParam = params.get('tab');
-
-      if (tabParam === 'rd') {
-        setActiveTab('samples');
-      }
-
+    if (typeof window !== 'undefined') {
       // Load sample requests from localstorage
       const stored = localStorage.getItem('sampleRequests');
       let localReqs = [];
@@ -227,37 +217,54 @@ export default function TrackingPage() {
         setSampleRequests(defaultRequests);
         localReqs = defaultRequests;
       }
+    }
+  }, []);
+
+  // Separate effect to handle query params so it doesn't depend on filteredTrackingData length
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const orderId = params.get('orderId');
+      const tabParam = params.get('tab');
+
+      if (tabParam === 'rd') {
+        setActiveTab('samples');
+      }
 
       if (orderId) {
-        const foundShipping = filteredTrackingData.find((t: any) => t.dbRecord?.DonHang?._id === orderId || t.dbRecord?.DonHang === orderId);
-        if (foundShipping) {
-          setTrackingCode(foundShipping.code);
-          setSelectedTracking(foundShipping);
-          setActiveTab('shipment');
-        }
+        api.get(`/shipping/order/${orderId}`).then(res => {
+          if (res.data.success) {
+            const mapped = mapDBTrackingToUI(res.data.data);
+            setTrackingCode(mapped.code);
+            setSelectedTracking(mapped);
+            setActiveTab('shipment');
+          }
+        }).catch(e => console.error(e));
       } else if (code) {
         setTrackingCode(code);
-        // Try searching in shippingData
-        const foundShipping = filteredTrackingData.find((t: any) => t.code.toLowerCase() === code.toLowerCase());
-        if (foundShipping) {
-          setSelectedTracking(foundShipping);
-          setActiveTab('shipment');
-        } else {
+        api.get(`/shipping/track/${code}`).then(res => {
+          if (res.data.success) {
+            setSelectedTracking(mapDBTrackingToUI(res.data.data));
+            setActiveTab('shipment');
+          }
+        }).catch(e => {
           // Check local R&D requests
-          const foundRD = customerRequests.find((r: any) => r.id === trackingCode);
+          const stored = localStorage.getItem('sampleRequests');
+          const localReqs = stored ? JSON.parse(stored) : [];
+          const foundRD = localReqs.find((r: any) => r.id === code);
           if (foundRD) {
             setSelectedSample(foundRD);
             setActiveTab('samples');
           } else {
-            // Try fetching from DB if not start with REQ
             if (!code.toLowerCase().startsWith('req-')) {
               fetchDBRDRequest(code);
             }
           }
-        }
+        });
       }
     }
-  }, [filteredTrackingData, user]);
+  }, []);
 
   // Simulating live package metrics ticking
   useEffect(() => {
@@ -333,7 +340,7 @@ export default function TrackingPage() {
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!trackingCode) return;
 
     if (activeTab === 'shipment') {
@@ -341,6 +348,17 @@ export default function TrackingPage() {
       if (found) {
         setSelectedTracking(found);
       } else {
+        try {
+          const res = await api.get(`/shipping/track/${trackingCode}`);
+          if (res.data.success) {
+            setSelectedTracking(mapDBTrackingToUI(res.data.data));
+            setActiveTab('shipment');
+            return;
+          }
+        } catch (e) {
+          // Continue to RD search
+        }
+        
         // Try searching in local R&D in case they entered R&D code under shipping tab
         const stored = localStorage.getItem('sampleRequests');
         if (stored) {
