@@ -26,7 +26,45 @@ export default function RDTrackingDetailPage() {
 
   const loadRequest = async (code: string) => {
     setLoading(true);
-    // 1. Nếu là dạng mock từ localStorage (bắt đầu bằng REQ-)
+
+    // 1. Fetch from DB first
+    try {
+      const res = await api.get(`/rd-tracking/${code}`);
+      if (res.data.success) {
+        const item = res.data.data;
+        const itemCustomer = item.ContractID?.title || 'Khách hàng';
+        
+        if (user && user.role !== 'Admin' && user.role !== 'NhanVien') {
+          const customerName = user.profile?.TenKhachHang || '';
+          const belongsToMe = itemCustomer.toLowerCase().includes(customerName.toLowerCase()) ||
+            customerName.toLowerCase().includes(itemCustomer.toLowerCase());
+          if (!belongsToMe) {
+            toast.error('Bạn không có quyền truy cập dữ liệu pha chế này.');
+            router.push('/theo-doi-don-hang?tab=samples');
+            return;
+          }
+        }
+        
+        setSelectedSample({
+          id: item.MaNhatKy || code,
+          customer: itemCustomer,
+          colorCode: item.MaMauYeuCau || 'RAL-MIX',
+          surface: item.ContractID?.surface || 'Kim loại',
+          status: item.TrangThai || 'pending',
+          date: new Date(item.createdAt).toLocaleDateString('vi-VN'),
+          LichSuPhienBan: item.LichSuPhienBan || [],
+          signedBy: item.signedBy,
+          signedAt: item.signedAt,
+          imageUrl: item.imageUrl
+        });
+        setLoading(false);
+        return;
+      }
+    } catch (e) {
+      console.error('Failed to load R&D from DB:', e);
+    }
+
+    // 2. Fallback to mock/localStorage data if DB fetch fails
     if (code.startsWith('REQ-')) {
       if (typeof window !== 'undefined') {
         const storedRequests = localStorage.getItem('sampleRequests');
@@ -53,7 +91,7 @@ export default function RDTrackingDetailPage() {
         }
       }
       
-      // Fallback khi quét mã QR trên điện thoại (điện thoại không có sẵn localStorage của máy tính)
+      // Hardcoded fallback
       if (code.toUpperCase() === 'REQ-001') {
         setSelectedSample({
           id: code,
@@ -85,48 +123,11 @@ export default function RDTrackingDetailPage() {
           LichSuPhienBan: [],
         });
       }
-      setLoading(false);
-      return;
-    }
-
-    // 2. Fetch from DB
-    try {
-      const res = await api.get(`/rd-tracking/${code}`);
-      if (res.data.success) {
-        const item = res.data.data;
-        const itemCustomer = item.ContractID?.title || 'Khách hàng';
-        
-        if (user && user.role !== 'Admin' && user.role !== 'NhanVien') {
-          const customerName = user.profile?.TenKhachHang || '';
-          const belongsToMe = itemCustomer.toLowerCase().includes(customerName.toLowerCase()) ||
-            customerName.toLowerCase().includes(itemCustomer.toLowerCase());
-          if (!belongsToMe) {
-            toast.error('Bạn không có quyền truy cập dữ liệu pha chế này.');
-            router.push('/theo-doi-don-hang?tab=samples');
-            return;
-          }
-        }
-        
-        setSelectedSample({
-          id: item.MaNhatKy || code,
-          customer: itemCustomer,
-          colorCode: item.MaMauYeuCau || 'RAL-MIX',
-          surface: item.ContractID?.surface || 'Kim loại',
-          status: item.TrangThai || 'pending',
-          date: new Date(item.createdAt).toLocaleDateString('vi-VN'),
-          LichSuPhienBan: item.LichSuPhienBan || [],
-          signedBy: item.signedBy,
-          signedAt: item.signedAt
-        });
-      } else {
-        toast.error('Không tìm thấy dữ liệu yêu cầu.');
-      }
-    } catch (e) {
-      console.error('Failed to load R&D from DB:', e);
+    } else {
       toast.error('Không tìm thấy mã nhật ký R&D.');
-    } finally {
-      setLoading(false);
     }
+    
+    setLoading(false);
   };
 
   if (loading) {
