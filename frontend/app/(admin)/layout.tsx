@@ -289,6 +289,11 @@ export default function AdminLayout({
       return;
     }
 
+    // Ngoại lệ: Khách hàng được phép truy cập trang chi tiết R&D (layout không block, để cho page tự xử lý API backend)
+    if (isCustomer && pathname.startsWith("/rd-tracking/") && pathname !== "/rd-tracking/new") {
+      return;
+    }
+
     // Tìm item khớp với pathname hiện tại (chọn item có href dài nhất để xử lý chính xác các trang con như /rd-tracking/new)
     let matchedItem: any = null;
     allNavItems.forEach((section) => {

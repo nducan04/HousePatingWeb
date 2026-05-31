@@ -7,16 +7,33 @@ const NhanVien = require('../models/NhanVien');
 exports.getRDLogs = async (req, res) => {
   try {
     let query = {};
+    
+    if (req.query.type === 'standalone') {
+      query.ContractID = { $exists: false }; // Yêu cầu từ khách hàng không có ContractID
+    } else if (req.query.type === 'contract') {
+      query.ContractID = { $exists: true, $ne: null }; // Nhật ký pha chế từ hợp đồng
+    }
+
     if (req.user && (req.user.VaiTro === 'KhachHangB2C' || req.user.VaiTro === 'KhachHangB2B')) {
       const KhachHang = require('../models/KhachHang');
       const kh = await KhachHang.findOne({ AccountID: req.user._id });
       if (kh) {
-        // Find all contracts belonging to this customer
-        const contracts = await HopDong.find({ CustomerID: kh._id });
-        const contractIds = contracts.map(c => c._id);
-        query.ContractID = { $in: contractIds };
+        if (req.query.type === 'standalone') {
+          // Lọc các yêu cầu có customerName giống với tên khách hàng
+          query.customerName = { $regex: new RegExp(kh.TenKhachHang, 'i') };
+        } else {
+          // Lọc hợp đồng
+          const contracts = await HopDong.find({ CustomerID: kh._id });
+          const contractIds = contracts.map(c => c._id);
+          query.ContractID = { $in: contractIds };
+        }
       } else {
-        return res.status(200).json({ success: true, count: 0, data: [] });
+        // Nếu không phải Khách hàng cụ thể nhưng có tên trong User
+        if (req.query.type === 'standalone' && req.user.username) {
+            query.customerName = { $regex: new RegExp(req.user.username, 'i') };
+        } else {
+            return res.status(200).json({ success: true, count: 0, data: [] });
+        }
       }
     }
 
@@ -57,11 +74,22 @@ exports.getRDLogById = async (req, res) => {
       const KhachHang = require('../models/KhachHang');
       const kh = await KhachHang.findOne({ AccountID: req.user._id });
       
-      const customerId = log.ContractID?.CustomerID?.toString();
-      const khId = kh?._id?.toString();
-      
-      if (!kh || !log.ContractID || customerId !== khId) {
+      if (!kh) {
         return res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập dữ liệu pha chế này.' });
+      }
+
+      if (log.ContractID) {
+        const customerId = log.ContractID.CustomerID?.toString();
+        const khId = kh._id?.toString();
+        if (customerId !== khId) {
+          return res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập dữ liệu pha chế này.' });
+        }
+      } else {
+        // Standalone request check
+        const regex = new RegExp(kh.TenKhachHang, 'i');
+        if (!regex.test(log.customerName) && log.customerName !== req.user.username) {
+          return res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập dữ liệu pha chế này.' });
+        }
       }
     }
     
@@ -81,13 +109,17 @@ exports.createRDLog = async (req, res) => {
       surface, substrate, deadline, requirements, imageUrl 
     } = req.body;
     
-    // Generate unique ID
-    const count = await NhatKyTestMau.countDocuments();
-    const MaNhatKy = `RD-${new Date().getFullYear() % 100}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(count + 1).padStart(2, '0')}`;
+    // Generate unique ID (standalone vs contract)
+    const isStandalone = !ContractID;
+    const prefix = isStandalone ? 'REQ' : 'RD';
+    
+    // Tìm các documents bắt đầu bằng prefix
+    const count = await NhatKyTestMau.countDocuments({ MaNhatKy: { $regex: `^${prefix}` } });
+    const MaNhatKy = `${prefix}-${new Date().getFullYear() % 100}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(count + 1).padStart(3, '0')}`;
     
     const payload = {
       MaNhatKy,
-      MaMauYeuCau,
+      MaMauYeuCau: MaMauYeuCau || colorName || 'CUSTOM',
       TrangThai: ContractID ? 'testing' : 'pending',
       LichSuPhienBan: [],
       customerName,
@@ -113,7 +145,10 @@ exports.createRDLog = async (req, res) => {
 exports.addVersion = async (req, res) => {
   try {
     const { result, parameters, feedback, inputWeight, outputWeight, imageUrl } = req.body;
-    const log = await NhatKyTestMau.findById(req.params.id);
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(req.params.id);
+    const log = isObjectId 
+      ? await NhatKyTestMau.findById(req.params.id) 
+      : await NhatKyTestMau.findOne({ MaNhatKy: req.params.id });
     
     if (!log) {
       return res.status(404).json({ success: false, message: 'Log not found' });
@@ -157,7 +192,10 @@ exports.addVersion = async (req, res) => {
 // @route   PATCH /api/rd-tracking/:id/sign-kcs
 exports.signKCS = async (req, res) => {
   try {
-    const log = await NhatKyTestMau.findById(req.params.id);
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(req.params.id);
+    const log = isObjectId 
+      ? await NhatKyTestMau.findById(req.params.id) 
+      : await NhatKyTestMau.findOne({ MaNhatKy: req.params.id });
     if (!log) {
       return res.status(404).json({ success: false, message: 'Log not found' });
     }
