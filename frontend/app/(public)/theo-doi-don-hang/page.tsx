@@ -103,7 +103,8 @@ export default function TrackingPage() {
           const params = new URLSearchParams(window.location.search);
           const code = params.get('code');
           const orderId = params.get('orderId');
-          if (!code && !orderId && mapped.length > 0) {
+          const tab = params.get('tab');
+          if (!code && !orderId && mapped.length > 0 && tab !== 'samples' && tab !== 'rd') {
             setSelectedTracking(mapped[0]);
             setTrackingCode(mapped[0].code);
             setActiveTab('shipment');
@@ -227,18 +228,7 @@ export default function TrackingPage() {
         setActiveTab('samples');
       }
 
-      // Load sample requests from localstorage
-      const stored = localStorage.getItem('sampleRequests');
-      if (stored) {
-        setSampleRequests(JSON.parse(stored));
-      } else {
-        const defaultRequests = [
-          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
-          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026', LichSuPhienBan: [] },
-        ];
-        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
-        setSampleRequests(defaultRequests);
-      }
+      // Xóa logic đọc localStorage, danh sách yêu cầu sẽ được fetch qua loadSampleRequests (gọi API)
 
       if (code) {
         setTrackingCode(code);
@@ -302,42 +292,32 @@ export default function TrackingPage() {
     }
   }, [isAuthenticated, activeTab]);
 
-  const loadSampleRequests = () => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('sampleRequests');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setSampleRequests(parsed);
+  const loadSampleRequests = async () => {
+    try {
+      const res = await api.get('/rd-tracking?type=standalone');
+      if (res.data.success) {
+        const mapped = res.data.data.map((item: any) => ({
+          id: item.MaNhatKy || item._id,
+          customer: item.customerName || item.ContractID?.title || 'Khách hàng',
+          colorCode: item.MaMauYeuCau || item.colorName || 'N/A',
+          surface: item.surface || 'Kim loại',
+          status: item.TrangThai || 'pending',
+          date: new Date(item.createdAt).toLocaleDateString('vi-VN'),
+          LichSuPhienBan: item.LichSuPhienBan || [],
+          signedBy: item.signedBy,
+          signedAt: item.signedAt
+        }));
 
-        // Find user display name
-        const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-        const myReqs = parsed.filter((r: any) =>
-          r.customer === displayName ||
-          (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
-        );
+        setSampleRequests(mapped);
 
-        if (myReqs.length > 0) {
-          setSelectedSample(myReqs[0]);
+        if (mapped.length > 0) {
+          setSelectedSample(mapped[0]);
         } else {
           setSelectedSample(null);
         }
-      } else {
-        const defaultRequests = [
-          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
-          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026', LichSuPhienBan: [] },
-        ];
-        setSampleRequests(defaultRequests);
-        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
-
-        const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-        const myReqs = defaultRequests.filter((r: any) =>
-          r.customer === displayName ||
-          (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
-        );
-        if (myReqs.length > 0) {
-          setSelectedSample(myReqs[0]);
-        }
       }
+    } catch (e) {
+      console.error('Error fetching sample requests:', e);
     }
   };
 
@@ -353,17 +333,13 @@ export default function TrackingPage() {
         const success = await fetchSingleTracking(trackingCode);
         if (success) return;
 
-        // Try searching in local R&D in case they entered R&D code under shipping tab
-        const stored = localStorage.getItem('sampleRequests');
-        if (stored) {
-          const reqs = JSON.parse(stored);
-          const foundRD = reqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
-          if (foundRD) {
-            setSelectedSample(foundRD);
-            setActiveTab('samples');
-            setSelectedTracking(null);
-            return;
-          }
+        // Try searching in sampleRequests state
+        const foundRD = sampleRequests.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
+        if (foundRD) {
+          setSelectedSample(foundRD);
+          setActiveTab('samples');
+          setSelectedTracking(null);
+          return;
         }
 
         // Try DB R&D
@@ -372,24 +348,16 @@ export default function TrackingPage() {
           return;
         }
 
-        toast.error('Không tìm thấy mã tracking vận chuyển. Thử: VTSC-240601-001 hoặc VTSC-240610-002');
+        toast.error('Không tìm thấy mã tracking vận chuyển.');
       }
     } else {
       // Searching under RD tab
-      const stored = localStorage.getItem('sampleRequests');
-      let localReqs = [];
-      if (stored) {
-        localReqs = JSON.parse(stored);
-      }
-
-      const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
+      const foundRD = sampleRequests.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
       if (foundRD) {
         setSelectedSample(foundRD);
         setSelectedTracking(null);
-      } else if (!trackingCode.toLowerCase().startsWith('req-')) {
-        fetchDBRDRequest(trackingCode);
       } else {
-        toast.error('Không tìm thấy yêu cầu R&D. Thử: REQ-001 hoặc REQ-002');
+        fetchDBRDRequest(trackingCode);
       }
     }
   };
@@ -440,13 +408,11 @@ export default function TrackingPage() {
     upcoming: 'bg-slate-100 text-slate-400 border border-slate-200',
   };
 
-  // Filter requests for the current customer
-  const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
+  // Filter requests (Backend already filtered by user ID for security)
   const customerRequests = filteredSampleRequests.filter(req => {
-    const isMine = req.customer === displayName || (req.customer && req.customer.toLowerCase() === displayName.toLowerCase());
     const matchSearch = req.id.toLowerCase().includes(sampleSearchTerm.toLowerCase()) ||
       (req.colorCode && req.colorCode.toLowerCase().includes(sampleSearchTerm.toLowerCase()));
-    return isMine && matchSearch;
+    return matchSearch;
   });
 
   return (
@@ -675,7 +641,7 @@ export default function TrackingPage() {
                   <div className="mt-8 flex justify-center">
                     <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center shrink-0">
                       <QRCodeSVG
-                        value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking?code=${selectedTracking.code}`}
+                        value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/theo-doi-don-hang?code=${selectedTracking.code}`}
                         size={100}
                         bgColor="#ffffff"
                         fgColor="#0a0e27"
@@ -745,7 +711,7 @@ export default function TrackingPage() {
                         )}
                       </div>
                       <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 group-hover:bg-white transition-colors">
-                        <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking?code=${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
+                        <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/theo-doi-don-hang?code=${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
                       </div>
                     </div>
                   );
@@ -874,7 +840,7 @@ export default function TrackingPage() {
                             <QrCode size={16} /> QR Code
                           </button>
                           <Link
-                            href={`/tracking?tab=samples&code=${req.id}`}
+                            href={`/rd-tracking/${req.id}`}
                             className="flex-1 flex justify-center items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-600/20 hover:-translate-y-0.5 transition-all"
                           >
                             Xem chi tiết <ChevronRight size={16} />
@@ -923,7 +889,7 @@ export default function TrackingPage() {
 
               <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center justify-center">
                 <QRCodeSVG
-                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking?tab=samples&code=${qrRequestId}`}
+                  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/theo-doi-don-hang/rd/${qrRequestId}`}
                   size={180}
                   bgColor="#f8fafc"
                   fgColor="#0f172a"

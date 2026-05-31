@@ -52,41 +52,32 @@ export default function RDTrackingPage() {
   useEffect(() => {
     fetchLogs();
     fetchContracts();
-
-    // Load sample requests from localStorage
-    if (typeof window !== "undefined") {
-      const storedRequests = localStorage.getItem("sampleRequests");
-      if (storedRequests) {
-        setSampleRequests(JSON.parse(storedRequests));
-      } else {
-        const defaultRequests = [
-          {
-            id: "REQ-001",
-            customer: "NCC Aluminium",
-            colorCode: "INT-D2525",
-            surface: "Nhôm định hình",
-            status: "pending",
-            date: "12/05/2026",
-          },
-          {
-            id: "REQ-002",
-            customer: "VPIC Steel",
-            colorCode: "RAL-9005",
-            surface: "Thép tấm",
-            status: "processing",
-            date: "11/05/2026",
-          },
-        ];
-        setSampleRequests(defaultRequests);
-        localStorage.setItem("sampleRequests", JSON.stringify(defaultRequests));
-      }
-    }
+    fetchSampleRequests();
   }, []);
+
+  const fetchSampleRequests = async () => {
+    try {
+      const res = await api.get("/rd-tracking?type=standalone");
+      if (res.data.success) {
+        const mapped = res.data.data.map((item: any) => ({
+          id: item.MaNhatKy || item._id,
+          customer: item.customerName || item.ContractID?.title || "Khách hàng",
+          colorCode: item.MaMauYeuCau || item.colorName || "N/A",
+          surface: item.surface || "Kim loại",
+          status: item.TrangThai || "pending",
+          date: new Date(item.createdAt).toLocaleDateString("vi-VN"),
+        }));
+        setSampleRequests(mapped);
+      }
+    } catch (err) {
+      console.error("Failed to fetch sample requests:", err);
+    }
+  };
 
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/rd-tracking");
+      const res = await api.get("/rd-tracking?type=contract");
       if (res.data.success) {
         setData(res.data.data);
       }
@@ -103,17 +94,6 @@ export default function RDTrackingPage() {
       if (res.data.success) {
         const fetchedContracts = res.data.data;
         setContracts(fetchedContracts);
-
-        // Khôi phục dữ liệu từ localStorage (Yêu cầu mẫu thử được tạo qua form /rd-tracking/new)
-        let localRequests: any[] = [];
-        try {
-          const stored = localStorage.getItem('sampleRequests');
-          if (stored) localRequests = JSON.parse(stored);
-        } catch (e) {
-          console.error('Error parsing local sample requests', e);
-        }
-
-        setSampleRequests(localRequests);
       }
     } catch (err) {
       console.error("Failed to fetch contracts:", err);
