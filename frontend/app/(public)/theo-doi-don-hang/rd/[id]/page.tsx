@@ -6,8 +6,10 @@ import {
   Clock, Beaker, CheckCircle2, ArrowLeft, Calendar, Layers, XCircle, User, Image as ImageIcon
 } from 'lucide-react';
 import { toast } from '@/lib/utils/notification';
-import api from '@/lib/utils/axiosAuth';
+import axios from 'axios';
 import { useAuthStore } from '@/lib/store/authStore';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export default function RDTrackingDetailPage() {
   const params = useParams();
@@ -27,9 +29,9 @@ export default function RDTrackingDetailPage() {
   const loadRequest = async (code: string) => {
     setLoading(true);
 
-    // 1. Fetch from DB first
+    // 1. Fetch from DB first (public route, no auth required)
     try {
-      const res = await api.get(`/rd-tracking/${code}`);
+      const res = await axios.get(`${API_URL}/rd-tracking/track/${code}`);
       if (res.data.success) {
         const item = res.data.data;
         const itemCustomer = item.ContractID?.title || 'Khách hàng';
