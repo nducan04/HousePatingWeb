@@ -103,7 +103,8 @@ export default function TrackingPage() {
           const params = new URLSearchParams(window.location.search);
           const code = params.get('code');
           const orderId = params.get('orderId');
-          if (!code && !orderId && mapped.length > 0) {
+          const tab = params.get('tab');
+          if (!code && !orderId && mapped.length > 0 && tab !== 'samples' && tab !== 'rd') {
             setSelectedTracking(mapped[0]);
             setTrackingCode(mapped[0].code);
             setActiveTab('shipment');
@@ -201,23 +202,7 @@ export default function TrackingPage() {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Load sample requests from localstorage
-      const stored = localStorage.getItem('sampleRequests');
-      let localReqs = [];
-      if (stored) {
-        localReqs = JSON.parse(stored);
-        setSampleRequests(localReqs);
-      } else {
-        const defaultRequests = [
-          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
-          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026', LichSuPhienBan: [] },
-        ];
-        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
-        setSampleRequests(defaultRequests);
-        localReqs = defaultRequests;
-      }
-    }
+    // Không dùng localStorage nữa, loadSampleRequests sẽ được gọi khi có user
   }, []);
 
   // Separate effect to handle query params so it doesn't depend on filteredTrackingData length
@@ -249,17 +234,8 @@ export default function TrackingPage() {
             setActiveTab('shipment');
           }
         }).catch(e => {
-          // Check local R&D requests
-          const stored = localStorage.getItem('sampleRequests');
-          const localReqs = stored ? JSON.parse(stored) : [];
-          const foundRD = localReqs.find((r: any) => r.id === code);
-          if (foundRD) {
-            setSelectedSample(foundRD);
-            setActiveTab('samples');
-          } else {
-            if (!code.toLowerCase().startsWith('req-')) {
-              fetchDBRDRequest(code);
-            }
+          if (!code.toLowerCase().startsWith('req-')) {
+            fetchDBRDRequest(code);
           }
         });
       }
@@ -301,42 +277,19 @@ export default function TrackingPage() {
     }
   }, [isAuthenticated, activeTab]);
 
-  const loadSampleRequests = () => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('sampleRequests');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setSampleRequests(parsed);
-
-        // Find user display name
-        const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-        const myReqs = parsed.filter((r: any) =>
-          r.customer === displayName ||
-          (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
-        );
-
-        if (myReqs.length > 0) {
-          setSelectedSample(myReqs[0]);
-        } else {
-          setSelectedSample(null);
-        }
-      } else {
-        const defaultRequests = [
-          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
-          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026', LichSuPhienBan: [] },
-        ];
-        setSampleRequests(defaultRequests);
-        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
-
-        const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-        const myReqs = defaultRequests.filter((r: any) =>
-          r.customer === displayName ||
-          (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
-        );
-        if (myReqs.length > 0) {
-          setSelectedSample(myReqs[0]);
+  const loadSampleRequests = async () => {
+    try {
+      const res = await api.get('/rd-tracking?type=standalone');
+      if (res.data.success) {
+        const mapped = res.data.data.map(mapDBRDToUI);
+        setSampleRequests(mapped);
+        
+        if (mapped.length > 0) {
+          setSelectedSample(mapped[0]);
         }
       }
+    } catch (err) {
+      console.error('Failed to load sample requests:', err);
     }
   };
 
@@ -359,20 +312,6 @@ export default function TrackingPage() {
           // Continue to RD search
         }
         
-        // Try searching in local R&D in case they entered R&D code under shipping tab
-        const stored = localStorage.getItem('sampleRequests');
-        if (stored) {
-          const reqs = JSON.parse(stored);
-          const foundRD = reqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
-          if (foundRD) {
-            setSelectedSample(foundRD);
-            setActiveTab('samples');
-            setSelectedTracking(null);
-            return;
-          }
-        }
-
-        // Try DB R&D
         if (!trackingCode.toLowerCase().startsWith('req-')) {
           fetchDBRDRequest(trackingCode);
           return;
@@ -382,20 +321,14 @@ export default function TrackingPage() {
       }
     } else {
       // Searching under RD tab
-      const stored = localStorage.getItem('sampleRequests');
-      let localReqs = [];
-      if (stored) {
-        localReqs = JSON.parse(stored);
-      }
-
-      const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
+      const foundRD = sampleRequests.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
       if (foundRD) {
         setSelectedSample(foundRD);
         setSelectedTracking(null);
       } else if (!trackingCode.toLowerCase().startsWith('req-')) {
         fetchDBRDRequest(trackingCode);
       } else {
-        toast.error('Không tìm thấy yêu cầu R&D. Thử: REQ-001 hoặc REQ-002');
+        toast.error('Không tìm thấy yêu cầu R&D.');
       }
     }
   };
@@ -446,13 +379,11 @@ export default function TrackingPage() {
     upcoming: 'bg-slate-100 text-slate-400 border border-slate-200',
   };
 
-  // Filter requests for the current customer
-  const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
+  // Filter requests (Backend already filtered by user ID for security)
   const customerRequests = filteredSampleRequests.filter(req => {
-    const isMine = req.customer === displayName || (req.customer && req.customer.toLowerCase() === displayName.toLowerCase());
     const matchSearch = req.id.toLowerCase().includes(sampleSearchTerm.toLowerCase()) ||
       (req.colorCode && req.colorCode.toLowerCase().includes(sampleSearchTerm.toLowerCase()));
-    return isMine && matchSearch;
+    return matchSearch;
   });
 
   return (
@@ -891,7 +822,7 @@ export default function TrackingPage() {
                             <QrCode size={16} /> QR Code
                           </button>
                           <Link
-                            href={`/tracking/rd/${req.id}`}
+                            href={`/rd-tracking/${req.id}`}
                             className="flex-1 flex justify-center items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-600/20 hover:-translate-y-0.5 transition-all"
                           >
                             Xem chi tiết <ChevronRight size={16} />
