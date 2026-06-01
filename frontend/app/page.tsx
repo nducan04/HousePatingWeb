@@ -478,8 +478,6 @@ export default function HomePage() {
         if (redirectPath) {
           router.push(redirectPath);
           setRedirectPath(null);
-        } else if (role === "Admin" || role === "Director") {
-          router.push("/dashboard");
         } else if (role === "NhanVien") {
           router.push("/quan-ly-san-pham");
         } else {

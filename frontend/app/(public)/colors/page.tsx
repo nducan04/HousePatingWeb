@@ -108,9 +108,7 @@ export default function ColorsPage() {
           return;
         }
         const role = res.data.user.role;
-        if (role === "Admin" || role === "Director") {
-          router.push("/dashboard");
-        } else if (role === "NhanVien") {
+        if (role === "NhanVien") {
           router.push("/quan-ly-san-pham");
         } else {
           router.push("/");
