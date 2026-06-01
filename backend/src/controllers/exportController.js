@@ -125,8 +125,8 @@ const exportTargetsExcel = async (req, res) => {
       { header: 'Năm', key: 'year', width: 10 },
       { header: 'Mã KH', key: 'MaKH', width: 15 },
       { header: 'Tên KH', key: 'TenKhachHang', width: 35 },
-      { header: 'Target (Kg)', key: 'targetKg', width: 15 },
-      { header: 'Thực tế (Kg)', key: 'actualKg', width: 15 },
+      { header: 'Target (Thùng)', key: 'targetKg', width: 15 },
+      { header: 'Thực tế (Thùng)', key: 'actualKg', width: 15 },
     ];
 
     const rows = targets.map(t => ({

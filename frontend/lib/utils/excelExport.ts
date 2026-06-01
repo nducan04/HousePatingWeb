@@ -80,7 +80,7 @@ export const exportDashboardToExcel = async (
 
   const kpiRows = [
     [1, 'Tổng doanh thu', totalRevenue, 'Triệu VNĐ', 'Doanh số kinh doanh thực tế đạt được'],
-    [2, 'Tổng sản lượng xuất bán', totalProduction, 'KG (Kilogram)', 'Sản lượng phân phối qua các kho hàng'],
+    [2, 'Tổng sản lượng xuất bán', totalProduction, 'KG (Thùng)', 'Sản lượng phân phối qua các kho hàng'],
     [3, 'Tổng số đơn đặt hàng', customerCount, 'Đơn hàng', 'Số lượng giao dịch thành công phát sinh'],
     [4, 'Tổng số khách hàng tương tác', customerCount, 'Khách hàng', 'Đối tác phát sinh hóa đơn & hợp đồng'],
   ];
@@ -389,8 +389,8 @@ export const exportBusinessReportExcel = async (
 
   // Khối 2: Bảng chi tiết
   const tableStartRow = 11;
-  const headers = ['STT', 'Mã Đơn Hàng', 'Ngày Bán', 'Khách Hàng', 'Loại Hình', 'Sản Phẩm', 'Số Lượng (kg)', 'Đơn Giá (VNĐ)', 'Thuế (8%)', 'Tổng Tiền Thanh Toán (VNĐ)'];
-
+  const headers = ['STT', 'Mã Đơn Hàng', 'Ngày Bán', 'Khách Hàng', 'Loại Hình', 'Sản Phẩm', 'Số Lượng (thùng)', 'Đơn Giá (VNĐ)', 'Thuế (8%)', 'Tổng Tiền Thanh Toán (VNĐ)'];
+  
   const headerRow = sheet.getRow(tableStartRow);
   headerRow.values = headers;
   headerRow.font = headerFont;
@@ -545,8 +545,8 @@ export const exportInventoryReportExcel = async (
 
   // Khối 2: Bảng chi tiết
   const tableStartRow = 11;
-  const headers = ['STT', 'Mã SKU', 'Tên Sản Phẩm/Màu Sơn', 'Phân Loại', 'Số Lượng Tồn Kho (kg)', 'Đơn Giá Tồn (VNĐ)', 'Tổng Giá Trị Tồn Kho (VNĐ)'];
-
+  const headers = ['STT', 'Mã SKU', 'Tên Sản Phẩm/Màu Sơn', 'Phân Loại', 'Số Lượng Tồn Kho (thùng)', 'Đơn Giá Tồn (VNĐ)', 'Tổng Giá Trị Tồn Kho (VNĐ)'];
+  
   const headerRow = sheet.getRow(tableStartRow);
   headerRow.values = headers;
   headerRow.font = headerFont;
@@ -702,8 +702,8 @@ export const exportProductionReportExcel = async (
 
   // Khối 2: Bảng chi tiết
   const tableStartRow = 11;
-  const headers = ['STT', 'Mã Yêu Cầu R&D', 'Tên Khách Hàng B2B', 'Mã Màu Mục Tiêu', 'Khối Lượng Thử Nghiệm (kg)', 'Trạng Thái Xử Lý', 'Kỹ sư phụ trách'];
-
+  const headers = ['STT', 'Mã Yêu Cầu R&D', 'Tên Khách Hàng B2B', 'Mã Màu Mục Tiêu', 'Khối Lượng Thử Nghiệm (thùng)', 'Trạng Thái Xử Lý', 'Kỹ sư phụ trách'];
+  
   const headerRow = sheet.getRow(tableStartRow);
   headerRow.values = headers;
   headerRow.font = headerFont;

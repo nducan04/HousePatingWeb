@@ -12,6 +12,17 @@ const maMauSchema = new mongoose.Schema({
   TonKhoTamGiu: { type: Number, default: 0, min: 0 },  // Đã ký hợp đồng nhưng chưa xuất kho
   NguongCanhBao: { type: Number, default: 200 },       // Dưới 200kg sẽ báo động đỏ
   
+  // THÔNG SỐ KỸ THUẬT CHI TIẾT CỦA MÀU SƠN
+  ThongSoKyThuat: {
+    DanhMuc: { type: String },
+    DoBong: { type: String },
+    BeMat: { type: String },
+    UngDung: { type: String },
+    DoPhuLyThuyet: { type: String },
+    QuyCachDongGoi: { type: String },
+    QuyTrinhPhaChe: { type: String }
+  },
+
   TrangThai: { type: Boolean, default: true },
 }, { _id: true });
 
@@ -31,10 +42,10 @@ const sanPhamSonSchema = new mongoose.Schema({
   DonViTinh: { 
     type: String, 
     enum: {
-      values: ['Thùng', 'Kg'],
+      values: ['Thùng', 'Thùng'],
       message: 'Đơn vị tính không hợp lệ'
     }, 
-    default: 'Kg' 
+    default: 'Thùng' 
   },
   DonGiaCoSo: { type: Number, required: [true, 'Vui lòng nhập đơn giá'], min: [0, 'Giá không được âm'] },
   HinhAnh: [{ type: String, trim: true }],

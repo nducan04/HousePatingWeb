@@ -249,7 +249,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
                     <tr key={i}>
                       <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.productName}</td>
                       <td>{item.colorCode || '—'}</td>
-                      <td>{item.quantity?.toLocaleString('vi-VN')} Kg</td>
+                      <td>{item.quantity?.toLocaleString('vi-VN')} thùng</td>
                       <td>{item.unitPrice?.toLocaleString('vi-VN')}</td>
                       <td style={{ fontWeight: 600, color: '#d97706' }}>
                         {(item.quantity * item.unitPrice).toLocaleString('vi-VN')}

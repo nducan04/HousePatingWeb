@@ -17,7 +17,7 @@ const thanhPhanSchema = new mongoose.Schema({
     max: 100
   },
   KhoiLuongDinhMuc: {
-    type: Number, // Tính toán mặc định cho 1 đơn vị cơ sở (kg)
+    type: Number, // Tính toán mặc định cho 1 đơn vị cơ sở (thùng)
     default: 0
   }
 }, { _id: false });

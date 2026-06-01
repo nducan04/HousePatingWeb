@@ -56,7 +56,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           name: item.TenNguyenVatLieu,
           category: item.PhanLoai || 'Resin',
           stock: item.TonKho || 0,
-          unit: item.DonViTinh || 'kg',
+          unit: item.DonViTinh || 'thùng',
           cost: item.DonGia || 0,
           supplier: item.NhaCungCap?.TenNCC || 'Local'
         }));
@@ -588,7 +588,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                       onChange={e => setNewVersion(p => ({ ...p, inputWeight: e.target.value }))}
                     />
                     <div className="absolute inset-y-0 right-4 flex items-center text-sm text-gray-400 font-medium pointer-events-none">
-                      kg
+                      thùng
                     </div>
                   </div>
                 </div>
@@ -691,7 +691,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                           setNewVersion(p => ({ ...p, components: comps }));
                         }}
                       />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">kg</span>
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">thùng</span>
                     </div>
 
                     {newVersion.components.length > 1 && (
@@ -845,10 +845,10 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
-                        Input: <span className="font-black">{v.inputWeight}kg</span>
+                        Input: <span className="font-black">{v.inputWeight}thùng</span>
                       </div>
                       <div className="bg-purple-50 text-purple-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
-                        Output: <span className="font-black">{v.outputWeight}kg</span>
+                        Output: <span className="font-black">{v.outputWeight}thùng</span>
                       </div>
                       <div className={`px-3 py-1.5 rounded-xl text-[12px] font-bold ${parseFloat(wastage) > 5 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
                         }`}>

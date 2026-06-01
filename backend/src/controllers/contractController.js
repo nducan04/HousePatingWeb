@@ -496,7 +496,7 @@ exports.generatePreviewPDF = async (req, res) => {
           doc.font(font).fontSize(10).fillColor('#000000');
           doc.text(item.productName, col1 + 5, y + 7, { width: 120 });
           doc.font(fontBold).text(item.colorCode || '—', col2, y + 7, { width: 70, align: 'center' });
-          doc.font(font).text(item.quantity.toLocaleString('vi-VN') + ' Kg', col3, y + 7, { width: 70, align: 'center' });
+          doc.font(font).text(item.quantity.toLocaleString('vi-VN') + ' Thùng', col3, y + 7, { width: 70, align: 'center' });
           doc.text(item.unitPrice.toLocaleString('vi-VN') + 'đ', col4 - 5, y + 7, { width: 95, align: 'right' });
           doc.font(fontBold).text(lineTotal.toLocaleString('vi-VN') + 'đ', col5 - 5, y + 7, { width: 95, align: 'right' });
           

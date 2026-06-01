@@ -110,8 +110,8 @@ export default function PackagingDetailPage({ params }: { params: { id: string }
             <tr>
               <th>Loại Bao Bì</th>
               <th style={{ textAlign: 'center' }}>Số Lượng</th>
-              <th style={{ textAlign: 'center' }}>Khối Lượng Tịnh (Kg/ĐV)</th>
-              <th style={{ textAlign: 'right' }}>Thành Tiền (Kg)</th>
+              <th style={{ textAlign: 'center' }}>Khối Lượng Tịnh (Thùng/ĐV)</th>
+              <th style={{ textAlign: 'right' }}>Thành Tiền (Thùng)</th>
             </tr>
           </thead>
           <tbody>
@@ -127,7 +127,7 @@ export default function PackagingDetailPage({ params }: { params: { id: string }
           <tfoot>
             <tr style={{ background: 'rgba(0,212,255,0.05)' }}>
               <td colSpan={3} style={{ fontWeight: 800, textAlign: 'right', color: '#475569' }}>TỔNG KHỐI LƯỢNG TỊNH (NET WEIGHT):</td>
-              <td style={{ textAlign: 'right', fontWeight: 900, fontSize: 18, color: '#059669' }}>{data.NetWeightTotal} Kg</td>
+              <td style={{ textAlign: 'right', fontWeight: 900, fontSize: 18, color: '#059669' }}>{data.NetWeightTotal} thùng</td>
             </tr>
           </tfoot>
         </table>

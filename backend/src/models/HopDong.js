@@ -21,8 +21,8 @@ const mongoose = require('mongoose');
 const chiTietHopDongSchema = new mongoose.Schema({
   productName: { type: String, required: true },     // Tên sản phẩm / Dòng sơn
   colorCode: { type: String, default: '' },           // Mã màu sơn
-  quantity: { type: Number, required: true },          // Khối lượng (Kg)
-  unitPrice: { type: Number, required: true },         // Đơn giá (VNĐ/Kg)
+  quantity: { type: Number, required: true },          // Khối lượng (Thùng)
+  unitPrice: { type: Number, required: true },         // Đơn giá (VNĐ/Thùng)
   technicalReqs: { type: String, default: '' }         // Yêu cầu kỹ thuật đặc thù
 }, { _id: false });
 

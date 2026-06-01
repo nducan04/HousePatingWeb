@@ -7,8 +7,8 @@ const lichSuPhienBanSchema = new mongoose.Schema({
   result: { type: String, enum: ['pass', 'fail', 'pending'], default: 'pending' },
   parameters: { type: String, required: true },
   feedback: { type: String },
-  inputWeight: { type: Number, default: 0 }, // Khối lượng đầu vào (kg)
-  outputWeight: { type: Number, default: 0 }, // Khối lượng thực thu (kg)
+  inputWeight: { type: Number, default: 0 }, // Khối lượng đầu vào (thùng)
+  outputWeight: { type: Number, default: 0 }, // Khối lượng thực thu (thùng)
   images: [{ type: String }], // Mảng URL ảnh (để sau này gắn ImageKit)
   imageUrl: { type: String }, // URL ảnh đại diện cho mẻ test (IPFS)
   tester: { type: String, required: true },

@@ -130,7 +130,7 @@ export default function PackagingPage() {
         <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
           <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>KHỐI LƯỢNG TỊNH</div>
           <div style={{ fontSize: 28, fontWeight: 800, color: '#d97706' }}>
-            {slips.reduce((acc, s) => acc + s.NetWeightTotal, 0).toLocaleString()} <span style={{ fontSize: 14 }}>Kg</span>
+            {slips.reduce((acc, s) => acc + s.NetWeightTotal, 0).toLocaleString()} <span style={{ fontSize: 14 }}>Thùng</span>
           </div>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
@@ -186,7 +186,7 @@ export default function PackagingPage() {
                       <div key={idx} style={{ fontSize: 11 }}>{spec.containerType} x {spec.quantity}</div>
                     ))}
                   </td>
-                  <td style={{ fontWeight: 700 }}>{s.NetWeightTotal} kg</td>
+                  <td style={{ fontWeight: 700 }}>{s.NetWeightTotal} thùng</td>
                   <td style={{ fontSize: 12 }}>{new Date(s.createdAt).toLocaleDateString()}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -282,7 +282,7 @@ export default function PackagingPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {packagingData.specs.map((spec, idx) => (
                     <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 12, alignItems: 'center' }}>
-                      <div className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ background: '#ffffff', fontSize: 12 }}>{spec.containerType} ( {spec.unitWeight} kg )</div>
+                      <div className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ background: '#ffffff', fontSize: 12 }}>{spec.containerType} ( {spec.unitWeight} thùng )</div>
                       <input 
                         type="number" 
                         className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
@@ -291,7 +291,7 @@ export default function PackagingPage() {
                         onChange={e => updateSpec(idx, 'quantity', parseInt(e.target.value) || 0)}
                       />
                       <div style={{ textAlign: 'right', fontWeight: 700, fontSize: 14 }}>
-                        {(spec.quantity * spec.unitWeight).toLocaleString()} <span style={{ fontSize: 10, color: '#94a3b8' }}>Kg</span>
+                        {(spec.quantity * spec.unitWeight).toLocaleString()} <span style={{ fontSize: 10, color: '#94a3b8' }}>Thùng</span>
                       </div>
                     </div>
                   ))}
@@ -321,7 +321,7 @@ export default function PackagingPage() {
               <div style={{ marginTop: 10, padding: 15, borderRadius: 8, background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>TỔNG KHỐI LƯỢNG THỰC XUẤT:</div>
                 <div style={{ fontSize: 24, fontWeight: 900, color: '#059669' }}>
-                  {packagingData.specs.reduce((acc, s) => acc + (s.quantity * s.unitWeight), 0).toLocaleString()} <span style={{ fontSize: 14 }}>Kg</span>
+                  {packagingData.specs.reduce((acc, s) => acc + (s.quantity * s.unitWeight), 0).toLocaleString()} <span style={{ fontSize: 14 }}>Thùng</span>
                 </div>
               </div>
 

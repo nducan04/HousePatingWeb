@@ -585,7 +585,7 @@ export default function ContractsPage() {
                         </div>
                       </div>
                       <div className="input-group-premium md:col-span-2 lg:col-span-2">
-                        <label className="form-label-mini">Số lượng (Kg)</label>
+                        <label className="form-label-mini">Số lượng (Thùng)</label>
                         <input type="number" className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="0" value={newItem.quantity} onChange={e => setNewItem({ ...newItem, quantity: Number(e.target.value) })} />
                       </div>
                       <div className="input-group-premium md:col-span-6 lg:col-span-2">
@@ -628,7 +628,7 @@ export default function ContractsPage() {
                               {item.technicalReqs && <div style={{ fontSize: 11, opacity: 0.5 }}>{item.technicalReqs}</div>}
                             </td>
                             <td><span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#7c3aed' }}>{item.colorCode}</span></td>
-                            <td><span style={{ fontWeight: 700 }}>{item.quantity}</span> <span style={{ opacity: 0.5 }}>Kg</span></td>
+                            <td><span style={{ fontWeight: 700 }}>{item.quantity}</span> <span style={{ opacity: 0.5 }}>Thùng</span></td>
                             <td>{item.unitPrice.toLocaleString()} ₫</td>
                             <td><span style={{ fontWeight: 900, color: '#2563eb' }}>{(item.quantity * item.unitPrice).toLocaleString()}</span> ₫</td>
                             <td style={{ textAlign: 'right', paddingRight: 24 }}>

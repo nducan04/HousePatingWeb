@@ -4,6 +4,7 @@ import AuthProvider from '@/lib/components/AuthProvider';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import AlertOverride from '@/components/AlertOverride';
+import GlobalChatbot from '@/components/GlobalChatbot';
 
 const inter = Inter({
   subsets: ['latin', 'vietnamese'],

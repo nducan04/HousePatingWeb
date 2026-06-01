@@ -82,7 +82,7 @@ const MOCK_DATA: SanPham[] = [
     PhanLoai: "Sơn tĩnh điện",
     DonGiaCoSo: 65000,
     MoTa: "Sơn bột tĩnh điện Epoxy có độ bóng cao, chịu va đập tốt, chuyên dùng cho nội thất gia đình và văn phòng.",
-    DonViTinh: "Kg",
+    DonViTinh: "Thùng",
     TongTonKho: 1250,
     HinhAnh: ["https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?auto=format&fit=crop&q=80&w=400&h=400", "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400&h=400"],
     DanhSachMaMau: [{ MaMau: "WHT01", TenMau: "Trắng", HexCode: "#FFFFFF", TonKhoKhaDung: 500, TonKhoTamGiu: 0, NguongCanhBao: 100, TrangThai: true }]
@@ -121,7 +121,7 @@ const MOCK_DATA: SanPham[] = [
     PhanLoai: "Sơn tĩnh điện",
     DonGiaCoSo: 72000,
     MoTa: "Kháng UV cực tốt, chống phai màu, chịu thời tiết khắc nghiệt. Phù hợp cho khung nhôm cửa kính.",
-    DonViTinh: "Kg",
+    DonViTinh: "Thùng",
     TongTonKho: 320,
     HinhAnh: ["https://images.unsplash.com/photo-1502325966718-85a90488dc29?auto=format&fit=crop&q=80&w=400&h=400"],
     DanhSachMaMau: []
@@ -182,7 +182,7 @@ export default function SanPhamPage() {
     PhanLoai: "Sơn tĩnh điện",
     DonGiaCoSo: 0,
     MoTa: "",
-    DonViTinh: "Kg",
+    DonViTinh: "Thùng",
     HinhAnh: [] as string[],
     MoTaSanPham: "",
     DanhSachMaMau: [] as MaMau[],
@@ -334,7 +334,7 @@ export default function SanPhamPage() {
         PhanLoai: item.PhanLoai,
         DonGiaCoSo: item.DonGiaCoSo,
         MoTa: item.MoTa || "",
-        DonViTinh: item.DonViTinh || "Kg",
+        DonViTinh: item.DonViTinh || "Thùng",
         HinhAnh: Array.isArray(item.HinhAnh) ? item.HinhAnh : (item.HinhAnh ? [item.HinhAnh] : []),
         MoTaSanPham: item.MoTaSanPham || "",
         DanhSachMaMau: item.DanhSachMaMau || [],
@@ -354,7 +354,7 @@ export default function SanPhamPage() {
         PhanLoai: "Sơn tĩnh điện",
         DonGiaCoSo: 0,
         MoTa: "",
-        DonViTinh: "Kg",
+        DonViTinh: "Thùng",
         HinhAnh: [],
         MoTaSanPham: "",
         DanhSachMaMau: [],
@@ -476,7 +476,7 @@ export default function SanPhamPage() {
       "Phân Loại": sp.PhanLoai,
       "Đơn Giá": sp.DonGiaCoSo,
       "Tồn Kho Tổng": sp.TongTonKho || 0,
-      "Đơn Vị Tính": sp.DonViTinh || "Kg",
+      "Đơn Vị Tính": sp.DonViTinh || "Thùng",
       "Số Lượng SKU": sp.DanhSachMaMau?.length || 0,
     }));
 
@@ -878,7 +878,7 @@ export default function SanPhamPage() {
                     onChange={(e) => setFormData({ ...formData, DonViTinh: e.target.value })}
                   >
                     <option value="Thùng">Thùng</option>
-                    <option value="Kg">Kg</option>
+                    <option value="Thùng">Thùng</option>
                     <option value="Lít">Lít</option>
                   </select>
                 </div>

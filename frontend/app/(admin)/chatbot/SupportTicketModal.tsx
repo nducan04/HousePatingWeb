@@ -395,7 +395,7 @@ export default function SupportTicketModal({ isOpen, onClose, onSuccess }: Suppo
                             <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span>
                             <span className="flex-1 truncate" title={sp.productName}>{sp.productName}</span>
                             {sp.colorCode && <span className="ml-2 px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-xs">{sp.colorCode}</span>}
-                            <span className="ml-3 font-medium">{sp.quantity} kg</span>
+                            <span className="ml-3 font-medium">{sp.quantity} thùng</span>
                           </li>
                         ))}
                       </ul>
