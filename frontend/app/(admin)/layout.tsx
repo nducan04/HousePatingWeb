@@ -135,7 +135,7 @@ const allNavItems: NavSection[] = [
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/quan-ly-ma-mau",
+        href: "/colors",
         label: "Tra cứu mã màu",
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
