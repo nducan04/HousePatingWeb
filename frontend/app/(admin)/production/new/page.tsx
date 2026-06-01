@@ -136,7 +136,7 @@ export default function NewProductionOrder() {
                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                    {selectedContract.ChiTietHopDong.map((item: any, idx: number) => (
                      <div key={idx} className="badge info" style={{ fontSize: 11 }}>
-                       {item.colorCode} ({item.quantity} kg)
+                       {item.colorCode} ({item.quantity} thùng)
                      </div>
                    ))}
                  </div>
@@ -167,7 +167,7 @@ export default function NewProductionOrder() {
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Khối lượng Target (Kg)</label>
+                <label className="form-label">Khối lượng Target (Thùng)</label>
                 <div style={{ position: 'relative' }}>
                   <input 
                     type="number" 
@@ -190,7 +190,7 @@ export default function NewProductionOrder() {
                       <div key={idx} style={{ padding: 12, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                          <div style={{ fontSize: 13, fontWeight: 700 }}>{item.name}</div>
                          <div style={{ textAlign: 'right' }}>
-                           <div style={{ fontSize: 14, fontWeight: 800, color: '#2563eb' }}>{item.weight.toLocaleString()} Kg</div>
+                           <div style={{ fontSize: 14, fontWeight: 800, color: '#2563eb' }}>{item.weight.toLocaleString()} thùng</div>
                            <div style={{ fontSize: 10, color: '#94a3b8' }}>{item.ratio}% TỶ LỆ</div>
                          </div>
                       </div>

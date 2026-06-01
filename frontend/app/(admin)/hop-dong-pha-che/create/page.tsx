@@ -226,7 +226,7 @@ export default function CreateContractPage() {
                   <th>#</th>
                   <th>Tên sản phẩm *</th>
                   <th>Mã màu</th>
-                  <th>Khối lượng (Kg) *</th>
+                  <th>Khối lượng (Thùng) *</th>
                   <th>Đơn giá (VNĐ) *</th>
                   <th>Thành tiền</th>
                   <th>Yêu cầu KT</th>
@@ -341,7 +341,7 @@ export default function CreateContractPage() {
               }}>
                 <span>{d.productName} {d.colorCode ? `(${d.colorCode})` : ''}</span>
                 <span style={{ color: '#475569' }}>
-                  {d.quantity.toLocaleString('vi-VN')} Kg × {d.unitPrice.toLocaleString('vi-VN')} = <strong style={{ color: '#d97706' }}>{(d.quantity * d.unitPrice).toLocaleString('vi-VN')}</strong>
+                  {d.quantity.toLocaleString('vi-VN')} thùng × {d.unitPrice.toLocaleString('vi-VN')} = <strong style={{ color: '#d97706' }}>{(d.quantity * d.unitPrice).toLocaleString('vi-VN')}</strong>
                 </span>
               </div>
             ))}

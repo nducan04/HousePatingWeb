@@ -49,7 +49,7 @@ export default function ShopPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Basic cart state mapping
-  const { addToCart: addToCartStore } = useCartStore();
+  const { cartItems, addToCart: addToCartStore } = useCartStore();
   const [cartLoading, setCartLoading] = useState("");
   const [cartMessage, setCartMessage] = useState({ id: "", text: "" });
   const [productQuantities, setProductQuantities] = useState<Record<string, number>>({});
@@ -160,10 +160,14 @@ export default function ShopPage() {
       {/* Header Space for floating effect */}
       <div className="pt-24 px-4 sm:px-8 max-w-[1500px] mx-auto">
 
-        {/* Navigation Back */}
-        <div className="mb-6">
+        {/* Navigation Back & Cart */}
+        <div className="mb-6 flex justify-between items-center">
           <Link href="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-lg font-bold text-blue-400 shadow-sm border border-white/20 hover:bg-white/20 hover:text-blue-300 transition-all no-underline">
             ← Quay lại trang chủ
+          </Link>
+          <Link href="/cart" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 rounded-lg font-bold text-white shadow-lg hover:bg-blue-500 transition-all no-underline">
+            <ShoppingCart size={20} /> 
+            <span>Giỏ hàng {cartItems?.length > 0 && `(${cartItems.length})`}</span>
           </Link>
         </div>
 
@@ -249,7 +253,7 @@ export default function ShopPage() {
                         {sp.ThuongHieu}
                       </p>
                       <p className="text-[12px] text-slate-300 font-medium mb-4">
-                        Tồn kho: <span className="font-bold text-white">{sp.TongTonKho}</span> {sp.DonViTinh || "Kg"}
+                        Tồn kho: <span className="font-bold text-white">{sp.TongTonKho}</span> {sp.DonViTinh || "Thùng"}
                       </p>
                       <div className="mt-auto">
                         <div className="flex justify-between items-end mb-3">
@@ -258,7 +262,7 @@ export default function ShopPage() {
                               {sp.DonGiaCoSo?.toLocaleString() || 0} ₫
                             </span>
                             <span className="text-xs text-slate-400 font-medium">
-                              / {sp.DonViTinh || "Kg"}
+                              / {sp.DonViTinh || "Thùng"}
                             </span>
                           </div>
                         </div>

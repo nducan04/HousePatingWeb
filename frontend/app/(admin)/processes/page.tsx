@@ -61,7 +61,7 @@ export default function QuyTrinhPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
         <div className="kpi-card cyan">
           <div className="kpi-icon"><Layers size={22} /></div>
-          <div className="kpi-label">Tổng Khối Lượng Sản Xuất (Kg)</div>
+          <div className="kpi-label">Tổng Khối Lượng Sản Xuất (Thùng)</div>
           <div className="kpi-value">{STATS.total.toLocaleString()}</div>
         </div>
         <div className="kpi-card purple">
@@ -126,7 +126,7 @@ export default function QuyTrinhPage() {
               <th>Cấu Hình Trace Batch Chuyển Chuỗi Cung Ứng Line Pha</th>
               <th>Mã Phiếu Hợp Đồng Mẹ </th>
               <th>Tên Mẫu Model Cân Chuẩn</th>
-              <th>Target Cần Chiết Rót Tính Bình Nhựa Tấn (Kg)</th>
+              <th>Target Cần Chiết Rót Tính Bình Nhựa Tấn (Thùng)</th>
               <th>Label Zone Status - Mã Màu Khoảng Đen Trắng Hệ Trạm Khung KCS </th>
               <th>Kỹ Thuật / Master Chặn KCS Trực Ca</th>
               <th>Lốc Time Cấu Kết Nạp Nhựa Tròn Auto Log Traceability Time </th>
@@ -142,7 +142,7 @@ export default function QuyTrinhPage() {
                   {item.CongThucID?.TenCongThuc} <br />
                   <span style={{ fontSize: 11, color: '#d97706' }}>{item.CongThucID?.MaMau}</span>
                 </td>
-                <td style={{ fontWeight: 700 }}>{item.TargetWeight.toLocaleString()} <span style={{ fontSize: 12, color: '#94a3b8' }}>Kg</span></td>
+                <td style={{ fontWeight: 700 }}>{item.TargetWeight.toLocaleString()} <span style={{ fontSize: 12, color: '#94a3b8' }}>Thùng</span></td>
                 <td>
                   <span className={`badge ${item.TrangThai === 'completed' ? 'approved' : item.TrangThai === 'in_progress' ? 'testing' : 'pending'}`}>
                     {item.TrangThai === 'in_progress' ? 'Đang pha chế' : item.TrangThai === 'completed' ? 'Hoàn thành' : item.TrangThai}

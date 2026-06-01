@@ -608,7 +608,7 @@ export default function VanChuyenPage() {
             <div className="space-y-4 text-sm">
               {[
                 { label: 'Số kiện', value: `${selectedTracking.LoHang?.SoKien || 0} kiện (Đã đóng gói)` },
-                { label: 'Khối lượng', value: `${selectedTracking.LoHang?.KhoiLuong || 0} kg` },
+                { label: 'Khối lượng', value: `${selectedTracking.LoHang?.KhoiLuong || 0} thùng` },
               ].map(r => (
                 <div key={r.label} className="flex justify-between items-center">
                   <span className="text-slate-400 font-medium">{r.label}</span>
@@ -900,7 +900,7 @@ export default function VanChuyenPage() {
                       <div className="text-[12px] text-slate-400 mt-0.5">{item.DonHang?.KhachHang?.MaKH || ''}</div>
                     </td>
                     <td className="px-6 py-4 text-slate-600 text-[14px] font-medium">
-                      {item.LoHang?.SoKien || 0} kiện — {item.LoHang?.KhoiLuong || 0}kg
+                      {item.LoHang?.SoKien || 0} kiện — {item.LoHang?.KhoiLuong || 0}thùng
                     </td>
                     <td className="px-6 py-4">
                       <span className={`font-bold text-[14px] ${item.VanChuyenInfo?.NhanVien ? 'text-amber-600' : 'text-slate-400 italic'}`}>

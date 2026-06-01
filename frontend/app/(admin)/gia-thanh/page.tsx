@@ -117,7 +117,7 @@ export default function GiaThanhPage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex justify-between items-start">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">TB Giá Vốn (Gốc)</p>
-            <p className="text-2xl font-bold text-slate-900">{(STATS.avgBase / 1000).toFixed(0)}k/kg</p>
+            <p className="text-2xl font-bold text-slate-900">{(STATS.avgBase / 1000).toFixed(0)}k/thùng</p>
           </div>
           <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
             <TrendingDown strokeWidth={1.5} className="w-5 h-5 text-amber-600" />
@@ -127,7 +127,7 @@ export default function GiaThanhPage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex justify-between items-start">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">TB Giá B2B (+20%)</p>
-            <p className="text-2xl font-bold text-slate-900">{(STATS.avgB2B / 1000).toFixed(0)}k/kg</p>
+            <p className="text-2xl font-bold text-slate-900">{(STATS.avgB2B / 1000).toFixed(0)}k/thùng</p>
           </div>
           <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
             <Briefcase strokeWidth={1.5} className="w-5 h-5 text-blue-600" />
@@ -137,7 +137,7 @@ export default function GiaThanhPage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex justify-between items-start">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">TB Giá B2C (+30%)</p>
-            <p className="text-2xl font-bold text-slate-900">{(STATS.avgB2C / 1000).toFixed(0)}k/kg</p>
+            <p className="text-2xl font-bold text-slate-900">{(STATS.avgB2C / 1000).toFixed(0)}k/thùng</p>
           </div>
           <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
             <ShoppingCart strokeWidth={1.5} className="w-5 h-5 text-emerald-600" />

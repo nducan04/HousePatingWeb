@@ -192,7 +192,7 @@ exports.getDashboardStats = async (req, res) => {
       data: {
         kpi: {
           totalRevenue: { value: Math.round(globalRevenue / 1000000), unit: 'Tr VNĐ', change: revChange, label: 'Tổng Doanh Thu' },
-          totalProduction: { value: globalVolume, unit: 'kg', change: volChange, label: 'Tổng Sản Lượng' },
+          totalProduction: { value: globalVolume, unit: 'thùng', change: volChange, label: 'Tổng Sản Lượng' },
           customerCount: { value: totalCustomers, unit: 'Đối tác', change: customerChange, label: 'Tổng Khách Hàng' },
           avgOrderValue: { value: Math.round(globalRevenue / (totalCustomers || 1) / 1000000), unit: 'Tr/Khách', change: 0, label: 'Giá trị Trung bình' }
         },

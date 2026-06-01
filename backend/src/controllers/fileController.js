@@ -100,7 +100,7 @@ const importFile = async (req, res) => {
             TenNguyenVatLieu: row['Tên NVL'] || row['Tên Nguyên Vật Liệu'] || row.TenNguyenVatLieu || 'Chưa cập nhật',
             PhanLoai: row['Phân Loại'] || row.PhanLoai || 'Khác',
             TonKho: Number(row['Tồn Kho'] || row.TonKho) || 0,
-            DonViTinh: row['Đơn Vị Tính'] || row.DonViTinh || 'Kg',
+            DonViTinh: row['Đơn Vị Tính'] || row.DonViTinh || 'Thùng',
             DonGia: Number(row['Đơn Giá'] || row.DonGia) || 0,
             GhiChu: row['Ghi Chú'] || row.GhiChu || ''
           };
@@ -147,7 +147,7 @@ const importFile = async (req, res) => {
           const targetData = {
             customer: khachHang._id,
             period: { month: Number(row['Tháng'] || row.month), year: Number(row['Năm'] || row.year) },
-            targetKg: Number(row['Target (Kg)'] || row.targetKg) || 0,
+            targetKg: Number(row['Target (Thùng)'] || row.targetKg) || 0,
             targetRevenue: Number(row['Target Doanh Thu'] || row.targetRevenue) || 0
           };
 

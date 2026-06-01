@@ -234,7 +234,7 @@ export default function PhieuDetailModal({ phieu, onClose }: Props) {
                               </div>
                             )}
                           </td>
-                          <td style={tdStyle({ align: "center" })}>Kg</td>
+                          <td style={tdStyle({ align: "center" })}>Thùng</td>
                           <td style={tdStyle({ align: "center" })}>{it.SoLuong ?? ""}</td>
                           <td style={tdStyle({ align: "right" })}>
                             {it.DonGia ? it.DonGia.toLocaleString("vi-VN") : "—"}

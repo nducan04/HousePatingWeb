@@ -33,11 +33,11 @@ const SingleYearTooltip = ({ active, payload, label }: any) => {
         <div className="space-y-2">
           <div className="flex justify-between gap-6">
             <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold"><span className="w-2.5 h-2.5 rounded-full bg-purple-500" />Thực tế</span>
-            <span className="text-xs font-black text-purple-600">{thucTe.toLocaleString("vi-VN")} KG</span>
+            <span className="text-xs font-black text-purple-600">{thucTe.toLocaleString("vi-VN")} thùng</span>
           </div>
           <div className="flex justify-between gap-6">
             <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold"><span className="w-2.5 h-2.5 rounded-full bg-amber-400" />Kế hoạch</span>
-            <span className="text-xs font-black text-amber-500">{keHoach.toLocaleString("vi-VN")} KG</span>
+            <span className="text-xs font-black text-amber-500">{keHoach.toLocaleString("vi-VN")} thùng</span>
           </div>
           <div className="flex justify-between gap-6 pt-1 border-t border-slate-100">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Hoàn thành</span>
@@ -45,7 +45,7 @@ const SingleYearTooltip = ({ active, payload, label }: any) => {
           </div>
           <div className="flex justify-between gap-6">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Chênh lệch</span>
-            <span className={`text-xs font-black ${chenh >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{chenh >= 0 ? "+" : ""}{chenh.toLocaleString("vi-VN")} KG</span>
+            <span className={`text-xs font-black ${chenh >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{chenh >= 0 ? "+" : ""}{chenh.toLocaleString("vi-VN")} thùng</span>
           </div>
         </div>
       </div>
@@ -68,7 +68,7 @@ const MultiYearTooltip = ({ active, payload, label }: any) => {
               <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />{p.name}
               </span>
-              <span className="text-xs font-black" style={{ color: p.color }}>{Number(p.value).toLocaleString("vi-VN")} KG</span>
+              <span className="text-xs font-black" style={{ color: p.color }}>{Number(p.value).toLocaleString("vi-VN")} thùng</span>
             </div>
           ))}
         </div>
@@ -80,17 +80,33 @@ const MultiYearTooltip = ({ active, payload, label }: any) => {
 
 interface ProductionPlanChartProps {
   year?: "2026" | "2025" | "2024";
+  filter?: "month" | "quarter" | "year";
+  onFilterChange?: (filter: "month" | "quarter" | "year") => void;
+  onYearChange?: (year: "2026" | "2025" | "2024") => void;
+  onDataChange?: (data: any[], filter: string) => void;
 }
 
-export default function ProductionPlanChart({ year }: ProductionPlanChartProps) {
+export default function ProductionPlanChart({ year, filter, onFilterChange, onYearChange, onDataChange }: ProductionPlanChartProps) {
   const [selectedYear, setSelectedYear] = useState<"2026" | "2025" | "2024">(year || "2026");
-  const [selectedFilter, setSelectedFilter] = useState<"month" | "quarter" | "year">("month");
+  const [selectedFilter, setSelectedFilter] = useState<"month" | "quarter" | "year">(filter || "month");
 
   useEffect(() => {
-    if (year) {
-      setSelectedYear(year);
-    }
+    if (year) setSelectedYear(year);
   }, [year]);
+
+  useEffect(() => {
+    if (filter) setSelectedFilter(filter);
+  }, [filter]);
+
+  const handleFilterChange = (newFilter: "month" | "quarter" | "year") => {
+    setSelectedFilter(newFilter);
+    if (onFilterChange) onFilterChange(newFilter);
+  };
+
+  const handleYearChange = (newYear: "2026" | "2025" | "2024") => {
+    setSelectedYear(newYear);
+    if (onYearChange) onYearChange(newYear);
+  };
 
   const [chartData, setChartData] = useState<any[]>([]);
   const [multiYearData, setMultiYearData] = useState<any[]>([]);
@@ -124,9 +140,13 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
           prodPlan: results[i].data.data?.[0]?.prodPlan ?? 0,
         }));
         setMultiYearData(grouped);
+        if (onDataChange) onDataChange(grouped, "year");
       } else {
         const res = await api.get("/reports/production", { params: { year: selectedYear, filter: selectedFilter } });
-        if (res.data.success) setChartData(res.data.data);
+        if (res.data.success) {
+          setChartData(res.data.data);
+          if (onDataChange) onDataChange(res.data.data, selectedFilter);
+        }
       }
     } catch (error) {
       console.error("Lỗi khi fetch dữ liệu biểu đồ sản lượng:", error);
@@ -186,7 +206,7 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
                   {selectedFilter === "year" ? "So sánh Sản lượng các Năm" : `Sản lượng Thực tế vs Kế hoạch ${selectedYear}`}
                 </h3>
                 <p className="text-xs font-semibold text-slate-400 mt-0.5">
-                  {selectedFilter === "year" ? "Đơn vị: Kilogram (KG)" : "Đơn vị: Kilogram (KG)"}
+                  {selectedFilter === "year" ? "Đơn vị: Thùng" : "Đơn vị: Thùng"}
                 </p>
               </div>
             </div>
@@ -196,7 +216,7 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-black bg-purple-50 text-purple-600 border border-purple-100/50 shadow-sm">
                 <Package size={12} />
-                Thực tế: {totalThucTe.toLocaleString("vi-VN")} KG
+                Thực tế: {totalThucTe.toLocaleString("vi-VN")} thùng
               </span>
               <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100/50 shadow-sm">
                 <Award size={12} />
@@ -214,7 +234,7 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
 
             <select
               value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value as "month" | "quarter" | "year")}
+              onChange={(e) => handleFilterChange(e.target.value as "month" | "quarter" | "year")}
               className="px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all cursor-pointer shadow-sm"
               disabled={loading}
             >
@@ -225,7 +245,7 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
 
             <select
               value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value as any)}
+              onChange={(e) => handleYearChange(e.target.value as any)}
               className="px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all cursor-pointer shadow-sm"
               disabled={loading}
             >
@@ -256,8 +276,8 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
                 <YAxis
                   axisLine={false} tickLine={false}
                   tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
-                  label={{ value: "Sản lượng (KG)", dy: 50, angle: -90, position: "insideLeft", offset: 10, fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
+                  tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}M` : v.toLocaleString("vi-VN")}
+                  label={{ value: "Sản lượng (Thùng)", dy: 50, angle: -90, position: "insideLeft", offset: 10, fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
                 />
                 <Tooltip content={<MultiYearTooltip />} cursor={{ fill: "rgba(139,92,246,0.05)" }} />
                 <Legend verticalAlign="top" align="right" iconType="circle" iconSize={10}
@@ -287,8 +307,10 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
                 <YAxis
                   axisLine={false} tickLine={false}
                   tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 700 }}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
-                  label={{ value: "Sản lượng (KG)", angle: -90, position: "insideLeft", offset: 10, fill: "#94a3b8", fontSize: 18, fontWeight: 600 }}
+                  tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}M` : v.toLocaleString("vi-VN")}
+                  ticks={[0, 200, 400, 600, 800, 1000, 1200]}
+                  domain={[0, 1100]}
+                  label={{ value: "Sản lượng (Thùng)", angle: -90, position: "insideLeft", offset: 10, fill: "#94a3b8", fontSize: 18, fontWeight: 600 }}
                 />
                 <Tooltip content={<SingleYearTooltip />} cursor={{ fill: "rgba(139,92,246,0.05)" }} />
                 <Legend verticalAlign="top" align="right" iconType="circle" iconSize={10}
@@ -396,7 +418,7 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
 
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1.5">
-                  Chỉ tiêu đặt ra (KG)
+                  Chỉ tiêu đặt ra (Thùng)
                 </label>
                 <div className="relative">
                   <input
@@ -407,12 +429,9 @@ export default function ProductionPlanChart({ year }: ProductionPlanChartProps) 
                     className="w-full pl-4 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-sm font-semibold outline-none transition-all"
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                    KG
+                    Thùng
                   </div>
                 </div>
-                <p className="text-[11px] font-medium text-slate-400 mt-2 flex items-center gap-1">
-                  💡 Nhập số thực tế. Ví dụ: nhập <strong className="text-slate-600">5000</strong> tương đương 5 tấn sơn.
-                </p>
               </div>
             </div>
 

@@ -136,7 +136,7 @@ export default function QLKhoPage() {
     MaNVL: "",
     TenNguyenVatLieu: "",
     PhanLoai: "Bột màu",
-    DonViTinh: "Kg",
+    DonViTinh: "Thùng",
     DonGia: 0,
     TonKho: 0,
     NhaCungCap: "",
@@ -349,7 +349,7 @@ export default function QLKhoPage() {
       MaNVL: "",
       TenNguyenVatLieu: "",
       PhanLoai: "Bột màu",
-      DonViTinh: "Kg",
+      DonViTinh: "Thùng",
       DonGia: 0,
       TonKho: 0,
       NhaCungCap: "",
@@ -415,7 +415,7 @@ export default function QLKhoPage() {
         MaNVL: "",
         TenNguyenVatLieu: "",
         PhanLoai: "Bột màu",
-        DonViTinh: "Kg",
+        DonViTinh: "Thùng",
         DonGia: 0,
         TonKho: 0,
         NhaCungCap: "",
@@ -735,7 +735,7 @@ export default function QLKhoPage() {
       if (data.length === 0) return toast.error("Không có dữ liệu để xuất!");
       const headers = ["STT", "Mã hàng", "Tên dòng sơn", "ĐVT", "Phân loại", "Tồn kho", "Đơn giá", "Thành tiền"];
       const rows = data.map((item, i) => [
-        i + 1, item.MaSanPham, item.TenDongSon, item.DonViTinh || "Kg",
+        i + 1, item.MaSanPham, item.TenDongSon, item.DonViTinh || "Thùng",
         item.PhanLoai || "—", item.TongTonKho || 0, item.DonGiaCoSo || 0,
         (item.TongTonKho || 0) * (item.DonGiaCoSo || 0),
       ]);
@@ -935,7 +935,7 @@ export default function QLKhoPage() {
                       Phân loại
                     </th>
                     <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-48">
-                      Tồn Kho (Thùng/Kg)
+                      Tồn Kho (Thùng/Thùng)
                     </th>
                     <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                       Đơn giá Cơ sở
@@ -1608,7 +1608,7 @@ export default function QLKhoPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="VD: Kg, Lít..."
+                    placeholder="VD: Thùng, Lít..."
                     className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium"
                     value={nvlForm.DonViTinh}
                     onChange={(e) =>
