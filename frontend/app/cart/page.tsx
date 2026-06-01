@@ -364,9 +364,10 @@ export default function GioHangPage() {
           </div>
 
           {/* RIGHT COLUMN: SUMMARY & FUNCTIONS */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 sticky top-[100px]">
-              <h3 className="text-lg font-black text-[#1c3c77] mb-6">Tóm tắt đơn hàng</h3>
+          <div className="lg:col-span-4">
+            <div className="sticky top-[100px] space-y-6">
+              <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">
+                <h3 className="text-lg font-black text-[#1c3c77] mb-6">Tóm tắt đơn hàng</h3>
               
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between items-center">
@@ -471,48 +472,11 @@ export default function GioHangPage() {
                 <span className="text-[11px] font-bold text-slate-700 group-hover:text-purple-600">R&D</span>
               </Link>
             </div>
+            </div>
           </div>
         </div>
 
-        {/* BOTTOM SECTION: PRODUCT SEARCH (POS mode) */}
-        {isAdminOrEmployee && (
-          <div className="mt-8 bg-white rounded-[24px] p-6 shadow-sm mb-12 border border-slate-100">
-            <h3 className="text-lg font-black text-[#1c3c77] mb-6 flex items-center gap-2"><Plus size={20} className="text-blue-600" /> Thêm sản phẩm vào giỏ</h3>
-            <div className="relative mb-6 max-w-md">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-11 text-sm text-slate-800 outline-none focus:border-blue-500"
-                placeholder="Tìm kiếm dòng sơn..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredProducts.slice(0, 8).map(sp => (
-                <div key={sp._id} className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
-                  <div className="w-12 h-12 bg-slate-50 rounded-lg overflow-hidden flex-shrink-0 border border-slate-100">
-                    {getImageUrl(sp.HinhAnh) ? <img src={getImageUrl(sp.HinhAnh)} className="w-full h-full object-cover" alt="" /> : <Box size={20} className="m-auto mt-3 text-slate-400" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-slate-800 text-xs truncate">{sp.TenDongSon}</div>
-                    <div className="text-[#1c3c77] font-bold text-xs mt-1">{(sp.DonGiaCoSo || 0).toLocaleString()} ₫</div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      const existing = cartItems.find(i => i.SanPham?._id === sp._id);
-                      updateQuantity(sp._id, existing ? existing.SoLuong + 1 : 1);
-                    }}
-                    disabled={sp.TonKho <= 0}
-                    className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-[#1c3c77] hover:text-white transition-colors disabled:opacity-50 shrink-0"
-                  >
-                    <Plus size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
       </div>
 
     </div>
