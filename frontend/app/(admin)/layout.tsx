@@ -139,11 +139,6 @@ const allNavItems: NavSection[] = [
         label: "Tra cứu mã màu",
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
-      {
-        href: "/nhap-du-lieu",
-        label: "Nhập dữ liệu",
-        roles: ["Admin", "NhanVien"],
-      },
     ],
   },
   {
