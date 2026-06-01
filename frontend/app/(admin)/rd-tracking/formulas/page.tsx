@@ -6,91 +6,61 @@ import Link from 'next/link';
 import { paintColors } from '@/lib/data/colors-data';
 import { useAuthStore } from '@/lib/store/authStore';
 import { toast } from '@/lib/utils/notification';
+import api from '@/lib/utils/axiosAuth';
 
 export default function FormulasPage() {
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [formulas, setFormulas] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [newFormula, setNewFormula] = useState({
-    colorCode: '',
-    baseType: '',
-    nhietDo: '195',
-    components: [{ materialId: '', percentage: 0 }]
+    MaCongThuc: '',
+    TenCongThuc: '',
+    MaMau: '',
+    SanPham: '',
+    nhietDo: '195', 
+    baseType: '',   
+    components: [{ materialId: '', percentage: 0, requiredAmount: 0 }]
   });
 
   useEffect(() => {
-    // Load formulas from localStorage
-    if (typeof window !== 'undefined') {
-      const storedFormulas = localStorage.getItem('paintFormulas');
-      if (storedFormulas) {
-        setFormulas(JSON.parse(storedFormulas));
-      } else {
-        const defaultFormulas = [
-          {
-            id: 'FOR-001',
-            colorCode: 'RAL-9005',
-            colorName: 'Jet Black',
-            baseType: 'Polyester TGIC',
-            nhietDo: 200,
-            components: [
-              { materialId: 'MAT-001', name: 'Resin P-2400', percentage: 60 },
-              { materialId: 'MAT-003', name: 'Carbon Black N330', percentage: 5 },
-              { materialId: 'MAT-005', name: 'Barium Sulfate', percentage: 30 },
-              { materialId: 'MAT-007', name: 'Benzoin (Degassing)', percentage: 5 },
-            ],
-            updatedAt: '15/05/2026',
-            author: 'Nguyen Van A'
-          },
-          {
-            id: 'FOR-002',
-            colorCode: 'INT-D2525',
-            colorName: 'Silver Metallic',
-            baseType: 'Super Durable Polyester',
-            nhietDo: 195,
-            components: [
-              { materialId: 'MAT-002', name: 'Resin SD-5000', percentage: 55 },
-              { materialId: 'MAT-008', name: 'Flow Agent (PV88)', percentage: 8 },
-              { materialId: 'MAT-004', name: 'Titanium Dioxide R-902', percentage: 5 },
-              { materialId: 'MAT-006', name: 'Silica Powder', percentage: 27 },
-              { materialId: 'MAT-007', name: 'Benzoin (Degassing)', percentage: 5 },
-            ],
-            updatedAt: '14/05/2026',
-            author: 'Tran Thi B'
-          }
-        ];
-        
-        setFormulas(defaultFormulas);
-        localStorage.setItem('paintFormulas', JSON.stringify(defaultFormulas));
-      }
-
-      // Load materials from localStorage
-      const storedMaterials = localStorage.getItem('rdMaterials');
-      if (storedMaterials) {
-        setMaterials(JSON.parse(storedMaterials));
-      } else {
-        const defaultMaterials = [
-          { id: 'MAT-001', name: 'Resin P-2400', category: 'Resin', stock: 500, unit: 'kg', cost: 120000, supplier: 'DSM' },
-          { id: 'MAT-002', name: 'Resin SD-5000', category: 'Resin', stock: 300, unit: 'kg', cost: 150000, supplier: 'Allnex' },
-          { id: 'MAT-003', name: 'Carbon Black N330', category: 'Pigment', stock: 50, unit: 'kg', cost: 80000, supplier: 'Orion' },
-          { id: 'MAT-004', name: 'Titanium Dioxide R-902', category: 'Pigment', stock: 200, unit: 'kg', cost: 95000, supplier: 'Chemours' },
-          { id: 'MAT-005', name: 'Barium Sulfate', category: 'Filler', stock: 1000, unit: 'kg', cost: 25000, supplier: 'Local' },
-          { id: 'MAT-006', name: 'Silica Powder', category: 'Filler', stock: 400, unit: 'kg', cost: 35000, supplier: 'Local' },
-          { id: 'MAT-007', name: 'Benzoin (Degassing)', category: 'Additive', stock: 20, unit: 'kg', cost: 200000, supplier: 'Evonik' },
-          { id: 'MAT-008', name: 'Flow Agent (PV88)', category: 'Additive', stock: 30, unit: 'kg', cost: 180000, supplier: 'Estron' },
-        ];
-        setMaterials(defaultMaterials);
-        localStorage.setItem('rdMaterials', JSON.stringify(defaultMaterials));
-      }
-    }
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [formulasRes, materialsRes, productsRes] = await Promise.all([
+        api.get('/formulas'),
+        api.get('/kho/nguyen-vat-lieu'),
+        api.get('/san-pham-son')
+      ]);
+
+      if (formulasRes.data?.success) {
+        setFormulas(formulasRes.data.data);
+      }
+      if (materialsRes.data?.success) {
+        setMaterials(materialsRes.data.data);
+      }
+      if (productsRes.data?.success) {
+        setProducts(productsRes.data.data);
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải dữ liệu', error);
+      toast.error('Không thể tải dữ liệu công thức');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddComponent = () => {
     setNewFormula(p => ({
       ...p,
-      components: [...p.components, { materialId: '', percentage: 0 }]
+      components: [...p.components, { materialId: '', percentage: 0, requiredAmount: 0 }]
     }));
   };
 
@@ -109,64 +79,73 @@ export default function FormulasPage() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleColorChange = (colorCode: string) => {
+    const colorInfo = paintColors.find(c => c.code === colorCode);
+    setNewFormula(p => ({
+      ...p,
+      MaMau: colorCode,
+      MaCongThuc: `CT-${colorCode}`,
+      TenCongThuc: `Công thức màu ${colorInfo?.name || colorCode}`
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate total percentage
     const total = newFormula.components.reduce((acc, curr) => acc + parseFloat(curr.percentage as any || 0), 0);
     if (total !== 100) {
       toast.error(`❌ Tổng tỷ lệ phải bằng 100%. Hiện tại là ${total}%`);
       return;
     }
 
-    const colorInfo = paintColors.find(c => c.code === newFormula.colorCode);
-    const nextId = `FOR-${String(formulas.length + 1).padStart(3, '0')}`;
-    
-    const resolvedComponents = newFormula.components.map(c => {
-      const mat = materials.find(m => m.id === c.materialId);
-      return {
-        materialId: c.materialId,
-        name: mat?.name || 'Unknown',
-        percentage: parseFloat(c.percentage as any)
+    if (!newFormula.SanPham) {
+      toast.error(`❌ Vui lòng chọn Sản phẩm Sơn`);
+      return;
+    }
+
+    try {
+      const payload = {
+        MaCongThuc: newFormula.MaCongThuc,
+        TenCongThuc: newFormula.TenCongThuc,
+        MaMau: newFormula.MaMau,
+        SanPham: newFormula.SanPham,
+        TrangThai: 'Active',
+        ThanhPhan: newFormula.components.map(c => ({
+          NguyenVatLieu: c.materialId,
+          TiLe: parseFloat(c.percentage as any),
+          KhoiLuongDinhMuc: parseFloat(c.requiredAmount as any)
+        })),
+        GhiChu: `Base Type: ${newFormula.baseType}, Nhiệt độ: ${newFormula.nhietDo}`
       };
-    });
 
-    const displayName =
-      user?.profile?.HoTen ||
-      user?.profile?.TenKhachHang ||
-      user?.username ||
-      'Admin';
-
-    const formulaToSave = {
-      id: nextId,
-      colorCode: newFormula.colorCode,
-      colorName: colorInfo?.name || 'Unknown',
-      baseType: newFormula.baseType,
-      nhietDo: parseInt(newFormula.nhietDo) || 195,
-      components: resolvedComponents,
-      updatedAt: new Date().toLocaleDateString('vi-VN'),
-      author: displayName
-    };
-
-    const updatedFormulas = [...formulas, formulaToSave];
-    setFormulas(updatedFormulas);
-    localStorage.setItem('paintFormulas', JSON.stringify(updatedFormulas));
-    
-    setIsModalOpen(false);
-    setNewFormula({
-      colorCode: '',
-      baseType: '',
-      nhietDo: '195',
-      components: [{ materialId: '', percentage: 0 }]
-    });
-    toast.success('✅ Đã tạo công thức mới thành công!');
+      const res = await api.post('/formulas', payload);
+      if (res.data.success) {
+        toast.success('✅ Đã tạo công thức mới thành công!');
+        setIsModalOpen(false);
+        setNewFormula({
+          MaCongThuc: '',
+          TenCongThuc: '',
+          MaMau: '',
+          SanPham: '',
+          nhietDo: '195',
+          baseType: '',
+          components: [{ materialId: '', percentage: 0, requiredAmount: 0 }]
+        });
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Lỗi khi tạo công thức');
+    }
   };
 
-  const filteredFormulas = formulas.filter(f => 
-    f.colorCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.colorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredFormulas = formulas.filter(f => {
+    const search = searchTerm.toLowerCase();
+    return (
+      (f.MaCongThuc || '').toLowerCase().includes(search) ||
+      (f.TenCongThuc || '').toLowerCase().includes(search) ||
+      (f.MaMau || '').toLowerCase().includes(search)
+    );
+  });
 
   const totalPercentage = newFormula.components.reduce((acc, curr) => acc + parseFloat(curr.percentage as any || 0), 0);
 
@@ -215,71 +194,77 @@ export default function FormulasPage() {
       </div>
 
       {/* Grid of Formulas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredFormulas.map(formula => {
-          const colorInfo = paintColors.find(c => c.code === formula.colorCode);
-          return (
-            <div key={formula.id} className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col">
-              {/* Header */}
-              <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-10 h-10 rounded-lg shadow-inner"
-                    style={{ background: colorInfo?.hex || '#333' }}
-                  />
-                  <div>
-                    <div className="text-sm font-black text-slate-900">{formula.colorCode}</div>
-                    <div className="text-xs font-medium text-slate-400">{formula.colorName}</div>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredFormulas.map(formula => {
+            const colorInfo = paintColors.find(c => c.code === formula.MaMau);
+            return (
+              <div key={formula._id || formula.MaCongThuc} className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col">
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-lg shadow-inner"
+                      style={{ background: colorInfo?.hex || '#333' }}
+                    />
+                    <div>
+                      <div className="text-sm font-black text-slate-900">{formula.MaMau}</div>
+                      <div className="text-xs font-medium text-slate-400">{formula.TenCongThuc}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[10px] font-bold border border-blue-200">
+                      {formula.SanPham?.MaSanPham || 'N/A'}
+                    </span>
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase ${formula.TrangThai === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
+                      {formula.TrangThai || 'Draft'}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[10px] font-bold border border-amber-200">
-                    🔥 {formula.nhietDo || 195}°C
-                  </span>
-                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold uppercase">
-                    {formula.baseType}
-                  </span>
-                </div>
-              </div>
 
-              {/* Body - Components */}
-              <div className="p-6 flex-1">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Thành phần</span>
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tỷ lệ (%)</span>
-                </div>
-                <div className="space-y-3">
-                  {formula.components.map((comp: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-700 font-medium flex items-center gap-2">
-                        <Beaker size={14} className="text-slate-400" />
-                        {comp.name}
-                      </span>
-                      <div className="flex items-center gap-3 flex-1 ml-4 justify-end">
-                        <div className="w-24 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                          <div className="bg-blue-600 h-full" style={{ width: `${comp.percentage}%` }} />
+                {/* Body - Components */}
+                <div className="p-6 flex-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Thành phần</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tỷ lệ (%)</span>
+                  </div>
+                  <div className="space-y-3">
+                    {(formula.ThanhPhan || []).map((comp: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <span className="text-slate-700 font-medium flex items-center gap-2">
+                          <Beaker size={14} className="text-slate-400" />
+                          {comp.NguyenVatLieu?.TenNguyenVatLieu || 'Unknown'}
+                        </span>
+                        <div className="flex items-center gap-3 flex-1 ml-4 justify-end">
+                          <div className="w-24 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-blue-600 h-full" style={{ width: `${comp.TiLe}%` }} />
+                          </div>
+                          <span className="text-slate-900 font-black min-w-[30px] text-right">{comp.TiLe}%</span>
                         </div>
-                        <span className="text-slate-900 font-black min-w-[30px] text-right">{comp.percentage}%</span>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-3 bg-slate-50/50 border-t border-slate-50 flex items-center justify-between text-xs text-slate-400 font-medium">
+                  <div className="flex items-center gap-4">
+                    <span>ID: {formula.MaCongThuc}</span>
+                    <span>Version: {formula.Version || '1.0'}</span>
+                  </div>
+                  <span>Cập nhật: {new Date(formula.updatedAt || new Date()).toLocaleDateString('vi-VN')}</span>
                 </div>
               </div>
+            );
+          })}
+        </div>
+      )}
 
-              {/* Footer */}
-              <div className="px-6 py-3 bg-slate-50/50 border-t border-slate-50 flex items-center justify-between text-xs text-slate-400 font-medium">
-                <div className="flex items-center gap-4">
-                  <span>ID: {formula.id}</span>
-                  <span>Người tạo: {formula.author}</span>
-                </div>
-                <span>Cập nhật: {formula.updatedAt}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {filteredFormulas.length === 0 && (
+      {!loading && filteredFormulas.length === 0 && (
         <div className="text-center py-12 bg-white border border-slate-100 rounded-2xl shadow-sm mt-6">
           <FlaskConical size={48} className="mx-auto mb-4 text-slate-300" />
           <p className="text-slate-400 font-medium">Không tìm thấy công thức nào khớp với từ khóa.</p>
@@ -289,7 +274,7 @@ export default function FormulasPage() {
       {/* Create Formula Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
@@ -303,14 +288,29 @@ export default function FormulasPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-1.5">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-1.5 lg:col-span-2">
+                  <label className="text-[13px] font-bold text-slate-500">Sản phẩm Sơn *</label>
+                  <select
+                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
+                    required
+                    value={newFormula.SanPham}
+                    onChange={e => setNewFormula(p => ({ ...p, SanPham: e.target.value }))}
+                  >
+                    <option value="">Chọn sản phẩm</option>
+                    {products.map(p => (
+                      <option key={p._id} value={p._id}>{p.MaSanPham} - {p.TenDongSon}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5 lg:col-span-2">
                   <label className="text-[13px] font-bold text-slate-500">Mã Màu Mục tiêu *</label>
                   <select
                     className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
                     required
-                    value={newFormula.colorCode}
-                    onChange={e => setNewFormula(p => ({ ...p, colorCode: e.target.value }))}
+                    value={newFormula.MaMau}
+                    onChange={e => handleColorChange(e.target.value)}
                   >
                     <option value="">Chọn mã màu</option>
                     {paintColors.map(c => (
@@ -319,27 +319,25 @@ export default function FormulasPage() {
                   </select>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[13px] font-bold text-slate-500">Loại Nền (Base Type) *</label>
+                <div className="space-y-1.5 lg:col-span-2">
+                  <label className="text-[13px] font-bold text-slate-500">Mã Công Thức</label>
                   <input
                     type="text"
                     className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
-                    placeholder="VD: Polyester TGIC"
                     required
-                    value={newFormula.baseType}
-                    onChange={e => setNewFormula(p => ({ ...p, baseType: e.target.value }))}
+                    value={newFormula.MaCongThuc}
+                    onChange={e => setNewFormula(p => ({ ...p, MaCongThuc: e.target.value }))}
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[13px] font-bold text-slate-500">Nhiệt độ sấy (°C) *</label>
+                <div className="space-y-1.5 lg:col-span-2">
+                  <label className="text-[13px] font-bold text-slate-500">Tên Công Thức</label>
                   <input
-                    type="number"
+                    type="text"
                     className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
-                    placeholder="VD: 195"
                     required
-                    value={newFormula.nhietDo}
-                    onChange={e => setNewFormula(p => ({ ...p, nhietDo: e.target.value }))}
+                    value={newFormula.TenCongThuc}
+                    onChange={e => setNewFormula(p => ({ ...p, TenCongThuc: e.target.value }))}
                   />
                 </div>
               </div>
@@ -367,15 +365,15 @@ export default function FormulasPage() {
                     >
                       <option value="">Chọn nguyên liệu</option>
                       {materials.map(m => (
-                        <option key={m.id} value={m.id}>{m.name} ({m.category})</option>
+                        <option key={m._id} value={m._id}>{m.TenNguyenVatLieu} ({m.PhanLoai})</option>
                       ))}
                     </select>
 
-                    <div className="relative w-32">
+                    <div className="relative w-28">
                       <input
                         type="number"
                         className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all pr-8"
-                        placeholder="0"
+                        placeholder="Tỷ lệ"
                         required
                         min="0"
                         max="100"
@@ -383,6 +381,19 @@ export default function FormulasPage() {
                         onChange={e => handleComponentChange(idx, 'percentage', e.target.value)}
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-bold">%</span>
+                    </div>
+
+                    <div className="relative w-32">
+                      <input
+                        type="number"
+                        className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all pr-8"
+                        placeholder="Khối lượng"
+                        required
+                        min="0"
+                        value={comp.requiredAmount}
+                        onChange={e => handleComponentChange(idx, 'requiredAmount', e.target.value)}
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-bold">Kg</span>
                     </div>
 
                     {newFormula.components.length > 1 && (

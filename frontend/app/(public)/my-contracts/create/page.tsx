@@ -535,7 +535,7 @@ function CustomerCreateContractPage() {
                         <tr key={idx}>
                           <td style={{ border: '1px solid #003399', padding: 8 }}>{it.productName}</td>
                           <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'center', fontWeight: 'bold' }}>{it.colorCode || '—'}</td>
-                          <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'center' }}>{it.quantity} Kg</td>
+                          <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'center' }}>{it.quantity} thùng</td>
                           <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>{it.unitPrice.toLocaleString('vi-VN')}đ</td>
                           <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right', fontWeight: 'bold' }}>{(it.quantity * it.unitPrice).toLocaleString('vi-VN')}đ</td>
                         </tr>

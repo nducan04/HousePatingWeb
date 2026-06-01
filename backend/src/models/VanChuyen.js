@@ -19,7 +19,7 @@ const vanChuyenSchema = new mongoose.Schema({
   },
   LoHang: {
     SoKien: { type: Number, default: 0 },
-    KhoiLuong: { type: Number, default: 0 }, // kg
+    KhoiLuong: { type: Number, default: 0 }, // thùng
     MauSon: String,
     BienBanFile: String // URL hoặc tên file
   },

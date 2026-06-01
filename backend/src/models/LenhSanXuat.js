@@ -5,7 +5,7 @@ const materialRequirementSchema = new mongoose.Schema({
   MaNVL: String,
   TenNVL: String,
   TiLe: Number,
-  KhoiLuongDuToan: Number // Kg
+  KhoiLuongDuToan: Number // Thùng
 }, { _id: false });
 
 const lenhSanXuatSchema = new mongoose.Schema({
@@ -29,7 +29,7 @@ const lenhSanXuatSchema = new mongoose.Schema({
   TargetWeight: {
     type: Number,
     required: true,
-    min: [1, 'Khối lượng sản xuất tối thiểu là 1kg']
+    min: [1, 'Khối lượng sản xuất tối thiểu là 1 thùng']
   },
   Assignee: {
     type: mongoose.Schema.Types.ObjectId,

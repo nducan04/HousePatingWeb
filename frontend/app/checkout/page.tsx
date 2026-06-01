@@ -12,7 +12,7 @@ import { resolveImageUrl } from '@/lib/utils/imageUrl';
 export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { cartItems, initializeCart, clearCart } = useCartStore();
+  const { cartItems, initializeCart, clearCart, updateQuantity, removeFromCart } = useCartStore();
   
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
   const [discountInfo, setDiscountInfo] = useState<any>(null);
@@ -28,6 +28,31 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingOrderId, setExistingOrderId] = useState<string | null>(null);
   const sessionId = useMemo(() => user?.id || getGuestSessionId(), [user]);
+
+  const handleUpdateQuantity = (productId: string, currentQty: number, change: number) => {
+    if (existingOrderId) return; // Không cho phép sửa nếu là đơn hàng cũ
+    const newQty = currentQty + change;
+    
+    if (newQty < 1) {
+      // Remove item if quantity becomes 0
+      setSelectedItems(prev => prev.filter(item => item.SanPham?._id !== productId));
+      if (removeFromCart) removeFromCart(productId);
+      return;
+    }
+    
+    // Update local state
+    setSelectedItems(prev => prev.map(item => {
+      if (item.SanPham?._id === productId) {
+        return { ...item, SoLuong: newQty };
+      }
+      return item;
+    }));
+    
+    // Update global store
+    if (updateQuantity) {
+      updateQuantity(productId, newQty);
+    }
+  };
   
   useEffect(() => {
     // Load checkout data
@@ -451,8 +476,30 @@ export default function CheckoutPage() {
                     <div className="flex-1 min-w-0 pt-1">
                       <div className="font-bold text-slate-800 text-[13px] leading-snug line-clamp-2 mb-1">{item.SanPham?.TenDongSon}</div>
                       <div className="text-[11px] text-slate-500 font-medium mb-1">Mã SP: {item.SanPham?.MaSanPham}</div>
-                      <div className="font-black text-[#1c3c77] text-sm">
-                        {((item.SanPham?.DonGiaCoSo || 0) * item.SoLuong).toLocaleString()} ₫
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="font-black text-[#1c3c77] text-sm">
+                          {((item.SanPham?.DonGiaCoSo || 0) * item.SoLuong).toLocaleString()} ₫
+                        </div>
+                        
+                        {!existingOrderId && (
+                          <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white">
+                            <button 
+                              onClick={() => handleUpdateQuantity(item.SanPham?._id, item.SoLuong, -1)}
+                              className="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-[#1c3c77] transition-colors font-bold"
+                            >
+                              -
+                            </button>
+                            <div className="w-8 h-7 flex items-center justify-center text-xs font-bold text-slate-800 border-x border-slate-200">
+                              {item.SoLuong}
+                            </div>
+                            <button 
+                              onClick={() => handleUpdateQuantity(item.SanPham?._id, item.SoLuong, 1)}
+                              className="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-[#1c3c77] transition-colors font-bold"
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

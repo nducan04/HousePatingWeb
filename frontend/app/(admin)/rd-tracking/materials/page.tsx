@@ -19,7 +19,7 @@ export default function MaterialsPage() {
     name: '',
     category: 'Resin',
     stock: 0,
-    unit: 'kg',
+    unit: 'thùng',
     cost: 0,
     supplier: ''
   });
@@ -50,7 +50,7 @@ export default function MaterialsPage() {
           name: item.TenNguyenVatLieu,
           category: item.PhanLoai || 'Resin',
           stock: item.TonKho || 0,
-          unit: item.DonViTinh || 'kg',
+          unit: item.DonViTinh || 'thùng',
           cost: item.DonGia || 0,
           supplier: item.NhaCungCap?.TenNCC || 'Local'
         }));
@@ -80,7 +80,7 @@ export default function MaterialsPage() {
               name: item.TenNguyenVatLieu,
               category: item.PhanLoai || 'Resin',
               stock: item.TonKho || 0,
-              unit: item.DonViTinh || 'kg',
+              unit: item.DonViTinh || 'thùng',
               cost: item.DonGia || 0,
               supplier: item.NhaCungCap?.TenNCC || 'Local'
             }));
@@ -89,14 +89,14 @@ export default function MaterialsPage() {
           } else {
             // Fallback to default mock data
             const defaultMaterials = [
-              { id: 'MAT-001', name: 'Resin P-2400', category: 'Resin', stock: 500, unit: 'kg', cost: 120000, supplier: 'DSM' },
-              { id: 'MAT-002', name: 'Resin SD-5000', category: 'Resin', stock: 300, unit: 'kg', cost: 150000, supplier: 'Allnex' },
-              { id: 'MAT-003', name: 'Carbon Black N330', category: 'Pigment', stock: 50, unit: 'kg', cost: 80000, supplier: 'Orion' },
-              { id: 'MAT-004', name: 'Titanium Dioxide R-902', category: 'Pigment', stock: 200, unit: 'kg', cost: 95000, supplier: 'Chemours' },
-              { id: 'MAT-005', name: 'Barium Sulfate', category: 'Filler', stock: 1000, unit: 'kg', cost: 25000, supplier: 'Local' },
-              { id: 'MAT-006', name: 'Silica Powder', category: 'Filler', stock: 400, unit: 'kg', cost: 35000, supplier: 'Local' },
-              { id: 'MAT-007', name: 'Benzoin (Degassing)', category: 'Additive', stock: 20, unit: 'kg', cost: 200000, supplier: 'Evonik' },
-              { id: 'MAT-008', name: 'Flow Agent (PV88)', category: 'Additive', stock: 30, unit: 'kg', cost: 180000, supplier: 'Estron' },
+              { id: 'MAT-001', name: 'Resin P-2400', category: 'Resin', stock: 500, unit: 'thùng', cost: 120000, supplier: 'DSM' },
+              { id: 'MAT-002', name: 'Resin SD-5000', category: 'Resin', stock: 300, unit: 'thùng', cost: 150000, supplier: 'Allnex' },
+              { id: 'MAT-003', name: 'Carbon Black N330', category: 'Pigment', stock: 50, unit: 'thùng', cost: 80000, supplier: 'Orion' },
+              { id: 'MAT-004', name: 'Titanium Dioxide R-902', category: 'Pigment', stock: 200, unit: 'thùng', cost: 95000, supplier: 'Chemours' },
+              { id: 'MAT-005', name: 'Barium Sulfate', category: 'Filler', stock: 1000, unit: 'thùng', cost: 25000, supplier: 'Local' },
+              { id: 'MAT-006', name: 'Silica Powder', category: 'Filler', stock: 400, unit: 'thùng', cost: 35000, supplier: 'Local' },
+              { id: 'MAT-007', name: 'Benzoin (Degassing)', category: 'Additive', stock: 20, unit: 'thùng', cost: 200000, supplier: 'Evonik' },
+              { id: 'MAT-008', name: 'Flow Agent (PV88)', category: 'Additive', stock: 30, unit: 'thùng', cost: 180000, supplier: 'Estron' },
             ];
             setMaterials(defaultMaterials);
             localStorage.setItem('rdMaterials', JSON.stringify(defaultMaterials));
@@ -104,14 +104,14 @@ export default function MaterialsPage() {
         } catch (error) {
           console.error('Failed to fetch from API, using fallback:', error);
           const defaultMaterials = [
-            { id: 'MAT-001', name: 'Resin P-2400', category: 'Resin', stock: 500, unit: 'kg', cost: 120000, supplier: 'DSM' },
-            { id: 'MAT-002', name: 'Resin SD-5000', category: 'Resin', stock: 300, unit: 'kg', cost: 150000, supplier: 'Allnex' },
-            { id: 'MAT-003', name: 'Carbon Black N330', category: 'Pigment', stock: 50, unit: 'kg', cost: 80000, supplier: 'Orion' },
-            { id: 'MAT-004', name: 'Titanium Dioxide R-902', category: 'Pigment', stock: 200, unit: 'kg', cost: 95000, supplier: 'Chemours' },
-            { id: 'MAT-005', name: 'Barium Sulfate', category: 'Filler', stock: 1000, unit: 'kg', cost: 25000, supplier: 'Local' },
-            { id: 'MAT-006', name: 'Silica Powder', category: 'Filler', stock: 400, unit: 'kg', cost: 35000, supplier: 'Local' },
-            { id: 'MAT-007', name: 'Benzoin (Degassing)', category: 'Additive', stock: 20, unit: 'kg', cost: 200000, supplier: 'Evonik' },
-            { id: 'MAT-008', name: 'Flow Agent (PV88)', category: 'Additive', stock: 30, unit: 'kg', cost: 180000, supplier: 'Estron' },
+            { id: 'MAT-001', name: 'Resin P-2400', category: 'Resin', stock: 500, unit: 'thùng', cost: 120000, supplier: 'DSM' },
+            { id: 'MAT-002', name: 'Resin SD-5000', category: 'Resin', stock: 300, unit: 'thùng', cost: 150000, supplier: 'Allnex' },
+            { id: 'MAT-003', name: 'Carbon Black N330', category: 'Pigment', stock: 50, unit: 'thùng', cost: 80000, supplier: 'Orion' },
+            { id: 'MAT-004', name: 'Titanium Dioxide R-902', category: 'Pigment', stock: 200, unit: 'thùng', cost: 95000, supplier: 'Chemours' },
+            { id: 'MAT-005', name: 'Barium Sulfate', category: 'Filler', stock: 1000, unit: 'thùng', cost: 25000, supplier: 'Local' },
+            { id: 'MAT-006', name: 'Silica Powder', category: 'Filler', stock: 400, unit: 'thùng', cost: 35000, supplier: 'Local' },
+            { id: 'MAT-007', name: 'Benzoin (Degassing)', category: 'Additive', stock: 20, unit: 'thùng', cost: 200000, supplier: 'Evonik' },
+            { id: 'MAT-008', name: 'Flow Agent (PV88)', category: 'Additive', stock: 30, unit: 'thùng', cost: 180000, supplier: 'Estron' },
           ];
           setMaterials(defaultMaterials);
           localStorage.setItem('rdMaterials', JSON.stringify(defaultMaterials));
@@ -132,7 +132,7 @@ export default function MaterialsPage() {
         name: '',
         category: 'Resin',
         stock: 0,
-        unit: 'kg',
+        unit: 'thùng',
         cost: 0,
         supplier: ''
       });

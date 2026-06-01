@@ -382,7 +382,7 @@ function InventoryDashboard({ data }: { data: any }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard title="Tổng SKUs" value={inv.totalSKUs || 0} icon={<Boxes />} color="blue" />
         <KpiCard title="Giá trị Tồn kho" value={formatCurrency(inv.totalStockValue || 0)} icon={<DollarSign />} color="emerald" />
-        <KpiCard title="Tổng Khối lượng" value={`${formatNumber(inv.totalKg || 0)} kg`} icon={<Package />} color="orange" />
+        <KpiCard title="Tổng Khối lượng" value={`${formatNumber(inv.totalKg || 0)} thùng`} icon={<Package />} color="orange" />
         <KpiCard
           title="Cảnh báo Tồn thấp"
           value={inv.lowStockItems || 0}
@@ -402,7 +402,7 @@ function InventoryDashboard({ data }: { data: any }) {
                 <XAxis type="number" hide />
                 <YAxis dataKey="_id" type="category" axisLine={false} tickLine={false} width={140} tick={{ fontSize: 13, fill: '#475569', fontWeight: 500 }} />
                 <Tooltip cursor={{ fill: 'transparent' }} />
-                <Bar dataKey="totalStock" name="Số lượng (kg)" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={25} />
+                <Bar dataKey="totalStock" name="Số lượng (thùng)" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={25} />
               </BarChart>
             </ResponsiveContainer>
           </div>

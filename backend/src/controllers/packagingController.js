@@ -137,7 +137,7 @@ exports.createPackagingSlip = async (req, res) => {
            ChiTiet: [{
              MaItem: product.MaSanPham,
              TenItem: `${product.TenDongSon} (${rdLog.MaMauYeuCau})`,
-             SoLuong: totalWeight, // Kg
+             SoLuong: totalWeight, // Thùng
              ItemId: product._id
            }],
            MoTa: `Nhập kho thành phẩm từ phiếu đóng gói ${MaPhieuDongGoi}`,

@@ -4,6 +4,7 @@ import AuthProvider from '@/lib/components/AuthProvider';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import AlertOverride from '@/components/AlertOverride';
+import GlobalChatbot from '@/components/GlobalChatbot';
 
 const inter = Inter({
   subsets: ['latin', 'vietnamese'],
@@ -40,8 +41,9 @@ export default function RootLayout({
         <AuthProvider>
           <AlertOverride />
           {children}
-          <Toaster 
-            position="top-center" 
+          <GlobalChatbot />
+          <Toaster
+            position="top-center"
             toastOptions={{
               className: 'font-bold text-sm',
               duration: 4000,

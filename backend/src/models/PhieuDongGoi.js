@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const packagingSpecsSchema = new mongoose.Schema({
   containerType: { type: String, required: true }, // VD: Thùng 20L, Lon 5L
   quantity: { type: Number, required: true },       // Số lượng bao bì
-  unitWeight: { type: Number, required: true },      // Khối lượng tịnh mỗi đơn vị (Kg)
+  unitWeight: { type: Number, required: true },      // Khối lượng tịnh mỗi đơn vị (Thùng)
   totalWeight: { type: Number, required: true }      // Tổng khối lượng dòng này
 }, { _id: false });
 

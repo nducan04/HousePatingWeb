@@ -186,7 +186,7 @@ export default function PhieuKiemKeModal({ phieu, onClose }: Props) {
                             </div>
                           )}
                         </td>
-                        <td style={td("center")}>{row.Sanpham?.DonViTinh || "Kg"}</td>
+                        <td style={td("center")}>{row.Sanpham?.DonViTinh || "Thùng"}</td>
                         <td style={td("center")}>{row.TonKhoHT ?? 0}</td>
                         <td style={{ ...td("center"), fontWeight: "bold", backgroundColor: "#f5f5f5" }}>{row.TonThucTe ?? 0}</td>
                         <td style={{ ...td("center"), color: chenh < 0 ? "red" : chenh > 0 ? "green" : "#333" }}>

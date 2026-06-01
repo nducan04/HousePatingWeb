@@ -27,7 +27,7 @@ const CartItemRow = ({ item, isSelected, onSelect, onRemove, products, updateQua
 
   const sp = products.find((p: any) => p._id === item.SanPham._id);
   const stock = sp ? (sp.TongTonKho || sp.TonKho || 0) : 0;
-  const unit = sp?.DonViTinh || 'Kg';
+  const unit = sp?.DonViTinh || 'Thùng';
 
   const updateWithDebounce = (newQty: number) => {
     if (isNaN(newQty) || newQty < 1) newQty = 1;
@@ -45,7 +45,7 @@ const CartItemRow = ({ item, isSelected, onSelect, onRemove, products, updateQua
 
   return (
     <div className="grid grid-cols-12 gap-4 items-center py-4 bg-white border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors rounded-xl px-2">
-      <div className="col-span-6 flex items-center gap-4">
+      <div className="col-span-5 flex items-center gap-4">
         <input 
           type="checkbox" 
           className="w-4 h-4 cursor-pointer accent-[#1c3c77]"
@@ -92,7 +92,7 @@ const CartItemRow = ({ item, isSelected, onSelect, onRemove, products, updateQua
         </div>
       </div>
       
-      <div className="col-span-2 flex items-center justify-end gap-3">
+      <div className="col-span-3 flex items-center justify-end gap-3">
         <span className="text-sm font-black text-rose-600">
           {((item.SanPham?.DonGiaCoSo || 0) * localQty).toLocaleString()} ₫
         </span>
@@ -330,10 +330,10 @@ export default function GioHangPage() {
 
               {/* TABLE HEADER */}
               <div className="grid grid-cols-12 gap-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">
-                <div className="col-span-6">SẢN PHẨM</div>
+                <div className="col-span-5">SẢN PHẨM</div>
                 <div className="col-span-2 text-center">ĐƠN GIÁ</div>
                 <div className="col-span-2 text-center">SỐ LƯỢNG</div>
-                <div className="col-span-2 text-right pr-2">THÀNH TIỀN</div>
+                <div className="col-span-3 text-right pr-2">THÀNH TIỀN</div>
               </div>
 
               {/* ITEM LIST */}

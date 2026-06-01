@@ -40,7 +40,7 @@ const PrintableReportTemplate = ({ selectedMonth, data }: { selectedMonth: strin
         <h2 className="font-bold mb-2">1. Tổng quan:</h2>
         <ul className="list-disc pl-8 mb-4">
           <li>Tổng doanh thu: {data.summary.revenue} VNĐ</li>
-          <li>Tổng sản lượng sơn xuất kho: {data.summary.volume} kg</li>
+          <li>Tổng sản lượng sơn xuất kho: {data.summary.volume} thùng</li>
         </ul>
 
         <h2 className="font-bold mb-2">2. Bảng kê chi tiết:</h2>
@@ -174,7 +174,7 @@ export default function BaoCaoThongKePage() {
         items: c.chiTietHopDong?.map((it: any) => ({
           name: it.productName,
           qty: it.quantity,
-          unit: 'Kg',
+          unit: 'Thùng',
           price: it.unitPrice,
           total: it.quantity * it.unitPrice
         })) || []
@@ -202,12 +202,12 @@ export default function BaoCaoThongKePage() {
     const b2bCount = allTransactions.filter(tx => tx.type === 'B2B').length;
     const b2cCount = allTransactions.filter(tx => tx.type === 'B2C').length;
 
-    // Tổng sản lượng (Kg/Lít)
+    // Tổng sản lượng (Thùng/Lít)
     let totalVolume = 0;
     const productCategories: Record<string, { value: number, color: string, unit: string }> = {
-      'Sơn tĩnh điện': { value: 0, color: '#3b82f6', unit: 'kg' },
+      'Sơn tĩnh điện': { value: 0, color: '#3b82f6', unit: 'thùng' },
       'Sơn tàu biển': { value: 0, color: '#8b5cf6', unit: 'Lít' },
-      'Sơn công nghiệp': { value: 0, color: '#f59e0b', unit: 'kg' },
+      'Sơn công nghiệp': { value: 0, color: '#f59e0b', unit: 'thùng' },
       'Sơn nội thất': { value: 0, color: '#10b981', unit: 'Lít' },
       'Sơn ngoại thất': { value: 0, color: '#ef4444', unit: 'Lít' },
     };
@@ -400,7 +400,7 @@ export default function BaoCaoThongKePage() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Sản lượng xuất kho</p>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">{currentData.summary.volume} <span className="text-sm text-slate-400 font-bold">Kg</span></h3>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">{currentData.summary.volume} <span className="text-sm text-slate-400 font-bold">Thùng</span></h3>
                 <p className={`text-[12px] font-bold mt-2 flex items-center gap-1 w-fit px-2 py-0.5 rounded-full ${getGrowthClass(currentData.summary.volGrowth)}`}>
                   {currentData.summary.volGrowth} <span className="text-slate-400 font-medium">so với kỳ trước</span>
                 </p>
@@ -505,7 +505,7 @@ export default function BaoCaoThongKePage() {
                     <Tooltip
                       contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)', padding: '12px' }}
                       itemStyle={{ fontWeight: 800, color: '#0f172a' }}
-                      formatter={(value: any) => [`${Number(value).toLocaleString()} Kg`, 'Sản lượng']}
+                      formatter={(value: any) => [`${Number(value).toLocaleString()} thùng`, 'Sản lượng']}
                     />
                     <Legend
                       verticalAlign="bottom"

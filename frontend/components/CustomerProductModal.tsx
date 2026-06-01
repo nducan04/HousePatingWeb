@@ -170,7 +170,7 @@ export default function CustomerProductModal({
 
           <div className="mb-6">
             <span className="text-3xl font-bold text-emerald-400">{(product.DonGiaCoSo || 0).toLocaleString()} ₫</span>
-            <span className="text-slate-400 ml-2">/ {product.DonViTinh || "Kg"}</span>
+            <span className="text-slate-400 ml-2">/ {product.DonViTinh || "Thùng"}</span>
           </div>
           
           <div className="mb-6 bg-slate-800/50 rounded-lg p-4 border border-white/5 text-sm text-slate-300 leading-relaxed font-medium">

@@ -263,6 +263,11 @@ export default function DashboardPage() {
   const [activeMonths, setActiveMonths] = useState<string[]>([]);
   const [activeRegions, setActiveRegions] = useState<string[]>([]);
 
+  // State to hold data from ProductionPlanChart
+  const [productionTableData, setProductionTableData] = useState<any[]>([]);
+  const [productionFilter, setProductionFilter] = useState<"month" | "quarter" | "year">("month");
+  const [productionYear, setProductionYear] = useState<"2026" | "2025" | "2024">("2026");
+
   // Build period string for API
   const buildPeriod = () => {
     if (activeMonths.length === 1) {
@@ -473,7 +478,7 @@ export default function DashboardPage() {
               color: "amber",
               label: "Sản lượng bán",
               value: stats.kpi.totalProduction.value.toLocaleString("vi-VN"),
-              unit: "KG",
+              unit: "Thùng",
               change: stats.kpi.totalProduction.change,
               sub: "vs kế hoạch",
             },
@@ -537,7 +542,15 @@ export default function DashboardPage() {
         </div>
 
         {/* Production Plan Chart */}
-        <ProductionPlanChart year={activeYears[0] as any} />
+        <ProductionPlanChart 
+          year={productionYear} 
+          filter={productionFilter}
+          onYearChange={setProductionYear}
+          onFilterChange={setProductionFilter}
+          onDataChange={(data, filter) => {
+            setProductionTableData(data);
+          }}
+        />
 
         {/* Bottom row: Staff ranking + Customer ranking */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -620,7 +633,7 @@ export default function DashboardPage() {
                         {c.name}
                       </td>
                       <td className="py-3 text-slate-600 font-medium">
-                        {c.volume.toLocaleString("vi-VN")} <span className="text-[9px] text-slate-400">KG</span>
+                        {c.volume.toLocaleString("vi-VN")} <span className="text-[9px] text-slate-400">Thùng</span>
                       </td>
                       <td className="py-3 text-blue-600 font-medium text-right">
                         {c.revenue.toLocaleString("vi-VN")} <span className="text-[9px] text-blue-300">đ</span>
@@ -640,32 +653,55 @@ export default function DashboardPage() {
 
         {/* Production Table */}
         <div className="bg-white p-6 rounded-sm border border-slate-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h3 className="text-base font-medium text-slate-900 tracking-tight">
                 Bảng dữ liệu: Sản lượng thực tế vs kế hoạch
               </h3>
               <p className="text-xs text-slate-400 font-medium mt-1">
-                Đơn vị: Kilogram (KG)
+                Đơn vị: Thùng <span className="font-light italic">(Sản lượng tính dựa trên các đơn hàng/hợp đồng pha chế đã hoàn thành)</span>
               </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={productionFilter}
+                onChange={(e) => setProductionFilter(e.target.value as "month" | "quarter" | "year")}
+                className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all cursor-pointer shadow-sm"
+              >
+                <option value="month">Theo Tháng</option>
+                <option value="quarter">Theo Quý</option>
+                <option value="year">Cả Năm</option>
+              </select>
+
+              <select
+                value={productionYear}
+                onChange={(e) => setProductionYear(e.target.value as any)}
+                className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all cursor-pointer shadow-sm"
+              >
+                <option value="2026">Năm 2026</option>
+                <option value="2025">Năm 2025</option>
+                <option value="2024">Năm 2024</option>
+              </select>
             </div>
           </div>
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/50">
-                  <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Thời gian</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    {productionFilter === "year" ? "Năm" : productionFilter === "quarter" ? "Quý" : "Thời gian"}
+                  </th>
                   <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider text-right">Mục tiêu (Kế hoạch)</th>
                   <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider text-right">Sản lượng thực tế</th>
                   <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider text-center">Tỷ lệ hoàn thành</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {stats.monthlyTrends?.map((row: any, i: number) => {
+                {(productionTableData.length > 0 ? productionTableData : (stats.monthlyTrends || [])).map((row: any, i: number) => {
                   const pct = row.prodPlan > 0 ? Math.round((row.prodActual / row.prodPlan) * 100) : 0;
                   return (
                     <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 text-slate-700 font-medium">{row.month}</td>
+                      <td className="px-4 py-3 text-slate-700 font-medium">{row.name || row.month}</td>
                       <td className="px-4 py-3 text-amber-600 font-medium text-right">{row.prodPlan.toLocaleString("vi-VN")}</td>
                       <td className="px-4 py-3 text-blue-600 font-medium text-right">{row.prodActual.toLocaleString("vi-VN")}</td>
                       <td className="px-4 py-3 text-center">
@@ -676,7 +712,7 @@ export default function DashboardPage() {
                     </tr>
                   );
                 })}
-                {(!stats.monthlyTrends || stats.monthlyTrends.length === 0) && (
+                {(productionTableData.length === 0 && (!stats.monthlyTrends || stats.monthlyTrends.length === 0)) && (
                   <tr>
                     <td colSpan={4} className="py-6 text-center text-slate-400 text-sm">Không có dữ liệu</td>
                   </tr>
@@ -778,7 +814,7 @@ export default function DashboardPage() {
                     <td className="px-6 py-3.5 text-right font-medium text-slate-700">
                       {c.volume.toLocaleString("vi-VN")}{" "}
                       <span className="text-[9px] text-slate-400 font-light ml-0.5">
-                        KG
+                        Thùng
                       </span>
                     </td>
                     <td className="px-6 py-3.5 text-right font-medium text-blue-600">

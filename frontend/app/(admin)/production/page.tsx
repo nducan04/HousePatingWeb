@@ -128,7 +128,7 @@ export default function ProductionDashboard() {
               <th>Mã Lệnh</th>
               <th>Hợp Đồng</th>
               <th>Công Thức / Màu</th>
-              <th>Sản Lượng (Kg)</th>
+              <th>Sản Lượng (Thùng)</th>
               <th>Line</th>
               <th>Phụ Trách</th>
               <th>Trạng Thái</th>
@@ -149,7 +149,7 @@ export default function ProductionDashboard() {
                     <div style={{ fontWeight: 700 }}>{order.CongThucID?.TenCongThuc}</div>
                     <div style={{ fontSize: 11, color: '#d97706' }}>{order.CongThucID?.MaCongThuc}</div>
                   </td>
-                  <td style={{ fontWeight: 800 }}>{order.TargetWeight} Kg</td>
+                  <td style={{ fontWeight: 800 }}>{order.TargetWeight} thùng</td>
                   <td>
                     <div className="badge" style={{ background: 'rgba(255,255,255,0.05)', color: '#475569' }}>
                       {order.ProductionLine}
