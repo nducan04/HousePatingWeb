@@ -173,7 +173,7 @@ export default function TrackingPage() {
   const fetchDBRDRequest = async (code: string) => {
     setLoadingRD(true);
     try {
-      const res = await api.get(`/rd-tracking/${code}`);
+      const res = await api.get(`/rd-tracking/track/${code}`);
       if (res.data.success) {
         const item = res.data.data;
         const itemCustomer = item.ContractID?.title || 'Khách hàng';
