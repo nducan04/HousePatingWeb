@@ -33,10 +33,15 @@ export default function CheckoutPage() {
     if (existingOrderId) return; // Không cho phép sửa nếu là đơn hàng cũ
     const newQty = currentQty + change;
     
+    const targetItem = selectedItems.find(item => item.SanPham?._id === productId);
+    const maMau = targetItem?.MaMau;
+
     if (newQty < 1) {
       // Remove item if quantity becomes 0
       setSelectedItems(prev => prev.filter(item => item.SanPham?._id !== productId));
-      if (removeFromCart) removeFromCart(productId);
+      if (removeFromCart) {
+        removeFromCart(sessionId, productId, maMau);
+      }
       return;
     }
     
@@ -50,7 +55,7 @@ export default function CheckoutPage() {
     
     // Update global store
     if (updateQuantity) {
-      updateQuantity(productId, newQty);
+      updateQuantity(sessionId, productId, newQty, maMau);
     }
   };
   
