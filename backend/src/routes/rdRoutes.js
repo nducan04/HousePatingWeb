@@ -3,6 +3,8 @@ const router = express.Router();
 const rdController = require('../controllers/rdController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
+router.get('/track/:id', rdController.getRDLogById);
+
 router.use(protect);
 
 // @route   GET /api/rd-tracking

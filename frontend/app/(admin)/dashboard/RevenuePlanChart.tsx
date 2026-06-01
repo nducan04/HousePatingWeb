@@ -255,8 +255,7 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
           </div>
         </div>
 
-        {/* Chart container */}
-        <div className="h-[400px] w-full mt-4">
+        <div className="h-[400px] w-full mt-4 min-w-0">
           {loading ? (
             <div className="w-full h-full flex flex-col items-center justify-center gap-3">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
@@ -264,7 +263,7 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
             </div>
           ) : selectedFilter === "year" ? (
             // ── CHẾ ĐỘ SO SÁNH ĐA NĂM ──
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height={400} minWidth={0}>
               <BarChart data={multiYearData} margin={{ top: 30, right: 20, left: 10, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis
@@ -290,7 +289,7 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
             </ResponsiveContainer>
           ) : (
             // ── CHẾ ĐỘ 1 NĂM (THÁNG / QUÝ) ──
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height={400} minWidth={0}>
               <ComposedChart data={chartData} margin={{ top: 30, right: 20, left: 10, bottom: 40 }}>
                 <defs>
                   <linearGradient id="colorThucTe" x1="0" y1="0" x2="0" y2="1">

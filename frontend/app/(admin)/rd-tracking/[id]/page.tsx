@@ -17,12 +17,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const { user } = useAuthStore();
   const router = useRouter();
+  const isCustomer = user?.role === 'KhachHangB2B' || user?.role === 'KhachHangB2C';
 
-  useEffect(() => {
-    if (user && (user.role === 'KhachHangB2B' || user.role === 'KhachHangB2C')) {
-      router.push(`/tracking?code=${id}&tab=rd`);
-    }
-  }, [user, router, id]);
+  // Khách hàng B2B/B2C vẫn được phép xem trang chi tiết này, không redirect đi đâu cả.
 
   const [request, setRequest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -45,8 +42,10 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     fetchData();
-    fetchMaterials();
-  }, [id]);
+    if (!isCustomer) {
+      fetchMaterials();
+    }
+  }, [id, isCustomer]);
 
   const fetchMaterials = async () => {
     try {
@@ -82,52 +81,16 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
   const fetchData = async () => {
     try {
       setLoading(true);
-      if (id.startsWith('REQ-')) {
-        // Load from localStorage
-        if (typeof window !== 'undefined') {
-          const storedRequests = localStorage.getItem('sampleRequests');
-          if (storedRequests) {
-            const requests = JSON.parse(storedRequests);
-            const req = requests.find((r: any) => r.id === id);
-            if (req) {
-              setRequest({
-                MaNhatKy: req.id,
-                MaMauYeuCau: req.colorCode,
-                TrangThai: req.status,
-                LichSuPhienBan: req.LichSuPhienBan || [],
-                updatedAt: new Date().toISOString(),
-                ContractID: { title: req.customer, MaHopDong: 'N/A' },
-                signedBy: req.signedBy,
-                signedAt: req.signedAt,
-                deadline: req.deadline,
-                sampleImageUrl: req.imageUrl
-              });
-              setIsSigned(req.status === 'approved');
-            } else {
-              setRequest(null);
-            }
-          }
-        }
-      } else {
-        const res = await api.get(`/rd-tracking/${id}`);
-        if (res.data.success) {
-          const data = res.data.data;
-          const fixedLichSu = (data.LichSuPhienBan || []).map((v: any) => ({
-            ...v,
-            tester: v.tester === 'Unknown Tester' || !v.tester ? ((user as any)?.name || 'Phi Binh Minh') : v.tester
-          }));
-          let customerName = data.ContractID?.title || data.customerName || 'Khách hàng';
-          if (!data.ContractID && typeof window !== 'undefined') {
-            const storedRequests = localStorage.getItem('sampleRequests');
-            if (storedRequests) {
-              const reqs = JSON.parse(storedRequests);
-              const matchedReq = reqs.find((r: any) => r.logId === data._id);
-              if (matchedReq) customerName = matchedReq.customer;
-            }
-          }
-          setRequest({ ...data, LichSuPhienBan: fixedLichSu, sampleCustomer: customerName });
-          setIsSigned(data.TrangThai === 'approved' || data.TrangThai === 'complete');
-        }
+      const res = await api.get(`/rd-tracking/${id}`);
+      if (res.data.success) {
+        const data = res.data.data;
+        const fixedLichSu = (data.LichSuPhienBan || []).map((v: any) => ({
+          ...v,
+          tester: v.tester === 'Unknown Tester' || !v.tester ? ((user as any)?.name || 'Phi Binh Minh') : v.tester
+        }));
+        let customerName = data.ContractID?.title || data.customerName || 'Khách hàng';
+        setRequest({ ...data, LichSuPhienBan: fixedLichSu, sampleCustomer: customerName });
+        setIsSigned(data.TrangThai === 'approved' || data.TrangThai === 'complete');
       }
     } catch (err) {
       console.error('Failed to fetch R&D details:', err);
@@ -173,96 +136,31 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
     }
 
     try {
-      if (id.startsWith('REQ-')) {
-        // Handle in localStorage
-        if (typeof window !== 'undefined') {
-          const storedRequests = localStorage.getItem('sampleRequests');
-          if (storedRequests) {
-            const requests = JSON.parse(storedRequests);
-            const reqIndex = requests.findIndex((r: any) => r.id === id);
-            if (reqIndex !== -1) {
-              const req = requests[reqIndex];
-
-              // Initialize LichSuPhienBan if it doesn't exist
-              if (!req.LichSuPhienBan) {
-                req.LichSuPhienBan = [];
-              }
-
-              const nextVer = `${req.LichSuPhienBan.length + 1}.0`;
-
-              // Deduct stock
-              const storedMaterials = localStorage.getItem('rdMaterials');
-              if (storedMaterials) {
-                const materialsList = JSON.parse(storedMaterials);
-                newVersion.components.forEach((comp: any) => {
-                  const matIndex = materialsList.findIndex((m: any) => m.id === comp.materialId);
-                  if (matIndex !== -1) {
-                    materialsList[matIndex].stock -= parseFloat(comp.quantity || 0);
-                  }
-                });
-                localStorage.setItem('rdMaterials', JSON.stringify(materialsList));
-                setMaterials(materialsList);
-              }
-
-              req.LichSuPhienBan.push({
-                version: nextVer,
-                date: new Date().toISOString(),
-                result,
-                parameters: newVersion.parameters,
-                feedback: newVersion.feedback,
-                inputWeight: parseFloat(newVersion.inputWeight) || 0,
-                outputWeight: parseFloat(newVersion.outputWeight) || 0,
-                nhietDo: parseFloat(newVersion.nhietDo) || 0,
-                hieuSuat: parseFloat(newVersion.hieuSuat) || 0,
-                tester: (user as any)?.name || 'Admin',
-                testerCode: (user as any)?.MaNhanVien || 'N/A',
-                components: newVersion.components,
-                imageUrl: newVersion.imageUrl
-              });
-
-              requests[reqIndex] = req;
-              localStorage.setItem('sampleRequests', JSON.stringify(requests));
-
-              // Update state to reflect changes
-              setRequest({
-                ...request,
-                LichSuPhienBan: req.LichSuPhienBan
-              });
-
-              setShowAddVersion(false);
-              setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
-              alert('✅ Đã cập nhật phiên bản test mới và trừ tồn kho!');
-              return;
+      const res = await api.post(`/rd-tracking/${id}/versions`, {
+        ...newVersion,
+        result,
+        tester: (user as any)?.name || 'Admin',
+        testerCode: (user as any)?.MaNhanVien || 'N/A'
+      });
+      if (res.data.success) {
+        // Deduct stock locally upon success to keep the inventory synced
+        const storedMaterials = localStorage.getItem('rdMaterials');
+        if (storedMaterials) {
+          const materialsList = JSON.parse(storedMaterials);
+          newVersion.components.forEach((comp: any) => {
+            const matIndex = materialsList.findIndex((m: any) => m.id === comp.materialId);
+            if (matIndex !== -1) {
+              materialsList[matIndex].stock -= parseFloat(comp.quantity || 0);
             }
-          }
+          });
+          localStorage.setItem('rdMaterials', JSON.stringify(materialsList));
+          setMaterials(materialsList);
         }
-      } else {
-        const res = await api.post(`/rd-tracking/${id}/versions`, {
-          ...newVersion,
-          result,
-          tester: (user as any)?.name || 'Admin',
-          testerCode: (user as any)?.MaNhanVien || 'N/A'
-        });
-        if (res.data.success) {
-          // Deduct stock locally upon success to keep the inventory synced
-          const storedMaterials = localStorage.getItem('rdMaterials');
-          if (storedMaterials) {
-            const materialsList = JSON.parse(storedMaterials);
-            newVersion.components.forEach((comp: any) => {
-              const matIndex = materialsList.findIndex((m: any) => m.id === comp.materialId);
-              if (matIndex !== -1) {
-                materialsList[matIndex].stock -= parseFloat(comp.quantity || 0);
-              }
-            });
-            localStorage.setItem('rdMaterials', JSON.stringify(materialsList));
-            setMaterials(materialsList);
-          }
 
-          setRequest(res.data.data);
-          setShowAddVersion(false);
-          setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
-          alert('✅ Đã cập nhật phiên bản test mới!');
-        }
+        setRequest(res.data.data);
+        setShowAddVersion(false);
+        setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
+        alert('✅ Đã cập nhật phiên bản test mới!');
       }
     } catch (err) {
       console.error('Failed to add version:', err);
@@ -272,42 +170,11 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
   const handleSignKCS = async () => {
     try {
-      if (id.startsWith('REQ-')) {
-        // Handle in localStorage
-        if (typeof window !== 'undefined') {
-          const storedRequests = localStorage.getItem('sampleRequests');
-          if (storedRequests) {
-            const requests = JSON.parse(storedRequests);
-            const reqIndex = requests.findIndex((r: any) => r.id === id);
-            if (reqIndex !== -1) {
-              const req = requests[reqIndex];
-              req.status = 'approved';
-              req.signedBy = (user as any)?.name || 'Admin';
-              req.signedAt = new Date().toISOString();
-
-              requests[reqIndex] = req;
-              localStorage.setItem('sampleRequests', JSON.stringify(requests));
-
-              setIsSigned(true);
-              setRequest({
-                ...request,
-                TrangThai: 'approved',
-                signedBy: req.signedBy,
-                signedAt: req.signedAt
-              });
-
-              alert('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
-              return;
-            }
-          }
-        }
-      } else {
-        const res = await api.patch(`/rd-tracking/${id}/sign-kcs`);
-        if (res.data.success) {
-          setIsSigned(true);
-          alert('✅ KCS Đã xác nhận đạt chuẩn. Hợp đồng đã chuyển sang trạng thái Đang giao hàng.');
-          fetchData(); // Refresh UI
-        }
+      const res = await api.patch(`/rd-tracking/${id}/sign-kcs`);
+      if (res.data.success) {
+        setIsSigned(true);
+        alert('✅ KCS Đã xác nhận đạt chuẩn. Trạng thái đã được cập nhật.');
+        fetchData(); // Refresh UI
       }
     } catch (err: any) {
       console.error('Failed to sign KCS:', err);
@@ -349,6 +216,165 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
   const contract = request.ContractID || {};
 
   const isPastDeadline = request?.deadline ? new Date() > new Date(request.deadline) : false;
+
+  if (isCustomer) {
+    let currentStep = 2; // Mặc định là bước 2
+    if (request.LichSuPhienBan?.length > 0) currentStep = 3;
+    if (request.TrangThai === 'kcs_passed') currentStep = 4;
+    if (isSigned) currentStep = 5;
+    if (request.TrangThai === 'approved' || request.TrangThai === 'complete') currentStep = 6;
+
+    const timelineSteps = [
+      { title: "Tiếp nhận yêu cầu R&D", desc: "Yêu cầu của bạn đã được tiếp nhận và ghi nhận thành công trên hệ thống VTSC PaintPro." },
+      { title: "Phân tích Lab & Hạt màu", desc: "Chuyên gia Lab VTSC đang phân tích đặc tính quang phổ hạt màu, độ bền và lựa chọn cấu trúc lớp nền." },
+      { title: "Pha chế mẫu thử (Lab Mixing)", desc: "Hệ thống thiết bị R&D tiến hành pha chế các mẻ test định biên theo công thức tiêu chuẩn AkzoNobel." },
+      { title: "Kiểm định KCS chất lượng", desc: "Mẫu sơn pha chế được test va đập vật lý, đo độ bóng bề mặt và sai lệch sai số màu Delta E." },
+      { title: "Bàn giao mẫu thực tế & Duyệt", desc: "Khách hàng nhận mẫu màu thật, thử nghiệm thực tế tại công trình để phê duyệt sản xuất hàng loạt." }
+    ];
+
+    return (
+      <div className="max-w-5xl mx-auto py-10 px-4 md:px-8 animate-in fade-in duration-700">
+        <button onClick={() => router.push('/theo-doi-don-hang?tab=samples')} className="mb-8 flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 text-[13px] font-bold text-slate-600 bg-white hover:bg-slate-50 hover:-translate-x-1 transition-all cursor-pointer shadow-sm">
+          <ArrowLeft size={16} /> Quay lại danh sách
+        </button>
+
+        {/* Card 1: Header Info */}
+        <div className="bg-white rounded-[24px] p-6 md:p-8 border border-slate-100 shadow-sm hover:shadow-md transition-shadow mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-purple-100/50 to-transparent rounded-bl-full z-0 pointer-events-none"></div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-[11px] font-black text-purple-600 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100 tracking-wider uppercase flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
+                ID Yêu cầu: {request.MaNhatKy}
+              </span>
+              <span className={`text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider border ${
+                request.TrangThai === 'approved' || request.TrangThai === 'complete' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                request.TrangThai === 'processing' ? 'bg-orange-50 text-orange-600 border-orange-100 animate-pulse' :
+                'bg-amber-50 text-amber-600 border-amber-100'
+              }`}>
+                {request.TrangThai === 'approved' ? 'COMPLETED' : request.TrangThai}
+              </span>
+            </div>
+            <h1 className="text-3xl md:text-[34px] font-black text-slate-900 mb-5 tracking-tight">{request.MaMauYeuCau}</h1>
+            <div className="flex flex-wrap items-center gap-5 md:gap-8 text-[12px] font-bold text-slate-500">
+              <div className="flex items-center gap-2"><Calendar size={14} className="text-slate-400"/> Ngày tạo: <span className="text-slate-800">{new Date(request.createdAt).toLocaleDateString('vi-VN')}</span></div>
+              <div className="flex items-center gap-2"><Clock size={14} className="text-slate-400"/> Hạn R&D: <span className="text-rose-600">{request.deadline ? new Date(request.deadline).toLocaleDateString('vi-VN') : 'N/A'}</span></div>
+              <div className="flex items-center gap-2"><Layers size={14} className="text-slate-400"/> Bề mặt: <span className="text-slate-800">{contract.surface || request.surface || 'Thép tấm'}</span></div>
+            </div>
+          </div>
+          {request.sampleImageUrl && (
+            <div className="flex flex-col items-center gap-2 relative z-10 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm ml-auto">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pt-1">Ảnh mẫu y/c</span>
+              <img src={request.sampleImageUrl} alt="Mẫu Yêu Cầu" className="w-[88px] h-[88px] object-cover rounded-xl border border-slate-100 cursor-pointer hover:scale-105 transition-transform" onClick={() => window.open(request.sampleImageUrl, '_blank')}/>
+            </div>
+          )}
+        </div>
+
+        {/* Card 2: Timeline */}
+        <div className="bg-white rounded-[24px] p-6 md:p-10 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="mb-10 border-b border-slate-50 pb-6">
+            <h2 className="text-[22px] font-black text-slate-900 mb-2 tracking-tight">Bản Đồ Lộ Trình Quy Trình Pha Chế Sơn</h2>
+            <p className="text-[13px] font-medium text-slate-500">Lịch trình pha chế R&D thời gian thực tương tác với phòng thí nghiệm</p>
+          </div>
+
+          <div className="relative pl-2 md:pl-6 max-w-3xl">
+            <div className="absolute left-[24px] md:left-[44px] top-6 bottom-10 w-[2px] bg-slate-100 rounded-full"></div>
+            
+            <div className="space-y-12 relative">
+              {timelineSteps.map((step, idx) => {
+                const stepNum = idx + 1;
+                const isCompleted = stepNum < currentStep;
+                const isCurrent = stepNum === currentStep;
+                const isPending = stepNum > currentStep;
+
+                return (
+                  <div key={idx} className="flex items-start gap-5 md:gap-8 relative group">
+                    <div className="relative z-10 flex-shrink-0 mt-0.5 transition-transform group-hover:scale-110 duration-300">
+                      {isCompleted ? (
+                        <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 ring-4 ring-white">
+                          <CheckCircle2 size={18} strokeWidth={3} />
+                        </div>
+                      ) : isCurrent ? (
+                        <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-600/40 ring-4 ring-purple-50">
+                          <Clock size={18} strokeWidth={3} />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-white text-slate-400 border-2 border-slate-100 flex items-center justify-center text-[13px] font-black ring-4 ring-white shadow-sm">
+                          {stepNum}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className={`flex-1 pt-1 ${isPending ? 'opacity-50' : ''} transition-opacity duration-300`}>
+                      <div className="flex flex-wrap items-center gap-3 mb-2.5">
+                        <h3 className={`text-[15px] font-black tracking-tight ${isCurrent ? 'text-slate-900' : isCompleted ? 'text-slate-800' : 'text-slate-500'}`}>
+                          {step.title}
+                        </h3>
+                        {isCurrent && (
+                          <span className="text-[9px] font-black uppercase tracking-widest text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-100 shadow-sm">
+                            Đang xử lý
+                          </span>
+                        )}
+                      </div>
+                      <p className={`text-[13px] font-medium leading-relaxed max-w-xl ${isCurrent ? 'text-slate-600' : 'text-slate-400'}`}>
+                        {step.desc}
+                      </p>
+                      {stepNum === 3 && request.LichSuPhienBan?.length > 0 && (
+                        <div className="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-4">
+                          <div className="text-[11px] font-bold text-purple-600 uppercase tracking-widest flex items-center gap-1.5">
+                            <Beaker size={12} /> Nhật ký test của R&D Lab ({request.LichSuPhienBan.length} phiên bản)
+                          </div>
+                          <div className="space-y-3">
+                            {request.LichSuPhienBan.map((v: any, index: number) => (
+                              <div key={index} className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm space-y-2.5">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs font-black text-slate-800">Phiên bản {v.version}</span>
+                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${v.result === 'pass'
+                                    ? 'bg-emerald-50 text-emerald-600'
+                                    : 'bg-rose-50 text-rose-600'
+                                    }`}>
+                                    {v.result === 'pass' ? 'ĐẠT CHUẨN KCS' : 'CHƯA ĐẠT - RE-TEST'}
+                                  </span>
+                                </div>
+                                {v.parameters && (
+                                  <div className="text-xs text-slate-500 font-medium">
+                                    <strong>Thông số: </strong>{v.parameters}
+                                  </div>
+                                )}
+                                {v.feedback && (
+                                  <div className="text-xs text-slate-600 font-medium bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
+                                    <strong>Phản hồi kỹ thuật: </strong>{v.feedback}
+                                  </div>
+                                )}
+                                {v.imageUrl && (
+                                  <div className="mt-2">
+                                    <img 
+                                      src={v.imageUrl} 
+                                      alt={`Ảnh mẻ test ${v.version}`} 
+                                      className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:scale-105 transition-transform"
+                                      onClick={() => window.open(v.imageUrl, '_blank')}
+                                    />
+                                  </div>
+                                )}
+                                <div className="flex flex-wrap gap-3 text-[10px] font-bold text-slate-400">
+                                  <span>Hao hụt: <strong className="text-slate-700">{(v.inputWeight && v.outputWeight) ? ((v.inputWeight - v.outputWeight) / v.inputWeight * 100).toFixed(1) : '0.0'}%</strong></span>
+                                  <span>Người test: <strong className="text-slate-700">{v.tester || 'Admin'}</strong></span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', paddingBottom: 100 }}>
@@ -494,7 +520,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           <h3 className="text-lg font-bold text-slate-800">Hành trình Phân tích & Pha chế (R&D Timeline)</h3>
           <p className="text-sm text-slate-400 mt-1">Dữ liệu vòng lặp test được ghi nhận qua từng phiên bản</p>
         </div>
-        {!isSigned && (
+        {!isSigned && !isCustomer && (
           <div className="flex items-center gap-3">
             {passCount > 0 && (
               <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">

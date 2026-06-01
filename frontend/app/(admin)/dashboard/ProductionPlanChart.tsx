@@ -256,7 +256,7 @@ export default function ProductionPlanChart({ year, filter, onFilterChange, onYe
           </div>
         </div>
 
-        <div className="h-[380px] w-full mt-4">
+        <div className="h-[380px] w-full mt-4 min-w-0">
           {loading ? (
             <div className="w-full h-full flex flex-col items-center justify-center gap-3">
               <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
@@ -264,7 +264,7 @@ export default function ProductionPlanChart({ year, filter, onFilterChange, onYe
             </div>
           ) : selectedFilter === "year" ? (
             // ── CHẾ ĐỘ SO SÁNH ĐA NĂM ──
-            <ResponsiveContainer width="100%" height={380}>
+            <ResponsiveContainer width="100%" height={380} minWidth={0}>
               <BarChart data={multiYearData} margin={{ top: 30, right: 20, left: 20, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis
@@ -289,7 +289,7 @@ export default function ProductionPlanChart({ year, filter, onFilterChange, onYe
             </ResponsiveContainer>
           ) : (
             // ── CHẾ ĐỘ 1 NĂM (THÁNG / QUÝ) ──
-            <ResponsiveContainer width="100%" height={380}>
+            <ResponsiveContainer width="100%" height={380} minWidth={0}>
               <ComposedChart data={chartData} margin={{ top: 30, right: 20, left: 20, bottom: 40 }}>
                 <defs>
                   <linearGradient id="colorProdActual" x1="0" y1="0" x2="0" y2="1">

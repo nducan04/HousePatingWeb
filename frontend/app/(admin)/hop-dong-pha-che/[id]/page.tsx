@@ -271,35 +271,33 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
             </h3>
 
             {contract.ipfsCid ? (
-              <div>
-                <div style={{
-                  padding: '0.625rem 1.125rem', background: 'rgba(5, 150, 105, 0.08)',
-                  borderRadius: '10px', color: '#059669',
-                  fontSize: '1rem', fontWeight: 600, marginBottom: '1.125rem'
-                }}>
-                  ✅ PDF đã upload lên IPFS
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#94a3b8', wordBreak: 'break-all', marginBottom: 8 }}>
-                  <strong>CID:</strong> {contract.ipfsCid}
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#94a3b8', wordBreak: 'break-all', marginBottom: '1.125rem' }}>
-                  <strong>Hash:</strong> {contract.documentHash}
-                </div>
-                <a href={`https://gateway.pinata.cloud/ipfs/${contract.ipfsCid}`} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs" style={{ width: '100%', justifyContent: 'center' }}>
-                  <ExternalLink size={14} /> Xem PDF trên IPFS
-                </a>
-                {/* PDF Preview iframe */}
-                {(pdfUrl || contract.ipfsCid) && (
-                  <div style={{ marginTop: '1.125rem', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                    <iframe
-                      src={pdfUrl || `https://gateway.pinata.cloud/ipfs/${contract.ipfsCid}`}
-                      style={{ width: '100%', height: 300, border: 'none', background: '#fff' }}
-                      title="Contract PDF Preview"
-                    />
+              (() => {
+                const isMockCid = contract.ipfsCid.startsWith('QmMock');
+                const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+                const displayPdfUrl = pdfUrl || (isMockCid ? `${BACKEND_URL}/uploads/contract_${contract.contractId}.pdf` : `https://ipfs.io/ipfs/${contract.ipfsCid}`);
+                
+                return (
+                  <div>
+                    <div style={{
+                      padding: '0.625rem 1.125rem', background: 'rgba(5, 150, 105, 0.08)',
+                      borderRadius: '10px', color: '#059669',
+                      fontSize: '1rem', fontWeight: 600, marginBottom: '1.125rem'
+                    }}>
+                      ✅ PDF đã upload lên {isMockCid ? 'Server (Mock IPFS)' : 'IPFS'}
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: '#94a3b8', wordBreak: 'break-all', marginBottom: 8 }}>
+                      <strong>CID:</strong> {contract.ipfsCid} {isMockCid && <span className="text-amber-500 font-bold ml-2">(MOCK)</span>}
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: '#94a3b8', wordBreak: 'break-all', marginBottom: '1.125rem' }}>
+                      <strong>Hash:</strong> {contract.documentHash}
+                    </div>
+                    <a href={displayPdfUrl} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-50 text-blue-700 hover:bg-blue-100 mt-2" style={{ width: '100%', justifyContent: 'center', border: '1px solid #bfdbfe' }}>
+                      <ExternalLink size={16} /> Xem PDF trên IPFS
+                    </a>
                   </div>
-                )}
-              </div>
+                );
+              })()
             ) : (
               <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" style={{ width: '100%' }} onClick={handleGeneratePDF} disabled={isGenerating}>
                 {isGenerating ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Đang sinh PDF...</> : <><Upload size={16} /> Sinh PDF → Hash → IPFS</>}

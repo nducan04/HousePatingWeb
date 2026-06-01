@@ -3,7 +3,7 @@ import { saveAs } from 'file-saver';
 
 const autoFitColumnWidths = (sheet: ExcelJS.Worksheet, startRow: number = 1) => {
   if (!sheet.columns) return;
-  
+
   sheet.columns.forEach(column => {
     if (!column || typeof column.eachCell !== 'function') return;
 
@@ -40,13 +40,13 @@ export const exportDashboardToExcel = async (
 ) => {
   const workbook = new ExcelJS.Workbook();
   const exportDate = new Date().toLocaleDateString('vi-VN');
-  
+
   // Font chung cho toàn bộ bảng tính
   const baseFont = { name: 'Arial', size: 11 };
   const titleFont = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF1A1A40' } };
   const headerFont = { name: 'Arial', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
   const subTitleFont = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF64748B' } };
-  
+
   // Mở sheet 1: BÁO CÁO CHỈ SỐ KPI
   const sheet1 = workbook.addWorksheet('KPI & Tổng Quan', {
     views: [{ showGridLines: true }]
@@ -111,7 +111,7 @@ export const exportDashboardToExcel = async (
     r.values = row;
     r.font = baseFont;
     r.alignment = { vertical: 'middle' };
-    
+
     // Border
     row.forEach((_, cIdx) => {
       const cell = r.getCell(cIdx + 1);
@@ -149,7 +149,7 @@ export const exportDashboardToExcel = async (
   staffHeaderRow.values = staffHeaders;
   staffHeaderRow.font = headerFont;
   staffHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
+
   staffHeaders.forEach((_, colIdx) => {
     const cell = staffHeaderRow.getCell(colIdx + 1);
     cell.fill = {
@@ -314,7 +314,7 @@ export const exportBusinessReportExcel = async (
 ) => {
   const workbook = new ExcelJS.Workbook();
   const exportDate = new Date().toLocaleString('vi-VN');
-  
+
   const baseFont = { name: 'Times New Roman', size: 11 };
   const boldFont = { name: 'Times New Roman', size: 11, bold: true };
   const italicFont = { name: 'Times New Roman', size: 11, italic: true };
@@ -372,7 +372,7 @@ export const exportBusinessReportExcel = async (
   const kpiDataRow = sheet.getRow(8);
   const totalRevenue = stats?.kpi?.totalRevenue?.value || 0;
   const totalVolume = stats?.kpi?.totalProduction?.value || 0;
-  
+
   // Tính tổng B2B và B2C từ transactions
   const b2bCount = transactions.filter(t => t.type === 'B2B').length;
   const b2cCount = transactions.filter(t => t.type === 'B2C').length;
@@ -380,7 +380,7 @@ export const exportBusinessReportExcel = async (
   kpiDataRow.values = ['', totalRevenue * 1000000, totalVolume, b2bCount, b2cCount]; // revenue is in millions from API
   kpiDataRow.font = boldFont;
   kpiDataRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
+
   [2, 3, 4, 5].forEach(colIdx => {
     const cell = kpiDataRow.getCell(colIdx);
     cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
@@ -395,7 +395,7 @@ export const exportBusinessReportExcel = async (
   headerRow.values = headers;
   headerRow.font = headerFont;
   headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
+
   headers.forEach((_, idx) => {
     const cell = headerRow.getCell(idx + 1);
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
@@ -418,7 +418,7 @@ export const exportBusinessReportExcel = async (
     ];
     r.font = baseFont;
     r.alignment = { vertical: 'middle' };
-    
+
     // Borders
     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].forEach(colIdx => {
       r.getCell(colIdx).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
@@ -429,7 +429,7 @@ export const exportBusinessReportExcel = async (
     r.getCell(8).numFmt = '#,##0';
     r.getCell(9).numFmt = '#,##0';
     r.getCell(10).numFmt = '#,##0';
-    
+
     r.getCell(1).alignment = { horizontal: 'center' };
     r.getCell(3).alignment = { horizontal: 'center' };
     r.getCell(5).alignment = { horizontal: 'center' };
@@ -440,16 +440,16 @@ export const exportBusinessReportExcel = async (
 
   // Khối chữ ký
   const currentLastRow = tableStartRow + transactions.length + 3;
-  
+
   const sigRow1 = sheet.getRow(currentLastRow);
   sigRow1.getCell(2).value = 'NGƯỜI LẬP BIỂU';
   sigRow1.getCell(2).font = boldFont;
   sigRow1.getCell(2).alignment = { horizontal: 'center' };
-  
+
   sigRow1.getCell(6).value = 'KẾ TOÁN TRƯỞNG';
   sigRow1.getCell(6).font = boldFont;
   sigRow1.getCell(6).alignment = { horizontal: 'center' };
-  
+
   sheet.mergeCells(`I${currentLastRow}:J${currentLastRow}`);
   sigRow1.getCell(9).value = 'GIÁM ĐỐC PHÊ DUYỆT';
   sigRow1.getCell(9).font = boldFont;
@@ -470,7 +470,7 @@ export const exportInventoryReportExcel = async (
 ) => {
   const workbook = new ExcelJS.Workbook();
   const exportDate = new Date().toLocaleString('vi-VN');
-  
+
   const baseFont = { name: 'Times New Roman', size: 11 };
   const boldFont = { name: 'Times New Roman', size: 11, bold: true };
   const italicFont = { name: 'Times New Roman', size: 11, italic: true };
@@ -528,15 +528,15 @@ export const exportInventoryReportExcel = async (
   const kpiDataRow = sheet.getRow(8);
   const invSummary = stats?.inventory?.summary || {};
   kpiDataRow.values = [
-    '', 
-    invSummary.totalSKUs || 0, 
-    invSummary.totalStockValue || 0, 
-    invSummary.totalKg || 0, 
+    '',
+    invSummary.totalSKUs || 0,
+    invSummary.totalStockValue || 0,
+    invSummary.totalKg || 0,
     invSummary.lowStockItems || 0
   ];
   kpiDataRow.font = boldFont;
   kpiDataRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
+
   [2, 3, 4, 5].forEach(colIdx => {
     const cell = kpiDataRow.getCell(colIdx);
     cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
@@ -551,7 +551,7 @@ export const exportInventoryReportExcel = async (
   headerRow.values = headers;
   headerRow.font = headerFont;
   headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
+
   headers.forEach((_, idx) => {
     const cell = headerRow.getCell(idx + 1);
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
@@ -571,7 +571,7 @@ export const exportInventoryReportExcel = async (
     ];
     r.font = baseFont;
     r.alignment = { vertical: 'middle' };
-    
+
     // Borders
     [1, 2, 3, 4, 5, 6, 7].forEach(colIdx => {
       r.getCell(colIdx).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
@@ -581,7 +581,7 @@ export const exportInventoryReportExcel = async (
     r.getCell(5).numFmt = '#,##0';
     r.getCell(6).numFmt = '#,##0';
     r.getCell(7).numFmt = '#,##0';
-    
+
     r.getCell(1).alignment = { horizontal: 'center' };
     r.getCell(4).alignment = { horizontal: 'center' };
   });
@@ -591,7 +591,7 @@ export const exportInventoryReportExcel = async (
 
   // Khối chữ ký
   const currentLastRow = tableStartRow + inventory.length + 3;
-  
+
   sheet.mergeCells(`F${currentLastRow}:G${currentLastRow}`);
   const dateRow = sheet.getRow(currentLastRow);
   dateRow.getCell(6).value = 'Hà Nội, ngày ... tháng ... năm 2026';
@@ -626,7 +626,7 @@ export const exportProductionReportExcel = async (
 ) => {
   const workbook = new ExcelJS.Workbook();
   const exportDate = new Date().toLocaleString('vi-VN');
-  
+
   const baseFont = { name: 'Times New Roman', size: 11 };
   const boldFont = { name: 'Times New Roman', size: 11, bold: true };
   const italicFont = { name: 'Times New Roman', size: 11, italic: true };
@@ -684,16 +684,16 @@ export const exportProductionReportExcel = async (
   const kpiDataRow = sheet.getRow(8);
   const rdSummary = stats?.efficiency || 0;
   const successRate = stats?.rdSuccessRate || 0;
-  
+
   kpiDataRow.values = [
-    '', 
-    `${rdSummary}%`, 
-    productionLogs.length || 0, 
-    `${successRate}%` 
+    '',
+    `${rdSummary}%`,
+    productionLogs.length || 0,
+    `${successRate}%`
   ];
   kpiDataRow.font = boldFont;
   kpiDataRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
+
   [2, 3, 4].forEach(colIdx => {
     const cell = kpiDataRow.getCell(colIdx);
     cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
@@ -708,7 +708,7 @@ export const exportProductionReportExcel = async (
   headerRow.values = headers;
   headerRow.font = headerFont;
   headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
+
   headers.forEach((_, idx) => {
     const cell = headerRow.getCell(idx + 1);
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
@@ -728,7 +728,7 @@ export const exportProductionReportExcel = async (
     ];
     r.font = baseFont;
     r.alignment = { vertical: 'middle' };
-    
+
     // Borders
     [1, 2, 3, 4, 5, 6, 7].forEach(colIdx => {
       r.getCell(colIdx).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
@@ -736,7 +736,7 @@ export const exportProductionReportExcel = async (
 
     // Formatting numbers
     r.getCell(5).numFmt = '#,##0.00';
-    
+
     r.getCell(1).alignment = { horizontal: 'center' };
     r.getCell(2).alignment = { horizontal: 'center' };
     r.getCell(6).alignment = { horizontal: 'center' };
@@ -747,16 +747,16 @@ export const exportProductionReportExcel = async (
 
   // Khối chữ ký
   const currentLastRow = tableStartRow + productionLogs.length + 3;
-  
+
   const sigRow1 = sheet.getRow(currentLastRow);
   sigRow1.getCell(2).value = 'NGƯỜI LẬP BIỂU';
   sigRow1.getCell(2).font = boldFont;
   sigRow1.getCell(2).alignment = { horizontal: 'center' };
-  
+
   sigRow1.getCell(5).value = 'TRƯỞNG PHÒNG R&D';
   sigRow1.getCell(5).font = boldFont;
   sigRow1.getCell(5).alignment = { horizontal: 'center' };
-  
+
   sheet.mergeCells(`F${currentLastRow}:G${currentLastRow}`);
   sigRow1.getCell(6).value = 'GIÁM ĐỐC PHÊ DUYỆT';
   sigRow1.getCell(6).font = boldFont;
@@ -778,7 +778,7 @@ export const exportCustomerServiceReportExcel = async (
   try {
     const workbook = new ExcelJS.Workbook();
     const exportDate = new Date().toLocaleString('vi-VN');
-    
+
     // Yêu cầu font chữ chủ đạo: Times New Roman, cỡ 11
     const baseFont = { name: 'Times New Roman', size: 11 };
     const boldFont = { name: 'Times New Roman', size: 11, bold: true };
@@ -842,15 +842,15 @@ export const exportCustomerServiceReportExcel = async (
     const kpiDataRow = sheet.getRow(8);
     // Render dữ liệu thực từ object summaryData
     kpiDataRow.values = [
-      '', 
-      summaryData?.kpi?.totalReturns || 0, 
-      `${summaryData?.kpi?.successRate || 0}%`, 
+      '',
+      summaryData?.kpi?.totalReturns || 0,
+      `${summaryData?.kpi?.successRate || 0}%`,
       `${summaryData?.kpi?.avgResponseTime || 0}h`,
       `${summaryData?.kpi?.csatScore || 0}/5`
     ];
     kpiDataRow.font = boldFont;
     kpiDataRow.alignment = { horizontal: 'center', vertical: 'middle' };
-    
+
     // Format data KPI
     [2, 3, 4, 5].forEach(colIdx => {
       const cell = kpiDataRow.getCell(colIdx);
@@ -861,22 +861,21 @@ export const exportCustomerServiceReportExcel = async (
     // Cách khối 1 khoảng 2 dòng => Bắt đầu từ dòng 11
     const tableStartRow = 11;
     const headers = [
-      'STT', 
-      'Mã Phiếu', 
-      'Tên Khách Hàng', 
-      'Loại Yêu Cầu', 
-      'Trạng Thái Xử Lý', 
-      'Nhân Viên Phụ Trách', 
-      'Ngày Tạo', 
-      'Kết Quả Kiểm Định KCS / Nguyên Nhân Lỗi', 
+      'STT',
+      'Mã Phiếu',
+      'Tên Khách Hàng',
+      'Loại Yêu Cầu',
+      'Trạng Thái Xử Lý',
+      'Ngày Tạo',
+      'Nguyên Nhân Lỗi',
       'Ghi Chú / Phương Án Xử Lý'
     ];
-    
+
     const headerRow = sheet.getRow(tableStartRow);
     headerRow.values = headers;
     headerRow.font = headerFont;
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-    
+
     // Format Table Header Chi tiết
     headers.forEach((_, idx) => {
       const cell = headerRow.getCell(idx + 1);
@@ -893,19 +892,18 @@ export const exportCustomerServiceReportExcel = async (
         ticket.customer, // C: Tên Khách Hàng
         ticket.type || ticket.LoaiYeuCau, // D: Loại Yêu Cầu
         ticket.status || ticket.TrangThai, // E: Trạng Thái Xử Lý
-        ticket.assignee || 'Chưa phân công', // F: Nhân Viên Phụ Trách
-        (ticket.createdAt || ticket.time) ? new Date(ticket.createdAt || ticket.time).toLocaleDateString('vi-VN') : '', // G: Ngày Tạo
-        ticket.cause || ticket.KetQuaKiemDinh || '', // H: Nguyên Nhân Lỗi
-        ticket.solution || '' // I: Ghi Chú / Phương Án
+        (ticket.createdAt || ticket.time) ? new Date(ticket.createdAt || ticket.time).toLocaleDateString('vi-VN') : '', // F: Ngày Tạo
+        ticket.cause || ticket.KetQuaKiemDinh || '', // G: Nguyên Nhân Lỗi
+        ticket.solution || '' // H: Ghi Chú / Phương Án
       ];
       r.font = baseFont;
-      
+
       // Định dạng Căn lề và Border cho dòng dữ liệu thô
-      [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(colIdx => {
+      [1, 2, 3, 4, 5, 6, 7, 8].forEach(colIdx => {
         const cell = r.getCell(colIdx);
         cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
         // Mặc định căn trái, nhưng STT, Mã Phiếu, Loại, Trạng thái, Ngày tạo căn giữa
-        if ([1, 2, 4, 5, 7].includes(colIdx)) {
+        if ([1, 2, 4, 5, 6].includes(colIdx)) {
           cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         } else {
           cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
@@ -919,7 +917,7 @@ export const exportCustomerServiceReportExcel = async (
     // --- 5. KHỐI CHỮ KÝ HÀNH CHÍNH ---
     // Cách bảng dữ liệu 3 dòng
     const currentLastRow = tableStartRow + ticketList.length + 3;
-    
+
     const sigRow = sheet.getRow(currentLastRow);
     // Cột B: NGƯỜI LẬP BIỂU
     sigRow.getCell(2).value = 'NGƯỜI LẬP BIỂU';
@@ -928,7 +926,7 @@ export const exportCustomerServiceReportExcel = async (
     sheet.getRow(currentLastRow + 1).getCell(2).value = '(Ký, ghi rõ họ tên)';
     sheet.getRow(currentLastRow + 1).getCell(2).font = italicFont;
     sheet.getRow(currentLastRow + 1).getCell(2).alignment = { horizontal: 'center' };
-    
+
     // Cột E: TRƯỞNG BỘ PHẬN CSKH
     sigRow.getCell(5).value = 'TRƯỞNG BỘ PHẬN CSKH';
     sigRow.getCell(5).font = boldFont;
@@ -936,7 +934,7 @@ export const exportCustomerServiceReportExcel = async (
     sheet.getRow(currentLastRow + 1).getCell(5).value = '(Ký, ghi rõ họ tên)';
     sheet.getRow(currentLastRow + 1).getCell(5).font = italicFont;
     sheet.getRow(currentLastRow + 1).getCell(5).alignment = { horizontal: 'center' };
-    
+
     // Cột H: GIÁM ĐỐC PHÊ DUYỆT
     sigRow.getCell(8).value = 'GIÁM ĐỐC PHÊ DUYỆT';
     sigRow.getCell(8).font = boldFont;
@@ -949,7 +947,7 @@ export const exportCustomerServiceReportExcel = async (
     const buffer = await workbook.xlsx.writeBuffer();
     const fileName = `VTSC_Bao_Cao_Hau_Mai_CSKH_2026.xlsx`;
     saveAs(new Blob([buffer]), fileName);
-    
+
   } catch (error) {
     console.error("Lỗi khi kết xuất file Excel:", error);
     // throw new Error("Không thể kết xuất báo cáo Excel Hậu mãi & CSKH");
@@ -1023,19 +1021,19 @@ export const exportHrReportExcel = async (
 
   const kpiDataRow = sheet.getRow(8);
   const kpiStats = stats?.kpi || {};
-  
+
   // Calculate unique departments
   const departments = new Set(staffList.map(s => s.BoPhan).filter(Boolean));
-  
+
   kpiDataRow.values = [
-    '', 
-    kpiStats.totalStaff || staffList.length || 0, 
+    '',
+    kpiStats.totalStaff || staffList.length || 0,
     `${kpiStats.onTimeRate || '98.2'}%`,
     departments.size
   ];
   kpiDataRow.font = boldFont;
   kpiDataRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
+
   [2, 3, 4].forEach(colIdx => {
     const cell = kpiDataRow.getCell(colIdx);
     cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
@@ -1044,12 +1042,12 @@ export const exportHrReportExcel = async (
   // Khối 2: Danh sách nhân sự
   const tableStartRow = 11;
   const headers = ['STT', 'Mã Nhân Viên', 'Họ Tên', 'Phòng Ban', 'Chức Vụ', 'Giới Tính', 'Trạng Thái'];
-  
+
   const headerRow = sheet.getRow(tableStartRow);
   headerRow.values = headers;
   headerRow.font = headerFont;
   headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
+
   headers.forEach((_, idx) => {
     const cell = headerRow.getCell(idx + 1);
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
@@ -1069,12 +1067,12 @@ export const exportHrReportExcel = async (
     ];
     r.font = baseFont;
     r.alignment = { vertical: 'middle' };
-    
+
     // Borders
     [1, 2, 3, 4, 5, 6, 7].forEach(colIdx => {
       r.getCell(colIdx).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
     });
-    
+
     r.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
     r.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
     r.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
@@ -1086,16 +1084,16 @@ export const exportHrReportExcel = async (
 
   // Khối chữ ký
   const currentLastRow = tableStartRow + staffList.length + 3;
-  
+
   const sigRow1 = sheet.getRow(currentLastRow);
   sigRow1.getCell(2).value = 'NGƯỜI LẬP BIỂU';
   sigRow1.getCell(2).font = boldFont;
   sigRow1.getCell(2).alignment = { horizontal: 'center' };
-  
+
   sigRow1.getCell(4).value = 'PHÒNG NHÂN SỰ';
   sigRow1.getCell(4).font = boldFont;
   sigRow1.getCell(4).alignment = { horizontal: 'center' };
-  
+
   sheet.mergeCells(`F${currentLastRow}:G${currentLastRow}`);
   sigRow1.getCell(6).value = 'GIÁM ĐỐC PHÊ DUYỆT';
   sigRow1.getCell(6).font = boldFont;
@@ -1175,24 +1173,24 @@ export const exportLegalReportExcel = async (
 
   const kpiDataRow = sheet.getRow(8);
   const kpiStats = stats?.kpi || {};
-  
+
   // Calculate verified percentage
   let verifiedCount = 0;
   contracts.forEach(c => {
     if (c.status === 'Đã xác minh') verifiedCount++;
   });
   const verifiedRate = contracts.length > 0 ? ((verifiedCount / contracts.length) * 100).toFixed(1) : 100;
-  
+
   kpiDataRow.values = [
-    '', 
-    contracts.length, 
+    '',
+    contracts.length,
     `${verifiedRate}%`,
     kpiStats.expiringContracts || 0,
     kpiStats.activeLegalCases || 0
   ];
   kpiDataRow.font = boldFont;
   kpiDataRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
+
   [2, 3, 4, 5].forEach(colIdx => {
     const cell = kpiDataRow.getCell(colIdx);
     cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
@@ -1201,12 +1199,12 @@ export const exportLegalReportExcel = async (
   // Khối 2: Bảng Kiểm toán Hợp đồng Blockchain
   const tableStartRow = 11;
   const headers = ['STT', 'Mã Hợp Đồng B2B', 'Tên Đối Tác Mua Bản', 'Mã Băm Giao Dịch (TxHash Blockchain)', 'Khối Block', 'Trạng Thái Trên Chuỗi'];
-  
+
   const headerRow = sheet.getRow(tableStartRow);
   headerRow.values = headers;
   headerRow.font = headerFont;
   headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  
+
   headers.forEach((_, idx) => {
     const cell = headerRow.getCell(idx + 1);
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
@@ -1225,12 +1223,12 @@ export const exportLegalReportExcel = async (
     ];
     r.font = baseFont;
     r.alignment = { vertical: 'middle' };
-    
+
     // Borders
     [1, 2, 3, 4, 5, 6].forEach(colIdx => {
       r.getCell(colIdx).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
     });
-    
+
     r.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
     r.getCell(4).alignment = { horizontal: 'left', vertical: 'middle' }; // Căn trái cho chuỗi băm
     r.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
@@ -1242,16 +1240,16 @@ export const exportLegalReportExcel = async (
 
   // Khối chữ ký (Cách 3 dòng)
   const currentLastRow = tableStartRow + contracts.length + 3;
-  
+
   const sigRow1 = sheet.getRow(currentLastRow);
   sigRow1.getCell(2).value = 'NGƯỜI LẬP BIỂU';
   sigRow1.getCell(2).font = boldFont;
   sigRow1.getCell(2).alignment = { horizontal: 'center' };
-  
+
   sigRow1.getCell(4).value = 'PHÒNG HÀNH CHÍNH PHÁP CHẾ';
   sigRow1.getCell(4).font = boldFont;
   sigRow1.getCell(4).alignment = { horizontal: 'center' };
-  
+
   sheet.mergeCells(`E${currentLastRow}:F${currentLastRow}`);
   sigRow1.getCell(5).value = 'GIÁM ĐỐC PHÊ DUYỆT';
   sigRow1.getCell(5).font = boldFont;

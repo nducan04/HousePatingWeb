@@ -45,6 +45,7 @@ import { useAuthStore } from "@/lib/store/authStore";
 import { useCartStore, getGuestSessionId } from "@/lib/store/cartStore";
 import { paintColors } from "@/lib/data/colors-data";
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
+import { QRCodeCanvas } from "qrcode.react";
 
 const BACKEND_URL = "http://localhost:5000";
 
@@ -399,7 +400,7 @@ export default function HomePage() {
 
         alert("Đặt hàng thành công!");
         if (user?.role === "KhachHangB2B" || user?.role === "KhachHangB2C") {
-          router.push("/don-hang-cua-toi");
+          router.push("/my-orders");
         } else {
           router.push("/don-hang");
         }
@@ -434,10 +435,8 @@ export default function HomePage() {
         if (redirectPath) {
           router.push(redirectPath);
           setRedirectPath(null);
-        } else if (role === "Admin" || role === "Director") {
-          router.push("/dashboard");
         } else if (role === "NhanVien") {
-          router.push("/san-pham");
+          router.push("/quan-ly-san-pham");
         } else {
           router.push("/");
         }
@@ -549,56 +548,57 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900 antialiased scroll-smooth">
+    <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900 antialiased">
       {/* ═══════ HEADER / NAVBAR ═══════ */}
-      <header className="fixed w-full top-0 left-0 z-[999] bg-white/90 backdrop-blur-xl border-b border-slate-200/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)] transition-all">
-        <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 py-3.5 flex items-center justify-between">
+      <header className="sticky top-0 z-[100] bg-white/70 backdrop-blur-xl border-b border-slate-200/40 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+        <div className="max-w-[1400px] mx-auto px-8 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3.5 no-underline group">
-            <div className="w-[180px] h-[50px] rounded-lg bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-105 px-3">
+            <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-110 px-3">
               <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
             </div>
+
           </Link>
 
-          <nav className="hidden xl:flex items-center gap-1">
+          <nav className="hidden xl:flex items-center gap-0.5">
             <Link
               href="/"
-              className="text-[13px] font-bold text-blue-600 no-underline px-3.5 py-2.5 rounded-md bg-blue-50 whitespace-nowrap transition-all"
+              className="text-[13px] font-bold text-blue-600 no-underline px-3 py-2 rounded-xl bg-blue-50 whitespace-nowrap"
             >
               Trang chủ
             </Link>
             <Link
               href="#san-pham"
-              className="text-[13px] font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3.5 py-2.5 rounded-md whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Sản phẩm
             </Link>
             <Link
               href="#bang-mau"
-              className="text-[13px] font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3.5 py-2.5 rounded-md whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Bảng màu
             </Link>
             <Link
-              href="/theo-doi-don-hang"
-              className="text-[13px] font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3.5 py-2.5 rounded-md whitespace-nowrap"
+              href="/tracking"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Theo dõi & Tra cứu
             </Link>
             <Link
               href="#quy-trinh"
-              className="text-[13px] font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3.5 py-2.5 rounded-md whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Quy trình
             </Link>
             <Link
               href="#tin-tuc"
-              className="text-[13px] font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3.5 py-2.5 rounded-md whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Tin tức
             </Link>
             <Link
               href="#footer"
-              className="text-[13px] font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3.5 py-2.5 rounded-md whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Liên hệ
             </Link>
@@ -636,7 +636,7 @@ export default function HomePage() {
       </header>
 
       {/* ═══════ HERO BANNER (Balanced Fonts) ═══════ */}
-      <section className="relative h-[550px] sm:h-[650px] w-full overflow-hidden mt-[78px]">
+      <section className="relative h-[550px] sm:h-[650px] w-full overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
             src="/paint_factory_exterior_1778742118407.png"
@@ -703,7 +703,12 @@ export default function HomePage() {
               ctaText="Gửi mẫu"
               ctaColor="text-blue-600"
               onClick={() => {
-                router.push("/rd-tracking/new");
+                if (!isAuthenticated) {
+                  setRedirectPath("/rd-tracking/new");
+                  setIsLoginOpen(true);
+                } else {
+                  router.push("/rd-tracking/new");
+                }
               }}
             />
             <ServiceCard
@@ -745,7 +750,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ QUY TRÌNH PHA CHẾ SƠN (Mới) ═══════ */}
-      <section id="quy-trinh" className="px-8 py-24 bg-slate-50 scroll-mt-24">
+      <section id="quy-trinh" className="px-8 py-24 bg-slate-50 scroll-mt-[25px]">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
@@ -841,18 +846,14 @@ export default function HomePage() {
               </div>
             </div>
             <button className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-bold text-base hover:bg-blue-600 hover:-translate-y-1 transition-all shadow-xl cursor-pointer border-none">
-              <Link
-                href="/rd-tracking/new"
-                className="text-white font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline">
-                Gửi yêu cầu R&D ngay
-              </Link>
+              Gửi yêu cầu R&D ngay
             </button>
           </div>
         </div>
       </section>
 
       {/* ═══════ BẢNG MÀU XU HƯỚNG ═══════ */}
-      <section id="bang-mau" className="px-8 py-20 bg-slate-50">
+      <section id="bang-mau" className="px-8 py-20 bg-slate-50 scroll-mt-[40px]">
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
             <div>
@@ -868,10 +869,10 @@ export default function HomePage() {
               </p>
             </div>
             <Link
-              href="/mau-sac"
+              href="/colors"
               className="text-blue-600 font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline"
             >
-              Xem tất cả <ArrowRight size={18} />
+              Tra Cứu Toàn Bộ <ArrowRight size={18} />
             </Link>
           </div>
 
@@ -904,7 +905,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ PRODUCTS SECTION (Balanced) ═══════ */}
-      <section id="san-pham" className="px-8 py-20 bg-white">
+      <section id="san-pham" className="px-8 py-20 bg-white scroll-mt-[40px]">
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
             <div>
@@ -916,7 +917,7 @@ export default function HomePage() {
               </p>
             </div>
             <Link
-              href="/san-pham"
+              href="/shop"
               className="text-blue-600 font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline"
             >
             </Link>
@@ -962,7 +963,6 @@ export default function HomePage() {
                     sp.ThuongHieu?.toLowerCase().includes(search)
                   );
                 })
-                .slice(0, 8)
                 .map((sp) => (
                   <div
                     key={sp._id}
@@ -1116,7 +1116,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ TIN TỨC & KHUYẾN MÃI (Uniform) ═══════ */}
-      <section id="tin-tuc" className="px-8 py-20 bg-slate-50">
+      <section id="tin-tuc" className="px-8 py-20 bg-slate-50 scroll-mt-[40px]">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -1188,16 +1188,12 @@ export default function HomePage() {
       {/* ═══════ FOOTER ═══════ */}
       <footer
         id="footer"
-        className="bg-slate-900 text-white pt-20 pb-10 scroll-mt-20 relative overflow-hidden"
+        className="relative text-white pt-20 pb-10 scroll-mt-[40px] bg-cover bg-center overflow-hidden"
         style={{
-          backgroundImage: "url('/login-illustration.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed",
+          backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.94)), url('/login-illustration.png')`
         }}
       >
-        <div className="absolute inset-0 bg-slate-900/90 z-0"></div>
-        <div className="max-w-[1300px] mx-auto px-10 relative z-10">
+        <div className="max-w-[1300px] mx-auto px-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-16">
             {/* Column 1: Company Info */}
             <div className="lg:col-span-5">
@@ -1279,7 +1275,7 @@ export default function HomePage() {
                 </li>
                 <li>
                   <Link
-                    href="/admin/contracts"
+                    href="/my-contracts"
                     className="hover:text-blue-400 transition-colors no-underline text-slate-300"
                   >
                     - Tra cứu hợp đồng
@@ -1314,658 +1310,643 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-        </div >
-      </footer >
+        </div>
+      </footer>
 
-      {/* ═══════ PRODUCT DETAIL MODAL (Refined Fonts) ═══════ */}
-      {
-        isViewOpen && selectedProduct && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row max-h-[90vh] relative">
-              <button
-                onClick={() => setIsViewOpen(false)}
-                className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center text-slate-950"
-              >
-                <X size={24} />
-              </button>
-              <div className="md:w-5/12 bg-slate-50 p-10 flex items-center justify-center">
-                <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-xl bg-white border-8 border-white">
-                  <img
-                    src={getImageUrl(selectedProduct.HinhAnh)}
-                    alt={selectedProduct.TenDongSon}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-              <div className="md:w-7/12 p-10 sm:p-14 overflow-y-auto">
-                <div className="space-y-8">
-                  <div>
-                    <div className="inline-flex items-center px-4 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 text-white uppercase tracking-widest mb-4">
-                      {selectedProduct.PhanLoai}
-                    </div>
-                    <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-2">
-                      {selectedProduct.TenDongSon}
-                    </h2>
-                    <p className="text-lg text-slate-400 font-bold uppercase tracking-wider">
-                      {selectedProduct.ThuongHieu}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-8 py-6 border-y border-slate-100">
-                    <div>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">
-                        Giá đề xuất
-                      </p>
-                      <p className="text-3xl font-bold text-emerald-600">
-                        {selectedProduct.DonGiaCoSo?.toLocaleString()} ₫
-                      </p>
-                    </div>
-                    <div className="h-12 w-px bg-slate-100"></div>
-                    <div>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">
-                        Quy cách
-                      </p>
-                      <p className="text-2xl font-bold text-slate-800">
-                        {selectedProduct.DonViTinh || "Thùng"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">
-                      Mô tả sản phẩm
-                    </h4>
-                    <p className="text-slate-500 text-base leading-relaxed font-medium">
-                      {selectedProduct.MoTa ||
-                        "Dòng sơn tĩnh điện AkzoNobel cao cấp..."}
-                    </p>
-                  </div>
-                  {selectedProduct.DanhSachMaMau &&
-                    selectedProduct.DanhSachMaMau.length > 0 && (
-                      <div className="space-y-4">
-                        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">
-                          Màu sắc sẵn có ({selectedProduct.DanhSachMaMau.length})
-                        </h4>
-                        <div className="flex flex-wrap gap-3">
-                          {selectedProduct.DanhSachMaMau.map(
-                            (m: any, i: number) => (
-                              <div key={i} className="group/item relative">
-                                <div
-                                  className="w-10 h-10 rounded-xl border border-slate-200 shadow-sm transition-all hover:scale-110"
-                                  style={{ background: m.HexCode }}
-                                />
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/item:opacity-100 transition-all whitespace-nowrap pointer-events-none">
-                                  {m.MaMau} — {m.TenMau}
-                                </div>
-                              </div>
-                            ),
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  <div className="pt-6 space-y-4">
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">
-                        Số lượng
-                      </span>
-                      <div className="flex items-center bg-slate-100 rounded-xl p-1 w-32">
-                        <button
-                          onClick={() => updateQuantity(selectedProduct._id, -1, selectedProduct.TongTonKho)}
-                          className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          min="1"
-                          value={productQuantities[selectedProduct._id] || 1}
-                          onChange={(e) =>
-                            handleQuantityChange(
-                              selectedProduct._id,
-                              e.target.value,
-                              selectedProduct.TongTonKho
-                            )
-                          }
-                          onBlur={() => handleQuantityBlur(selectedProduct._id)}
-                          className="w-12 text-center bg-transparent border-none text-base font-bold text-slate-900 outline-none appearance-none"
-                        />
-                        <button
-                          onClick={() => updateQuantity(selectedProduct._id, 1, selectedProduct.TongTonKho)}
-                          className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => addToCart(selectedProduct)}
-                      disabled={cartLoading === selectedProduct._id}
-                      className={`w-full h-16 text-white rounded-2xl font-bold text-lg shadow-xl transition-all flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer ${cartMessage.id === selectedProduct._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500" : "bg-red-500 text-sm") : "bg-blue-600 hover:bg-blue-700 hover:-translate-y-1"}`}
-                    >
-                      {cartLoading === selectedProduct._id ? (
-                        <Loader2 className="animate-spin" size={24} />
-                      ) : cartMessage.id === selectedProduct._id ? (
-                        cartMessage.text === "Đã thêm vào giỏ!" ? (
-                          <>
-                            <ShoppingCart size={24} />
-                            Đã vào giỏ!
-                          </>
-                        ) : (
-                          <span>{cartMessage.text}</span>
-                        )
-                      ) : (
-                        <>
-                          <ShoppingCart size={24} />
-                          Thêm vào giỏ hàng
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-      {/* ═══════ TRENDING COLOR MODAL ═══════ */}
-      {
-        selectedTrendingColor && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300">
-              <div className="p-6 pb-0 flex justify-between items-start">
-                <div>
-                  <h3 className="text-2xl font-bold text-slate-900">
-                    {selectedTrendingColor.name}
-                  </h3>
-                  <p className="text-sm font-semibold text-blue-600">
-                    {selectedTrendingColor.code}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setSelectedTrendingColor(null)}
-                  className="text-slate-400 hover:text-slate-700 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="p-6">
-                <div
-                  className="w-full h-40 rounded-2xl shadow-inner border border-slate-200 mb-6"
-                  style={{ backgroundColor: selectedTrendingColor.hex }}
-                />
-
-                <div className="space-y-0 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100">
-                  <DetailRow label="Mã Màu" value={selectedTrendingColor.code} />
-                  <DetailRow label="HEX" value={selectedTrendingColor.hex} />
-                  <DetailRow
-                    label="Danh mục"
-                    value={selectedTrendingColor.category}
-                  />
-                  <DetailRow
-                    label="Độ bóng"
-                    value={selectedTrendingColor.gloss}
-                  />
-                  <DetailRow
-                    label="Bề mặt"
-                    value={selectedTrendingColor.surface}
-                  />
-                  <DetailRow
-                    label="Ứng dụng"
-                    value={selectedTrendingColor.application}
-                  />
-                  <DetailRow
-                    label="Độ phủ lý thuyết"
-                    value={selectedTrendingColor.coverage}
-                  />
-                  <DetailRow
-                    label="Quy cách đóng gói"
-                    value={selectedTrendingColor.packaging}
-                  />
-                  <div className="flex justify-between items-start pt-3 border-t border-slate-200 mt-0 pb-3">
-                    <span className="font-semibold text-blue-600 text-sm w-1/3">
-                      Quy trình pha chế
-                    </span>
-                    <span className="font-bold text-slate-900 text-sm text-right w-2/3 leading-relaxed">
-                      {selectedTrendingColor.mixing}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 pt-0 flex gap-3">
-                <button
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      setRedirectPath("/rd-tracking/new");
-                      setIsLoginOpen(true);
-                    } else {
-                      router.push("/rd-tracking/new");
-                    }
-                  }}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Sparkles size={16} /> Yêu cầu mẫu thử
-                </button>
-                <button
-                  onClick={() => setSelectedTrendingColor(null)}
-                  className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 py-3.5 rounded-xl font-bold text-sm transition-colors shadow-sm cursor-pointer"
-                >
-                  Đóng
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-
-
-      {
-        isLoginOpen && (
-          <div className="fixed inset-0 z-[400] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm p-8 relative animate-in zoom-in-95 duration-300">
-              <button
-                onClick={() => {
-                  setIsLoginOpen(false);
-                  setIsRegisterMode(false);
-                }}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-all cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-
-              <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">
-                Chào Mừng Trở Lại
-              </h2>
-
-              {isForgotMode ? (
-                <form onSubmit={handleForgotSubmit} className="space-y-4">
-                  {forgotError && (
-                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
-                      <AlertCircle size={16} /> {forgotError}
-                    </div>
-                  )}
-                  {forgotSuccess && (
-                    <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3 text-emerald-600 text-xs font-bold">
-                      <ShieldCheck size={16} /> Đặt lại mật khẩu thành công!
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    <input
-                      type="text"
-                      value={forgotUsername}
-                      onChange={(e) => setForgotUsername(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                      placeholder="Tên đăng nhập"
-                      required
-                    />
-                    <input
-                      type="email"
-                      value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                      placeholder="Email đã đăng ký"
-                      required
-                    />
-                    <input
-                      type="password"
-                      value={forgotNewPassword}
-                      onChange={(e) => setForgotNewPassword(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                      placeholder="Mật khẩu mới"
-                      required
-                    />
-                    <input
-                      type="password"
-                      value={forgotConfirmPassword}
-                      onChange={(e) => setForgotConfirmPassword(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                      placeholder="Nhập lại mật khẩu mới"
-                      required
-                    />
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={isResetting}
-                      className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
-                    >
-                      {isResetting ? (
-                        <Loader2 className="animate-spin" size={18} />
-                      ) : (
-                        "Cập Nhật Mật Khẩu"
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="text-center pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsForgotMode(false)}
-                      className="text-[11px] font-bold text-slate-400 hover:text-blue-600 bg-transparent border-none cursor-pointer transition-colors"
-                    >
-                      Quay lại đăng nhập
-                    </button>
-                  </div>
-                </form>
-              ) : !isRegisterMode ? (
-                <form onSubmit={handlePageLogin} className="space-y-4">
-                  {loginError && (
-                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
-                      <AlertCircle size={16} /> {loginError}
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    <input
-                      type="text"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                      placeholder="Tên đăng nhập"
-                    />
-
-                    <input
-                      type="password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                      placeholder="••••••"
-                    />
-                  </div>
-
-                  <div className="text-right">
-                    <button
-                      type="button"
-                      onClick={() => setIsForgotMode(true)}
-                      className="text-[11px] font-bold text-blue-600 hover:underline bg-transparent border-none cursor-pointer"
-                    >
-                      Quên Mật Khẩu?
-                    </button>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={isLoggingIn}
-                      className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
-                    >
-                      {isLoggingIn ? (
-                        <Loader2 className="animate-spin" size={18} />
-                      ) : (
-                        "Đăng Nhập"
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="text-center pt-4">
-                    <p className="text-sm text-slate-500 font-medium">
-                      Chưa có tài khoản?{" "}
-                      <button
-                        type="button"
-                        onClick={() => setIsRegisterMode(true)}
-                        className="text-blue-600 font-bold hover:underline bg-transparent border-none cursor-pointer"
-                      >
-                        Đăng kí ngay
-                      </button>
-                    </p>
-                  </div>
-
-                  <div className="relative py-4">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-slate-100"></div>
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white px-2 text-slate-400 font-bold">
-                        Hoặc
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 pt-4">
-                    <button
-                      type="button"
-                      className="w-full h-12 bg-[#0f172a] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-black transition-all border-none cursor-pointer"
-                    >
-                      <img
-                        src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png"
-                        className="w-4 h-4"
-                        alt="Apple"
-                      />
-                      Đăng nhập bằng Apple
-                    </button>
-                    <button
-                      type="button"
-                      className="w-full h-12 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer"
-                    >
-                      <img
-                        src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png"
-                        className="w-4 h-4"
-                        alt="Google"
-                      />
-                      Đăng nhập bằng Google
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <form onSubmit={handlePageRegister} className="space-y-4">
-                  {registerError && (
-                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
-                      <AlertCircle size={16} /> {registerError}
-                    </div>
-                  )}
-                  {registerSuccess && (
-                    <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3 text-emerald-600 text-xs font-bold">
-                      <ShieldCheck size={16} /> Đăng ký thành công! Đang chuyển
-                      sang đăng nhập...
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    <input
-                      type="text"
-                      value={registerUsername}
-                      onChange={(e) => setRegisterUsername(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                      placeholder="Tên đăng nhập"
-                      required
-                    />
-
-                    <input
-                      type="text"
-                      value={registerFullName}
-                      onChange={(e) => setRegisterFullName(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                      placeholder="Họ và tên đầy đủ / Tên doanh nghiệp"
-                      required
-                    />
-
-                    <input
-                      type="email"
-                      value={registerEmail}
-                      onChange={(e) => setRegisterEmail(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                      placeholder="Email"
-                      required
-                    />
-
-                    <input
-                      type="password"
-                      value={registerPassword}
-                      onChange={(e) => setRegisterPassword(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                      placeholder="Mật khẩu"
-                      required
-                    />
-
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
-                        Loại khách hàng
-                      </label>
-                      <select
-                        value={registerRole}
-                        onChange={(e) => setRegisterRole(e.target.value)}
-                        className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all cursor-pointer"
-                      >
-                        <option value="KhachHangB2C">Khách hàng cá nhân</option>
-                        <option value="KhachHangB2B">
-                          Khách hàng doanh nghiệp
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      disabled={registerLoading}
-                      className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
-                    >
-                      {registerLoading ? (
-                        <Loader2 className="animate-spin" size={18} />
-                      ) : (
-                        "Đăng Ký Tài Khoản"
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="text-center pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsRegisterMode(false)}
-                      className="text-[11px] font-bold text-slate-400 hover:text-blue-600 bg-transparent border-none cursor-pointer transition-colors"
-                    >
-                      Đã có tài khoản? Đăng nhập
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-        )
-      }
-      {/* ═══════ NEWS DETAIL MODAL ═══════ */}
-      {
-        isNewsOpen && selectedNews && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] relative animate-in zoom-in-95 duration-300">
-              <button
-                onClick={() => setIsNewsOpen(false)}
-                className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-white/80 backdrop-blur-md shadow-lg border border-slate-100 hover:bg-slate-50 transition-all flex items-center justify-center text-slate-950 cursor-pointer"
-              >
-                <X size={24} />
-              </button>
-
-              <div className="h-[300px] sm:h-[400px] w-full relative overflow-hidden">
+      {isViewOpen && selectedProduct && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row max-h-[90vh] relative">
+            <button
+              onClick={() => setIsViewOpen(false)}
+              className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center text-slate-950"
+            >
+              <X size={24} />
+            </button>
+            <div className="md:w-5/12 bg-slate-50 p-10 flex items-center justify-center">
+              <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-xl bg-white border-8 border-white">
                 <img
-                  src={getImageUrl(selectedNews.HinhAnh)}
-                  alt={selectedNews.TieuDe}
+                  src={getImageUrl(selectedProduct.HinhAnh)}
+                  alt={selectedProduct.TenDongSon}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
-                <div className="absolute bottom-10 left-10 right-10">
-                  <span className="inline-flex items-center px-4 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 text-white uppercase tracking-widest mb-4">
-                    {new Date(selectedNews.createdAt).toLocaleDateString(
-                      "vi-VN",
-                      {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                      },
-                    )}
-                  </span>
-                  <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight">
-                    {selectedNews.TieuDe}
-                  </h2>
-                </div>
               </div>
-
-              <div className="flex-1 overflow-y-auto p-10 sm:p-14 bg-white">
-                <div className="max-w-2xl mx-auto space-y-8">
-                  <div className="prose prose-slate prose-lg max-w-none">
-                    {selectedNews.NoiDung ? (
-                      <div
-                        className="text-slate-600 leading-relaxed font-medium space-y-4 whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{ __html: selectedNews.NoiDung }}
-                      />
-                    ) : (
-                      <p className="text-slate-500 font-medium leading-relaxed italic">
-                        {selectedNews.Abstract ||
-                          "Thông tin đang được cập nhật..."}
-                      </p>
-                    )}
+            </div>
+            <div className="md:w-7/12 p-10 sm:p-14 overflow-y-auto">
+              <div className="space-y-8">
+                <div>
+                  <div className="inline-flex items-center px-4 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 text-white uppercase tracking-widest mb-4">
+                    {selectedProduct.PhanLoai}
                   </div>
-
-                  <div className="pt-10 border-t border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
-                        V
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">
-                          Ban biên tập VTSC
-                        </p>
-                        <p className="text-xs text-slate-400 font-medium">
-                          Chuyên trang quảng bá sản phẩm
-                        </p>
+                  <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-2">
+                    {selectedProduct.TenDongSon}
+                  </h2>
+                  <p className="text-lg text-slate-400 font-bold uppercase tracking-wider">
+                    {selectedProduct.ThuongHieu}
+                  </p>
+                </div>
+                <div className="flex items-center gap-8 py-6 border-y border-slate-100">
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">
+                      Giá đề xuất
+                    </p>
+                    <p className="text-3xl font-bold text-emerald-600">
+                      {selectedProduct.DonGiaCoSo?.toLocaleString()} ₫
+                    </p>
+                  </div>
+                  <div className="h-12 w-px bg-slate-100"></div>
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">
+                      Quy cách
+                    </p>
+                    <p className="text-2xl font-bold text-slate-800">
+                      {selectedProduct.DonViTinh || "Kg"}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">
+                    Mô tả sản phẩm
+                  </h4>
+                  <p className="text-slate-500 text-base leading-relaxed font-medium">
+                    {selectedProduct.MoTa ||
+                      "Dòng sơn tĩnh điện AkzoNobel cao cấp..."}
+                  </p>
+                </div>
+                {selectedProduct.DanhSachMaMau &&
+                  selectedProduct.DanhSachMaMau.length > 0 && (
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">
+                        Màu sắc sẵn có ({selectedProduct.DanhSachMaMau.length})
+                      </h4>
+                      <div className="flex flex-wrap gap-3">
+                        {selectedProduct.DanhSachMaMau.map(
+                          (m: any, i: number) => (
+                            <div key={i} className="group/item relative">
+                              <div
+                                className="w-10 h-10 rounded-xl border border-slate-200 shadow-sm transition-all hover:scale-110"
+                                style={{ background: m.HexCode }}
+                              />
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/item:opacity-100 transition-all whitespace-nowrap pointer-events-none">
+                                {m.MaMau} — {m.TenMau}
+                              </div>
+                            </div>
+                          ),
+                        )}
                       </div>
                     </div>
-                    <button
-                      onClick={() => setIsNewsOpen(false)}
-                      className="px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-sm transition-all cursor-pointer border-none"
-                    >
-                      Đóng bài viết
-                    </button>
+                  )}
+
+                {/* QR Code Truy xuất nguồn gốc */}
+                <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-start gap-4">
+                  <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm shrink-0">
+                    <QRCodeCanvas
+                      value={`${typeof window !== 'undefined' ? window.location.origin : ''}/trace/${selectedProduct._id}`}
+                      size={70}
+                      bgColor={"#ffffff"}
+                      fgColor={"#0f172a"}
+                      level={"Q"}
+                    />
                   </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mb-1">
+                      <QrCode size={16} className="text-blue-500" />
+                      Truy xuất nguồn gốc
+                    </h4>
+                    <p className="text-xs text-slate-500 leading-relaxed mb-2">
+                      Khách hàng có thể quét mã QR này để xem thông tin hóa đơn, ngày sản xuất, hạn sử dụng và quy trình.
+                    </p>
+                    <a
+                      href={`/trace/${selectedProduct._id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline"
+                    >
+                      Xem trước trang truy xuất ↗
+                    </a>
+                  </div>
+                </div>
+
+                <div className="pt-6 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+                      Số lượng
+                    </span>
+                    <div className="flex items-center bg-slate-100 rounded-xl p-1 w-32">
+                      <button
+                        onClick={() => updateQuantity(selectedProduct._id, -1, selectedProduct.TongTonKho)}
+                        className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        value={productQuantities[selectedProduct._id] || 1}
+                        onChange={(e) =>
+                          handleQuantityChange(
+                            selectedProduct._id,
+                            e.target.value,
+                            selectedProduct.TongTonKho
+                          )
+                        }
+                        onBlur={() => handleQuantityBlur(selectedProduct._id)}
+                        className="w-12 text-center bg-transparent border-none text-base font-bold text-slate-900 outline-none appearance-none"
+                      />
+                      <button
+                        onClick={() => updateQuantity(selectedProduct._id, 1, selectedProduct.TongTonKho)}
+                        className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => addToCart(selectedProduct)}
+                    disabled={cartLoading === selectedProduct._id}
+                    className={`w-full h-16 text-white rounded-2xl font-bold text-lg shadow-xl transition-all flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer ${cartMessage.id === selectedProduct._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500" : "bg-red-500 text-sm") : "bg-blue-600 hover:bg-blue-700 hover:-translate-y-1"}`}
+                  >
+                    {cartLoading === selectedProduct._id ? (
+                      <Loader2 className="animate-spin" size={24} />
+                    ) : cartMessage.id === selectedProduct._id ? (
+                      cartMessage.text === "Đã thêm vào giỏ!" ? (
+                        <>
+                          <ShoppingCart size={24} />
+                          Đã vào giỏ!
+                        </>
+                      ) : (
+                        <span>{cartMessage.text}</span>
+                      )
+                    ) : (
+                      <>
+                        <ShoppingCart size={24} />
+                        Thêm vào giỏ hàng
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
 
-      {/* ═══════ POLICY MODAL ═══════ */}
-      {
-        isPolicyOpen && selectedPolicyType && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-300">
-              <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
-                    {POLICIES_DATA[selectedPolicyType].icon}
-                  </div>
-                  {POLICIES_DATA[selectedPolicyType].title}
-                </h2>
-                <button
-                  onClick={() => setIsPolicyOpen(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
-                >
-                  <X size={20} />
-                </button>
+      {/* ═══════ TRENDING COLOR MODAL ═══════ */}
+      {selectedTrendingColor && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300">
+            <div className="p-6 pb-0 flex justify-between items-start">
+              <div>
+                <h3 className="text-2xl font-bold text-slate-900">
+                  {selectedTrendingColor.name}
+                </h3>
+                <p className="text-sm font-semibold text-blue-600">
+                  {selectedTrendingColor.code}
+                </p>
               </div>
-              <div className="p-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                <div
-                  className="prose prose-slate max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: POLICIES_DATA[selectedPolicyType].content,
-                  }}
+              <button
+                onClick={() => setSelectedTrendingColor(null)}
+                className="text-slate-400 hover:text-slate-700 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div
+                className="w-full h-40 rounded-2xl shadow-inner border border-slate-200 mb-6"
+                style={{ backgroundColor: selectedTrendingColor.hex }}
+              />
+
+              <div className="space-y-0 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100">
+                <DetailRow label="Mã Màu" value={selectedTrendingColor.code} />
+                <DetailRow label="HEX" value={selectedTrendingColor.hex} />
+                <DetailRow
+                  label="Danh mục"
+                  value={selectedTrendingColor.category}
                 />
+                <DetailRow
+                  label="Độ bóng"
+                  value={selectedTrendingColor.gloss}
+                />
+                <DetailRow
+                  label="Bề mặt"
+                  value={selectedTrendingColor.surface}
+                />
+                <DetailRow
+                  label="Ứng dụng"
+                  value={selectedTrendingColor.application}
+                />
+                <DetailRow
+                  label="Độ phủ lý thuyết"
+                  value={selectedTrendingColor.coverage}
+                />
+                <DetailRow
+                  label="Quy cách đóng gói"
+                  value={selectedTrendingColor.packaging}
+                />
+                <div className="flex justify-between items-start pt-3 border-t border-slate-200 mt-0 pb-3">
+                  <span className="font-semibold text-blue-600 text-sm w-1/3">
+                    Quy trình pha chế
+                  </span>
+                  <span className="font-bold text-slate-900 text-sm text-right w-2/3 leading-relaxed">
+                    {selectedTrendingColor.mixing}
+                  </span>
+                </div>
               </div>
-              <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-50 flex justify-end">
-                <button
-                  onClick={() => setIsPolicyOpen(false)}
-                  className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-                >
-                  Đã hiểu
-                </button>
+            </div>
+
+            <div className="p-6 pt-0 flex gap-3">
+              <button
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    setRedirectPath("/rd-tracking/new");
+                    setIsLoginOpen(true);
+                  } else {
+                    router.push("/rd-tracking/new");
+                  }
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Sparkles size={16} /> Yêu cầu mẫu thử
+              </button>
+              <button
+                onClick={() => setSelectedTrendingColor(null)}
+                className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 py-3.5 rounded-xl font-bold text-sm transition-colors shadow-sm cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+      {isLoginOpen && (
+        <div className="fixed inset-0 z-[400] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm p-8 relative animate-in zoom-in-95 duration-300">
+            <button
+              onClick={() => {
+                setIsLoginOpen(false);
+                setIsRegisterMode(false);
+              }}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-all cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">
+              Chào Mừng Trở Lại
+            </h2>
+
+            {isForgotMode ? (
+              <form onSubmit={handleForgotSubmit} className="space-y-4">
+                {forgotError && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
+                    <AlertCircle size={16} /> {forgotError}
+                  </div>
+                )}
+                {forgotSuccess && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3 text-emerald-600 text-xs font-bold">
+                    <ShieldCheck size={16} /> Đặt lại mật khẩu thành công!
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    value={forgotUsername}
+                    onChange={(e) => setForgotUsername(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Tên đăng nhập"
+                    required
+                  />
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Email đã đăng ký"
+                    required
+                  />
+                  <input
+                    type="password"
+                    value={forgotNewPassword}
+                    onChange={(e) => setForgotNewPassword(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Mật khẩu mới"
+                    required
+                  />
+                  <input
+                    type="password"
+                    value={forgotConfirmPassword}
+                    onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Nhập lại mật khẩu mới"
+                    required
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isResetting}
+                    className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                  >
+                    {isResetting ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      "Cập Nhật Mật Khẩu"
+                    )}
+                  </button>
+                </div>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotMode(false)}
+                    className="text-[11px] font-bold text-slate-400 hover:text-blue-600 bg-transparent border-none cursor-pointer transition-colors"
+                  >
+                    Quay lại đăng nhập
+                  </button>
+                </div>
+              </form>
+            ) : !isRegisterMode ? (
+              <form onSubmit={handlePageLogin} className="space-y-4">
+                {loginError && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
+                    <AlertCircle size={16} /> {loginError}
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Tên đăng nhập"
+                  />
+
+                  <input
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="••••••"
+                  />
+                </div>
+
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotMode(true)}
+                    className="text-[11px] font-bold text-blue-600 hover:underline bg-transparent border-none cursor-pointer"
+                  >
+                    Quên Mật Khẩu?
+                  </button>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isLoggingIn}
+                    className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                  >
+                    {isLoggingIn ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      "Đăng Nhập"
+                    )}
+                  </button>
+                </div>
+
+                <div className="text-center pt-4">
+                  <p className="text-sm text-slate-500 font-medium">
+                    Chưa có tài khoản?{" "}
+                    <button
+                      type="button"
+                      onClick={() => setIsRegisterMode(true)}
+                      className="text-blue-600 font-bold hover:underline bg-transparent border-none cursor-pointer"
+                    >
+                      Đăng kí ngay
+                    </button>
+                  </p>
+                </div>
+
+              </form>
+            ) : (
+              <form onSubmit={handlePageRegister} className="space-y-4">
+                {registerError && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
+                    <AlertCircle size={16} /> {registerError}
+                  </div>
+                )}
+                {registerSuccess && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3 text-emerald-600 text-xs font-bold">
+                    <ShieldCheck size={16} /> Đăng ký thành công! Đang chuyển
+                    sang đăng nhập...
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    value={registerUsername}
+                    onChange={(e) => setRegisterUsername(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Tên đăng nhập"
+                    required
+                  />
+
+                  <input
+                    type="text"
+                    value={registerFullName}
+                    onChange={(e) => setRegisterFullName(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Họ và tên đầy đủ / Tên doanh nghiệp"
+                    required
+                  />
+
+                  <input
+                    type="email"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Email"
+                    required
+                  />
+
+                  <input
+                    type="password"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                    placeholder="Mật khẩu"
+                    required
+                  />
+
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                      Loại khách hàng
+                    </label>
+                    <select
+                      value={registerRole}
+                      onChange={(e) => setRegisterRole(e.target.value)}
+                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all cursor-pointer"
+                    >
+                      <option value="KhachHangB2C">Khách hàng cá nhân</option>
+                      <option value="KhachHangB2B">
+                        Khách hàng doanh nghiệp
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    disabled={registerLoading}
+                    className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                  >
+                    {registerLoading ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      "Đăng Ký Tài Khoản"
+                    )}
+                  </button>
+                </div>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsRegisterMode(false)}
+                    className="text-[11px] font-bold text-slate-400 hover:text-blue-600 bg-transparent border-none cursor-pointer transition-colors"
+                  >
+                    Đã có tài khoản? Đăng nhập
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+      {/* ═══════ NEWS DETAIL MODAL ═══════ */}
+      {isNewsOpen && selectedNews && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] relative animate-in zoom-in-95 duration-300">
+            <button
+              onClick={() => setIsNewsOpen(false)}
+              className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-white/80 backdrop-blur-md shadow-lg border border-slate-100 hover:bg-slate-50 transition-all flex items-center justify-center text-slate-950 cursor-pointer"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="h-[300px] sm:h-[400px] w-full relative overflow-hidden">
+              <img
+                src={getImageUrl(selectedNews.HinhAnh)}
+                alt={selectedNews.TieuDe}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
+              <div className="absolute bottom-10 left-10 right-10">
+                <span className="inline-flex items-center px-4 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 text-white uppercase tracking-widest mb-4">
+                  {new Date(selectedNews.createdAt).toLocaleDateString(
+                    "vi-VN",
+                    {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    },
+                  )}
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight">
+                  {selectedNews.TieuDe}
+                </h2>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-10 sm:p-14 bg-white">
+              <div className="max-w-2xl mx-auto space-y-8">
+                <div className="prose prose-slate prose-lg max-w-none">
+                  {selectedNews.NoiDung ? (
+                    <div
+                      className="text-slate-600 leading-relaxed font-medium space-y-4 whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ __html: selectedNews.NoiDung }}
+                    />
+                  ) : (
+                    <p className="text-slate-500 font-medium leading-relaxed italic">
+                      {selectedNews.Abstract ||
+                        "Thông tin đang được cập nhật..."}
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-10 border-t border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
+                      V
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        Ban biên tập VTSC
+                      </p>
+                      <p className="text-xs text-slate-400 font-medium">
+                        Chuyên trang quảng bá sản phẩm
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsNewsOpen(false)}
+                    className="px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-sm transition-all cursor-pointer border-none"
+                  >
+                    Đóng bài viết
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        )
-      }
-    </div >
+        </div>
+      )}
+
+      {/* ═══════ POLICY MODAL ═══════ */}
+      {isPolicyOpen && selectedPolicyType && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-300">
+            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                  {POLICIES_DATA[selectedPolicyType].icon}
+                </div>
+                {POLICIES_DATA[selectedPolicyType].title}
+              </h2>
+              <button
+                onClick={() => setIsPolicyOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div
+                className="prose prose-slate max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: POLICIES_DATA[selectedPolicyType].content,
+                }}
+              />
+            </div>
+            <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-50 flex justify-end">
+              <button
+                onClick={() => setIsPolicyOpen(false)}
+                className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+              >
+                Đã hiểu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

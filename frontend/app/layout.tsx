@@ -41,7 +41,6 @@ export default function RootLayout({
         <AuthProvider>
           <AlertOverride />
           {children}
-          <GlobalChatbot />
           <Toaster
             position="top-center"
             toastOptions={{

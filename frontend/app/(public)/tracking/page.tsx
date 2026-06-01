@@ -103,7 +103,8 @@ export default function TrackingPage() {
           const params = new URLSearchParams(window.location.search);
           const code = params.get('code');
           const orderId = params.get('orderId');
-          if (!code && !orderId && mapped.length > 0) {
+          const tab = params.get('tab');
+          if (!code && !orderId && mapped.length > 0 && tab !== 'samples' && tab !== 'rd') {
             setSelectedTracking(mapped[0]);
             setTrackingCode(mapped[0].code);
             setActiveTab('shipment');
@@ -201,8 +202,12 @@ export default function TrackingPage() {
   }, []);
 
   useEffect(() => {
-    // Read pre-filled query param if exists
-    if (typeof window !== 'undefined' && filteredTrackingData.length > 0) {
+    // Không dùng localStorage nữa, loadSampleRequests sẽ được gọi khi có user
+  }, []);
+
+  // Separate effect to handle query params so it doesn't depend on filteredTrackingData length
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
       const orderId = params.get('orderId');
@@ -212,52 +217,30 @@ export default function TrackingPage() {
         setActiveTab('samples');
       }
 
-      // Load sample requests from localstorage
-      const stored = localStorage.getItem('sampleRequests');
-      let localReqs = [];
-      if (stored) {
-        localReqs = JSON.parse(stored);
-        setSampleRequests(localReqs);
-      } else {
-        const defaultRequests = [
-          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
-          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026', LichSuPhienBan: [] },
-        ];
-        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
-        setSampleRequests(defaultRequests);
-        localReqs = defaultRequests;
-      }
-
       if (orderId) {
-        const foundShipping = filteredTrackingData.find((t: any) => t.dbRecord?.DonHang?._id === orderId || t.dbRecord?.DonHang === orderId);
-        if (foundShipping) {
-          setTrackingCode(foundShipping.code);
-          setSelectedTracking(foundShipping);
-          setActiveTab('shipment');
-        }
+        api.get(`/shipping/order/${orderId}`).then(res => {
+          if (res.data.success) {
+            const mapped = mapDBTrackingToUI(res.data.data);
+            setTrackingCode(mapped.code);
+            setSelectedTracking(mapped);
+            setActiveTab('shipment');
+          }
+        }).catch(e => console.error(e));
       } else if (code) {
         setTrackingCode(code);
-        // Try searching in shippingData
-        const foundShipping = filteredTrackingData.find((t: any) => t.code.toLowerCase() === code.toLowerCase());
-        if (foundShipping) {
-          setSelectedTracking(foundShipping);
-          setActiveTab('shipment');
-        } else {
-          // Check local R&D requests
-          const foundRD = customerRequests.find((r: any) => r.id === trackingCode);
-          if (foundRD) {
-            setSelectedSample(foundRD);
-            setActiveTab('samples');
-          } else {
-            // Try fetching from DB if not start with REQ
-            if (!code.toLowerCase().startsWith('req-')) {
-              fetchDBRDRequest(code);
-            }
+        api.get(`/shipping/track/${code}`).then(res => {
+          if (res.data.success) {
+            setSelectedTracking(mapDBTrackingToUI(res.data.data));
+            setActiveTab('shipment');
           }
-        }
+        }).catch(e => {
+          if (!code.toLowerCase().startsWith('req-')) {
+            fetchDBRDRequest(code);
+          }
+        });
       }
     }
-  }, [filteredTrackingData, user]);
+  }, []);
 
   // Simulating live package metrics ticking
   useEffect(() => {
@@ -294,46 +277,23 @@ export default function TrackingPage() {
     }
   }, [isAuthenticated, activeTab]);
 
-  const loadSampleRequests = () => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('sampleRequests');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setSampleRequests(parsed);
-
-        // Find user display name
-        const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-        const myReqs = parsed.filter((r: any) =>
-          r.customer === displayName ||
-          (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
-        );
-
-        if (myReqs.length > 0) {
-          setSelectedSample(myReqs[0]);
-        } else {
-          setSelectedSample(null);
-        }
-      } else {
-        const defaultRequests = [
-          { id: 'REQ-001', customer: 'NCC Aluminium', colorCode: 'INT-D2525', surface: 'Nhôm định hình', status: 'pending', date: '12/05/2026', LichSuPhienBan: [] },
-          { id: 'REQ-002', customer: 'VPIC Steel', colorCode: 'RAL-9005', surface: 'Thép tấm', status: 'processing', date: '11/05/2026', LichSuPhienBan: [] },
-        ];
-        setSampleRequests(defaultRequests);
-        localStorage.setItem('sampleRequests', JSON.stringify(defaultRequests));
-
-        const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-        const myReqs = defaultRequests.filter((r: any) =>
-          r.customer === displayName ||
-          (r.customer && r.customer.toLowerCase() === displayName.toLowerCase())
-        );
-        if (myReqs.length > 0) {
-          setSelectedSample(myReqs[0]);
+  const loadSampleRequests = async () => {
+    try {
+      const res = await api.get('/rd-tracking?type=standalone');
+      if (res.data.success) {
+        const mapped = res.data.data.map(mapDBRDToUI);
+        setSampleRequests(mapped);
+        
+        if (mapped.length > 0) {
+          setSelectedSample(mapped[0]);
         }
       }
+    } catch (err) {
+      console.error('Failed to load sample requests:', err);
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!trackingCode) return;
 
     if (activeTab === 'shipment') {
@@ -341,20 +301,17 @@ export default function TrackingPage() {
       if (found) {
         setSelectedTracking(found);
       } else {
-        // Try searching in local R&D in case they entered R&D code under shipping tab
-        const stored = localStorage.getItem('sampleRequests');
-        if (stored) {
-          const reqs = JSON.parse(stored);
-          const foundRD = reqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
-          if (foundRD) {
-            setSelectedSample(foundRD);
-            setActiveTab('samples');
-            setSelectedTracking(null);
+        try {
+          const res = await api.get(`/shipping/track/${trackingCode}`);
+          if (res.data.success) {
+            setSelectedTracking(mapDBTrackingToUI(res.data.data));
+            setActiveTab('shipment');
             return;
           }
+        } catch (e) {
+          // Continue to RD search
         }
-
-        // Try DB R&D
+        
         if (!trackingCode.toLowerCase().startsWith('req-')) {
           fetchDBRDRequest(trackingCode);
           return;
@@ -364,20 +321,14 @@ export default function TrackingPage() {
       }
     } else {
       // Searching under RD tab
-      const stored = localStorage.getItem('sampleRequests');
-      let localReqs = [];
-      if (stored) {
-        localReqs = JSON.parse(stored);
-      }
-
-      const foundRD = localReqs.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
+      const foundRD = sampleRequests.find((r: any) => r.id.toLowerCase() === trackingCode.toLowerCase());
       if (foundRD) {
         setSelectedSample(foundRD);
         setSelectedTracking(null);
       } else if (!trackingCode.toLowerCase().startsWith('req-')) {
         fetchDBRDRequest(trackingCode);
       } else {
-        toast.error('Không tìm thấy yêu cầu R&D. Thử: REQ-001 hoặc REQ-002');
+        toast.error('Không tìm thấy yêu cầu R&D.');
       }
     }
   };
@@ -428,13 +379,11 @@ export default function TrackingPage() {
     upcoming: 'bg-slate-100 text-slate-400 border border-slate-200',
   };
 
-  // Filter requests for the current customer
-  const displayName = user?.profile?.HoTen || user?.profile?.TenKhachHang || user?.username || '';
-  const customerRequests = sampleRequests.filter(req => {
-    const isMine = req.customer === displayName || (req.customer && req.customer.toLowerCase() === displayName.toLowerCase());
+  // Filter requests (Backend already filtered by user ID for security)
+  const customerRequests = filteredSampleRequests.filter(req => {
     const matchSearch = req.id.toLowerCase().includes(sampleSearchTerm.toLowerCase()) ||
-      req.colorCode.toLowerCase().includes(sampleSearchTerm.toLowerCase());
-    return isMine && matchSearch;
+      (req.colorCode && req.colorCode.toLowerCase().includes(sampleSearchTerm.toLowerCase()));
+    return matchSearch;
   });
 
   return (
@@ -513,7 +462,7 @@ export default function TrackingPage() {
             <div className="bg-white border border-slate-100 rounded-[32px] shadow-xl overflow-hidden mb-8">
               <div className="grid grid-cols-1 lg:grid-cols-3">
                 {/* Left Side: Tall Map */}
-                <div className="relative h-[500px] lg:h-[800px] lg:col-span-2 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50">
+                <div className="relative h-[500px] lg:h-[800px] lg:col-span-2 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50 order-last lg:order-first">
                   <RouteMap
                     origin="Số 215 Lạch Tray, Gia Viên, Hải Phòng"
                     destination={selectedTracking.address || ''}
@@ -537,7 +486,7 @@ export default function TrackingPage() {
                 </div>
 
                 {/* Right Side: Info & Timeline */}
-                <div className="p-8 flex flex-col h-[500px] lg:h-[800px] overflow-y-auto">
+                <div className="p-8 flex flex-col h-[500px] lg:h-[800px] overflow-y-auto order-first lg:order-last">
                   {/* Order Info Header */}
                   <div className="flex justify-between items-start flex-wrap gap-6 mb-8 pb-8 border-b border-slate-100 shrink-0">
                     <div className="flex-1">
@@ -606,18 +555,6 @@ export default function TrackingPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center shrink-0 hidden sm:flex">
-                      <QRCodeSVG
-                        value={`https://vtsc.vn/tracking/${selectedTracking.code}`}
-                        size={80}
-                        bgColor="#ffffff"
-                        fgColor="#0a0e27"
-                        level="H"
-                      />
-                      <div className="text-center mt-2 text-[9px] text-slate-400 font-mono font-bold">
-                        {selectedTracking.code}
-                      </div>
-                    </div>
                   </div>
 
                   {/* Timeline */}
@@ -681,6 +618,24 @@ export default function TrackingPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* QR Code at bottom */}
+                  <div className="mt-8 flex justify-center">
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center shrink-0">
+                      <QRCodeSVG
+                        value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking?code=${selectedTracking.code}`}
+                        size={100}
+                        bgColor="#ffffff"
+                        fgColor="#0a0e27"
+                        level="H"
+                      />
+                      <div className="text-center mt-3 text-[10px] text-slate-400 font-mono font-bold">
+                        Quét mã để theo dõi
+                        <br />
+                        {selectedTracking.code}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -738,7 +693,7 @@ export default function TrackingPage() {
                         )}
                       </div>
                       <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 group-hover:bg-white transition-colors">
-                        <QRCodeSVG value={`https://vtsc.vn/tracking/${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
+                        <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : 'https://vtsc.vn'}/tracking?code=${t.code}`} size={70} bgColor="transparent" fgColor="#0f172a" />
                       </div>
                     </div>
                   );
@@ -867,7 +822,7 @@ export default function TrackingPage() {
                             <QrCode size={16} /> QR Code
                           </button>
                           <Link
-                            href={`/tracking/rd/${req.id}`}
+                            href={`/rd-tracking/${req.id}`}
                             className="flex-1 flex justify-center items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-600/20 hover:-translate-y-0.5 transition-all"
                           >
                             Xem chi tiết <ChevronRight size={16} />

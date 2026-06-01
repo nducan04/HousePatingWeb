@@ -324,12 +324,12 @@ function SalesDashboard({ data }: { data: any }) {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100 min-w-0">
           <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
             <Activity className="text-blue-600" size={20} /> Xu hướng Doanh thu vs Kế hoạch
           </h3>
-          <div className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[350px] min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <ComposedChart data={trends}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
@@ -343,12 +343,12 @@ function SalesDashboard({ data }: { data: any }) {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 min-w-0">
           <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
             <PieChartIcon className="text-emerald-600" size={20} /> Cơ cấu Doanh thu Sản phẩm
           </h3>
-          <div className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[350px] min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <PieChart>
                 <Pie
                   data={data.detailed?.revenueByCategory || []}
@@ -393,10 +393,10 @@ function InventoryDashboard({ data }: { data: any }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 min-w-0">
           <h3 className="text-lg font-black text-slate-900 mb-6">Phân bổ Tồn kho theo Danh mục</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[300px] min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={catDist} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                 <XAxis type="number" hide />
@@ -514,10 +514,10 @@ function ProductionDashboard({ data }: { data: any }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Donut Chart */}
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center min-w-0">
           <h3 className="text-lg font-black text-slate-900 mb-6 w-full flex items-center gap-2"><PieChartIcon className="text-blue-600" size={20} /> Tỉ lệ trạng thái mẫu KCS</h3>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[300px] w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <PieChart>
                 <Pie data={donutData} innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
                   {donutData.map((entry, index) => (
@@ -532,10 +532,10 @@ function ProductionDashboard({ data }: { data: any }) {
         </div>
 
         {/* Bar Chart */}
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center min-w-0">
           <h3 className="text-lg font-black text-slate-900 mb-6 w-full flex items-center gap-2"><BarChartIcon className="text-blue-600" size={20} /> Phân bổ số mẻ test theo trạng thái</h3>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[300px] w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={barData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
@@ -549,10 +549,10 @@ function ProductionDashboard({ data }: { data: any }) {
       </div>
 
       {/* Line Chart */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center">
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center min-w-0">
         <h3 className="text-lg font-black text-slate-900 mb-6 w-full flex items-center gap-2"><LineChartIcon className="text-blue-600" size={20} /> Độ hao hụt (%) trung bình theo 5 log mới nhất</h3>
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-[300px] w-full min-w-0">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <LineChart data={lineData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
@@ -604,12 +604,12 @@ function CustomerServiceDashboard({ data }: { data: any }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100 min-w-0">
           <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
             <Activity className="text-blue-600" size={20} /> Xu hướng bảo hành/đổi trả theo tuần
           </h3>
-          <div className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[350px] min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={supportTrends}>
                 <defs>
                   <linearGradient id="colorTickets" x1="0" y1="0" x2="0" y2="1">
@@ -679,12 +679,12 @@ function HrDashboard({ data }: { data: any }) {
         <KpiCard title="Tỷ lệ đi làm đúng giờ" value={`${kpi.onTimeRate}%`} icon={<Clock />} color="emerald" />
       </div>
 
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-w-4xl mx-auto">
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-w-4xl mx-auto min-w-0">
         <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
           <Users className="text-blue-600" size={20} /> Biến động nhân sự theo tháng
         </h3>
-        <div className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-[400px] min-w-0">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <BarChart data={hrTrends}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
