@@ -296,23 +296,27 @@ export default function AdminLayout({
       return;
     }
 
-    // Tìm item khớp với pathname hiện tại (chọn item có href dài nhất để xử lý chính xác các trang con như /rd-tracking/new)
-    let matchedItem: any = null;
+    // Tìm tất cả items khớp với pathname hiện tại
+    const matchedItems: any[] = [];
     allNavItems.forEach((section) => {
       section.items.forEach((item) => {
         if (
           item.href &&
           (pathname === item.href || pathname.startsWith(item.href + "/"))
         ) {
-          if (!matchedItem || item.href.length > matchedItem.href.length) {
-            matchedItem = item;
-          }
+          matchedItems.push(item);
         }
       });
     });
 
-    if (matchedItem) {
-      if (!matchedItem.roles.includes(userRole)) {
+    if (matchedItems.length > 0) {
+      // Lọc các items khớp có độ dài href lớn nhất
+      const maxLength = Math.max(...matchedItems.map((item) => item.href.length));
+      const bestMatches = matchedItems.filter((item) => item.href.length === maxLength);
+
+      // Cho phép truy cập nếu có bất kỳ item nào chứa vai trò của user
+      const isAllowed = bestMatches.some((item) => item.roles.includes(userRole));
+      if (!isAllowed) {
         if (isCustomer) {
           router.push("/");
         } else {
