@@ -117,17 +117,12 @@ const allNavItems = [
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/quan-ly-ma-mau",
+        href: "/colors",
         label: "Tra cứu mã màu",
         icon: Palette,
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
-      {
-        href: "/nhap-du-lieu",
-        label: "Nhập dữ liệu",
-        icon: FileUp,
-        roles: ["Admin", "NhanVien"],
-      },
+
     ],
   },
   {
@@ -161,12 +156,6 @@ const allNavItems = [
         href: "/hieu-suat",
         label: "Theo dõi hiệu suất",
         icon: SignalHigh,
-        roles: ["Admin", "NhanVien"],
-      },
-      {
-        href: "/doi-tra",
-        label: "Trung Tâm Giải Quyết Khiếu Nại",
-        icon: ReceiptRussianRuble,
         roles: ["Admin", "NhanVien"],
       },
       {
