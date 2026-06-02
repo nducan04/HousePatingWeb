@@ -20,7 +20,7 @@ interface KhachHang {
 const CartItemRow = ({ item, isSelected, onSelect, onRemove, products, updateQuantityStore, sessionId, getImageUrl }: any) => {
   const [localQty, setLocalQty] = React.useState(item.SoLuong);
   const timeoutRef = React.useRef<any>(null);
-  
+
   React.useEffect(() => {
     setLocalQty(item.SoLuong);
   }, [item.SoLuong]);
@@ -36,7 +36,7 @@ const CartItemRow = ({ item, isSelected, onSelect, onRemove, products, updateQua
       newQty = stock;
     }
     setLocalQty(newQty);
-    
+
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       updateQuantityStore(sessionId, item.SanPham._id, newQty);
@@ -46,8 +46,8 @@ const CartItemRow = ({ item, isSelected, onSelect, onRemove, products, updateQua
   return (
     <div className="grid grid-cols-12 gap-4 items-center py-4 bg-white border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors rounded-xl px-2">
       <div className="col-span-5 flex items-center gap-4">
-        <input 
-          type="checkbox" 
+        <input
+          type="checkbox"
           className="w-4 h-4 cursor-pointer accent-[#1c3c77]"
           checked={isSelected}
           onChange={() => onSelect(item.SanPham?._id)}
@@ -72,11 +72,11 @@ const CartItemRow = ({ item, isSelected, onSelect, onRemove, products, updateQua
           </div>
         </div>
       </div>
-      
+
       <div className="col-span-2 text-center text-sm font-bold text-slate-500">
         {(item.SanPham?.DonGiaCoSo || 0).toLocaleString()} ₫
       </div>
-      
+
       <div className="col-span-2 flex justify-center">
         <div className="flex items-center bg-white border border-slate-200 rounded-lg h-9 shadow-sm">
           <button onClick={() => updateWithDebounce(localQty - 1)} className="text-slate-500 hover:text-[#1c3c77] font-bold px-3 h-full border-r border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-l-lg transition-colors">-</button>
@@ -91,7 +91,7 @@ const CartItemRow = ({ item, isSelected, onSelect, onRemove, products, updateQua
           <button onClick={() => updateWithDebounce(localQty + 1)} className="text-slate-500 hover:text-[#1c3c77] font-bold px-3 h-full border-l border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-r-lg transition-colors">+</button>
         </div>
       </div>
-      
+
       <div className="col-span-3 flex items-center justify-end gap-3">
         <span className="text-sm font-black text-rose-600">
           {((item.SanPham?.DonGiaCoSo || 0) * localQty).toLocaleString()} ₫
@@ -239,13 +239,13 @@ export default function GioHangPage() {
 
   const handleCheckout = async () => {
     if (selectedItems.size === 0) return alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán');
-    
+
     // Store selected items to session storage for the checkout page
     sessionStorage.setItem('checkoutItems', JSON.stringify(Array.from(selectedItems)));
     if (discountInfo) {
       sessionStorage.setItem('checkoutDiscount', JSON.stringify(discountInfo));
     }
-    
+
     // Navigate to checkout page
     router.push('/checkout');
   };
@@ -273,11 +273,13 @@ export default function GioHangPage() {
     .filter((item: any) => selectedItems.has(item.SanPham?._id))
     .reduce((acc: number, item: any) => acc + (item.SanPham?.DonGiaCoSo || 0) * item.SoLuong, 0);
 
-  const finalTotal = selectedTotal - (discountInfo?.DiscountAmount || 0);
+  const subTotalAfterDiscount = Math.max(0, selectedTotal - (discountInfo?.DiscountAmount || 0));
+  const vatAmount = subTotalAfterDiscount * 0.1;
+  const finalTotal = subTotalAfterDiscount + vatAmount;
 
   return (
     <div className="min-h-screen font-sans pb-20 relative text-slate-800" style={{ backgroundColor: '#f0f4f8' }}>
-      
+
       {/* HEADER (Giống ảnh mẫu, nhưng dùng logo VTSC PaintPro) */}
       <header className="bg-white px-8 py-4 flex items-center justify-between shadow-sm sticky top-0 z-50 border-b border-slate-200">
         <Link href="/" className="flex items-center gap-3 no-underline group">
@@ -313,14 +315,14 @@ export default function GioHangPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* LEFT COLUMN: CART ITEMS TABLE */}
           <div className="lg:col-span-8">
             <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 h-full">
-              
+
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   className="w-4 h-4 cursor-pointer accent-[#1c3c77]"
                   checked={cartItems.length > 0 && selectedItems.size === cartItems.length}
                   onChange={handleSelectAll}
@@ -368,110 +370,109 @@ export default function GioHangPage() {
             <div className="sticky top-[100px] space-y-6">
               <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">
                 <h3 className="text-lg font-black text-[#1c3c77] mb-6">Tóm tắt đơn hàng</h3>
-              
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">Sản phẩm đã chọn:</span>
-                  <span className="text-sm font-bold text-slate-800">{selectedItems.size} món</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">Tạm tính:</span>
-                  <span className="text-sm font-bold text-slate-800">{selectedTotal.toLocaleString()} ₫</span>
-                </div>
-                {discountInfo && (
-                  <div className="flex justify-between items-center text-emerald-600">
-                    <span className="text-sm">Giảm giá:</span>
-                    <span className="text-sm font-bold">-{discountInfo.DiscountAmount.toLocaleString()} ₫</span>
+
+                <div className="space-y-4 mb-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-500">Sản phẩm đã chọn:</span>
+                    <span className="text-sm font-bold text-slate-800">{selectedItems.size} món</span>
                   </div>
-                )}
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                  <span className="text-sm text-slate-500">Phí giao hàng:</span>
-                  <span className="text-sm text-slate-400 italic">Tính khi thanh toán</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-500">Tạm tính:</span>
+                    <span className="text-sm font-bold text-slate-800">{selectedTotal.toLocaleString()} ₫</span>
+                  </div>
+                  {discountInfo && (
+                    <div className="flex justify-between items-center text-emerald-600">
+                      <span className="text-sm">Giảm giá:</span>
+                      <span className="text-sm font-bold">-{discountInfo.DiscountAmount.toLocaleString()} ₫</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-500">Thuế VAT (10%):</span>
+                    <span className="text-sm font-bold text-slate-800">{vatAmount.toLocaleString()} ₫</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-base font-black text-slate-800">Tổng cộng:</span>
+                    <span className="text-xl font-black text-rose-600">{finalTotal.toLocaleString()} ₫</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-base font-black text-slate-800">Tổng cộng:</span>
-                  <span className="text-xl font-black text-rose-600">{finalTotal.toLocaleString()} ₫</span>
+
+                {/* CUSTOMER & VOUCHER FORM */}
+                <div className="space-y-4 mb-6 pt-4 border-t border-slate-100">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Thông tin giao hàng</label>
+                  {isAdminOrEmployee ? (
+                    <select
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#1c3c77] transition-all"
+                      value={selectedCustomerId}
+                      onChange={e => handleCustomerChange(e.target.value)}
+                    >
+                      <option value="">-- Chọn khách hàng --</option>
+                      {customers.map(c => <option key={c._id} value={c._id}>{c.TenKhachHang}</option>)}
+                    </select>
+                  ) : (
+                    <div className="text-sm font-bold text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center gap-2">
+                      <User size={16} className="text-slate-400" /> {user?.profile?.TenKhachHang}
+                    </div>
+                  )}
+
+                  <textarea
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#1c3c77] transition-all min-h-[80px]"
+                    placeholder="Nhập địa chỉ giao hàng..."
+                    value={shippingAddress}
+                    onChange={e => setShippingAddress(e.target.value)}
+                  />
+
+                  <div className="flex gap-2 pt-2">
+                    <div className="relative flex-1">
+                      <Tag size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 pl-9 text-sm uppercase text-slate-800 outline-none focus:border-[#1c3c77]"
+                        placeholder="MÃ GIẢM GIÁ"
+                        value={discountCode}
+                        onChange={e => setDiscountCode(e.target.value.toUpperCase())}
+                      />
+                    </div>
+                    <button onClick={handleApplyVoucher} className="px-5 bg-slate-800 text-white font-bold text-xs rounded-xl hover:bg-slate-700 transition-colors">Áp dụng</button>
+                  </div>
+                  {discountInfo && (
+                    <div className="flex items-center justify-between bg-emerald-50 text-emerald-700 px-3 py-2 rounded-xl text-xs font-bold border border-emerald-100">
+                      <div className="flex items-center gap-1.5"><CheckCircle2 size={14} /> Đã áp dụng mã giảm giá</div>
+                      <button onClick={() => { setDiscountInfo(null); setDiscountCode(''); }} className="text-rose-500 hover:text-rose-700"><Trash size={14} /></button>
+                    </div>
+                  )}
                 </div>
+
+                <button
+                  onClick={handleCheckout}
+                  disabled={selectedItems.size === 0 || isSubmitting}
+                  className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${selectedItems.size > 0 && !isSubmitting
+                      ? 'bg-gradient-to-r from-[#1c3c77] to-blue-800 text-white hover:shadow-lg hover:shadow-blue-900/20 hover:-translate-y-0.5 cursor-pointer'
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    }`}
+                >
+                  {isSubmitting ? 'ĐANG XỬ LÝ...' : `TIẾN HÀNH THANH TOÁN (${finalTotal.toLocaleString()} đ)`}
+                </button>
               </div>
 
-              {/* CUSTOMER & VOUCHER FORM */}
-              <div className="space-y-4 mb-6 pt-4 border-t border-slate-100">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Thông tin giao hàng</label>
-                {isAdminOrEmployee ? (
-                  <select
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#1c3c77] transition-all"
-                    value={selectedCustomerId}
-                    onChange={e => handleCustomerChange(e.target.value)}
-                  >
-                    <option value="">-- Chọn khách hàng --</option>
-                    {customers.map(c => <option key={c._id} value={c._id}>{c.TenKhachHang}</option>)}
-                  </select>
-                ) : (
-                  <div className="text-sm font-bold text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center gap-2">
-                    <User size={16} className="text-slate-400" /> {user?.profile?.TenKhachHang}
-                  </div>
-                )}
-                
-                <textarea
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#1c3c77] transition-all min-h-[80px]"
-                  placeholder="Nhập địa chỉ giao hàng..."
-                  value={shippingAddress}
-                  onChange={e => setShippingAddress(e.target.value)}
-                />
-
-                <div className="flex gap-2 pt-2">
-                  <div className="relative flex-1">
-                    <Tag size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 pl-9 text-sm uppercase text-slate-800 outline-none focus:border-[#1c3c77]"
-                      placeholder="MÃ GIẢM GIÁ"
-                      value={discountCode}
-                      onChange={e => setDiscountCode(e.target.value.toUpperCase())}
-                    />
-                  </div>
-                  <button onClick={handleApplyVoucher} className="px-5 bg-slate-800 text-white font-bold text-xs rounded-xl hover:bg-slate-700 transition-colors">Áp dụng</button>
-                </div>
-                {discountInfo && (
-                  <div className="flex items-center justify-between bg-emerald-50 text-emerald-700 px-3 py-2 rounded-xl text-xs font-bold border border-emerald-100">
-                    <div className="flex items-center gap-1.5"><CheckCircle2 size={14} /> Đã áp dụng mã giảm giá</div>
-                    <button onClick={() => { setDiscountInfo(null); setDiscountCode(''); }} className="text-rose-500 hover:text-rose-700"><Trash size={14}/></button>
-                  </div>
-                )}
+              {/* CÁC CHỨC NĂNG THEO YÊU CẦU: Đơn hàng, Tracking, Thanh toán, R&D */}
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <Link href={isAdminOrEmployee ? "/don-hang" : "/my-orders"} className="bg-white p-4 rounded-[20px] shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center gap-2 no-underline group border border-slate-100 hover:border-blue-200">
+                  <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all"><Package size={18} /></div>
+                  <span className="text-[11px] font-bold text-slate-700 group-hover:text-blue-600">Đơn hàng</span>
+                </Link>
+                <Link href="/tracking" className="bg-white p-4 rounded-[20px] shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center gap-2 no-underline group border border-slate-100 hover:border-emerald-200">
+                  <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all"><Truck size={18} /></div>
+                  <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-600">Tracking</span>
+                </Link>
+                <Link href={isAdminOrEmployee ? "/quan-ly-thanh-toan" : "/my-payments"} className="bg-white p-4 rounded-[20px] shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center gap-2 no-underline group border border-slate-100 hover:border-indigo-200">
+                  <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all"><QrCode size={18} /></div>
+                  <span className="text-[11px] font-bold text-slate-700 group-hover:text-indigo-600">Thanh toán</span>
+                </Link>
+                <Link href={isAdminOrEmployee ? "/rd-tracking" : "/tracking?tab=rd"} className="bg-white p-4 rounded-[20px] shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center gap-2 no-underline group border border-slate-100 hover:border-purple-200">
+                  <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all"><Beaker size={18} /></div>
+                  <span className="text-[11px] font-bold text-slate-700 group-hover:text-purple-600">R&D</span>
+                </Link>
               </div>
-
-              <button
-                onClick={handleCheckout}
-                disabled={selectedItems.size === 0 || isSubmitting}
-                className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-                  selectedItems.size > 0 && !isSubmitting 
-                  ? 'bg-gradient-to-r from-[#1c3c77] to-blue-800 text-white hover:shadow-lg hover:shadow-blue-900/20 hover:-translate-y-0.5 cursor-pointer' 
-                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                }`}
-              >
-                {isSubmitting ? 'ĐANG XỬ LÝ...' : `TIẾN HÀNH THANH TOÁN (${finalTotal.toLocaleString()} đ)`}
-              </button>
-            </div>
-
-            {/* CÁC CHỨC NĂNG THEO YÊU CẦU: Đơn hàng, Tracking, Thanh toán, R&D */}
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <Link href={isAdminOrEmployee ? "/don-hang" : "/my-orders"} className="bg-white p-4 rounded-[20px] shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center gap-2 no-underline group border border-slate-100 hover:border-blue-200">
-                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all"><Package size={18} /></div>
-                <span className="text-[11px] font-bold text-slate-700 group-hover:text-blue-600">Đơn hàng</span>
-              </Link>
-              <Link href="/tracking" className="bg-white p-4 rounded-[20px] shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center gap-2 no-underline group border border-slate-100 hover:border-emerald-200">
-                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all"><Truck size={18} /></div>
-                <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-600">Tracking</span>
-              </Link>
-              <Link href={isAdminOrEmployee ? "/quan-ly-thanh-toan" : "/my-payments"} className="bg-white p-4 rounded-[20px] shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center gap-2 no-underline group border border-slate-100 hover:border-indigo-200">
-                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all"><QrCode size={18} /></div>
-                <span className="text-[11px] font-bold text-slate-700 group-hover:text-indigo-600">Thanh toán</span>
-              </Link>
-              <Link href={isAdminOrEmployee ? "/rd-tracking" : "/tracking?tab=rd"} className="bg-white p-4 rounded-[20px] shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center gap-2 no-underline group border border-slate-100 hover:border-purple-200">
-                <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all"><Beaker size={18} /></div>
-                <span className="text-[11px] font-bold text-slate-700 group-hover:text-purple-600">R&D</span>
-              </Link>
-            </div>
             </div>
           </div>
         </div>
