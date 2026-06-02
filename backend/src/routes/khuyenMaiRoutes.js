@@ -6,7 +6,8 @@ const {
     createVoucher,
     updateVoucher,
     deleteVoucher,
-    validateVoucher
+    validateVoucher,
+    getVoucherStats
 } = require('../controllers/khuyenMaiController');
 
 // Validate is accessible to all logged in users (for cart)
@@ -19,5 +20,6 @@ router.use(authorize('Admin', 'NhanVien'));
 router.post('/', createVoucher);
 router.put('/:id', updateVoucher);
 router.delete('/:id', deleteVoucher);
+router.get('/:id/stats', getVoucherStats);
 
 module.exports = router;

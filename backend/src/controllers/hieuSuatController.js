@@ -36,12 +36,13 @@ exports.getPerformanceStats = async (req, res) => {
         ]);
 
         // 4. TỔNG HỢP R&D (Kỹ thuật pha chế)
-        // Lưu ý: NhatKyTestMau lưu tester là string (tên), nên ta aggregate theo tên
+        // Lưu ý: NhatKyTestMau lưu testerCode và tester, ta ưu tiên testerCode (MaNV)
         const rdStats = await NhatKyTestMau.aggregate([
             { $unwind: '$LichSuPhienBan' },
             {
                 $group: {
-                    _id: '$LichSuPhienBan.tester',
+                    _id: '$LichSuPhienBan.testerCode',
+                    testerName: { $first: '$LichSuPhienBan.tester' },
                     testCount: { $sum: 1 },
                     passCount: { $sum: { $cond: [{ $eq: ['$LichSuPhienBan.result', 'pass'] }, 1, 0] } },
                     failCount: { $sum: { $cond: [{ $eq: ['$LichSuPhienBan.result', 'fail'] }, 1, 0] } }
@@ -63,15 +64,16 @@ exports.getPerformanceStats = async (req, res) => {
         const passRate = globalTotalTests > 0 ? parseFloat(((globalPassTests / globalTotalTests) * 100).toFixed(1)) : 0;
 
         const mixingChartData = rdStats
-            .filter(s => s._id)
+            .filter(s => s._id || s.testerName)
             .map(s => {
-                const isSystem = s._id.toLowerCase().includes('hệ thống') || s._id.toLowerCase().includes('system');
+                const identifier = s._id || s.testerName || 'Unknown';
+                const isSystem = identifier.toLowerCase().includes('hệ thống') || identifier.toLowerCase().includes('system');
                 let displayName = '';
                 if (isSystem) {
                     displayName = 'Hợp đồng pha chế';
                 } else {
-                    const nameParts = s._id.split(' ');
-                    displayName = nameParts.length > 2 ? nameParts.slice(-2).join(' ') : s._id;
+                    const nameParts = (s.testerName || identifier).split(' ');
+                    displayName = nameParts.length > 2 ? nameParts.slice(-2).join(' ') : (s.testerName || identifier);
                 }
                 return {
                     name: displayName,
@@ -97,6 +99,7 @@ exports.getPerformanceStats = async (req, res) => {
         const processedStaff = staff.map(nv => {
             const nvId = nv._id.toString();
             const nvName = nv.HoTen;
+            const nvMaNV = nv.MaNV;
 
             // Doanh số
             const sales = salesStats.find(s => s._id && s._id.toString() === nvId) || { totalRevenue: 0, orderCount: 0 };
@@ -104,8 +107,8 @@ exports.getPerformanceStats = async (req, res) => {
             // Logistics
             const logistics = logisticsStats.find(l => l._id && l._id.toString() === nvId) || { deliveryCount: 0 };
 
-            // R&D (Dựa trên tên nhân viên)
-            const rd = rdStats.find(r => r._id === nvName) || { testCount: 0 };
+            // R&D (Ưu tiên theo mã nhân viên, fallback theo tên)
+            const rd = rdStats.find(r => (r._id && r._id === nvMaNV) || (r.testerName && r.testerName === nvName)) || { testCount: 0 };
 
             // CSKH
             const support = supportStats.find(su => su._id && su._id.toString() === nvId) || { ticketCount: 0 };
@@ -143,6 +146,55 @@ exports.getPerformanceStats = async (req, res) => {
 
         const bestStaff = processedStaff.sort((a, b) => (b.revenue + b.deliveries * 1000000 + b.tests * 500000) - (a.revenue + a.deliveries * 1000000 + a.tests * 500000))[0];
 
+        // 7. TÍNH TOÁN DỮ LIỆU BIỂU ĐỒ RADAR (ĐỘNG)
+        let techScore = 90;
+        let salesScore = 85;
+        let disciplineScore = 90;
+        let attitudeScore = 92;
+
+        const employeeId = req.query.employeeId;
+        if (employeeId) {
+            const emp = staff.find(nv => nv._id.toString() === employeeId || nv.MaNV === employeeId);
+            if (emp) {
+                techScore = emp.HieuSuatKPI?.tyLeTestMau || emp.HieuSuatKPI?.diemKPI || 85;
+                salesScore = emp.HieuSuatKPI?.diemKPI || 80;
+                disciplineScore = emp.HieuSuatKPI?.tyLeMotDon || 90;
+                attitudeScore = emp.HieuSuatKPI?.diemDanhGia || 92;
+            }
+        } else {
+            const techStaff = staff.filter(nv => ['Kỹ thuật', 'Sản xuất'].includes(nv.BoPhan));
+            const salesStaff = staff.filter(nv => ['Kinh doanh', 'Sale / MKT'].includes(nv.BoPhan));
+
+            const avgTechKPI = techStaff.length > 0
+                ? techStaff.reduce((sum, nv) => sum + (nv.HieuSuatKPI?.tyLeTestMau || nv.HieuSuatKPI?.diemKPI || 85), 0) / techStaff.length
+                : 85;
+
+            const rdBase = passRate > 0 ? passRate : avgTechKPI;
+            techScore = rdBase;
+
+            const avgSalesKPI = salesStaff.length > 0
+                ? salesStaff.reduce((sum, nv) => sum + (nv.HieuSuatKPI?.diemKPI || 80), 0) / salesStaff.length
+                : 80;
+            salesScore = avgSalesKPI;
+
+            const avgDiscipline = staff.length > 0
+                ? staff.reduce((sum, nv) => sum + (nv.HieuSuatKPI?.tyLeMotDon || 90), 0) / staff.length
+                : 90;
+            disciplineScore = avgDiscipline;
+
+            const avgAttitude = staff.length > 0
+                ? staff.reduce((sum, nv) => sum + (nv.HieuSuatKPI?.diemDanhGia || 92), 0) / staff.length
+                : 92;
+            attitudeScore = avgAttitude;
+        }
+
+        const radarData = [
+            { subject: 'Kỹ thuật', A: Math.round((techScore / 100) * 150), fullMark: 150 },
+            { subject: 'Doanh số', A: Math.round((salesScore / 100) * 150), fullMark: 150 },
+            { subject: 'Kỷ luật', A: Math.round((disciplineScore / 100) * 150), fullMark: 150 },
+            { subject: 'Thái độ', A: Math.round((attitudeScore / 100) * 150), fullMark: 150 }
+        ];
+
         res.status(200).json({
             success: true,
             summary: {
@@ -154,13 +206,7 @@ exports.getPerformanceStats = async (req, res) => {
             charts: {
                 topSales: topSalesStaff,
                 mixingStats: mixingChartData,
-                // Radar data based on global avg or specific staff if passed in query
-                radar: [
-                    { subject: 'Kỹ thuật', A: 120, fullMark: 150 },
-                    { subject: 'Doanh số', A: 110, fullMark: 150 },
-                    { subject: 'Kỷ luật', A: 130, fullMark: 150 },
-                    { subject: 'Thái độ', A: 140, fullMark: 150 },
-                ]
+                radar: radarData
             },
             staff: processedStaff
         });

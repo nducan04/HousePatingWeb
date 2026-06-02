@@ -104,19 +104,22 @@ export default function LoyaltyPromotionHub() {
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [selectedVoucherDetails, setSelectedVoucherDetails] = useState<Voucher | null>(null);
 
-  const getMockAppliedOrders = (voucher: Voucher): AppliedOrder[] => {
-    return Array.from({ length: 5 }).map((_, idx) => {
-      const originalPrice = 1000000 + Math.floor(Math.random() * 4000000);
-      const discountAmount = voucher.type === 'percent' ? (originalPrice * voucher.value) / 100 : voucher.value;
-      return {
-        orderId: `DH202605${Math.floor(1000 + Math.random() * 9000)}`,
-        customerName: `Khách hàng ${idx + 1}`,
-        orderDate: new Date(Date.now() - Math.floor(Math.random() * 10) * 86400000).toISOString().split('T')[0],
-        originalPrice,
-        discountAmount,
-        finalPrice: originalPrice - discountAmount,
-      };
-    });
+  const [appliedOrders, setAppliedOrders] = useState<AppliedOrder[]>([]);
+
+  const fetchVoucherStats = async (voucherId: string | number) => {
+    try {
+      const res = await api.get(`/khuyen-mai/${voucherId}/stats`);
+      if (res.data.success) {
+        setAppliedOrders(res.data.data.appliedOrders);
+      }
+    } catch (error) {
+      console.error("Lỗi tải chi tiết thống kê voucher:", error);
+    }
+  };
+
+  const handleOpenVoucherDetails = (v: Voucher) => {
+    setSelectedVoucherDetails(v);
+    fetchVoucherStats(v.id);
   };
 
   // Toast
@@ -142,32 +145,26 @@ export default function LoyaltyPromotionHub() {
         console.error("Lỗi tải khách hàng:", error);
       }
 
-      setVouchers([
-      {
-        id: 1,
-        code: "VTSC-VIP20",
-        type: "percent",
-        value: 20,
-        condition: "Chỉ áp dụng cho hạng VIP",
-        used: 124,
-        budget: 500,
-        status: "active",
-        startDate: "2026-04-01",
-        endDate: "2026-06-30"
-      },
-      {
-        id: 2,
-        code: "SUMMER50",
-        type: "fixed",
-        value: 5000000,
-        condition: "Đơn hàng ≥ 50 triệu",
-        used: 87,
-        budget: 300,
-        status: "active",
-        startDate: "2026-05-01",
-        endDate: "2026-07-31"
-      },
-    ]);
+      try {
+        const resVouchers = await api.get('/khuyen-mai');
+        if (resVouchers.data.success) {
+          const fetchedVouchers: Voucher[] = resVouchers.data.data.map((v: any) => ({
+            id: v._id,
+            code: v.MaVoucher,
+            type: v.LoaiGiamGia === 'PHAN_TRAM' ? 'percent' : 'fixed',
+            value: v.MucGiam,
+            condition: v.GhiChu || `Giảm ${v.LoaiGiamGia === 'PHAN_TRAM' ? v.MucGiam + '%' : v.MucGiam.toLocaleString() + 'đ'}`,
+            used: v.SoLuongDaDung || 0,
+            budget: v.SoLuongToiDa || 0,
+            status: v.TrangThai === 'DANG_DIEN_RA' ? 'active' : 'ended',
+            startDate: new Date(v.NgayBatDau || v.createdAt).toISOString().split('T')[0],
+            endDate: new Date(v.NgayHetHan).toISOString().split('T')[0]
+          }));
+          setVouchers(fetchedVouchers);
+        }
+      } catch (error) {
+        console.error("Lỗi tải danh sách voucher:", error);
+      }
 
     setLoading(false);
     };
@@ -183,11 +180,12 @@ export default function LoyaltyPromotionHub() {
     value: 0,
     targetTier: 'all' as 'all' | 'VIP' | 'Vàng' | 'Bạc' | 'New',
     minOrder: 0,
+    maxUsage: 500,
     startDate: '',
     endDate: ''
   });
 
-  const handleCreateCampaign = () => {
+  const handleCreateCampaign = async () => {
     if (!formData.name || !formData.code) {
       alert("Vui lòng nhập tên chiến dịch và mã voucher");
       return;
@@ -197,26 +195,46 @@ export default function LoyaltyPromotionHub() {
       ? `Chỉ áp dụng cho hạng ${formData.targetTier === 'New' ? 'Khách hàng mới' : formData.targetTier}`
       : `Đơn hàng ≥ ${formData.minOrder.toLocaleString()}đ`;
 
-    const newVoucher: Voucher = {
-      id: Date.now(),
-      code: formData.code,
-      type: formData.type,
-      value: formData.value,
-      condition: conditionText,
-      used: 0,
-      budget: 200,
-      status: 'active',
-      startDate: formData.startDate || new Date().toISOString().split('T')[0],
-      endDate: formData.endDate || '2026-12-31'
-    };
+    try {
+      const payload = {
+        MaVoucher: formData.code,
+        LoaiGiamGia: formData.type === 'percent' ? 'PHAN_TRAM' : 'GIAM_THANG',
+        MucGiam: formData.value,
+        DonHangToiThieu: formData.minOrder,
+        NgayBatDau: formData.startDate || new Date().toISOString().split('T')[0],
+        NgayHetHan: formData.endDate || '2026-12-31',
+        SoLuongToiDa: formData.maxUsage || 500,
+        GhiChu: conditionText
+      };
 
-    setVouchers([...vouchers, newVoucher]);
-    setIsCampaignModalOpen(false);
-    setFormData({
-      name: '', code: '', type: 'percent', value: 0,
-      targetTier: 'all', minOrder: 0, startDate: '', endDate: ''
-    });
-    showToast("Đã tạo chiến dịch thành công!");
+      const res = await api.post('/khuyen-mai', payload);
+      
+      if (res.data.success) {
+        const v = res.data.data;
+        const newVoucher: Voucher = {
+          id: v._id,
+          code: v.MaVoucher,
+          type: v.LoaiGiamGia === 'PHAN_TRAM' ? 'percent' : 'fixed',
+          value: v.MucGiam,
+          condition: v.GhiChu || conditionText,
+          used: v.SoLuongDaDung || 0,
+          budget: v.SoLuongToiDa || formData.maxUsage || 500,
+          status: v.TrangThai === 'DANG_DIEN_RA' ? 'active' : 'ended',
+          startDate: new Date(v.NgayBatDau).toISOString().split('T')[0],
+          endDate: new Date(v.NgayHetHan).toISOString().split('T')[0]
+        };
+
+        setVouchers([newVoucher, ...vouchers]);
+        setIsCampaignModalOpen(false);
+        setFormData({
+          name: '', code: '', type: 'percent', value: 0,
+          targetTier: 'all', minOrder: 0, maxUsage: 500, startDate: '', endDate: ''
+        });
+        showToast("Đã tạo chiến dịch thành công!");
+      }
+    } catch (error: any) {
+      alert("Lỗi tạo chiến dịch: " + (error.response?.data?.message || error.message));
+    }
   };
 
   // --- Logic Tặng Voucher ---
@@ -559,7 +577,7 @@ export default function LoyaltyPromotionHub() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button
-                          onClick={() => setSelectedVoucherDetails(v)}
+                          onClick={() => handleOpenVoucherDetails(v)}
                           className="text-xs px-4 py-1.5 border border-blue-200 text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition-colors"
                         >
                           Chi tiết
@@ -659,11 +677,20 @@ export default function LoyaltyPromotionHub() {
                     <option value="New">Khách hàng mới</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Giá trị đơn hàng tối thiểu</label>
-                  <div className="flex items-center gap-2">
-                    <input type="number" value={formData.minOrder} onChange={(e) => setFormData({ ...formData, minOrder: Number(e.target.value) })} className="flex-1 px-4 py-2.5 border border-slate-300 rounded-md" />
-                    <span className="text-slate-500">VNĐ</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Giá trị tối thiểu</label>
+                    <div className="flex items-center gap-2">
+                      <input type="number" value={formData.minOrder} onChange={(e) => setFormData({ ...formData, minOrder: Number(e.target.value) })} className="flex-1 px-4 py-2.5 border border-slate-300 rounded-md" />
+                      <span className="text-slate-500 text-xs">VNĐ</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Giới hạn số lượng</label>
+                    <div className="flex items-center gap-2">
+                      <input type="number" value={formData.maxUsage} onChange={(e) => setFormData({ ...formData, maxUsage: Number(e.target.value) })} className="flex-1 px-4 py-2.5 border border-slate-300 rounded-md" />
+                      <span className="text-slate-500 text-xs">Mã</span>
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -714,16 +741,24 @@ export default function LoyaltyPromotionHub() {
                     </tr>
                   </thead>
                   <tbody>
-                    {getMockAppliedOrders(selectedVoucherDetails).map((order) => (
-                      <tr key={order.orderId} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 font-mono font-medium text-slate-700">{order.orderId}</td>
-                        <td className="px-6 py-4 text-slate-600">{order.customerName}</td>
-                        <td className="px-6 py-4 text-slate-500">{order.orderDate}</td>
-                        <td className="px-6 py-4 text-right text-slate-500">{order.originalPrice.toLocaleString()}đ</td>
-                        <td className="px-6 py-4 text-right text-emerald-600 font-medium">-{order.discountAmount.toLocaleString()}đ</td>
-                        <td className="px-6 py-4 text-right font-semibold text-slate-800">{order.finalPrice.toLocaleString()}đ</td>
+                    {appliedOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                          Chưa có đơn hàng nào sử dụng mã khuyến mãi này.
+                        </td>
                       </tr>
-                    ))}
+                    ) : (
+                      appliedOrders.map((order) => (
+                        <tr key={order.orderId} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 font-mono font-medium text-slate-700">{order.orderId}</td>
+                          <td className="px-6 py-4 text-slate-600">{order.customerName}</td>
+                          <td className="px-6 py-4 text-slate-500">{order.orderDate}</td>
+                          <td className="px-6 py-4 text-right text-slate-500">{order.originalPrice.toLocaleString()}đ</td>
+                          <td className="px-6 py-4 text-right text-emerald-600 font-medium">-{order.discountAmount.toLocaleString()}đ</td>
+                          <td className="px-6 py-4 text-right font-semibold text-slate-800">{order.finalPrice.toLocaleString()}đ</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
