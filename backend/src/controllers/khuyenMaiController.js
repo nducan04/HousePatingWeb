@@ -140,3 +140,48 @@ exports.validateVoucher = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// @desc    Get stats and usage history for a specific voucher
+// @route   GET /api/khuyen-mai/:id/stats
+exports.getVoucherStats = async (req, res) => {
+    try {
+        const voucherId = req.params.id;
+        const voucher = await KhuyenMai.findById(voucherId);
+        
+        if (!voucher) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy mã giảm giá' });
+        }
+
+        const DonHang = require('../models/DonHang');
+        const orders = await DonHang.find({ KhuyenMai: voucherId, TrangThai: { $ne: 'DA_HUY' } })
+            .populate('KhachHang', 'TenKhachHang');
+
+        const appliedOrders = orders.map(order => {
+            const originalPrice = order.Items.reduce((acc, item) => acc + (item.SoLuong * item.DonGia), 0);
+            const discountAmount = voucher.LoaiGiamGia === 'PHAN_TRAM' 
+                ? Math.min((originalPrice * voucher.MucGiam) / 100, voucher.GiamToiDa || Infinity)
+                : voucher.MucGiam;
+            
+            return {
+                orderId: order.MaDonHang,
+                customerName: order.KhachHang ? order.KhachHang.TenKhachHang : 'Khách vãng lai',
+                orderDate: new Date(order.createdAt).toISOString().split('T')[0],
+                originalPrice: originalPrice,
+                discountAmount: discountAmount,
+                finalPrice: Math.max(originalPrice - discountAmount, 0)
+            };
+        });
+
+        res.status(200).json({ 
+            success: true, 
+            data: {
+                voucher: voucher,
+                totalUsageCount: appliedOrders.length,
+                totalDiscountGiven: appliedOrders.reduce((acc, order) => acc + order.discountAmount, 0),
+                appliedOrders: appliedOrders
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

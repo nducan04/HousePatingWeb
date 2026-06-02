@@ -4,11 +4,13 @@ import React, { useState, useEffect } from 'react';
 import {
     Search, Filter, Calendar, Users, Target, Award, SignalHigh,
     TrendingUp, Star, AlertCircle, ChevronRight, User, Briefcase,
-    CheckCircle, BarChart3, Radar, Download, TrendingDown, Truck
+    CheckCircle, BarChart3, Radar as RadarIcon, Download, TrendingDown, Truck
 } from 'lucide-react';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LabelList
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LabelList,
+    Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
+import * as XLSX from 'xlsx';
 import api from '@/lib/utils/axiosAuth';
 import { resolveImageUrl } from '@/lib/utils/imageUrl';
 
@@ -74,6 +76,38 @@ export default function PerformanceDashboard() {
         color: CHART_COLORS[idx % CHART_COLORS.length]
     }));
 
+    const exportToExcel = () => {
+        if (!liveStaff || liveStaff.length === 0) return;
+
+        // Chuẩn bị dữ liệu để xuất
+        const exportData = liveStaff.map((staff: any) => ({
+            'Mã Nhân Viên': staff.maNV || staff.id,
+            'Họ Tên': staff.name,
+            'Bộ Phận': staff.dept,
+            'Chức Vụ': staff.role,
+            'Doanh Số (VNĐ)': staff.revenue,
+            'Số Đơn Hàng': staff.orders,
+            'Số Chuyến Vận Chuyển': staff.deliveries,
+            'Số Mẫu Test R&D': staff.tests,
+            'Số Yêu Cầu CSKH': staff.customers,
+            'Điểm KPI': staff.satisfaction,
+            'Đánh Giá': staff.level === 'Excellent' ? 'Xuất sắc' : (staff.level === 'Good' ? 'Tốt' : 'Đạt')
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Hiệu Suất Nhân Sự");
+
+        // Tự động điều chỉnh độ rộng cột
+        const colWidths = [
+            { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 18 },
+            { wch: 15 }, { wch: 20 }, { wch: 18 }, { wch: 20 }, { wch: 10 }, { wch: 12 }
+        ];
+        ws['!cols'] = colWidths;
+
+        XLSX.writeFile(wb, `Bao_Cao_Hieu_Suat_VTSC_${new Date().getTime()}.xlsx`);
+    };
+
     return (
         <div className="p-6 md:p-8 flex flex-col gap-8 bg-slate-50/30 min-h-screen">
             {/* Header & Title */}
@@ -84,8 +118,11 @@ export default function PerformanceDashboard() {
                     </h2>
                     <p className="text-sm text-slate-500 font-light mt-1">Dữ liệu được cập nhật theo thời gian thực từ VTSC PaintPro</p>
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors shadow-sm font-light">
-                    <Download size={16} className="text-slate-400" />
+                <button 
+                    onClick={exportToExcel}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm font-light"
+                >
+                    <Download size={16} />
                     Xuất Báo Cáo
                 </button>
             </div>
@@ -232,6 +269,24 @@ export default function PerformanceDashboard() {
             {/* TAB CONTENT: PERFORMANCE (HIỆU SUẤT ĐỒ THỊ CHI TIẾT) */}
             {activeTab === 'performance' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm p-6 h-[450px]">
+                        <div className="flex flex-col mb-6">
+                            <h3 className="text-sm font-medium text-slate-800 flex items-center gap-2">
+                                <RadarIcon className="text-purple-500" size={16} /> Chỉ Số Năng Lực Cốt Lõi
+                            </h3>
+                            <span className="text-xs text-slate-400 font-light mt-1">Đánh giá các khía cạnh năng lực của phòng ban</span>
+                        </div>
+                        <ResponsiveContainer width="100%" height={360}>
+                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={charts.radar || []}>
+                                <PolarGrid stroke="#e2e8f0" />
+                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 300 }} />
+                                <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
+                                <Radar name="Trung bình" dataKey="A" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.4} />
+                                <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '13px', fontWeight: 300 }} />
+                            </RadarChart>
+                        </ResponsiveContainer>
+                    </div>
+
                     <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm p-6 h-[450px]">
                         <div className="flex flex-col mb-6">
                             <h3 className="text-sm font-medium text-slate-800 flex items-center gap-2">

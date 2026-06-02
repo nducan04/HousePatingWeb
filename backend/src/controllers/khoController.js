@@ -4,6 +4,7 @@ const GiaoDichKho = require("../models/GiaoDichKho");
 const PhieuKiemKho = require("../models/PhieuKiemKho");
 const NguyenVatLieu = require("../models/NguyenVatLieu");
 const PhieuNhapXuatKho = require("../models/PhieuNhapXuatKho");
+const DonHang = require("../models/DonHang");
 
 /**
  * 1. Nhập Kho Nhanh (Thao tác trên 1 SKU cụ thể)
@@ -809,5 +810,58 @@ exports.deletePhieuNhapXuat = async (req, res) => {
       .json({ success: true, message: `Đã xóa phiếu ${phieu.MaPhieu}` });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * Thống kê top sản phẩm bán chạy nhất từ Đơn hàng
+ */
+exports.getSanPhamBanChay = async (req, res) => {
+  try {
+    const pipeline = [
+      {
+        $match: {
+          TrangThai: { $ne: 'DA_HUY' }
+        }
+      },
+      { $unwind: "$Items" },
+      {
+        $group: {
+          _id: "$Items.SanPham",
+          SoLuongBan: { $sum: "$Items.SoLuong" },
+          TongDoanhThu: { $sum: "$Items.ThanhTien" }
+        }
+      },
+      {
+        $lookup: {
+          from: "SanPhamSons",
+          localField: "_id",
+          foreignField: "_id",
+          as: "SanPhamInfo"
+        }
+      },
+      { $unwind: "$SanPhamInfo" },
+      {
+        $project: {
+          _id: 1,
+          MaSanPham: "$SanPhamInfo.MaSanPham",
+          TenDongSon: "$SanPhamInfo.TenDongSon",
+          HinhAnh: { $arrayElemAt: ["$SanPhamInfo.HinhAnh", 0] },
+          SoLuongBan: 1,
+          TongDoanhThu: 1
+        }
+      },
+      { $sort: { SoLuongBan: -1 } },
+      { $limit: 10 }
+    ];
+
+    const bestSellers = await DonHang.aggregate(pipeline);
+
+    res.status(200).json({
+      success: true,
+      data: bestSellers
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
