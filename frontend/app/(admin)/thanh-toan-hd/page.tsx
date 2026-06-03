@@ -35,7 +35,8 @@ interface ThanhToanHD {
 }
 
 export default function ThanhToanHopDongPage() {
-  const { role } = useAuthStore();
+  const { user } = useAuthStore();
+  const role = user?.role;
   const [data, setData] = useState<ThanhToanHD[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
