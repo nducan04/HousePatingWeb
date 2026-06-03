@@ -695,11 +695,25 @@ function CustomerServiceDashboard({ data }: { data: any }) {
   const loyalty = csData.loyalty || {
     activeVouchers: 0,
     vipCustomers: 0,
-    churnAlerts: 0
+    churnAlerts: 0,
+    totalVouchers: 0,
+    voucherTypes: { PHAN_TRAM: 0, GIAM_THANG: 0, TANG_KEM: 0 },
+    voucherUsagesList: [],
+    topVouchers: []
   };
 
   const supportTrends = csData.supportTrends || [];
   const pendingComplaints = csData.pendingComplaints || [];
+
+  const voucherTypes = loyalty.voucherTypes || { PHAN_TRAM: 0, GIAM_THANG: 0, TANG_KEM: 0 };
+  const voucherTypeDist = [
+    { name: 'Phần trăm (%)', value: voucherTypes.PHAN_TRAM || 0 },
+    { name: 'Giảm thẳng (₫)', value: voucherTypes.GIAM_THANG || 0 },
+    { name: 'Tặng kèm', value: voucherTypes.TANG_KEM || 0 }
+  ].filter(item => item.value > 0);
+
+  const topVouchers = loyalty.topVouchers || [];
+  const voucherUsages = loyalty.voucherUsagesList || [];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -711,6 +725,121 @@ function CustomerServiceDashboard({ data }: { data: any }) {
         <KpiCard title="Voucher đang kích hoạt" value={loyalty.activeVouchers} icon={<Ticket />} color="emerald" />
       </div>
 
+      {/* Thống kê & Lịch sử Voucher */}
+      <h3 className="text-lg font-black text-slate-900 -mb-2 pb-2 mt-8 border-t border-slate-200 pt-6">Thống kê & Lịch sử Voucher</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <KpiCard title="Tổng số Voucher" value={loyalty.totalVouchers || 0} icon={<Ticket />} color="blue" />
+        <KpiCard title="Loại Voucher khác nhau" value={voucherTypeDist.length} icon={<Layers />} color="purple" />
+        <KpiCard title="Lượt sử dụng Voucher" value={voucherUsages.length} icon={<CheckCircle />} color="emerald" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Charts: Cơ cấu & Top 5 */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 min-w-0">
+          <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+            <PieChartIcon className="text-blue-600" size={20} /> Cơ cấu & Top 5 Voucher dùng nhiều nhất
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Pie Chart: Type Distribution */}
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-bold text-slate-400 uppercase mb-4 text-center">Cơ cấu loại Voucher</span>
+              {voucherTypeDist.length === 0 ? (
+                <div className="h-[200px] flex items-center justify-center text-slate-400 text-xs">Không có dữ liệu</div>
+              ) : (
+                <div className="h-[200px] w-full min-w-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={voucherTypeDist}
+                        innerRadius={50}
+                        outerRadius={70}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {voucherTypeDist.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* Bar Chart: Top Vouchers */}
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-bold text-slate-400 uppercase mb-4 text-center">Top 5 Voucher dùng nhiều nhất</span>
+              {topVouchers.length === 0 ? (
+                <div className="h-[200px] flex items-center justify-center text-slate-400 text-xs">Không có dữ liệu</div>
+              ) : (
+                <div className="h-[200px] w-full min-w-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topVouchers} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="code" tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                      <YAxis tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ borderRadius: '10px', fontSize: 11 }} />
+                      <Bar dataKey="count" name="Số lần dùng" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Table: History of Voucher Usage */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col min-w-0">
+          <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+            <History size={20} className="text-slate-400" /> Nhật ký sử dụng Voucher gần đây
+          </h3>
+          <div className="overflow-y-auto max-h-[300px] custom-scrollbar flex-1">
+            <table className="w-full text-sm text-left">
+              <thead>
+                <tr className="text-slate-400 uppercase text-[10px] font-bold tracking-widest border-b border-slate-50 sticky top-0 bg-white z-10">
+                  <th className="pb-3 px-2">Khách hàng</th>
+                  <th className="pb-3">Voucher</th>
+                  <th className="pb-3 text-right">Giảm giá</th>
+                  <th className="pb-3 text-right">Ngày sử dụng</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {voucherUsages.length > 0 ? voucherUsages.map((usage: any, idx: number) => (
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-2">
+                      <div className="font-bold text-slate-900">{usage.customerName}</div>
+                      <div className="text-[10px] text-slate-400 font-semibold">{usage.orderId}</div>
+                    </td>
+                    <td className="py-3">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-xs font-bold uppercase">
+                        {usage.voucherCode}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right font-semibold text-emerald-600 text-sm">
+                      -{formatCurrency(usage.discountAmount)}
+                    </td>
+                    <td className="py-3 text-right text-slate-500 font-medium">
+                      {usage.date}
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={4} className="py-12 text-center text-slate-400 text-xs font-medium">
+                      Chưa có lịch sử sử dụng voucher
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Bảo hành, Đổi trả & Khiếu nại */}
       <h3 className="text-lg font-black text-slate-900 -mb-2 pb-2 mt-8 border-t border-slate-200 pt-6">Bảo hành, Đổi trả & Khiếu nại</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard title="Tổng ca bảo hành/đổi trả" value={kpi.totalReturns} icon={<AlertTriangle />} color="rose" />
