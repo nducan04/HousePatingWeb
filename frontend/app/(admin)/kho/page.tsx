@@ -21,7 +21,6 @@ import {
   X,
   Box,
   TrendingUp,
-  Trophy,
   Star,
   DollarSign
 } from "lucide-react";
@@ -133,7 +132,6 @@ export default function QLKhoPage() {
   const [nvlData, setNvlData] = useState<NguyenVatLieu[]>([]);
   const [phieuNXData, setPhieuNXData] = useState<PhieuNhapXuat[]>([]);
   const [nccList, setNccList] = useState<NhaCungCapItem[]>([]);
-  const [bestSellers, setBestSellers] = useState<BestSellerItem[]>([]);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -187,7 +185,6 @@ export default function QLKhoPage() {
     fetchNguyenVatLieu();
     fetchPhieuNhapXuat();
     fetchNhaCungCap();
-    fetchBestSellers();
   }, []);
 
   useEffect(() => {
@@ -293,14 +290,6 @@ export default function QLKhoPage() {
     }
   };
 
-  const fetchBestSellers = async () => {
-    try {
-      const res = await api.get(`${API_KHO}/ban-chay`);
-      if (res.data.success) setBestSellers(res.data.data);
-    } catch (error) {
-      console.error("Lỗi lấy danh sách bán chạy:", error);
-    }
-  };
 
   // KPI
   const STATS = {
@@ -919,130 +908,10 @@ export default function QLKhoPage() {
         >
           <ClipboardList size={18} /> Phiếu Kiểm Kê
         </button>
-        <button
-          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "banchay"
-            ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
-            : "bg-transparent text-slate-500 hover:bg-slate-50"
-            }`}
-          onClick={() => setActiveTab("banchay")}
-        >
-          <Trophy size={18} /> Top Bán Chạy
-        </button>
+
       </div>
 
-      {activeTab === "banchay" && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50 rounded-full blur-3xl -mr-20 -mt-20 opacity-50"></div>
-            <div className="relative z-10 flex items-center justify-between mb-8">
-              <div>
-                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <TrendingUp className="text-amber-500" size={24} />
-                  Top Sản Phẩm Bán Chạy Nhất
-                </h3>
-                <p className="text-sm text-slate-500 mt-1">Dữ liệu tổng hợp từ các đơn hàng đã được xử lý</p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Biểu đồ */}
-              <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
-                <h4 className="text-sm font-bold text-slate-700 mb-6 flex items-center gap-2">
-                  <BarChart size={18} className="text-blue-500" /> Biểu Đồ Sản Lượng Bán
-                </h4>
-                <div className="h-[400px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={bestSellers} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                      <XAxis 
-                        dataKey="TenDongSon" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fill: '#64748b', fontSize: 12 }} 
-                        dy={10}
-                        angle={-25}
-                        textAnchor="end"
-                        height={60}
-                      />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fill: '#64748b', fontSize: 12 }}
-                      />
-                      <Tooltip 
-                        cursor={{ fill: '#f1f5f9' }}
-                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      />
-                      <Bar 
-                        dataKey="SoLuongBan" 
-                        name="Số lượng bán" 
-                        fill="#3b82f6" 
-                        radius={[6, 6, 0, 0]}
-                        barSize={32}
-                      >
-                        {
-                          bestSellers.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={index === 0 ? '#f59e0b' : index === 1 ? '#94a3b8' : index === 2 ? '#b45309' : '#3b82f6'} />
-                          ))
-                        }
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Danh sách List */}
-              <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-                <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-                   <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                    <Star size={18} className="text-amber-500" /> Bảng Xếp Hạng Chi Tiết
-                  </h4>
-                </div>
-                <div className="overflow-y-auto h-[400px] custom-scrollbar p-2">
-                  {bestSellers.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3">
-                      <Box size={40} className="text-slate-200" />
-                      <p>Chưa có dữ liệu thống kê</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {bestSellers.map((sp, idx) => (
-                        <div key={sp._id} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100 group">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm shrink-0
-                            ${idx === 0 ? 'bg-amber-100 text-amber-600 border border-amber-200' : 
-                              idx === 1 ? 'bg-slate-200 text-slate-600 border border-slate-300' : 
-                              idx === 2 ? 'bg-orange-100 text-orange-700 border border-orange-200' : 
-                              'bg-slate-50 text-slate-400 border border-slate-100'}`}>
-                            {idx + 1}
-                          </div>
-                          
-                          <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
-                             <img src={resolveImageUrl(sp.HinhAnh)} alt={sp.TenDongSon} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = 'https://placehold.co/100x100?text=SP' }} />
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <h5 className="font-bold text-slate-800 truncate group-hover:text-blue-600 transition-colors" title={sp.TenDongSon}>{sp.TenDongSon}</h5>
-                            <p className="text-xs font-semibold text-slate-500 mt-0.5">{sp.MaSanPham}</p>
-                          </div>
-
-                          <div className="text-right shrink-0">
-                            <div className="font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md text-sm inline-block mb-1 shadow-sm">
-                              {sp.SoLuongBan.toLocaleString('vi-VN')} đv
-                            </div>
-                            <p className="text-[11px] font-bold text-slate-400 flex items-center justify-end gap-1">
-                               <DollarSign size={10} /> {sp.TongDoanhThu.toLocaleString('vi-VN')} ₫
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {activeTab === "kho" && (

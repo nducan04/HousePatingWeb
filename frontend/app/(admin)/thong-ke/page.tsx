@@ -10,10 +10,12 @@ import {
   TrendingUp, AlertTriangle, Boxes, Factory, ClipboardCheck,
   ArrowUpRight, ArrowDownRight, RefreshCw, Layers, History, Activity,
   CheckCircle, Clock, Smile, FileText, Scale, ShieldCheck, Copy,
-  Crown, Ticket, PieChart as PieChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon
+  Crown, Ticket, PieChart as PieChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon,
+  Trophy, Box, Star
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { exportDashboardToExcel, exportBusinessReportExcel, exportInventoryReportExcel, exportProductionReportExcel, exportCustomerServiceReportExcel, exportHrReportExcel, exportLegalReportExcel } from '@/lib/utils/excelExport';
+import { resolveImageUrl } from '@/lib/utils/imageUrl';
 
 // Formatting utilities
 const formatCurrency = (value: number) => {
@@ -76,7 +78,7 @@ export default function StatisticsDashboard() {
     setLoading(true);
     try {
       const query = `?period=${encodeURIComponent(selectedPeriod)}`;
-      const [statsRes, detailedRes, inventoryRes, productionRes, csRes, hrRes, productsRes, rdRes, contractsRes] = await Promise.all([
+      const [statsRes, detailedRes, inventoryRes, productionRes, csRes, hrRes, productsRes, rdRes, contractsRes, bestSellersRes] = await Promise.all([
         api.get(`/dashboard/stats${query}`),
         api.get(`/dashboard/detailed-stats${query}`),
         api.get(`/dashboard/inventory-stats${query}`),
@@ -85,7 +87,8 @@ export default function StatisticsDashboard() {
         api.get(`/dashboard/hr-legal-stats${query}`),
         api.get('/san-pham-son'),
         api.get('/rd-tracking'),
-        api.get('/contracts')
+        api.get('/contracts'),
+        api.get('/inventory/ban-chay')
       ]);
 
       const rawRdTracking = rdRes.data?.success ? rdRes.data.data : [];
@@ -102,7 +105,8 @@ export default function StatisticsDashboard() {
         customerService: csRes.data?.success ? csRes.data.data : null,
         hrLegal: hrRes.data?.success ? hrRes.data.data : null,
         rdTracking: filteredRdTracking,
-        contracts: filteredContracts
+        contracts: filteredContracts,
+        bestSellers: bestSellersRes.data?.success ? bestSellersRes.data.data : []
       });
 
       if (productsRes.data?.success) {
@@ -376,6 +380,7 @@ function SalesDashboard({ data }: { data: any }) {
 function InventoryDashboard({ data }: { data: any }) {
   const inv = data.inventory?.summary || {};
   const catDist = data.inventory?.categoryDist || [];
+  const bestSellers = data.bestSellers || [];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -438,6 +443,117 @@ function InventoryDashboard({ data }: { data: any }) {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Sản Phẩm Bán Chạy Nhất */}
+      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50 rounded-full blur-3xl -mr-20 -mt-20 opacity-30 pointer-events-none"></div>
+        <div className="relative z-10 flex items-center justify-between mb-8">
+          <div>
+            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <Trophy className="text-amber-500" size={24} />
+              Top Sản Phẩm Bán Chạy Nhất
+            </h3>
+            <p className="text-sm text-slate-500 mt-1">Dữ liệu tổng hợp sản lượng bán ra thực tế từ các đơn hàng</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Biểu đồ cột */}
+          <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
+            <h4 className="text-sm font-bold text-slate-700 mb-6 flex items-center gap-2">
+              <BarChartIcon size={18} className="text-blue-500" /> Biểu Đồ Sản Lượng Bán
+            </h4>
+            <div className="h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={bestSellers} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis 
+                    dataKey="TenDongSon" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 12 }} 
+                    dy={10}
+                    angle={-25}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 12 }}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: '#f1f5f9' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar 
+                    dataKey="SoLuongBan" 
+                    name="Số lượng bán" 
+                    fill="#3b82f6" 
+                    radius={[6, 6, 0, 0]}
+                    barSize={32}
+                  >
+                    {
+                      bestSellers.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={index === 0 ? '#f59e0b' : index === 1 ? '#94a3b8' : index === 2 ? '#b45309' : '#3b82f6'} />
+                      ))
+                    }
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Bảng xếp hạng chi tiết */}
+          <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+               <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <Star size={18} className="text-amber-500" /> Bảng Xếp Hạng Chi Tiết
+              </h4>
+            </div>
+            <div className="overflow-y-auto h-[400px] custom-scrollbar p-2">
+              {bestSellers.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3">
+                  <Box size={40} className="text-slate-200" />
+                  <p>Chưa có dữ liệu thống kê sản phẩm bán chạy</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {bestSellers.map((sp: any, idx: number) => (
+                    <div key={sp._id} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100 group">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm shrink-0
+                        ${idx === 0 ? 'bg-amber-100 text-amber-600 border border-amber-200' : 
+                          idx === 1 ? 'bg-slate-200 text-slate-600 border border-slate-300' : 
+                          idx === 2 ? 'bg-orange-100 text-orange-700 border border-orange-200' : 
+                          'bg-slate-50 text-slate-400 border border-slate-100'}`}>
+                        {idx + 1}
+                      </div>
+                      
+                      <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
+                         <img src={resolveImageUrl(sp.HinhAnh)} alt={sp.TenDongSon} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = 'https://placehold.co/100x100?text=SP' }} />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h5 className="font-bold text-slate-800 truncate group-hover:text-blue-600 transition-colors" title={sp.TenDongSon}>{sp.TenDongSon}</h5>
+                        <p className="text-xs font-semibold text-slate-500 mt-0.5">{sp.MaSanPham}</p>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <div className="font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md text-sm inline-block mb-1 shadow-sm">
+                          {sp.SoLuongBan.toLocaleString('vi-VN')} đv
+                        </div>
+                        <p className="text-[11px] font-bold text-slate-400 flex items-center justify-end gap-1">
+                           <DollarSign size={10} /> {sp.TongDoanhThu.toLocaleString('vi-VN')} ₫
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
