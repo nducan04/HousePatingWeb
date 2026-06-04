@@ -35,7 +35,7 @@ export default function RDTrackingDetailPage() {
       if (res.data.success) {
         const item = res.data.data;
         const itemCustomer = item.ContractID?.title || 'Khách hàng';
-        
+
         if (user && user.role !== 'Admin' && user.role !== 'NhanVien') {
           const customerName = user.profile?.TenKhachHang || '';
           const belongsToMe = itemCustomer.toLowerCase().includes(customerName.toLowerCase()) ||
@@ -46,7 +46,7 @@ export default function RDTrackingDetailPage() {
             return;
           }
         }
-        
+
         setSelectedSample({
           id: item.MaNhatKy || code,
           customer: itemCustomer,
@@ -92,7 +92,7 @@ export default function RDTrackingDetailPage() {
           }
         }
       }
-      
+
       // Hardcoded fallback
       if (code.toUpperCase() === 'REQ-001') {
         setSelectedSample({
@@ -128,7 +128,7 @@ export default function RDTrackingDetailPage() {
     } else {
       toast.error('Không tìm thấy mã nhật ký R&D.');
     }
-    
+
     setLoading(false);
   };
 
@@ -192,9 +192,9 @@ export default function RDTrackingDetailPage() {
             {selectedSample.imageUrl && (
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
-                <img 
-                  src={selectedSample.imageUrl} 
-                  alt="Ảnh mẫu khách gửi" 
+                <img
+                  src={selectedSample.imageUrl}
+                  alt="Ảnh mẫu khách gửi"
                   className="w-16 h-16 object-cover rounded-lg shadow-sm border border-slate-100 cursor-pointer hover:scale-105 transition-transform"
                   onClick={() => window.open(selectedSample.imageUrl, '_blank')}
                 />
@@ -206,7 +206,7 @@ export default function RDTrackingDetailPage() {
         {/* interactive 5-Step Process Timeline */}
         <div className="bg-white border border-slate-100 rounded-[28px] p-8 shadow-sm space-y-8">
           <div>
-            <h3 className="text-lg font-black text-slate-800">Bản Đồ Lộ Trình Quy Trình Pha Chế Sơn</h3>
+            <h3 className="text-lg font-black text-slate-800">Tiến Độ Quy Trình Pha Chế Sơn </h3>
             <p className="text-xs text-slate-400 font-medium mt-1">Lịch trình pha chế R&D thời gian thực tương tác với phòng thí nghiệm</p>
           </div>
 

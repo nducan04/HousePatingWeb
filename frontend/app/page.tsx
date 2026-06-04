@@ -963,6 +963,7 @@ export default function HomePage() {
                     sp.ThuongHieu?.toLowerCase().includes(search)
                   );
                 })
+                .slice(0, 8)
                 .map((sp) => (
                   <div
                     key={sp._id}
