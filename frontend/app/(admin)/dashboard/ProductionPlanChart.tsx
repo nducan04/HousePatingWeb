@@ -16,6 +16,7 @@ import {
 import { Package, Award, Calendar, Loader2, Target, X, Factory, BarChart3 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { toast } from "@/lib/utils/notification";
+import { useAuthStore } from "@/lib/store/authStore";
 
 // Tooltip cho chế độ 1 năm
 const SingleYearTooltip = ({ active, payload, label }: any) => {
@@ -87,6 +88,9 @@ interface ProductionPlanChartProps {
 }
 
 export default function ProductionPlanChart({ year, filter, onFilterChange, onYearChange, onDataChange }: ProductionPlanChartProps) {
+  const { user } = useAuthStore();
+  const isAdminOrDirector = user?.role === "Admin" || user?.role === "Director";
+
   const [selectedYear, setSelectedYear] = useState<"2026" | "2025" | "2024">(year || "2026");
   const [selectedFilter, setSelectedFilter] = useState<"month" | "quarter" | "year">(filter || "month");
 
@@ -224,13 +228,15 @@ export default function ProductionPlanChart({ year, filter, onFilterChange, onYe
               </span>
             </div>
 
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2 bg-slate-900 hover:bg-purple-600 text-white font-bold text-sm rounded-xl shadow-sm transition-all flex items-center gap-2"
-            >
-              <Target size={16} />
-              <span className="hidden sm:inline">Mục tiêu</span>
-            </button>
+            {isAdminOrDirector && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="px-4 py-2 bg-slate-900 hover:bg-purple-600 text-white font-bold text-sm rounded-xl shadow-sm transition-all flex items-center gap-2"
+              >
+                <Target size={16} />
+                <span className="hidden sm:inline">Mục tiêu</span>
+              </button>
+            )}
 
             <select
               value={selectedFilter}
