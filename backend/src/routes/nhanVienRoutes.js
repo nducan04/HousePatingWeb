@@ -8,7 +8,7 @@ const router = express.Router();
 router.use(protect);
 
 router.route('/')
-  .get(authorize('Admin'), getAll)
+  .get(authorize('Admin', 'Director', 'NhanVien'), getAll)
   .post(authorize('Admin'), create);
 
 router.route('/:id')
