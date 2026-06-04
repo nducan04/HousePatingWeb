@@ -4,18 +4,17 @@ const reportController = require('../controllers/reportController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
-router.use(authorize('Admin', 'Director'));
 
-// API Cài đặt mục tiêu doanh thu
-router.post('/targets', reportController.setRevenueTarget);
+// API Cài đặt mục tiêu doanh thu (chỉ Admin, Director)
+router.post('/targets', authorize('Admin', 'Director'), reportController.setRevenueTarget);
 
-// API Lấy dữ liệu biểu đồ doanh thu thực tế vs kế hoạch
-router.get('/revenue', reportController.getRevenueChartData);
+// API Lấy dữ liệu biểu đồ doanh thu thực tế vs kế hoạch (Admin, Director, NhanVien)
+router.get('/revenue', authorize('Admin', 'Director', 'NhanVien'), reportController.getRevenueChartData);
 
-// API Cài đặt mục tiêu sản lượng
-router.post('/targets/production', reportController.setProductionTarget);
+// API Cài đặt mục tiêu sản lượng (chỉ Admin, Director)
+router.post('/targets/production', authorize('Admin', 'Director'), reportController.setProductionTarget);
 
-// API Lấy dữ liệu biểu đồ sản lượng thực tế vs kế hoạch
-router.get('/production', reportController.getProductionChartData);
+// API Lấy dữ liệu biểu đồ sản lượng thực tế vs kế hoạch (Admin, Director, NhanVien)
+router.get('/production', authorize('Admin', 'Director', 'NhanVien'), reportController.getProductionChartData);
 
 module.exports = router;
