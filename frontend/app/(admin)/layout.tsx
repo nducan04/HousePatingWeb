@@ -69,7 +69,7 @@ const allNavItems: NavSection[] = [
         roles: ["Admin", "Director"],
       },
       {
-        href: "/quan-ly-san-pham",
+        href: "/dashboard",
         label: "Dashboard nghiệp vụ",
         roles: ["NhanVien"],
       },
@@ -271,10 +271,6 @@ export default function AdminLayout({
 
     // Phân quyền cho trang Dashboard
     if (pathname === "/dashboard") {
-      if (userRole === "NhanVien") {
-        router.push("/san-pham");
-        return;
-      }
       if (isCustomer) {
         router.push("/");
         return;

@@ -436,7 +436,7 @@ export default function HomePage() {
           router.push(redirectPath);
           setRedirectPath(null);
         } else if (role === "NhanVien") {
-          router.push("/quan-ly-san-pham");
+          router.push("/dashboard");
         } else {
           router.push("/");
         }
