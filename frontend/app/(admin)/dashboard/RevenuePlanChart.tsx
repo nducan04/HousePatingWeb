@@ -85,7 +85,7 @@ interface RevenuePlanChartProps {
 }
 
 export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
-  const { user } = useAuthStore();
+  const { user, isLoading, isAuthenticated } = useAuthStore();
   const isAdminOrDirector = user?.role === "Admin" || user?.role === "Director";
 
   const [selectedYear, setSelectedYear] = useState<"2026" | "2025" | "2024">(year || "2026");
@@ -148,7 +148,11 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
     }
   };
 
-  useEffect(() => { fetchRevenueData(); }, [selectedYear, selectedFilter]);
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      fetchRevenueData();
+    }
+  }, [selectedYear, selectedFilter, isLoading, isAuthenticated]);
 
   const handleSaveTarget = async () => {
     if (!targetAmount || isNaN(Number(targetAmount)) || Number(targetAmount) < 0) {

@@ -42,7 +42,12 @@ function LoginContent() {
           return;
         }
 
-        router.push("/");
+        const role = response.data.user.role;
+        if (role === "NhanVien" || role === "Admin" || role === "Director") {
+          router.push("/dashboard");
+        } else {
+          router.push("/");
+        }
       }
     } catch (err: any) {
       setError(err.response?.data?.error || "Đăng nhập thất bại");

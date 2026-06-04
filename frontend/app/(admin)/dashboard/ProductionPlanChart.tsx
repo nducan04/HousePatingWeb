@@ -88,7 +88,7 @@ interface ProductionPlanChartProps {
 }
 
 export default function ProductionPlanChart({ year, filter, onFilterChange, onYearChange, onDataChange }: ProductionPlanChartProps) {
-  const { user } = useAuthStore();
+  const { user, isLoading, isAuthenticated } = useAuthStore();
   const isAdminOrDirector = user?.role === "Admin" || user?.role === "Director";
 
   const [selectedYear, setSelectedYear] = useState<"2026" | "2025" | "2024">(year || "2026");
@@ -159,7 +159,11 @@ export default function ProductionPlanChart({ year, filter, onFilterChange, onYe
     }
   };
 
-  useEffect(() => { fetchProductionData(); }, [selectedYear, selectedFilter]);
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      fetchProductionData();
+    }
+  }, [selectedYear, selectedFilter, isLoading, isAuthenticated]);
 
   const handleSaveTarget = async () => {
     if (!targetAmount || isNaN(Number(targetAmount)) || Number(targetAmount) < 0) {

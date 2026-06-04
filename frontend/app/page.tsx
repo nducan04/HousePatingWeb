@@ -435,7 +435,7 @@ export default function HomePage() {
         if (redirectPath) {
           router.push(redirectPath);
           setRedirectPath(null);
-        } else if (role === "NhanVien") {
+        } else if (role === "NhanVien" || role === "Admin" || role === "Director") {
           router.push("/dashboard");
         } else {
           router.push("/");
