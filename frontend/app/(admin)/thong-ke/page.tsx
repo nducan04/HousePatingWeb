@@ -171,12 +171,6 @@ export default function StatisticsDashboard() {
         const rawContracts = data.contracts || [];
         const formattedContracts = rawContracts.map((c: any) => ({
           id: c.contractId || c._id,
-<<<<<<< Updated upstream
-          partner: c.customer?.name || 'Chưa xác định',
-          txHash: c.txHash || 'Chưa khởi tạo',
-          block: c.txHash ? Math.floor(Math.random() * 90000) + 12000000 : 'N/A',
-          status: (c.status === 'signed' || c.status === 'delivering' || c.status === 'completed') ? 'Đã xác minh' : 'Chờ ký số'
-=======
           partner: c.customer?.name || "Chưa xác định",
           txHash: c.txHash || "Chưa khởi tạo",
           block: c.txHash
@@ -188,7 +182,6 @@ export default function StatisticsDashboard() {
               c.status === "completed"
               ? "Đã xác minh"
               : "Chờ ký số",
->>>>>>> Stashed changes
         }));
         await exportLegalReportExcel(data.hrLegal || {}, formattedContracts, selectedPeriod);
       } else {
@@ -243,13 +236,8 @@ export default function StatisticsDashboard() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === tab
-<<<<<<< Updated upstream
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'text-slate-500 hover:bg-slate-50'
-=======
-                    ? "bg-slate-900 text-white shadow-md"
-                    : "text-slate-500 hover:bg-slate-50"
->>>>>>> Stashed changes
+                  ? "bg-slate-900 text-white shadow-md"
+                  : "text-slate-500 hover:bg-slate-50"
                   }`}
               >
                 {tab === 'SALES' ? 'Kinh doanh' : tab === 'INVENTORY' ? 'Kho vận' : tab === 'PRODUCTION' ? 'Sản xuất & R&D' : tab === 'CUSTOMER_SERVICE' ? 'Hậu mãi & CSKH' : tab === 'HR' ? 'Nhân sự' : 'Pháp lý'}
@@ -447,31 +435,24 @@ function InventoryDashboard({ data }: { data: any }) {
                     <td className="py-3 px-2 text-slate-500 font-medium">{new Date(m.createdAt).toLocaleDateString()}</td>
                     <td className="py-3 font-bold text-slate-900">{m.MaPhieu}</td>
                     <td className="py-3">
-<<<<<<< Updated upstream
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${m.LoaiPhieu === 'NHAP' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'
-                        }`}>
-                        {m.LoaiPhieu === 'NHAP' ? 'Nhập' : 'Xuất'}
-=======
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${m.LoaiPhieu === "NHAP"
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-blue-50 text-blue-600"
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-blue-50 text-blue-600"
                           }`}
                       >
                         {m.LoaiPhieu === "NHAP" ? "Nhập" : "Xuất"}
->>>>>>> Stashed changes
                       </span>
                     </td>
                     <td className="py-3 text-right font-semibold">{m.NhanVien?.HoTen || 'Hệ thống'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-<<<<<<< Updated upstream
-=======
+                  </tr >
+                ))
+                }
+              </tbody >
+            </table >
+          </div >
+        </div >
+      </div >
 
       {/* Top Sản Phẩm Bán Chạy Nhất */}
       <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm relative overflow-hidden">
@@ -632,8 +613,7 @@ function InventoryDashboard({ data }: { data: any }) {
           </div>
         </div>
       </div>
->>>>>>> Stashed changes
-    </div>
+    </div >
   );
 }
 
@@ -981,15 +961,8 @@ function KpiCard({ title, value, trend, icon, color, isAlert }: any) {
           {React.cloneElement(icon, { size: 24 })}
         </div>
         {trend !== undefined && (
-<<<<<<< Updated upstream
-          <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg ${trend >= 0 ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'
-            }`}>
-            {trend >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-=======
           <div
-            className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg ${trend >= 0
-                ? "text-emerald-600 bg-emerald-50"
-                : "text-rose-600 bg-rose-50"
+            className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg ${trend >= 0 ? "text-emerald-600 bg-emerald-50" : "text-rose-600 bg-rose-50"
               }`}
           >
             {trend >= 0 ? (
@@ -997,7 +970,6 @@ function KpiCard({ title, value, trend, icon, color, isAlert }: any) {
             ) : (
               <ArrowDownRight size={14} />
             )}
->>>>>>> Stashed changes
             {Math.abs(trend)}%
           </div>
         )}
