@@ -1,6 +1,7 @@
 const NhatKyTestMau = require('../models/NhatKyTestMau');
 const HopDong = require('../models/HopDong');
 const NhanVien = require('../models/NhanVien');
+const NguyenVatLieu = require('../models/NguyenVatLieu');
 
 // @desc    Get all R&D logs
 // @route   GET /api/rd-tracking
@@ -144,7 +145,7 @@ exports.createRDLog = async (req, res) => {
 // @route   POST /api/rd-tracking/:id/versions
 exports.addVersion = async (req, res) => {
   try {
-    const { result, parameters, feedback, inputWeight, outputWeight, imageUrl } = req.body;
+    const { result, parameters, feedback, inputWeight, outputWeight, imageUrl, nhietDo, hieuSuat, components } = req.body;
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(req.params.id);
     const log = isObjectId 
       ? await NhatKyTestMau.findById(req.params.id) 
@@ -152,6 +153,36 @@ exports.addVersion = async (req, res) => {
     
     if (!log) {
       return res.status(404).json({ success: false, message: 'Log not found' });
+    }
+
+    // Validate all stock levels first
+    if (components && Array.isArray(components)) {
+      // Group quantities by materialId
+      const grouped = {};
+      for (const comp of components) {
+        if (!comp.materialId) continue;
+        const qty = parseFloat(comp.quantity) || 0;
+        if (qty <= 0) continue;
+        grouped[comp.materialId] = (grouped[comp.materialId] || 0) + qty;
+      }
+
+      const materialsToUpdate = [];
+      for (const [materialId, qty] of Object.entries(grouped)) {
+        const material = await NguyenVatLieu.findOne({ MaNVL: materialId });
+        if (!material) {
+          return res.status(404).json({ success: false, message: `Nguyên vật liệu ${materialId} không tồn tại trong hệ thống.` });
+        }
+        if (material.TonKho < qty) {
+          return res.status(400).json({ success: false, message: `Nguyên vật liệu "${material.TenNguyenVatLieu}" không đủ tồn kho (Còn: ${material.TonKho} ${material.DonViTinh}, yêu cầu: ${qty}).` });
+        }
+        materialsToUpdate.push({ material, qty });
+      }
+
+      // Perform deduction after all validations pass
+      for (const item of materialsToUpdate) {
+        item.material.TonKho = Math.max(0, item.material.TonKho - item.qty);
+        await item.material.save();
+      }
     }
     
     // Auto-versioning
@@ -174,9 +205,12 @@ exports.addVersion = async (req, res) => {
       result,
       parameters,
       feedback,
-      inputWeight,
-      outputWeight,
+      inputWeight: parseFloat(inputWeight) || 0,
+      outputWeight: parseFloat(outputWeight) || 0,
       imageUrl,
+      nhietDo: parseFloat(nhietDo) || 195,
+      hieuSuat: parseFloat(hieuSuat) || 98,
+      components: components || [],
       tester: testerName,
       testerCode: testerCode
     });
