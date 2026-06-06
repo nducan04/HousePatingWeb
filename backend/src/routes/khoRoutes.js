@@ -17,13 +17,18 @@ const {
     duyetPhieuNhapXuat,
     tuChoiPhieu,
     updatePhieuNhapXuat,
-    deletePhieuNhapXuat
+    deletePhieuNhapXuat,
+    // San pham ban chay
+    getSanPhamBanChay
 } = require('../controllers/khoController');
 
 const router = express.Router();
 
 // API Lấy danh sách tồn kho
 router.get('/', protect, authorize('Admin', 'Director', 'NhanVien'), getTonKho);
+
+// API Lấy danh sách sản phẩm bán chạy (Thống kê)
+router.get('/ban-chay', protect, authorize('Admin', 'Director', 'NhanVien'), getSanPhamBanChay);
 
 // API Danh sách Phiếu kiểm
 router.get('/kiem-kho', protect, authorize('Admin', 'Director', 'NhanVien'), getDanhSachPhieu);

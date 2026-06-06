@@ -435,8 +435,8 @@ export default function HomePage() {
         if (redirectPath) {
           router.push(redirectPath);
           setRedirectPath(null);
-        } else if (role === "NhanVien") {
-          router.push("/quan-ly-san-pham");
+        } else if (role === "NhanVien" || role === "Admin" || role === "Director") {
+          router.push("/dashboard");
         } else {
           router.push("/");
         }
@@ -963,6 +963,7 @@ export default function HomePage() {
                     sp.ThuongHieu?.toLowerCase().includes(search)
                   );
                 })
+                .slice(0, 8)
                 .map((sp) => (
                   <div
                     key={sp._id}

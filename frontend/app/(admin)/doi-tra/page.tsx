@@ -167,15 +167,6 @@ export default function BaoHanhPage() {
       <div className="max-w-7xl mx-auto px-6 relative z-10 pt-[60px]">
         <div className="bg-white rounded-[24px] shadow-sm border border-slate-200 p-6 sm:p-10">
           <div className="flex justify-between items-start mb-8">
-            <div>
-              <h2 className="text-2xl font-black text-[#1e3a8a] flex items-center gap-3 uppercase">
-                <Wrench className="text-[#1e3a8a]" size={28} />
-                BẢO HÀNH KỸ THUẬT
-              </h2>
-              <p className="text-slate-500 font-medium mt-2">
-                Theo dõi lệnh bảo hành và phân công kỹ thuật viên KCS xử lý.
-              </p>
-            </div>
             <button
               className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-[#1e3a8a] text-white hover:bg-blue-900 shadow-lg shadow-blue-900/20 transition-all cursor-pointer"
               onClick={openCreateModal}

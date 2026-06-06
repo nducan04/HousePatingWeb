@@ -56,7 +56,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           name: item.TenNguyenVatLieu,
           category: item.PhanLoai || 'Resin',
           stock: item.TonKho || 0,
-          unit: item.DonViTinh || 'thùng',
+          unit: item.DonViTinh || 'kg',
           cost: item.DonGia || 0,
           supplier: item.NhaCungCap?.TenNCC || 'Local'
         }));
@@ -247,25 +247,24 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
                 ID Yêu cầu: {request.MaNhatKy}
               </span>
-              <span className={`text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider border ${
-                request.TrangThai === 'approved' || request.TrangThai === 'complete' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                request.TrangThai === 'processing' ? 'bg-orange-50 text-orange-600 border-orange-100 animate-pulse' :
-                'bg-amber-50 text-amber-600 border-amber-100'
-              }`}>
+              <span className={`text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider border ${request.TrangThai === 'approved' || request.TrangThai === 'complete' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                  request.TrangThai === 'processing' ? 'bg-orange-50 text-orange-600 border-orange-100 animate-pulse' :
+                    'bg-amber-50 text-amber-600 border-amber-100'
+                }`}>
                 {request.TrangThai === 'approved' ? 'COMPLETED' : request.TrangThai}
               </span>
             </div>
             <h1 className="text-3xl md:text-[34px] font-black text-slate-900 mb-5 tracking-tight">{request.MaMauYeuCau}</h1>
             <div className="flex flex-wrap items-center gap-5 md:gap-8 text-[12px] font-bold text-slate-500">
-              <div className="flex items-center gap-2"><Calendar size={14} className="text-slate-400"/> Ngày tạo: <span className="text-slate-800">{new Date(request.createdAt).toLocaleDateString('vi-VN')}</span></div>
-              <div className="flex items-center gap-2"><Clock size={14} className="text-slate-400"/> Hạn R&D: <span className="text-rose-600">{request.deadline ? new Date(request.deadline).toLocaleDateString('vi-VN') : 'N/A'}</span></div>
-              <div className="flex items-center gap-2"><Layers size={14} className="text-slate-400"/> Bề mặt: <span className="text-slate-800">{contract.surface || request.surface || 'Thép tấm'}</span></div>
+              <div className="flex items-center gap-2"><Calendar size={14} className="text-slate-400" /> Ngày tạo: <span className="text-slate-800">{new Date(request.createdAt).toLocaleDateString('vi-VN')}</span></div>
+              <div className="flex items-center gap-2"><Clock size={14} className="text-slate-400" /> Hạn R&D: <span className="text-rose-600">{request.deadline ? new Date(request.deadline).toLocaleDateString('vi-VN') : 'N/A'}</span></div>
+              <div className="flex items-center gap-2"><Layers size={14} className="text-slate-400" /> Bề mặt: <span className="text-slate-800">{contract.surface || request.surface || 'Thép tấm'}</span></div>
             </div>
           </div>
           {request.sampleImageUrl && (
             <div className="flex flex-col items-center gap-2 relative z-10 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm ml-auto">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pt-1">Ảnh mẫu y/c</span>
-              <img src={request.sampleImageUrl} alt="Mẫu Yêu Cầu" className="w-[88px] h-[88px] object-cover rounded-xl border border-slate-100 cursor-pointer hover:scale-105 transition-transform" onClick={() => window.open(request.sampleImageUrl, '_blank')}/>
+              <img src={request.sampleImageUrl} alt="Mẫu Yêu Cầu" className="w-[88px] h-[88px] object-cover rounded-xl border border-slate-100 cursor-pointer hover:scale-105 transition-transform" onClick={() => window.open(request.sampleImageUrl, '_blank')} />
             </div>
           )}
         </div>
@@ -273,13 +272,13 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         {/* Card 2: Timeline */}
         <div className="bg-white rounded-[24px] p-6 md:p-10 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
           <div className="mb-10 border-b border-slate-50 pb-6">
-            <h2 className="text-[22px] font-black text-slate-900 mb-2 tracking-tight">Bản Đồ Lộ Trình Quy Trình Pha Chế Sơn</h2>
+            <h2 className="text-[22px] font-black text-slate-900 mb-2 tracking-tight">Tiến Độ Quy Trình Pha Chế Sơn </h2>
             <p className="text-[13px] font-medium text-slate-500">Lịch trình pha chế R&D thời gian thực tương tác với phòng thí nghiệm</p>
           </div>
 
           <div className="relative pl-2 md:pl-6 max-w-3xl">
             <div className="absolute left-[24px] md:left-[44px] top-6 bottom-10 w-[2px] bg-slate-100 rounded-full"></div>
-            
+
             <div className="space-y-12 relative">
               {timelineSteps.map((step, idx) => {
                 const stepNum = idx + 1;
@@ -304,7 +303,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className={`flex-1 pt-1 ${isPending ? 'opacity-50' : ''} transition-opacity duration-300`}>
                       <div className="flex flex-wrap items-center gap-3 mb-2.5">
                         <h3 className={`text-[15px] font-black tracking-tight ${isCurrent ? 'text-slate-900' : isCompleted ? 'text-slate-800' : 'text-slate-500'}`}>
@@ -348,9 +347,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                                 )}
                                 {v.imageUrl && (
                                   <div className="mt-2">
-                                    <img 
-                                      src={v.imageUrl} 
-                                      alt={`Ảnh mẻ test ${v.version}`} 
+                                    <img
+                                      src={v.imageUrl}
+                                      alt={`Ảnh mẻ test ${v.version}`}
                                       className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:scale-105 transition-transform"
                                       onClick={() => window.open(v.imageUrl, '_blank')}
                                     />
@@ -588,7 +587,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                       onChange={e => setNewVersion(p => ({ ...p, inputWeight: e.target.value }))}
                     />
                     <div className="absolute inset-y-0 right-4 flex items-center text-sm text-gray-400 font-medium pointer-events-none">
-                      thùng
+                      kg
                     </div>
                   </div>
                 </div>
@@ -605,6 +604,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                       value={newVersion.outputWeight}
                       onChange={e => setNewVersion(p => ({ ...p, outputWeight: e.target.value }))}
                     />
+                    <div className="absolute inset-y-0 right-4 flex items-center text-sm text-gray-400 font-medium pointer-events-none">
+                      kg
+                    </div>
                   </div>
                 </div>
               </div>
@@ -691,7 +693,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                           setNewVersion(p => ({ ...p, components: comps }));
                         }}
                       />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">thùng</span>
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
+                        {materials.find(m => m.id === comp.materialId)?.unit || 'kg'}
+                      </span>
                     </div>
 
                     {newVersion.components.length > 1 && (
@@ -845,10 +849,10 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
-                        Input: <span className="font-black">{v.inputWeight}thùng</span>
+                        Input: <span className="font-black">{v.inputWeight} kg</span>
                       </div>
                       <div className="bg-purple-50 text-purple-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
-                        Output: <span className="font-black">{v.outputWeight}thùng</span>
+                        Output: <span className="font-black">{v.outputWeight} kg</span>
                       </div>
                       <div className={`px-3 py-1.5 rounded-xl text-[12px] font-bold ${parseFloat(wastage) > 5 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
                         }`}>
@@ -864,6 +868,24 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                         Hiệu suất: <span className="font-black">{v.hieuSuat || 98}%</span>
                       </div>
                     </div>
+
+                    {v.components && v.components.length > 0 && (
+                      <div className="mt-3">
+                        <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-1.5">
+                          <Beaker size={12} /> Nguyên liệu sử dụng
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {v.components.map((comp: any, cIdx: number) => {
+                            const mat = materials.find(m => m.id === comp.materialId);
+                            return (
+                              <span key={cIdx} className="bg-slate-100 text-slate-700 border border-slate-200/60 px-2.5 py-1 rounded-xl text-[12px] font-bold">
+                                {mat ? mat.name : comp.materialId}: <span className="font-black text-blue-600">{comp.quantity}</span> {mat?.unit || 'kg'}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Right Column: Feedback */}

@@ -39,6 +39,7 @@ import api from "@/lib/utils/axiosAuth";
 import RevenuePlanChart from "./RevenuePlanChart";
 import ProductionPlanChart from "./ProductionPlanChart";
 import { exportDashboardToExcel } from "@/lib/utils/excelExport";
+import { useAuthStore } from "@/lib/store/authStore";
 
 // Tooltip cho biểu đồ
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -153,11 +154,11 @@ function GaugeChart({ value }: { value: number }) {
         x={cx}
         y={cy + 30}
         textAnchor="middle"
-        fontSize="18"
+        fontSize={value >= 10000 ? "11" : value >= 1000 ? "13" : value >= 100 ? "15" : "18"}
         fill={color}
         fontWeight="900"
       >
-        {value.toFixed(1)}%
+        {Math.round(value)}%
       </text>
     </svg>
   );
@@ -254,9 +255,13 @@ const MONTHS = [
 const REGIONS = ["Miền Bắc", "Miền Trung", "Miền Nam"];
 
 export default function DashboardPage() {
+  const { isLoading: authLoading, isAuthenticated } = useAuthStore();
+
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [staffRanking, setStaffRanking] = useState<any[]>([]);
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [topColors, setTopColors] = useState<any[]>([]);
 
   // Filter states
   const [activeYears, setActiveYears] = useState<string[]>(["2026"]);
@@ -267,6 +272,7 @@ export default function DashboardPage() {
   const [productionTableData, setProductionTableData] = useState<any[]>([]);
   const [productionFilter, setProductionFilter] = useState<"month" | "quarter" | "year">("month");
   const [productionYear, setProductionYear] = useState<"2026" | "2025" | "2024">("2026");
+
 
   // Build period string for API
   const buildPeriod = () => {
@@ -293,6 +299,8 @@ export default function DashboardPage() {
             revenue: Math.round((s.revenue || 0) / 1_000_000), // Tr.đ
           })),
         );
+        setTopProducts(detailRes.data.data.topProducts || []);
+        setTopColors(detailRes.data.data.topColors || []);
       }
     } catch (err) {
       console.error("Failed to fetch dashboard stats:", err);
@@ -302,8 +310,10 @@ export default function DashboardPage() {
   }, [activeYears, activeMonths]);
 
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    if (!authLoading && isAuthenticated) {
+      fetchStats();
+    }
+  }, [fetchStats, authLoading, isAuthenticated]);
 
   const toggle = (arr: string[], val: string, set: (v: string[]) => void) => {
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
@@ -311,11 +321,11 @@ export default function DashboardPage() {
 
   // Derived KPIs
   const totalRevenue = stats?.kpi?.totalRevenue?.value ?? 0; // Tr.đ
-  const revenueTarget = 500; // Tr.đ default target
+  const trends: any[] = stats?.monthlyTrends ?? [];
+  const revenueTarget = trends.reduce((acc, curr) => acc + (curr.revenuePlan || 0), 0) || 500; // Tr.đ dynamically calculated target, defaults to 500 if zero
   const gaugeValue =
     revenueTarget > 0 ? (totalRevenue / revenueTarget) * 100 : 0;
   const topCustomers: any[] = stats?.topCustomers ?? [];
-  const trends: any[] = stats?.monthlyTrends ?? [];
   const maxStaffRev = staffRanking[0]?.revenue || 1;
 
   // Customer ranking bar max
@@ -382,8 +392,9 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Sleek Horizontal Filter Toolbar ── */}
-      <div className="bg-white rounded-sm border border-slate-100 shadow-sm p-4 md:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-        <div className="flex flex-wrap items-center gap-6">
+      <div className="bg-white rounded-[24px] border border-slate-100 shadow-lg shadow-slate-200/40 p-5 md:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+        <div className="flex flex-wrap items-center gap-8 relative z-10">
           {/* Year selector */}
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
@@ -492,27 +503,28 @@ export default function DashboardPage() {
             return (
               <div
                 key={i}
-                className="bg-white rounded-sm border border-slate-100 shadow-sm p-4 hover:shadow-md transition-shadow"
+                className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-5 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] font-light text-slate-400 uppercase tracking-wider">
+                <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full ${palette[k.color]} opacity-10 group-hover:scale-150 transition-transform duration-700`} />
+                <div className="flex items-center justify-between mb-4 relative z-10">
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
                     {k.label}
                   </p>
                   <div
-                    className={`w-8 h-8 rounded-sm flex items-center justify-center ${palette[k.color]}`}
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center ${palette[k.color]} shadow-md`}
                   >
                     {k.icon}
                   </div>
                 </div>
-                <p className="text-[22px] font-medium text-slate-900 leading-none">
+                <p className="text-3xl font-black text-slate-900 leading-none mb-3 relative z-10 tracking-tight">
                   {k.value}
-                  <span className="text-xs font-light text-slate-400 ml-1">
+                  <span className="text-sm font-bold text-slate-400 ml-1.5 uppercase">
                     {k.unit}
                   </span>
                 </p>
-                <div className="flex items-center gap-1.5 mt-2">
+                <div className="flex items-center gap-1.5 relative z-10">
                   {kpiChange(k.change)}
-                  <span className="text-[11px] text-slate-400">{k.sub}</span>
+                  <span className="text-[12px] font-medium text-slate-500">{k.sub}</span>
                 </div>
               </div>
             );
@@ -521,22 +533,26 @@ export default function DashboardPage() {
 
         {/* Gauge + Revenue Chart row */}
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-5">
-          {/* Gauge */}
-          <div className="bg-white rounded-sm border border-slate-100 shadow-sm p-5 flex flex-col items-center justify-center gap-2">
-            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest text-center">
+          <div className="bg-white rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 p-6 flex flex-col items-center justify-center gap-3 relative group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            <p className="text-[12px] font-bold text-slate-500 uppercase tracking-widest text-center relative z-10">
               Tỷ lệ hoàn thành đạt doanh thu
             </p>
-            <GaugeChart value={gaugeValue} />
-            <p className="text-[11px] font-light text-slate-400 text-center">
+            <div className="relative z-10">
+              <GaugeChart value={gaugeValue} />
+            </div>
+            <p className="text-[12px] font-medium text-slate-400 text-center relative z-10 mt-2">
               So với cùng kỳ năm trước
             </p>
-            <div className="flex items-center gap-1 text-emerald-500 font-medium text-sm">
-              <TrendingUp size={14} />+{stats.kpi.totalRevenue.change}%
+            <div className={`flex items-center gap-1.5 font-bold text-base relative z-10 px-3 py-1 rounded-full ${stats.kpi.totalRevenue.change >= 0 ? "text-emerald-500 bg-emerald-50" : "text-rose-500 bg-rose-50"}`}>
+              {stats.kpi.totalRevenue.change >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+              {stats.kpi.totalRevenue.change >= 0 ? "+" : ""}
+              {stats.kpi.totalRevenue.change}%
             </div>
           </div>
 
           {/* Revenue Plan Chart */}
-          <div className="min-w-0">
+          <div className="min-w-0 bg-white rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 p-4">
             <RevenuePlanChart year={activeYears[0] as any} />
           </div>
         </div>
@@ -551,28 +567,25 @@ export default function DashboardPage() {
             setProductionTableData(data);
           }}
         />
-
         {/* Bottom row: Staff ranking + Customer ranking */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Staff by Revenue */}
-          <div className="bg-white rounded-sm border border-slate-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 p-6 flex flex-col h-full relative group">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[24px]" />
+            <div className="flex items-center justify-between mb-6 relative z-10">
               <div>
-                <h3
-                  className="font-medium text-slate-900 text-sm"
-                  style={{ fontSize: "14px" }}
-                >
+                <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+                  <Award size={20} className="text-amber-500" />
                   Top 10 nhân viên doanh thu
                 </h3>
-                <p className="text-slate-400" style={{ fontSize: "12px" }}>
+                <p className="text-slate-500 text-[13px] font-medium mt-1">
                   Dựa trên đơn hàng &amp; hợp đồng
                 </p>
               </div>
-              <Award size={18} className="text-amber-400" />
             </div>
-            <div className="space-y-2.5">
+            <div className="space-y-3 relative z-10 flex-1 flex flex-col justify-center">
               {staffRanking.length === 0 ? (
-                <p className="text-center text-slate-400 text-xs font-medium py-4">
+                <p className="text-center text-slate-400 text-sm font-medium py-8">
                   Chưa có dữ liệu nhân viên doanh thu trong kỳ này
                 </p>
               ) : (
@@ -605,44 +618,45 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-sm border border-slate-100 shadow-sm p-5 overflow-hidden flex flex-col h-full">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 p-6 overflow-hidden flex flex-col h-full relative group">
+            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[24px]" />
+            <div className="flex items-center justify-between mb-6 relative z-10">
               <div>
-                <h3 className="font-medium text-slate-900 text-sm">
+                <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+                  <Target size={20} className="text-blue-600" />
                   Top khách hàng trọng tâm
                 </h3>
-                <p className="text-[11px] text-slate-400 font-medium">
+                <p className="text-[13px] text-slate-500 font-medium mt-1">
                   Theo sản lượng tích lũy
                 </p>
               </div>
-              <Target size={18} className="text-blue-500" />
             </div>
-            <div className="overflow-x-auto flex-1 custom-scrollbar">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto flex-1 custom-scrollbar relative z-10">
+              <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider">
-                    <th className="pb-3 font-medium">Khách hàng</th>
-                    <th className="pb-3 font-medium">Sản lượng</th>
-                    <th className="pb-3 font-medium text-right">Doanh thu</th>
+                  <tr className="border-b border-slate-100/50 text-slate-400">
+                    <th className="pb-3 font-bold uppercase tracking-wider text-[11px]">Khách hàng</th>
+                    <th className="pb-3 font-bold uppercase tracking-wider text-[11px]">Sản lượng</th>
+                    <th className="pb-3 font-bold uppercase tracking-wider text-[11px] text-right">Doanh thu</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {topCustomers.slice(0, 5).map((c: any, i: number) => (
-                    <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3 text-slate-700 font-medium max-w-[120px] truncate" title={c.name}>
+                    <tr key={i} className="hover:bg-indigo-50/50 transition-colors group/row">
+                      <td className="py-3.5 text-slate-700 font-medium max-w-[150px] truncate group-hover/row:text-blue-700 transition-colors" title={c.name}>
                         {c.name}
                       </td>
-                      <td className="py-3 text-slate-600 font-medium">
-                        {c.volume.toLocaleString("vi-VN")} <span className="text-[9px] text-slate-400">Thùng</span>
+                      <td className="py-3.5 text-slate-900 font-semibold">
+                        {c.volume.toLocaleString("vi-VN")} <span className="text-[10px] text-slate-400 font-medium">Thùng</span>
                       </td>
-                      <td className="py-3 text-blue-600 font-medium text-right">
-                        {c.revenue.toLocaleString("vi-VN")} <span className="text-[9px] text-blue-300">đ</span>
+                      <td className="py-3.5 text-blue-600 font-bold text-right">
+                        {c.revenue.toLocaleString("vi-VN")} <span className="text-[10px] text-blue-400/80 font-medium">đ</span>
                       </td>
                     </tr>
                   ))}
                   {topCustomers.length === 0 && (
                     <tr>
-                      <td colSpan={3} className="py-4 text-center text-slate-400">Không có dữ liệu</td>
+                      <td colSpan={3} className="py-8 text-center text-slate-400 text-sm">Không có dữ liệu</td>
                     </tr>
                   )}
                 </tbody>
@@ -652,13 +666,14 @@ export default function DashboardPage() {
         </div>
 
         {/* Production Table */}
-        <div className="bg-white p-6 rounded-sm border border-slate-100 shadow-sm overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[24px]" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
             <div>
-              <h3 className="text-base font-medium text-slate-900 tracking-tight">
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight">
                 Bảng dữ liệu: Sản lượng thực tế vs kế hoạch
               </h3>
-              <p className="text-xs text-slate-400 font-medium mt-1">
+              <p className="text-[13px] text-slate-500 font-medium mt-1">
                 Đơn vị: Thùng <span className="font-light italic">(Sản lượng tính dựa trên các đơn hàng/hợp đồng pha chế đã hoàn thành)</span>
               </p>
             </div>
@@ -684,28 +699,28 @@ export default function DashboardPage() {
               </select>
             </div>
           </div>
-          <div className="overflow-x-auto custom-scrollbar">
+          <div className="overflow-x-auto custom-scrollbar relative z-10">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50">
-                  <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                <tr className="border-b border-slate-100/50 text-slate-400">
+                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px]">
                     {productionFilter === "year" ? "Năm" : productionFilter === "quarter" ? "Quý" : "Thời gian"}
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider text-right">Mục tiêu (Kế hoạch)</th>
-                  <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider text-right">Sản lượng thực tế</th>
-                  <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider text-center">Tỷ lệ hoàn thành</th>
+                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">Mục tiêu (Kế hoạch)</th>
+                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">Sản lượng thực tế</th>
+                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-center">Tỷ lệ hoàn thành</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {(productionTableData.length > 0 ? productionTableData : (stats.monthlyTrends || [])).map((row: any, i: number) => {
                   const pct = row.prodPlan > 0 ? Math.round((row.prodActual / row.prodPlan) * 100) : 0;
                   return (
-                    <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 text-slate-700 font-medium">{row.name || row.month}</td>
-                      <td className="px-4 py-3 text-amber-600 font-medium text-right">{row.prodPlan.toLocaleString("vi-VN")}</td>
-                      <td className="px-4 py-3 text-blue-600 font-medium text-right">{row.prodActual.toLocaleString("vi-VN")}</td>
+                    <tr key={i} className="hover:bg-slate-50/50 transition-colors group/row">
+                      <td className="px-4 py-3 font-medium text-slate-700">{row.name || row.month}</td>
+                      <td className="px-4 py-3 font-semibold text-amber-600 text-right">{row.prodPlan.toLocaleString("vi-VN")}</td>
+                      <td className="px-4 py-3 font-semibold text-blue-600 text-right">{row.prodActual.toLocaleString("vi-VN")}</td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${pct >= 100 ? 'bg-emerald-50 text-emerald-600' : pct >= 70 ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium shadow-sm ${pct >= 100 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : pct >= 70 ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
                           {pct}%
                         </span>
                       </td>
@@ -714,17 +729,109 @@ export default function DashboardPage() {
                 })}
                 {(productionTableData.length === 0 && (!stats.monthlyTrends || stats.monthlyTrends.length === 0)) && (
                   <tr>
-                    <td colSpan={4} className="py-6 text-center text-slate-400 text-sm">Không có dữ liệu</td>
+                    <td colSpan={4} className="py-8 text-center text-slate-400 text-sm">Không có dữ liệu</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
+
+        {/* Top Products & Top Colors Tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Products */}
+          <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden relative group">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[24px]" />
+            <div className="flex items-center justify-between gap-4 mb-6 relative z-10">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <Package size={20} className="text-blue-600" /> Sản phẩm bán chạy nhất
+                </h3>
+                <p className="text-[13px] text-slate-500 font-medium mt-1">
+                  Dựa trên tổng sản lượng bán ra
+                </p>
+              </div>
+            </div>
+            <div className="overflow-x-auto custom-scrollbar relative z-10">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100/50 text-slate-400">
+                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px]">Tên sản phẩm</th>
+                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">Sản lượng</th>
+                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">Doanh thu</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {topProducts.slice(0, 5).map((p: any, i: number) => (
+                    <tr key={i} className="hover:bg-blue-50/50 transition-colors group/row">
+                      <td className="px-4 py-3 font-medium text-slate-700 max-w-[150px] truncate group-hover/row:text-blue-700 transition-colors" title={p.name}>
+                        {p.name}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-slate-900 text-right">
+                        {p.sold?.toLocaleString("vi-VN")} <span className="text-[10px] text-slate-400 font-medium">Thùng</span>
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-emerald-600 text-right">
+                        {p.revenue?.toLocaleString("vi-VN")} <span className="text-[10px] text-emerald-400/80 font-medium">đ</span>
+                      </td>
+                    </tr>
+                  ))}
+                  {topProducts.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className="py-8 text-center text-slate-400 text-sm">Không có dữ liệu</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Top Colors */}
+          <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden relative group">
+            <div className="absolute inset-0 bg-gradient-to-bl from-purple-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[24px]" />
+            <div className="flex items-center justify-between gap-4 mb-6 relative z-10">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <Filter size={20} className="text-purple-600" /> Màu sơn được ưa chuộng
+                </h3>
+                <p className="text-[13px] text-slate-500 font-medium mt-1">
+                  Top mã màu xuất hiện nhiều nhất trong đơn hàng
+                </p>
+              </div>
+            </div>
+            <div className="overflow-x-auto custom-scrollbar relative z-10">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100/50 text-slate-400">
+                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px]">Mã màu</th>
+                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">Số lượt mua</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {topColors.slice(0, 5).map((c: any, i: number) => (
+                    <tr key={i} className="hover:bg-purple-50/50 transition-colors group/row">
+                      <td className="px-4 py-3 font-medium text-slate-700 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg shadow-sm border border-slate-200" style={{ background: c.name }} />
+                        <span className="group-hover/row:text-purple-700 transition-colors">{c.name}</span>
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-slate-900 text-right">
+                        {c.count?.toLocaleString("vi-VN")} <span className="text-[10px] text-slate-400 font-medium">Lượt</span>
+                      </td>
+                    </tr>
+                  ))}
+                  {topColors.length === 0 && (
+                    <tr>
+                      <td colSpan={2} className="py-8 text-center text-slate-400 text-sm">Không có dữ liệu</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── BẢNG CHI TIẾT KHÁCH HÀNG TRỌNG TÂM (KÉO DÀI FULL MÀN HÌNH) ── */}
-      <div className="bg-white rounded-sm border border-slate-100 shadow-sm overflow-hidden w-full mt-4">
+      <div className="bg-white rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden w-full mt-4">
         <div className="p-6 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-base font-medium text-slate-900 tracking-tight">
