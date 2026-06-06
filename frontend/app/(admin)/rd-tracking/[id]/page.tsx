@@ -56,7 +56,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           name: item.TenNguyenVatLieu,
           category: item.PhanLoai || 'Resin',
           stock: item.TonKho || 0,
-          unit: item.DonViTinh || 'thùng',
+          unit: item.DonViTinh || 'kg',
           cost: item.DonGia || 0,
           supplier: item.NhaCungCap?.TenNCC || 'Local'
         }));
@@ -587,7 +587,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                       onChange={e => setNewVersion(p => ({ ...p, inputWeight: e.target.value }))}
                     />
                     <div className="absolute inset-y-0 right-4 flex items-center text-sm text-gray-400 font-medium pointer-events-none">
-                      thùng
+                      kg
                     </div>
                   </div>
                 </div>
@@ -604,6 +604,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                       value={newVersion.outputWeight}
                       onChange={e => setNewVersion(p => ({ ...p, outputWeight: e.target.value }))}
                     />
+                    <div className="absolute inset-y-0 right-4 flex items-center text-sm text-gray-400 font-medium pointer-events-none">
+                      kg
+                    </div>
                   </div>
                 </div>
               </div>
@@ -690,7 +693,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                           setNewVersion(p => ({ ...p, components: comps }));
                         }}
                       />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">thùng</span>
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
+                        {materials.find(m => m.id === comp.materialId)?.unit || 'kg'}
+                      </span>
                     </div>
 
                     {newVersion.components.length > 1 && (
@@ -844,10 +849,10 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
-                        Input: <span className="font-black">{v.inputWeight}thùng</span>
+                        Input: <span className="font-black">{v.inputWeight} kg</span>
                       </div>
                       <div className="bg-purple-50 text-purple-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
-                        Output: <span className="font-black">{v.outputWeight}thùng</span>
+                        Output: <span className="font-black">{v.outputWeight} kg</span>
                       </div>
                       <div className={`px-3 py-1.5 rounded-xl text-[12px] font-bold ${parseFloat(wastage) > 5 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
                         }`}>
@@ -863,6 +868,24 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                         Hiệu suất: <span className="font-black">{v.hieuSuat || 98}%</span>
                       </div>
                     </div>
+
+                    {v.components && v.components.length > 0 && (
+                      <div className="mt-3">
+                        <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-1.5">
+                          <Beaker size={12} /> Nguyên liệu sử dụng
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {v.components.map((comp: any, cIdx: number) => {
+                            const mat = materials.find(m => m.id === comp.materialId);
+                            return (
+                              <span key={cIdx} className="bg-slate-100 text-slate-700 border border-slate-200/60 px-2.5 py-1 rounded-xl text-[12px] font-bold">
+                                {mat ? mat.name : comp.materialId}: <span className="font-black text-blue-600">{comp.quantity}</span> {mat?.unit || 'kg'}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Right Column: Feedback */}

@@ -59,11 +59,11 @@ export default function MyPaymentsPage() {
       if (momoRes.data.success && momoRes.data.payUrl) {
         window.location.href = momoRes.data.payUrl;
       } else {
-        toast.error('Lỗi khởi tạo thanh toán MoMo.');
+        toast.error(momoRes.data.message || 'Lỗi khởi tạo thanh toán MoMo.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error('Lỗi kết nối cổng thanh toán.');
+      toast.error(error.response?.data?.message || error.message || 'Lỗi kết nối cổng thanh toán.');
     }
   };
 
