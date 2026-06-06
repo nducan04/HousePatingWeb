@@ -240,7 +240,31 @@ exports.createMomoPayment = async (req, res) => {
         }
     } catch (error) {
         console.error('MoMo Create Error:', error.response?.data || error.message);
-        res.status(500).json({ success: false, message: error.message });
+        
+        let errorMessage = 'Không thể kết nối đến cổng thanh toán MoMo';
+        let detail = error.message;
+
+        if (error.response) {
+            // MoMo returned a non-2xx status code
+            const responseData = error.response.data;
+            detail = typeof responseData === 'object' ? JSON.stringify(responseData) : String(responseData);
+            if (responseData && responseData.message) {
+                errorMessage = `Cổng thanh toán MoMo báo lỗi: ${responseData.message} (Mã kết quả: ${responseData.resultCode || 'N/A'})`;
+            } else {
+                errorMessage = `Cổng thanh toán MoMo từ chối yêu cầu (HTTP ${error.response.status})`;
+            }
+        } else if (error.request) {
+            // Request was made but no response was received
+            errorMessage = 'Không thể kết nối đến máy chủ MoMo. Vui lòng kiểm tra lại cấu hình hoặc thử lại sau.';
+        } else {
+            errorMessage = `Lỗi hệ thống khi khởi tạo MoMo: ${error.message}`;
+        }
+
+        return res.status(400).json({
+            success: false,
+            message: errorMessage,
+            detail: detail
+        });
     }
 };
 

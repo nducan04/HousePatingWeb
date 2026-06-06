@@ -167,15 +167,20 @@ export default function CheckoutPage() {
           // Update order info to MOMO just in case it was COD before
           await api.patch(`/orders/${existingOrderId}/info`, { PhuongThucThanhToan: 'MOMO' }).catch(console.error);
 
-          const momoRes = await api.post('/thanh-toan/momo/create', {
-            type: 'ORDER',
-            id: existingOrderId,
-            amount: finalTotal
-          });
-          if (momoRes.data.success && momoRes.data.payUrl) {
-            window.location.href = momoRes.data.payUrl;
-          } else {
-            alert('Lỗi khởi tạo thanh toán MoMo.');
+          try {
+            const momoRes = await api.post('/thanh-toan/momo/create', {
+              type: 'ORDER',
+              id: existingOrderId,
+              amount: finalTotal
+            });
+            if (momoRes.data.success && momoRes.data.payUrl) {
+              window.location.href = momoRes.data.payUrl;
+            } else {
+              alert(momoRes.data.message || 'Lỗi khởi tạo thanh toán MoMo.');
+            }
+          } catch (momoErr: any) {
+            console.error('MoMo error', momoErr);
+            alert(`Thanh toán MoMo thất bại: ${momoErr.response?.data?.message || momoErr.message || 'Lỗi kết nối cổng thanh toán'}.`);
           }
         } else {
           // COD
@@ -222,12 +227,17 @@ export default function CheckoutPage() {
               sessionStorage.removeItem('checkoutDiscount');
               window.location.href = momoRes.data.payUrl;
             } else {
-              alert('Lỗi khởi tạo thanh toán MoMo. Vui lòng thanh toán sau trong phần Quản lý đơn hàng.');
+              alert(momoRes.data.message || 'Lỗi khởi tạo thanh toán MoMo. Vui lòng thanh toán sau trong phần Quản lý đơn hàng.');
+              sessionStorage.removeItem('checkoutItems');
+              sessionStorage.removeItem('checkoutDiscount');
               router.push('/my-orders');
             }
-          } catch (momoErr) {
+          } catch (momoErr: any) {
             console.error('MoMo error', momoErr);
-            alert('Lỗi kết nối cổng thanh toán MoMo. Đơn hàng của bạn đã được ghi nhận. Vui lòng thanh toán sau trong phần Quản lý đơn hàng.');
+            const detailMsg = momoErr.response?.data?.message || momoErr.message || '';
+            alert(`Thanh toán MoMo thất bại: ${detailMsg}. Đơn hàng của bạn đã được ghi nhận thành công. Bạn có thể tiến hành thanh toán lại trong trang "Đơn hàng của tôi".`);
+            sessionStorage.removeItem('checkoutItems');
+            sessionStorage.removeItem('checkoutDiscount');
             router.push('/my-orders');
           }
         }
