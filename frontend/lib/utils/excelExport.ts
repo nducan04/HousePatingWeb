@@ -25,6 +25,41 @@ const autoFitColumnWidths = (sheet: ExcelJS.Worksheet, startRow: number = 1) => 
   });
 };
 
+const addVTSCHeader = async (workbook: ExcelJS.Workbook, sheet: ExcelJS.Worksheet, maxColChar: string) => {
+  // Thêm Logo
+  try {
+    const response = await fetch('/vtsc.png');
+    const imageBuffer = await response.arrayBuffer();
+    const logoId = workbook.addImage({
+      buffer: imageBuffer,
+      extension: 'png',
+    });
+    sheet.addImage(logoId, {
+      tl: { col: 1.2, row: 0.2 },
+      ext: { width: 200, height: 200 }
+    });
+  } catch (e) {
+    console.error("Could not load logo", e);
+  }
+
+  // Thêm Text Company
+  sheet.mergeCells(`G1:K2`);
+  const headerCell = sheet.getCell('G1');
+  headerCell.value = {
+    richText: [
+      { text: 'Công ty Cổ phần Thương mại và Dịch vụ VOSCO\n', font: { name: 'Times New Roman', size: 12, bold: true } },
+      { text: 'Vosco Trading And Service Joint Stock Company (VTSC)\n', font: { name: 'Times New Roman', size: 11, bold: true } },
+      { text: 'Địa chỉ: 215 Lạch Tray, P. Gia Viên, Tp. Hải Phòng\n', font: { name: 'Times New Roman', size: 11 } },
+      { text: 'ĐT: 0225 3747226\n', font: { name: 'Times New Roman', size: 11 } },
+      { text: 'Email: vtsc@vtschp.vn', font: { name: 'Times New Roman', size: 11 } }
+    ]
+  };
+  headerCell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'left' };
+  
+  sheet.getRow(1).height = 80;
+  sheet.getRow(2).height = 80;
+};
+
 /**
  * Xuất báo cáo Excel kết quả kinh doanh & điều hành thời gian thực cho VTSC PaintPro
  * @param stats Dữ liệu KPIs từ API
@@ -326,22 +361,7 @@ export const exportBusinessReportExcel = async (
   });
 
   // Header hành chính
-  sheet.mergeCells('A1:C1');
-  const companyCell = sheet.getCell('A1');
-  companyCell.value = 'CÔNG TY CP TMDV VOSCO (VTSC)';
-  companyCell.font = boldFont;
-
-  sheet.mergeCells('G1:I1');
-  const countryCell = sheet.getCell('G1');
-  countryCell.value = 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM';
-  countryCell.font = boldFont;
-  countryCell.alignment = { horizontal: 'center' };
-
-  sheet.mergeCells('G2:I2');
-  const mottoCell = sheet.getCell('G2');
-  mottoCell.value = 'Độc lập - Tự do - Hạnh phúc';
-  mottoCell.font = { ...boldFont, underline: true };
-  mottoCell.alignment = { horizontal: 'center' };
+  await addVTSCHeader(workbook, sheet, 'I');
 
   // Tiêu đề
   sheet.mergeCells('A4:I4');
@@ -482,22 +502,7 @@ export const exportInventoryReportExcel = async (
   });
 
   // Header hành chính
-  sheet.mergeCells('A1:C1');
-  const companyCell = sheet.getCell('A1');
-  companyCell.value = 'CÔNG TY CP TMDV VOSCO (VTSC)';
-  companyCell.font = boldFont;
-
-  sheet.mergeCells('E1:G1');
-  const countryCell = sheet.getCell('E1');
-  countryCell.value = 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM';
-  countryCell.font = boldFont;
-  countryCell.alignment = { horizontal: 'center' };
-
-  sheet.mergeCells('E2:G2');
-  const mottoCell = sheet.getCell('E2');
-  mottoCell.value = 'Độc lập - Tự do - Hạnh phúc';
-  mottoCell.font = { ...boldFont, underline: true };
-  mottoCell.alignment = { horizontal: 'center' };
+  await addVTSCHeader(workbook, sheet, 'G');
 
   // Tiêu đề
   sheet.mergeCells('A4:G4');
@@ -638,22 +643,7 @@ export const exportProductionReportExcel = async (
   });
 
   // Header hành chính
-  sheet.mergeCells('A1:C1');
-  const companyCell = sheet.getCell('A1');
-  companyCell.value = 'CÔNG TY CP TMDV VOSCO (VTSC)';
-  companyCell.font = boldFont;
-
-  sheet.mergeCells('E1:G1');
-  const countryCell = sheet.getCell('E1');
-  countryCell.value = 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM';
-  countryCell.font = boldFont;
-  countryCell.alignment = { horizontal: 'center' };
-
-  sheet.mergeCells('E2:G2');
-  const mottoCell = sheet.getCell('E2');
-  mottoCell.value = 'Độc lập - Tự do - Hạnh phúc';
-  mottoCell.font = { ...boldFont, underline: true };
-  mottoCell.alignment = { horizontal: 'center' };
+  await addVTSCHeader(workbook, sheet, 'G');
 
   // Tiêu đề
   sheet.mergeCells('A4:G4');
@@ -791,25 +781,7 @@ export const exportCustomerServiceReportExcel = async (
     });
 
     // --- 1. KHỐI TIÊU ĐỀ HÀNH CHÍNH ---
-    // Ô A1:C1
-    sheet.mergeCells('A1:C1');
-    const companyCell = sheet.getCell('A1');
-    companyCell.value = 'CÔNG TY CP TMDV VOSCO (VTSC)';
-    companyCell.font = boldFont;
-
-    // Ô E1:H1
-    sheet.mergeCells('E1:H1');
-    const countryCell = sheet.getCell('E1');
-    countryCell.value = 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM';
-    countryCell.font = boldFont;
-    countryCell.alignment = { horizontal: 'center' };
-
-    // Ô E2:H2
-    sheet.mergeCells('E2:H2');
-    const mottoCell = sheet.getCell('E2');
-    mottoCell.value = 'Độc lập - Tự do - Hạnh phúc';
-    mottoCell.font = { ...boldFont, underline: true };
-    mottoCell.alignment = { horizontal: 'center' };
+    await addVTSCHeader(workbook, sheet, 'H');
 
     // Ô A4:H4
     sheet.mergeCells('A4:H4');
@@ -976,22 +948,7 @@ export const exportHrReportExcel = async (
   });
 
   // Header hành chính
-  sheet.mergeCells('A1:C1');
-  const companyCell = sheet.getCell('A1');
-  companyCell.value = 'CÔNG TY CP TMDV VOSCO (VTSC)';
-  companyCell.font = boldFont;
-
-  sheet.mergeCells('D1:G1');
-  const countryCell = sheet.getCell('D1');
-  countryCell.value = 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM';
-  countryCell.font = boldFont;
-  countryCell.alignment = { horizontal: 'center' };
-
-  sheet.mergeCells('D2:G2');
-  const mottoCell = sheet.getCell('D2');
-  mottoCell.value = 'Độc lập - Tự do - Hạnh phúc';
-  mottoCell.font = { ...boldFont, underline: true };
-  mottoCell.alignment = { horizontal: 'center' };
+  await addVTSCHeader(workbook, sheet, 'G');
 
   // Tiêu đề
   sheet.mergeCells('A4:G4');
@@ -1128,22 +1085,7 @@ export const exportLegalReportExcel = async (
   });
 
   // Header hành chính
-  sheet.mergeCells('A1:C1');
-  const companyCell = sheet.getCell('A1');
-  companyCell.value = 'CÔNG TY CP TMDV VOSCO (VTSC)';
-  companyCell.font = boldFont;
-
-  sheet.mergeCells('D1:F1');
-  const countryCell = sheet.getCell('D1');
-  countryCell.value = 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM';
-  countryCell.font = boldFont;
-  countryCell.alignment = { horizontal: 'center' };
-
-  sheet.mergeCells('D2:F2');
-  const mottoCell = sheet.getCell('D2');
-  mottoCell.value = 'Độc lập - Tự do - Hạnh phúc';
-  mottoCell.font = { ...boldFont, underline: true };
-  mottoCell.alignment = { horizontal: 'center' };
+  await addVTSCHeader(workbook, sheet, 'F');
 
   // Tiêu đề
   sheet.mergeCells('A4:F4');
