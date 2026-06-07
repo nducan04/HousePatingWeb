@@ -1132,9 +1132,6 @@ export default function QLKhoPage() {
                       <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                         Đơn giá
                       </th>
-                      <th className="px-6 py-5 text-center text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-                        Trạng thái (MOQ: 200)
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -1199,32 +1196,6 @@ export default function QLKhoPage() {
                               <span className="text-[10px] text-slate-400 font-bold ml-0.5">
                                 đ
                               </span>
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <div
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight shadow-sm border ${
-                                  tk >= 200
-                                    ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                    : tk > 0
-                                      ? "bg-amber-50 text-amber-600 border-amber-100"
-                                      : "bg-rose-50 text-rose-600 border-rose-100"
-                                }`}
-                              >
-                                <div
-                                  className={`w-1.5 h-1.5 rounded-md ${tk < 200 ? "animate-pulse" : ""} ${
-                                    tk >= 200
-                                      ? "bg-emerald-500"
-                                      : tk > 0
-                                        ? "bg-amber-500"
-                                        : "bg-rose-500"
-                                  }`}
-                                />
-                                {tk >= 200
-                                  ? "Đủ điều kiện (Sẵn sàng)"
-                                  : tk > 0
-                                    ? "Sắp hết (Dưới MOQ)"
-                                    : "Hết hàng (Khẩn cấp)"}
-                              </div>
                             </td>
                           </tr>
                         );
