@@ -31,7 +31,7 @@ interface DoiTac {
   _id?: string;
   MaKH: string;
   TenKhachHang: string;
-  PhanLoai: "B2B" | "B2C" | "Đại lý";
+  PhanLoai: "B2B" | "B2C";
   NgaySinh?: string;
   SDT: string;
   DiaChi?: string;
@@ -78,7 +78,6 @@ export default function DoiTacPage() {
   const STATS = {
     total: data.length,
     b2b: data.filter((d) => d.PhanLoai === "B2B").length,
-    daily: data.filter((d) => d.PhanLoai === "Đại lý").length,
     b2c: data.filter((d) => d.PhanLoai === "B2C").length,
   };
 
@@ -194,7 +193,7 @@ export default function DoiTacPage() {
       </div>
 
       {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {[
           {
             label: "Tổng Đối Tác",
@@ -209,13 +208,6 @@ export default function DoiTacPage() {
             icon: Building2,
             color: "blue",
             sub: "Hợp đồng dài hạn",
-          },
-          {
-            label: "Đại Lý Phân Phối",
-            value: STATS.daily,
-            icon: Ribbon,
-            color: "purple",
-            sub: "Kênh trung gian",
           },
           {
             label: "Khách Lẻ (B2C)",
@@ -251,9 +243,7 @@ export default function DoiTacPage() {
                     ? "bg-indigo-50 text-indigo-600"
                     : kpi.color === "blue"
                       ? "bg-blue-50 text-blue-600"
-                      : kpi.color === "purple"
-                        ? "bg-purple-50 text-purple-600"
-                        : "bg-amber-50 text-amber-600"
+                      : "bg-amber-50 text-amber-600"
                 }`}
               >
                 <kpi.icon size={24} />
@@ -285,7 +275,6 @@ export default function DoiTacPage() {
               {[
                 { id: "all", label: "Tất cả" },
                 { id: "B2B", label: "Doanh nghiệp (B2B)" },
-                { id: "Đại lý", label: "Đại lý" },
                 { id: "B2C", label: "Khách lẻ (B2C)" },
               ].map((f) => (
                 <button
@@ -384,9 +373,7 @@ export default function DoiTacPage() {
                         ${
                           item.PhanLoai === "B2B"
                             ? "bg-blue-50 text-blue-600"
-                            : item.PhanLoai === "Đại lý"
-                              ? "bg-purple-50 text-purple-600"
-                              : "bg-amber-50 text-amber-600"
+                            : "bg-amber-50 text-amber-600"
                         }`}
                       >
                         {item.PhanLoai}
@@ -517,13 +504,12 @@ export default function DoiTacPage() {
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          PhanLoai: e.target.value as "B2B" | "B2C" | "Đại lý",
+                          PhanLoai: e.target.value as "B2B" | "B2C",
                         })
                       }
                     >
                       <option value="B2C">Khách Lẻ (B2C)</option>
                       <option value="B2B">Doanh Nghiệp (B2B)</option>
-                      <option value="Đại lý">Đại lý Phân Phối</option>
                     </select>
                   </div>
 
@@ -610,7 +596,7 @@ export default function DoiTacPage() {
                 </div>
               </div>
 
-              {formData.PhanLoai === "Đại lý" && (
+              {formData.PhanLoai === "B2B" && (
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">
                     Mã số thuế / Giấy phép KD
