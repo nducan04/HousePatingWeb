@@ -1522,7 +1522,7 @@ export default function ContractsPage() {
                                   fontWeight: "bold",
                                 }}
                               >
-                                {it.colorCode} {paintColors.find(c => c.code === it.colorCode) ? `(${paintColors.find(c => c.code === it.colorCode)?.name})` : ""}
+                                {it.colorCode} {paintColors.find(c => c.code === it.colorCode) ? `— ${paintColors.find(c => c.code === it.colorCode)?.name}` : ""}
                               </td>
                               <td
                                 style={{
