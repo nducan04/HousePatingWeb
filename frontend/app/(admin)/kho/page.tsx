@@ -145,6 +145,21 @@ export default function QLKhoPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Accordion state for paint product color variants
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleRow = (id: string) => {
+    setExpandedRows((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
   // Modals
   const [isKiemKhoModal, setIsKiemKhoModal] = useState(false);
   const [kiemKhoItems, setKiemKhoItems] = useState<any[]>([
@@ -1149,55 +1164,107 @@ export default function QLKhoPage() {
                         const tk = item.TongTonKho || 0;
                         const isLow = tk < 200; // MOQ is 200kg
                         const pct = Math.min((tk / 1000) * 100, 100); // 1000 is arbitrary healthy stock
+                        const isExpanded = expandedRows.has(item._id);
 
                         return (
-                          <tr
-                            key={item._id}
-                            className="hover:bg-slate-50/50 transition-colors group"
-                          >
-                            <td className="px-6 py-4">
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-600">
-                                {item.MaSanPham}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                {item.TenDongSon}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">
-                                {item.PhanLoai}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center justify-end gap-3">
-                                <div className="flex-1 h-1.5 bg-slate-100 rounded-md overflow-hidden shadow-inner max-w-[80px]">
-                                  <div
-                                    className={`h-full rounded-md transition-all duration-1000 shadow-sm ${
-                                      tk >= 200
-                                        ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                                        : tk > 0
-                                          ? "bg-gradient-to-r from-amber-400 to-amber-500"
-                                          : "bg-gradient-to-r from-rose-400 to-rose-500"
-                                    }`}
-                                    style={{ width: `${pct}%` }}
-                                  />
-                                </div>
-                                <span
-                                  className={`font-semibold tabular-nums ${isLow ? "text-rose-600" : "text-emerald-600"}`}
-                                >
-                                  {tk.toLocaleString("vi-VN")}
+                          <React.Fragment key={item._id}>
+                            <tr
+                              className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                              onClick={() => toggleRow(item._id)}
+                            >
+                              <td className="px-6 py-4">
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-600">
+                                  {item.MaSanPham}
                                 </span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-right font-semibold text-slate-700">
-                              {item.DonGiaCoSo.toLocaleString("vi-VN")}{" "}
-                              <span className="text-[10px] text-slate-400 font-bold ml-0.5">
-                                đ
-                              </span>
-                            </td>
-                          </tr>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                  <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}>
+                                    ▶
+                                  </span>
+                                  {item.TenDongSon}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">
+                                  {item.PhanLoai}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center justify-end gap-3">
+                                  <div className="flex-1 h-1.5 bg-slate-100 rounded-md overflow-hidden shadow-inner max-w-[80px]">
+                                    <div
+                                      className={`h-full rounded-md transition-all duration-1000 shadow-sm ${
+                                        tk >= 200
+                                          ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                                          : tk > 0
+                                            ? "bg-gradient-to-r from-amber-400 to-amber-500"
+                                            : "bg-gradient-to-r from-rose-400 to-rose-500"
+                                      }`}
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                  <span
+                                    className={`font-semibold tabular-nums ${isLow ? "text-rose-600" : "text-emerald-600"}`}
+                                  >
+                                    {tk.toLocaleString("vi-VN")}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-right font-semibold text-slate-700">
+                                {item.DonGiaCoSo.toLocaleString("vi-VN")}{" "}
+                                <span className="text-[10px] text-slate-400 font-bold ml-0.5">
+                                  đ
+                                </span>
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr className="bg-slate-50/20">
+                                <td colSpan={5} className="px-8 py-4 border-b border-slate-100">
+                                  <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                      Chi tiết số lượng tồn kho từng màu (SKU)
+                                    </h4>
+                                    {item.DanhSachMaMau && item.DanhSachMaMau.length > 0 ? (
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                        {item.DanhSachMaMau.map((mau, mIdx) => (
+                                          <div
+                                            key={mIdx}
+                                            className="flex items-center justify-between p-3 bg-slate-50/50 border border-slate-200/40 rounded-xl hover:border-blue-200 hover:bg-slate-50 transition-colors"
+                                          >
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                              <span
+                                                className="w-4 h-4 rounded-full border border-slate-200 shrink-0"
+                                                style={{ backgroundColor: mau.HexCode || "#cccccc" }}
+                                              />
+                                              <div className="text-left min-w-0">
+                                                <p className="text-[12px] font-bold text-slate-800 truncate leading-none">
+                                                  {mau.TenMau}
+                                                </p>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">
+                                                  {mau.MaMau}
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <div className="text-right shrink-0 ml-2">
+                                              <span className="text-xs font-bold text-slate-800">
+                                                {mau.TonKhoKhaDung || 0}
+                                              </span>
+                                              <span className="text-[9px] text-slate-400 font-medium ml-0.5">thùng</span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-slate-400 italic">
+                                        Chưa có thông tin màu sắc nào cho dòng sơn này.
+                                      </p>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         );
                       })}
                   </tbody>
