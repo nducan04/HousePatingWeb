@@ -274,7 +274,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
               (() => {
                 const isMockCid = contract.ipfsCid.startsWith('QmMock');
                 const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
-                const displayPdfUrl = pdfUrl || (isMockCid ? `${BACKEND_URL}/uploads/contract_${contract.contractId}.pdf` : `https://ipfs.io/ipfs/${contract.ipfsCid}`);
+                const displayPdfUrl = pdfUrl || (isMockCid ? `${BACKEND_URL}/uploads/contract_${contract.contractId}.pdf` : `https://gateway.pinata.cloud/ipfs/${contract.ipfsCid}`);
                 
                 return (
                   <div>

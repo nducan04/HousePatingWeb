@@ -39,6 +39,7 @@ import api from "@/lib/utils/axiosAuth";
 import RevenuePlanChart from "./RevenuePlanChart";
 import ProductionPlanChart from "./ProductionPlanChart";
 import { exportDashboardToExcel } from "@/lib/utils/excelExport";
+import { useAuthStore } from "@/lib/store/authStore";
 
 // Tooltip cho biểu đồ
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -153,11 +154,11 @@ function GaugeChart({ value }: { value: number }) {
         x={cx}
         y={cy + 30}
         textAnchor="middle"
-        fontSize="18"
+        fontSize={value >= 10000 ? "11" : value >= 1000 ? "13" : value >= 100 ? "15" : "18"}
         fill={color}
         fontWeight="900"
       >
-        {value.toFixed(1)}%
+        {Math.round(value)}%
       </text>
     </svg>
   );
@@ -254,6 +255,8 @@ const MONTHS = [
 const REGIONS = ["Miền Bắc", "Miền Trung", "Miền Nam"];
 
 export default function DashboardPage() {
+  const { isLoading: authLoading, isAuthenticated } = useAuthStore();
+
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [staffRanking, setStaffRanking] = useState<any[]>([]);
@@ -307,8 +310,10 @@ export default function DashboardPage() {
   }, [activeYears, activeMonths]);
 
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    if (!authLoading && isAuthenticated) {
+      fetchStats();
+    }
+  }, [fetchStats, authLoading, isAuthenticated]);
 
   const toggle = (arr: string[], val: string, set: (v: string[]) => void) => {
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
@@ -316,11 +321,11 @@ export default function DashboardPage() {
 
   // Derived KPIs
   const totalRevenue = stats?.kpi?.totalRevenue?.value ?? 0; // Tr.đ
-  const revenueTarget = 500; // Tr.đ default target
+  const trends: any[] = stats?.monthlyTrends ?? [];
+  const revenueTarget = trends.reduce((acc, curr) => acc + (curr.revenuePlan || 0), 0) || 500; // Tr.đ dynamically calculated target, defaults to 500 if zero
   const gaugeValue =
     revenueTarget > 0 ? (totalRevenue / revenueTarget) * 100 : 0;
   const topCustomers: any[] = stats?.topCustomers ?? [];
-  const trends: any[] = stats?.monthlyTrends ?? [];
   const maxStaffRev = staffRanking[0]?.revenue || 1;
 
   // Customer ranking bar max
@@ -539,8 +544,10 @@ export default function DashboardPage() {
             <p className="text-[12px] font-medium text-slate-400 text-center relative z-10 mt-2">
               So với cùng kỳ năm trước
             </p>
-            <div className="flex items-center gap-1.5 text-emerald-500 font-bold text-base relative z-10 bg-emerald-50 px-3 py-1 rounded-full">
-              <TrendingUp size={16} />+{stats.kpi.totalRevenue.change}%
+            <div className={`flex items-center gap-1.5 font-bold text-base relative z-10 px-3 py-1 rounded-full ${stats.kpi.totalRevenue.change >= 0 ? "text-emerald-500 bg-emerald-50" : "text-rose-500 bg-rose-50"}`}>
+              {stats.kpi.totalRevenue.change >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+              {stats.kpi.totalRevenue.change >= 0 ? "+" : ""}
+              {stats.kpi.totalRevenue.change}%
             </div>
           </div>
 

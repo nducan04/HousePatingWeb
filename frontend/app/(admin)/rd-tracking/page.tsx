@@ -138,7 +138,7 @@ export default function RDTrackingPage() {
   };
 
   const STATS = useMemo(() => {
-    const contractLogs = data.filter(d => d.ContractID);
+    const contractLogs = data.filter((d) => d.ContractID);
     return {
       total: data.length,
       testing: data.filter(
@@ -174,21 +174,6 @@ export default function RDTrackingPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <span className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-              <FlaskConical size={22} />
-            </span>
-            Phân tích R&D
-          </h1>
-          <p className="text-slate-400 font-medium mt-1">
-            Truy xuất và kiểm soát chất lượng (KCS) phòng thí nghiệm
-          </p>
-        </div>
-      </div>
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="kpi-card group">
@@ -593,17 +578,17 @@ export default function RDTrackingPage() {
                     const wastage =
                       item.LichSuPhienBan?.length > 0
                         ? (
-                          item.LichSuPhienBan.reduce(
-                            (acc: number, cur: any) =>
-                              acc +
-                              (cur.inputWeight > 0
-                                ? ((cur.inputWeight - cur.outputWeight) /
-                                  cur.inputWeight) *
-                                100
-                                : 0),
-                            0,
-                          ) / item.LichSuPhienBan.length
-                        ).toFixed(1)
+                            item.LichSuPhienBan.reduce(
+                              (acc: number, cur: any) =>
+                                acc +
+                                (cur.inputWeight > 0
+                                  ? ((cur.inputWeight - cur.outputWeight) /
+                                      cur.inputWeight) *
+                                    100
+                                  : 0),
+                              0,
+                            ) / item.LichSuPhienBan.length
+                          ).toFixed(1)
                         : "0.0";
 
                     return (
@@ -634,14 +619,14 @@ export default function RDTrackingPage() {
                               {paintColors.find(
                                 (c) => c.code === item.MaMauYeuCau,
                               ) && (
-                                  <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
-                                    {
-                                      paintColors.find(
-                                        (c) => c.code === item.MaMauYeuCau,
-                                      )?.name
-                                    }
-                                  </div>
-                                )}
+                                <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
+                                  {
+                                    paintColors.find(
+                                      (c) => c.code === item.MaMauYeuCau,
+                                    )?.name
+                                  }
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>

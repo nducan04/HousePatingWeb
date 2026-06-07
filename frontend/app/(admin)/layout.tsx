@@ -69,7 +69,7 @@ const allNavItems: NavSection[] = [
         roles: ["Admin", "Director"],
       },
       {
-        href: "/quan-ly-san-pham",
+        href: "/dashboard",
         label: "Dashboard nghiệp vụ",
         roles: ["NhanVien"],
       },
@@ -138,11 +138,6 @@ const allNavItems: NavSection[] = [
         href: "/colors",
         label: "Tra cứu mã màu",
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
-      },
-      {
-        href: "/nhap-du-lieu",
-        label: "Nhập dữ liệu",
-        roles: ["Admin", "NhanVien"],
       },
     ],
   },
@@ -276,10 +271,6 @@ export default function AdminLayout({
 
     // Phân quyền cho trang Dashboard
     if (pathname === "/dashboard") {
-      if (userRole === "NhanVien") {
-        router.push("/san-pham");
-        return;
-      }
       if (isCustomer) {
         router.push("/");
         return;
@@ -311,11 +302,17 @@ export default function AdminLayout({
 
     if (matchedItems.length > 0) {
       // Lọc các items khớp có độ dài href lớn nhất
-      const maxLength = Math.max(...matchedItems.map((item) => item.href.length));
-      const bestMatches = matchedItems.filter((item) => item.href.length === maxLength);
+      const maxLength = Math.max(
+        ...matchedItems.map((item) => item.href.length),
+      );
+      const bestMatches = matchedItems.filter(
+        (item) => item.href.length === maxLength,
+      );
 
       // Cho phép truy cập nếu có bất kỳ item nào chứa vai trò của user
-      const isAllowed = bestMatches.some((item) => item.roles.includes(userRole));
+      const isAllowed = bestMatches.some((item) =>
+        item.roles.includes(userRole),
+      );
       if (!isAllowed) {
         if (isCustomer) {
           router.push("/");
@@ -373,18 +370,18 @@ export default function AdminLayout({
       return userRole === "NhanVien" ? "📦 Quản lý nghiệp vụ" : "📊 Dashboard";
     }
     if (pathname?.startsWith("/quan-ly-san-pham"))
-      return "📦 Quản lý Sản phẩm Sơn";
-    if (pathname?.startsWith("/kho")) return "🏭 Quản lý Kho";
+      return "📦 Quản lý sản phẩm sơn";
+    if (pathname?.startsWith("/kho")) return "🏭 Quản lý kho";
     if (pathname?.startsWith("/doi-tra"))
-      return "🎯 Trung Tâm Giải Quyết Khiếu Nại";
-    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý Khách Hàng";
-    if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý Nhân sự";
+      return "🎯 Trung tâm Giải quyết khiếu nại";
+    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý khách hàng";
+    if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý nhân sự";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
     if (pathname?.startsWith("/hop-dong-pha-che")) return "📝 Hợp đồng B2B";
-    if (pathname === "/colors") return "🎨 Tra cứu Mã Màu";
-    if (pathname === "/van-chuyen") return "📦 Theo dõi vận chuyển";
-    if (pathname === "/don-hang") return "📋 Quản lý Đơn hàng";
-    if (pathname === "/chatbot") return "🤖 AI Hỗ trợ Khách hàng";
+    if (pathname === "/colors") return "🎨 Tra cứu mã màu";
+    if (pathname === "/van-chuyen") return "📦 Quản lý vận chuyển";
+    if (pathname === "/don-hang") return "📋 Quản lý đơn hàng";
+    if (pathname === "/chatbot") return "🤖 AI Hỗ trợ khách hàng";
     if (pathname === "/quan-ly-thanh-toan") return "💳 Quản lý thanh toán";
     if (pathname === "/hieu-suat") return "📈 Theo dõi hiệu suất";
     if (pathname === "/khuyen-mai") return "🏷️ Quản lý khuyến mãi";
@@ -513,8 +510,6 @@ export default function AdminLayout({
           {/* Top Bar */}
           <header className="h-[88px] flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-10">
             <div className="flex items-center gap-4">
-
-
               <div>
                 <h1 className="text-[22px] font-black text-slate-900 tracking-tight">
                   {getPageTitle()}

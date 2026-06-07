@@ -59,7 +59,7 @@ export default function AdminCheckoutPage({ params }: { params: { id: string } }
         if (momoRes.data.success && momoRes.data.payUrl) {
           window.location.href = momoRes.data.payUrl;
         } else {
-          toast.error('Lỗi khởi tạo MoMo.');
+          toast.error(momoRes.data.message || 'Lỗi khởi tạo MoMo.');
           setProcessing(false);
         }
       } else {

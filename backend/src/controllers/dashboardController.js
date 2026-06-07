@@ -619,10 +619,25 @@ exports.getCustomerServiceStats = async (req, res) => {
     let activeVouchers = 0;
     let vipCustomers = 0;
     let churnAlerts = 0;
+    let totalVouchers = 0;
+    let voucherTypes = { PHAN_TRAM: 0, GIAM_THANG: 0, TANG_KEM: 0 };
+    let voucherUsagesList = [];
+    let topVouchers = [];
     
     try {
       const KhuyenMai = require('../models/KhuyenMai');
       activeVouchers = await KhuyenMai.countDocuments({ TrangThai: 'DANG_DIEN_RA', createdAt: { $lte: endDate } });
+      totalVouchers = await KhuyenMai.countDocuments({});
+
+      // Group vouchers by type
+      const allVouchers = await KhuyenMai.find({});
+      allVouchers.forEach(v => {
+        if (voucherTypes[v.LoaiGiamGia] !== undefined) {
+          voucherTypes[v.LoaiGiamGia]++;
+        } else {
+          voucherTypes[v.LoaiGiamGia] = 1;
+        }
+      });
       
       const DonHang = require('../models/DonHang');
       
@@ -643,6 +658,39 @@ exports.getCustomerServiceStats = async (req, res) => {
         { $group: { _id: '$KhachHang', lastOrder: { $max: '$createdAt' } } }
       ]);
       churnAlerts = recentOrders.filter(o => o.lastOrder < sixtyDaysAgo).length;
+
+      // Who used which voucher, when
+      const usages = await DonHang.find({ KhuyenMai: { $ne: null } })
+        .populate('KhachHang', 'TenKhachHang')
+        .populate('KhuyenMai', 'MaVoucher LoaiGiamGia MucGiam')
+        .sort({ createdAt: -1 })
+        .limit(20);
+
+      voucherUsagesList = usages.map(u => ({
+        orderId: u.MaDonHang || u._id.toString(),
+        customerName: u.KhachHang?.TenKhachHang || 'Khách hàng lẻ',
+        voucherCode: u.KhuyenMai?.MaVoucher || 'N/A',
+        discountAmount: u.GiamGia || 0,
+        totalAmount: u.TongTien,
+        date: new Date(u.createdAt).toLocaleDateString('vi-VN'),
+        status: u.TrangThai
+      }));
+
+      // Top 5 used vouchers
+      const allOrdersWithVouchers = await DonHang.find({ KhuyenMai: { $ne: null }, TrangThai: { $ne: 'DA_HUY' } })
+        .populate('KhuyenMai', 'MaVoucher');
+      const voucherUsageCounts = {};
+      allOrdersWithVouchers.forEach(o => {
+        const code = o.KhuyenMai?.MaVoucher;
+        if (code) {
+          voucherUsageCounts[code] = (voucherUsageCounts[code] || 0) + 1;
+        }
+      });
+      topVouchers = Object.keys(voucherUsageCounts).map(code => ({
+        code,
+        count: voucherUsageCounts[code]
+      })).sort((a, b) => b.count - a.count).slice(0, 5);
+
     } catch (err) {
       console.log('Error fetching loyalty stats:', err.message);
     }
@@ -659,7 +707,11 @@ exports.getCustomerServiceStats = async (req, res) => {
         loyalty: {
           activeVouchers,
           vipCustomers,
-          churnAlerts
+          churnAlerts,
+          totalVouchers,
+          voucherTypes,
+          voucherUsagesList,
+          topVouchers
         },
         supportTrends: formattedTrends,
         pendingComplaints

@@ -20,7 +20,11 @@ import {
   Download,
   X,
   Box,
+  TrendingUp,
+  Star,
+  DollarSign
 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 import api from "@/lib/utils/axiosAuth";
 import * as XLSX from "xlsx";
 import { paintColors } from "@/lib/data/colors-data";
@@ -110,6 +114,15 @@ interface PhieuNhapXuat {
   MoTa?: string;
   createdAt: string;
   SoLuong: number;
+}
+
+interface BestSellerItem {
+  _id: string;
+  MaSanPham: string;
+  TenDongSon: string;
+  HinhAnh: string;
+  SoLuongBan: number;
+  TongDoanhThu: number;
 }
 
 export default function QLKhoPage() {
@@ -276,6 +289,7 @@ export default function QLKhoPage() {
       console.error(error);
     }
   };
+
 
   // KPI
   const STATS = {
@@ -894,7 +908,11 @@ export default function QLKhoPage() {
         >
           <ClipboardList size={18} /> Phiếu Kiểm Kê
         </button>
+
       </div>
+
+
+
 
       {activeTab === "kho" && (
         <>
