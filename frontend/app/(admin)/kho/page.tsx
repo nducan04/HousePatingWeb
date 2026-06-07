@@ -2506,7 +2506,7 @@ export default function QLKhoPage() {
                               }}
                             />
                             <div className="text-left min-w-0">
-                              <p className="text-sm font-black text-slate-800 truncate">
+                              <p className="text-sm font-black text-slate-800">
                                 {paintColors.find((c) => c.code === mau.MaMau)?.name || mau.TenMau}
                               </p>
                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-0.5">

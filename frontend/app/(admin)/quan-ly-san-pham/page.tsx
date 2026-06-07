@@ -1204,7 +1204,7 @@ export default function SanPhamPage() {
                               style={{ backgroundColor: mau.HexCode || "#cccccc" }}
                             />
                             <div className="text-left">
-                              <p className="text-xs font-bold text-slate-800 leading-none">{paintColors.find(c => c.code === mau.MaMau)?.name || mau.TenMau}</p>
+                              <p className="text-xs font-bold text-slate-800 leading-normal">{paintColors.find(c => c.code === mau.MaMau)?.name || mau.TenMau}</p>
                               <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">{mau.MaMau} {mau.TonKhoKhaDung > 0 ? `(Còn ${mau.TonKhoKhaDung})` : '(Hết hàng)'}</p>
                             </div>
                           </div>
