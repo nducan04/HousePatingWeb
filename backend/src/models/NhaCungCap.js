@@ -41,8 +41,8 @@ const nhaCungCapSchema = new mongoose.Schema({
   },
   PhanLoai: {
     type: String,
-    enum: ['Đối Tác Chính', 'Đối Tác Phụ'],
-    default: 'Đối Tác Chính',
+    enum: ['Nhà Cung Cấp Chính', 'Nhà Cung Cấp Phụ'],
+    default: 'Nhà Cung Cấp Chính',
   },
   CongNo: {
     type: Number,

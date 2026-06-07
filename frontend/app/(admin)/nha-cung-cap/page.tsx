@@ -34,7 +34,7 @@ interface NhaCungCap {
   DiaChi?: string;
   SDT: string;
   Email?: string;
-  PhanLoai?: "Đối Tác Chính" | "Đối Tác Phụ";
+  PhanLoai?: "Nhà Cung Cấp Chính" | "Nhà Cung Cấp Phụ";
   CongNo?: number;
   AccountID?: {
     _id: string;
@@ -96,7 +96,7 @@ export default function NhaCungCapPage() {
     MaNCC: "",
     TenNCC: "",
     SDT: "",
-    PhanLoai: "Đối Tác Chính",
+    PhanLoai: "Nhà Cung Cấp Chính",
     CongNo: 0,
     MaSoThue: "",
     Email: "",
@@ -175,7 +175,7 @@ export default function NhaCungCapPage() {
         MaNCC: "NCC" + Date.now().toString().slice(-4),
         TenNCC: "",
         SDT: "",
-        PhanLoai: "Đối Tác Chính",
+        PhanLoai: "Nhà Cung Cấp Chính",
         CongNo: 0,
         MaSoThue: "",
         Email: "",
@@ -304,19 +304,19 @@ export default function NhaCungCapPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (await confirm("Chắc chắn muốn xóa đối tác cung ứng này?")) {
+    if (await confirm("Chắc chắn muốn xóa nhà cung cấp này?")) {
       try {
         await api.delete(`${API_URL}/${id}`);
         fetchData();
       } catch (error) {
-        toast.error("Lỗi xóa đối tác cung ứng");
+        toast.error("Lỗi xóa nhà cung cấp");
       }
     }
   };
 
   const STATS = {
     total: data.length,
-    chinh: data.filter((d) => d.PhanLoai === "Đối Tác Chính").length,
+    chinh: data.filter((d) => d.PhanLoai === "Nhà Cung Cấp Chính").length,
     noTotal: data.reduce((sum, d) => sum + (d.CongNo || 0), 0),
   };
 
@@ -336,7 +336,7 @@ export default function NhaCungCapPage() {
       "Người Liên Hệ": item.NguoiLienHe || "",
       SĐT: item.SDT || "",
       Email: item.Email || "",
-      "Phân Loại": item.PhanLoai || "Đối Tác Chính",
+      "Phân Loại": item.PhanLoai || "Nhà Cung Cấp Chính",
       "Công Nợ": item.CongNo || 0,
       "Địa Chỉ": item.DiaChi || "",
     }));
@@ -365,7 +365,7 @@ export default function NhaCungCapPage() {
               <h3 className="text-3xl font-semibold text-slate-900 tracking-tight">
                 {STATS.total}{" "}
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block sm:inline ml-0.5">
-                  Đối tác
+                  Đơn vị
                 </span>
               </h3>
             </div>
@@ -385,7 +385,7 @@ export default function NhaCungCapPage() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mb-1.5">
-                Đối tác chính
+                Nhà cung cấp chính
               </p>
               <h3 className="text-3xl font-semibold text-slate-900 tracking-tight">
                 {STATS.chinh}{" "}
@@ -425,7 +425,7 @@ export default function NhaCungCapPage() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mb-1.5">
-                Đối tác phụ / Dự phòng
+                Nhà cung cấp phụ / Dự phòng
               </p>
               <h3 className="text-3xl font-semibold text-slate-900 tracking-tight">
                 {STATS.total - STATS.chinh}{" "}
@@ -452,7 +452,7 @@ export default function NhaCungCapPage() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mb-1.5">
-                Tổng nợ đọng đối tác
+                Tổng nợ đọng nhà cung cấp
               </p>
               <h3 className="text-3xl font-semibold text-slate-900 tracking-tight">
                 {(STATS.noTotal / 1000000).toLocaleString("vi-VN", {
@@ -495,9 +495,9 @@ export default function NhaCungCapPage() {
 
             <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-100/70 rounded-lg border border-slate-100">
               {[
-                { id: "all", label: "Tất cả đối tác" },
-                { id: "Đối Tác Chính", label: "Đối Tác Chính" },
-                { id: "Đối Tác Phụ", label: "Đối Tác Phụ" },
+                { id: "all", label: "Tất cả nhà cung cấp" },
+                { id: "Nhà Cung Cấp Chính", label: "Nhà Cung Cấp Chính" },
+                { id: "Nhà Cung Cấp Phụ", label: "Nhà Cung Cấp Phụ" },
               ].map((f) => (
                 <button
                   key={f.id}
@@ -526,7 +526,7 @@ export default function NhaCungCapPage() {
               className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg font-semibold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/35 transition-all active:scale-95 cursor-pointer border-none"
               onClick={() => openForm()}
             >
-              <Plus size={16} /> Thêm Đối Tác
+              <Plus size={16} /> Thêm Nhà Cung Cấp
             </button>
           </div>
         </div>
@@ -542,10 +542,10 @@ export default function NhaCungCapPage() {
                   Viết tắt
                 </th>
                 <th className="px-6 py-5 text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-32">
-                  Mã Đối Tác
+                  Mã Nhà Cung Cấp
                 </th>
                 <th className="px-6 py-5 text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-                  Thông tin đối tác
+                  Thông tin nhà cung cấp
                 </th>
                 <th className="px-6 py-5 text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
                   Người liên hệ / Đại diện
@@ -568,7 +568,7 @@ export default function NhaCungCapPage() {
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-600 rounded-md animate-spin"></div>
                       <span className="text-sm font-bold text-slate-400">
-                        Đang tải hồ sơ đối tác...
+                        Đang tải hồ sơ nhà cung cấp...
                       </span>
                     </div>
                   </td>
@@ -581,7 +581,7 @@ export default function NhaCungCapPage() {
                         <Building size={28} />
                       </div>
                       <h4 className="text-[15px] font-semibold text-slate-700 mt-2">
-                        Không tìm thấy đối tác
+                        Không tìm thấy nhà cung cấp
                       </h4>
                       <p className="text-xs text-slate-400 font-bold">
                         Thử thay đổi điều kiện lọc hoặc từ khóa tìm kiếm.
@@ -641,19 +641,19 @@ export default function NhaCungCapPage() {
                     <td className="px-6 py-4.5 text-center">
                       <span
                         className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-[11px] font-semibold uppercase tracking-tight shadow-sm border ${
-                          item.PhanLoai === "Đối Tác Chính" || !item.PhanLoai
+                          item.PhanLoai === "Nhà Cung Cấp Chính" || !item.PhanLoai
                             ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                             : "bg-amber-50 text-amber-600 border-amber-100"
                         }`}
                       >
                         <div
                           className={`w-1.5 h-1.5 rounded-md animate-pulse ${
-                            item.PhanLoai === "Đối Tác Chính" || !item.PhanLoai
+                            item.PhanLoai === "Nhà Cung Cấp Chính" || !item.PhanLoai
                               ? "bg-emerald-500"
                               : "bg-amber-500"
                           }`}
                         ></div>
-                        {item.PhanLoai || "Đối Tác Chính"}
+                        {item.PhanLoai || "Nhà Cung Cấp Chính"}
                       </span>
                     </td>
 
@@ -699,7 +699,7 @@ export default function NhaCungCapPage() {
                         <button
                           onClick={() => handleDelete(item._id!)}
                           className="w-9 h-9 flex items-center justify-center rounded-md bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all border border-transparent hover:border-rose-100 cursor-pointer"
-                          title="Xóa đối tác"
+                          title="Xóa nhà cung cấp"
                         >
                           <Trash2 size={15} />
                         </button>
@@ -713,7 +713,7 @@ export default function NhaCungCapPage() {
         </div>
       </div>
 
-      {/* Modal - HỒ SƠ CHI TIẾT ĐỐI TÁC */}
+      {/* Modal - HỒ SƠ CHI TIẾT NHÀ CUNG CẤP */}
       {isDetailModalOpen && selectedNCC && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-md shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
@@ -721,7 +721,7 @@ export default function NhaCungCapPage() {
             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
               <h2 className="text-[17px] font-semibold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <div className="w-2.5 h-6 bg-blue-600 rounded-md"></div>
-                Thông tin hồ sơ nhà cung ứng
+                Thông tin hồ sơ nhà cung cấp
               </h2>
               <button
                 onClick={() => setIsDetailModalOpen(false)}
@@ -854,7 +854,7 @@ export default function NhaCungCapPage() {
                     </div>
                   ) : poList.length === 0 ? (
                     <div className="text-center py-16 text-slate-400 font-bold border-2 border-dashed border-slate-100 rounded-3xl">
-                      Chưa có phiếu đặt hàng nào được lập với đối tác.
+                      Chưa có phiếu đặt hàng nào được lập với nhà cung cấp.
                     </div>
                   ) : (
                     <div
@@ -1012,7 +1012,7 @@ export default function NhaCungCapPage() {
                 }}
                 className="px-6 py-3.5 bg-white border border-slate-200 text-slate-500 rounded-lg font-semibold text-[13px] hover:bg-slate-100 transition-all active:scale-95 cursor-pointer"
               >
-                Chỉnh sửa đối tác
+                Chỉnh sửa nhà cung cấp
               </button>
               <button
                 onClick={() => setIsDetailModalOpen(false)}
@@ -1025,7 +1025,7 @@ export default function NhaCungCapPage() {
         </div>
       )}
 
-      {/* Modal - THÊM / CẬP NHẬT ĐỐI TÁC */}
+      {/* Modal - THÊM / CẬP NHẬT NHÀ CUNG CẤP */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-md shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
@@ -1034,8 +1034,8 @@ export default function NhaCungCapPage() {
               <h2 className="text-[17px] font-semibold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <div className="w-2.5 h-6 bg-blue-600 rounded-md"></div>
                 {formData._id
-                  ? "Cập nhật hồ sơ đối tác"
-                  : "Khai báo đối tác cung ứng mới"}
+                  ? "Cập nhật hồ sơ nhà cung cấp"
+                  : "Khai báo nhà cung cấp mới"}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -1095,7 +1095,7 @@ export default function NhaCungCapPage() {
                 {/* Classification */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
-                    Phân loại đối tác
+                    Phân loại nhà cung cấp
                   </label>
                   <select
                     className="w-full bg-slate-50/80 border border-slate-100 rounded-md px-4 py-3 text-sm font-bold text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
@@ -1104,15 +1104,15 @@ export default function NhaCungCapPage() {
                       setFormData({
                         ...formData,
                         PhanLoai: e.target.value as
-                          | "Đối Tác Chính"
-                          | "Đối Tác Phụ",
+                          | "Nhà Cung Cấp Chính"
+                          | "Nhà Cung Cấp Phụ",
                       })
                     }
                   >
-                    <option value="Đối Tác Chính">
-                      Đối tác chính (Chiến lược)
+                    <option value="Nhà Cung Cấp Chính">
+                      Nhà cung cấp chính (Chiến lược)
                     </option>
-                    <option value="Đối Tác Phụ">Đối tác phụ (Dự phòng)</option>
+                    <option value="Nhà Cung Cấp Phụ">Nhà cung cấp phụ (Dự phòng)</option>
                   </select>
                 </div>
                 {/* SDT */}
@@ -1191,7 +1191,7 @@ export default function NhaCungCapPage() {
                 onClick={handleSubmit}
                 className="px-8 py-3.5 bg-blue-600 text-white rounded-lg font-semibold text-[13px] hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/35 transition-all active:scale-95 cursor-pointer border-none"
               >
-                Lưu hồ sơ đối tác
+                Lưu hồ sơ nhà cung cấp
               </button>
             </div>
           </div>
@@ -1414,7 +1414,7 @@ export default function NhaCungCapPage() {
             {/* Modal Body */}
             <div className="p-6 space-y-4">
               <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg text-xs font-bold text-amber-700">
-                Cấp tài khoản đăng nhập cho đối tác{" "}
+                Cấp tài khoản đăng nhập cho nhà cung cấp{" "}
                 <strong className="text-slate-900">{accountNCC.TenNCC}</strong>.
               </div>
               <div className="space-y-1.5">
