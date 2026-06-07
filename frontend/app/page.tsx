@@ -1388,7 +1388,7 @@ export default function HomePage() {
                                 style={{ background: m.HexCode }}
                               />
                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/item:opacity-100 transition-all whitespace-nowrap pointer-events-none">
-                                {m.MaMau} — {m.TenMau}
+                                {m.MaMau} — {paintColors.find((c) => c.code === m.MaMau)?.name || m.TenMau}
                               </div>
                             </div>
                           ),

@@ -146,7 +146,8 @@ export default function QLKhoPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Detail popup modal state for paint product color variants
-  const [selectedPaintProduct, setSelectedPaintProduct] = useState<KhoItem | null>(null);
+  const [selectedPaintProduct, setSelectedPaintProduct] =
+    useState<KhoItem | null>(null);
 
   // Modals
   const [isKiemKhoModal, setIsKiemKhoModal] = useState(false);
@@ -1029,23 +1030,6 @@ export default function QLKhoPage() {
               </div>
             </div>
           </div>
-
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-md blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
-            <div className="relative z-10 flex items-start justify-between">
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                  Cảnh Báo (Dưới MOQ)
-                </p>
-                <h3 className="text-2xl font-semibold text-rose-600 tracking-tight">
-                  {STATS.warning}
-                </h3>
-              </div>
-              <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
-                <AlertTriangle size={22} />
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="flex flex-wrap gap-3 mb-8 bg-white p-2 rounded-lg border border-slate-100 shadow-sm w-fit">
@@ -1167,7 +1151,10 @@ export default function QLKhoPage() {
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-2 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                                   {item.TenDongSon}
-                                  <Eye size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity ml-1 shrink-0" />
+                                  <Eye
+                                    size={14}
+                                    className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity ml-1 shrink-0"
+                                  />
                                 </div>
                               </td>
                               <td className="px-6 py-4">
@@ -2455,8 +2442,12 @@ export default function QLKhoPage() {
                     <Package size={20} />
                   </div>
                   <div className="text-left">
-                    <div className="text-lg font-black text-slate-900">{selectedPaintProduct.TenDongSon}</div>
-                    <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-0.5">{selectedPaintProduct.MaSanPham}</div>
+                    <div className="text-lg font-black text-slate-900">
+                      {selectedPaintProduct.TenDongSon}
+                    </div>
+                    <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-0.5">
+                      {selectedPaintProduct.MaSanPham}
+                    </div>
                   </div>
                 </h2>
                 <button
@@ -2471,14 +2462,22 @@ export default function QLKhoPage() {
               <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
                 <div className="bg-slate-50 rounded-2xl p-5 border border-slate-150 flex items-center justify-between">
                   <div>
-                    <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wide">Tổng tồn kho dòng sơn</p>
+                    <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wide">
+                      Tổng tồn kho dòng sơn
+                    </p>
                     <p className="text-3xl font-black text-slate-800 mt-1">
-                      {(selectedPaintProduct.TongTonKho || 0).toLocaleString("vi-VN")}{" "}
-                      <span className="text-sm text-slate-500 font-bold">{selectedPaintProduct.DonViTinh}</span>
+                      {(selectedPaintProduct.TongTonKho || 0).toLocaleString(
+                        "vi-VN",
+                      )}{" "}
+                      <span className="text-sm text-slate-500 font-bold">
+                        {selectedPaintProduct.DonViTinh}
+                      </span>
                     </p>
                   </div>
                   <div>
-                    <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wide text-right">Phân loại</p>
+                    <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wide text-right">
+                      Phân loại
+                    </p>
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-blue-50 text-blue-600 mt-1 border border-blue-100">
                       {selectedPaintProduct.PhanLoai}
                     </span>
@@ -2488,10 +2487,11 @@ export default function QLKhoPage() {
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                     <Beaker size={16} className="text-blue-500" />
-                    Bản đồ Tồn kho theo Mã Màu (SKUs)
+                    Tồn kho theo mã màu (SKUs)
                   </h3>
 
-                  {selectedPaintProduct.DanhSachMaMau && selectedPaintProduct.DanhSachMaMau.length > 0 ? (
+                  {selectedPaintProduct.DanhSachMaMau &&
+                  selectedPaintProduct.DanhSachMaMau.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {selectedPaintProduct.DanhSachMaMau.map((mau, mIdx) => (
                         <div
@@ -2501,11 +2501,13 @@ export default function QLKhoPage() {
                           <div className="flex items-center gap-3.5 min-w-0">
                             <span
                               className="w-5 h-5 rounded-full border border-slate-200 shadow-sm shrink-0"
-                              style={{ backgroundColor: mau.HexCode || "#cccccc" }}
+                              style={{
+                                backgroundColor: mau.HexCode || "#cccccc",
+                              }}
                             />
                             <div className="text-left min-w-0">
                               <p className="text-sm font-black text-slate-800 truncate">
-                                {mau.TenMau}
+                                {paintColors.find((c) => c.code === mau.MaMau)?.name || mau.TenMau}
                               </p>
                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-0.5">
                                 {mau.MaMau}
@@ -2516,14 +2518,18 @@ export default function QLKhoPage() {
                             <span className="text-sm font-black text-slate-800">
                               {mau.TonKhoKhaDung || 0}
                             </span>
-                            <span className="text-[10px] text-slate-500 font-bold ml-1">{selectedPaintProduct.DonViTinh}</span>
+                            <span className="text-[10px] text-slate-500 font-bold ml-1">
+                              {selectedPaintProduct.DonViTinh}
+                            </span>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                      <p className="text-sm text-slate-400 italic">Chưa có thông tin màu sắc nào cho dòng sơn này.</p>
+                      <p className="text-sm text-slate-400 italic">
+                        Chưa có thông tin màu sắc nào cho dòng sơn này.
+                      </p>
                     </div>
                   )}
                 </div>

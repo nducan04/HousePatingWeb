@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { X, Star, ShoppingCart, Loader2, ChevronLeft, ChevronRight, CheckCircle2, QrCode } from "lucide-react";
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
 import { QRCodeCanvas } from "qrcode.react";
+import { paintColors } from "@/lib/data/colors-data";
 
 interface CustomerProductModalProps {
   product: any;
@@ -213,7 +214,7 @@ export default function CustomerProductModal({
                           </div>
                         </td>
                         <td className="py-2 px-3 text-white font-medium">{c.MaMau}</td>
-                        <td className="py-2 px-3 text-slate-300">{c.TenMau}</td>
+                        <td className="py-2 px-3 text-slate-300">{paintColors.find((pc) => pc.code === c.MaMau)?.name || c.TenMau}</td>
                       </tr>
                     ))}
                   </tbody>

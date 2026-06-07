@@ -1,6 +1,7 @@
 "use client";
 import React, { useRef } from "react";
 import { X, Printer } from "lucide-react";
+import { paintColors } from "@/lib/data/colors-data";
 
 interface ChiTietRow {
   Sanpham?: { TenDongSon?: string; MaSanPham?: string; DonViTinh?: string } | null;
@@ -182,7 +183,7 @@ export default function PhieuKiemKeModal({ phieu, onClose }: Props) {
                           <div style={{ fontWeight: 600 }}>{row.Sanpham?.TenDongSon || "—"}</div>
                           {row.MaMau && (
                             <div style={{ fontSize: 11, color: "#666" }}>
-                              Màu: {row.TenMau ? `${row.TenMau} (${row.MaMau})` : row.MaMau}
+                              Màu: {row.MaMau ? `${paintColors.find(c => c.code === row.MaMau)?.name || row.TenMau || "Không xác định"} (${row.MaMau})` : "—"}
                             </div>
                           )}
                         </td>
