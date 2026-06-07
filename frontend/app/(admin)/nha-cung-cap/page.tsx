@@ -425,7 +425,7 @@ export default function NhaCungCapPage() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mb-1.5">
-                Nhà cung cấp phụ / Dự phòng
+                Nhà cung cấp phụ
               </p>
               <h3 className="text-3xl font-semibold text-slate-900 tracking-tight">
                 {STATS.total - STATS.chinh}{" "}
@@ -452,7 +452,7 @@ export default function NhaCungCapPage() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mb-1.5">
-                Tổng nợ đọng nhà cung cấp
+                Tổng nợ
               </p>
               <h3 className="text-3xl font-semibold text-slate-900 tracking-tight">
                 {(STATS.noTotal / 1000000).toLocaleString("vi-VN", {
@@ -641,14 +641,16 @@ export default function NhaCungCapPage() {
                     <td className="px-6 py-4.5 text-center">
                       <span
                         className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-[11px] font-semibold uppercase tracking-tight shadow-sm border ${
-                          item.PhanLoai === "Nhà Cung Cấp Chính" || !item.PhanLoai
+                          item.PhanLoai === "Nhà Cung Cấp Chính" ||
+                          !item.PhanLoai
                             ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                             : "bg-amber-50 text-amber-600 border-amber-100"
                         }`}
                       >
                         <div
                           className={`w-1.5 h-1.5 rounded-md animate-pulse ${
-                            item.PhanLoai === "Nhà Cung Cấp Chính" || !item.PhanLoai
+                            item.PhanLoai === "Nhà Cung Cấp Chính" ||
+                            !item.PhanLoai
                               ? "bg-emerald-500"
                               : "bg-amber-500"
                           }`}
@@ -1112,7 +1114,9 @@ export default function NhaCungCapPage() {
                     <option value="Nhà Cung Cấp Chính">
                       Nhà cung cấp chính (Chiến lược)
                     </option>
-                    <option value="Nhà Cung Cấp Phụ">Nhà cung cấp phụ (Dự phòng)</option>
+                    <option value="Nhà Cung Cấp Phụ">
+                      Nhà cung cấp phụ (Dự phòng)
+                    </option>
                   </select>
                 </div>
                 {/* SDT */}
