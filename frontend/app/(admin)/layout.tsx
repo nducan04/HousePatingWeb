@@ -106,7 +106,7 @@ const allNavItems: NavSection[] = [
     items: [
       {
         href: "/quan-ly-san-pham",
-        label: "Sản phẩm sơn",
+        label: "Quản lý sản phẩm",
         roles: ["Admin", "NhanVien"],
       },
       {
@@ -202,7 +202,7 @@ const allNavItems: NavSection[] = [
       {
         href: "/rd-tracking/new",
         label: "Yêu cầu mẫu thử",
-        roles: ["KhachHangB2B", "KhachHangB2C"],
+        roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
       },
       {
         href: "/thanh-toan-hd",

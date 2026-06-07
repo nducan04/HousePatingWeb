@@ -154,7 +154,15 @@ function GaugeChart({ value }: { value: number }) {
         x={cx}
         y={cy + 30}
         textAnchor="middle"
-        fontSize={value >= 10000 ? "11" : value >= 1000 ? "13" : value >= 100 ? "15" : "18"}
+        fontSize={
+          value >= 10000
+            ? "11"
+            : value >= 1000
+              ? "13"
+              : value >= 100
+                ? "15"
+                : "18"
+        }
         fill={color}
         fontWeight="900"
       >
@@ -270,9 +278,12 @@ export default function DashboardPage() {
 
   // State to hold data from ProductionPlanChart
   const [productionTableData, setProductionTableData] = useState<any[]>([]);
-  const [productionFilter, setProductionFilter] = useState<"month" | "quarter" | "year">("month");
-  const [productionYear, setProductionYear] = useState<"2026" | "2025" | "2024">("2026");
-
+  const [productionFilter, setProductionFilter] = useState<
+    "month" | "quarter" | "year"
+  >("month");
+  const [productionYear, setProductionYear] = useState<
+    "2026" | "2025" | "2024"
+  >("2026");
 
   // Build period string for API
   const buildPeriod = () => {
@@ -322,7 +333,8 @@ export default function DashboardPage() {
   // Derived KPIs
   const totalRevenue = stats?.kpi?.totalRevenue?.value ?? 0; // Tr.đ
   const trends: any[] = stats?.monthlyTrends ?? [];
-  const revenueTarget = trends.reduce((acc, curr) => acc + (curr.revenuePlan || 0), 0) || 500; // Tr.đ dynamically calculated target, defaults to 500 if zero
+  const revenueTarget =
+    trends.reduce((acc, curr) => acc + (curr.revenuePlan || 0), 0) || 500; // Tr.đ dynamically calculated target, defaults to 500 if zero
   const gaugeValue =
     revenueTarget > 0 ? (totalRevenue / revenueTarget) * 100 : 0;
   const topCustomers: any[] = stats?.topCustomers ?? [];
@@ -347,7 +359,7 @@ export default function DashboardPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
         <p className="text-slate-400 font-light animate-pulse tracking-wide">
-          Đang tổng hợp dữ liệu thời gian thực...
+          Đang tải dữ liệu...
         </p>
       </div>
     );
@@ -505,7 +517,9 @@ export default function DashboardPage() {
                 key={i}
                 className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-5 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group"
               >
-                <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full ${palette[k.color]} opacity-10 group-hover:scale-150 transition-transform duration-700`} />
+                <div
+                  className={`absolute -right-4 -top-4 w-24 h-24 rounded-full ${palette[k.color]} opacity-10 group-hover:scale-150 transition-transform duration-700`}
+                />
                 <div className="flex items-center justify-between mb-4 relative z-10">
                   <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
                     {k.label}
@@ -524,7 +538,9 @@ export default function DashboardPage() {
                 </p>
                 <div className="flex items-center gap-1.5 relative z-10">
                   {kpiChange(k.change)}
-                  <span className="text-[12px] font-medium text-slate-500">{k.sub}</span>
+                  <span className="text-[12px] font-medium text-slate-500">
+                    {k.sub}
+                  </span>
                 </div>
               </div>
             );
@@ -544,8 +560,14 @@ export default function DashboardPage() {
             <p className="text-[12px] font-medium text-slate-400 text-center relative z-10 mt-2">
               So với cùng kỳ năm trước
             </p>
-            <div className={`flex items-center gap-1.5 font-bold text-base relative z-10 px-3 py-1 rounded-full ${stats.kpi.totalRevenue.change >= 0 ? "text-emerald-500 bg-emerald-50" : "text-rose-500 bg-rose-50"}`}>
-              {stats.kpi.totalRevenue.change >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+            <div
+              className={`flex items-center gap-1.5 font-bold text-base relative z-10 px-3 py-1 rounded-full ${stats.kpi.totalRevenue.change >= 0 ? "text-emerald-500 bg-emerald-50" : "text-rose-500 bg-rose-50"}`}
+            >
+              {stats.kpi.totalRevenue.change >= 0 ? (
+                <TrendingUp size={16} />
+              ) : (
+                <TrendingDown size={16} />
+              )}
               {stats.kpi.totalRevenue.change >= 0 ? "+" : ""}
               {stats.kpi.totalRevenue.change}%
             </div>
@@ -558,8 +580,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Production Plan Chart */}
-        <ProductionPlanChart 
-          year={productionYear} 
+        <ProductionPlanChart
+          year={productionYear}
           filter={productionFilter}
           onYearChange={setProductionYear}
           onFilterChange={setProductionFilter}
@@ -635,28 +657,51 @@ export default function DashboardPage() {
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-100/50 text-slate-400">
-                    <th className="pb-3 font-bold uppercase tracking-wider text-[11px]">Khách hàng</th>
-                    <th className="pb-3 font-bold uppercase tracking-wider text-[11px]">Sản lượng</th>
-                    <th className="pb-3 font-bold uppercase tracking-wider text-[11px] text-right">Doanh thu</th>
+                    <th className="pb-3 font-bold uppercase tracking-wider text-[11px]">
+                      Khách hàng
+                    </th>
+                    <th className="pb-3 font-bold uppercase tracking-wider text-[11px]">
+                      Sản lượng
+                    </th>
+                    <th className="pb-3 font-bold uppercase tracking-wider text-[11px] text-right">
+                      Doanh thu
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {topCustomers.slice(0, 5).map((c: any, i: number) => (
-                    <tr key={i} className="hover:bg-indigo-50/50 transition-colors group/row">
-                      <td className="py-3.5 text-slate-700 font-medium max-w-[150px] truncate group-hover/row:text-blue-700 transition-colors" title={c.name}>
+                    <tr
+                      key={i}
+                      className="hover:bg-indigo-50/50 transition-colors group/row"
+                    >
+                      <td
+                        className="py-3.5 text-slate-700 font-medium max-w-[150px] truncate group-hover/row:text-blue-700 transition-colors"
+                        title={c.name}
+                      >
                         {c.name}
                       </td>
                       <td className="py-3.5 text-slate-900 font-semibold">
-                        {c.volume.toLocaleString("vi-VN")} <span className="text-[10px] text-slate-400 font-medium">Thùng</span>
+                        {c.volume.toLocaleString("vi-VN")}{" "}
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          Thùng
+                        </span>
                       </td>
                       <td className="py-3.5 text-blue-600 font-bold text-right">
-                        {c.revenue.toLocaleString("vi-VN")} <span className="text-[10px] text-blue-400/80 font-medium">đ</span>
+                        {c.revenue.toLocaleString("vi-VN")}{" "}
+                        <span className="text-[10px] text-blue-400/80 font-medium">
+                          đ
+                        </span>
                       </td>
                     </tr>
                   ))}
                   {topCustomers.length === 0 && (
                     <tr>
-                      <td colSpan={3} className="py-8 text-center text-slate-400 text-sm">Không có dữ liệu</td>
+                      <td
+                        colSpan={3}
+                        className="py-8 text-center text-slate-400 text-sm"
+                      >
+                        Không có dữ liệu
+                      </td>
                     </tr>
                   )}
                 </tbody>
@@ -674,13 +719,21 @@ export default function DashboardPage() {
                 Bảng dữ liệu: Sản lượng thực tế vs kế hoạch
               </h3>
               <p className="text-[13px] text-slate-500 font-medium mt-1">
-                Đơn vị: Thùng <span className="font-light italic">(Sản lượng tính dựa trên các đơn hàng/hợp đồng pha chế đã hoàn thành)</span>
+                Đơn vị: Thùng{" "}
+                <span className="font-light italic">
+                  (Sản lượng tính dựa trên các đơn hàng/hợp đồng pha chế đã hoàn
+                  thành)
+                </span>
               </p>
             </div>
             <div className="flex items-center gap-3">
               <select
                 value={productionFilter}
-                onChange={(e) => setProductionFilter(e.target.value as "month" | "quarter" | "year")}
+                onChange={(e) =>
+                  setProductionFilter(
+                    e.target.value as "month" | "quarter" | "year",
+                  )
+                }
                 className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all cursor-pointer shadow-sm"
               >
                 <option value="month">Theo Tháng</option>
@@ -704,34 +757,68 @@ export default function DashboardPage() {
               <thead>
                 <tr className="border-b border-slate-100/50 text-slate-400">
                   <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px]">
-                    {productionFilter === "year" ? "Năm" : productionFilter === "quarter" ? "Quý" : "Thời gian"}
+                    {productionFilter === "year"
+                      ? "Năm"
+                      : productionFilter === "quarter"
+                        ? "Quý"
+                        : "Thời gian"}
                   </th>
-                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">Mục tiêu (Kế hoạch)</th>
-                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">Sản lượng thực tế</th>
-                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-center">Tỷ lệ hoàn thành</th>
+                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">
+                    Mục tiêu (Kế hoạch)
+                  </th>
+                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">
+                    Sản lượng thực tế
+                  </th>
+                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-center">
+                    Tỷ lệ hoàn thành
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {(productionTableData.length > 0 ? productionTableData : (stats.monthlyTrends || [])).map((row: any, i: number) => {
-                  const pct = row.prodPlan > 0 ? Math.round((row.prodActual / row.prodPlan) * 100) : 0;
+                {(productionTableData.length > 0
+                  ? productionTableData
+                  : stats.monthlyTrends || []
+                ).map((row: any, i: number) => {
+                  const pct =
+                    row.prodPlan > 0
+                      ? Math.round((row.prodActual / row.prodPlan) * 100)
+                      : 0;
                   return (
-                    <tr key={i} className="hover:bg-slate-50/50 transition-colors group/row">
-                      <td className="px-4 py-3 font-medium text-slate-700">{row.name || row.month}</td>
-                      <td className="px-4 py-3 font-semibold text-amber-600 text-right">{row.prodPlan.toLocaleString("vi-VN")}</td>
-                      <td className="px-4 py-3 font-semibold text-blue-600 text-right">{row.prodActual.toLocaleString("vi-VN")}</td>
+                    <tr
+                      key={i}
+                      className="hover:bg-slate-50/50 transition-colors group/row"
+                    >
+                      <td className="px-4 py-3 font-medium text-slate-700">
+                        {row.name || row.month}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-amber-600 text-right">
+                        {row.prodPlan.toLocaleString("vi-VN")}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-blue-600 text-right">
+                        {row.prodActual.toLocaleString("vi-VN")}
+                      </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium shadow-sm ${pct >= 100 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : pct >= 70 ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium shadow-sm ${pct >= 100 ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : pct >= 70 ? "bg-amber-50 text-amber-600 border border-amber-100" : "bg-rose-50 text-rose-600 border border-rose-100"}`}
+                        >
                           {pct}%
                         </span>
                       </td>
                     </tr>
                   );
                 })}
-                {(productionTableData.length === 0 && (!stats.monthlyTrends || stats.monthlyTrends.length === 0)) && (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-400 text-sm">Không có dữ liệu</td>
-                  </tr>
-                )}
+                {productionTableData.length === 0 &&
+                  (!stats.monthlyTrends ||
+                    stats.monthlyTrends.length === 0) && (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="py-8 text-center text-slate-400 text-sm"
+                      >
+                        Không có dữ liệu
+                      </td>
+                    </tr>
+                  )}
               </tbody>
             </table>
           </div>
@@ -745,7 +832,8 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between gap-4 mb-6 relative z-10">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                  <Package size={20} className="text-blue-600" /> Sản phẩm bán chạy nhất
+                  <Package size={20} className="text-blue-600" /> Sản phẩm bán
+                  chạy nhất
                 </h3>
                 <p className="text-[13px] text-slate-500 font-medium mt-1">
                   Dựa trên tổng sản lượng bán ra
@@ -756,28 +844,51 @@ export default function DashboardPage() {
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-100/50 text-slate-400">
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px]">Tên sản phẩm</th>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">Sản lượng</th>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">Doanh thu</th>
+                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px]">
+                      Tên sản phẩm
+                    </th>
+                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">
+                      Sản lượng
+                    </th>
+                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">
+                      Doanh thu
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {topProducts.slice(0, 5).map((p: any, i: number) => (
-                    <tr key={i} className="hover:bg-blue-50/50 transition-colors group/row">
-                      <td className="px-4 py-3 font-medium text-slate-700 max-w-[150px] truncate group-hover/row:text-blue-700 transition-colors" title={p.name}>
+                    <tr
+                      key={i}
+                      className="hover:bg-blue-50/50 transition-colors group/row"
+                    >
+                      <td
+                        className="px-4 py-3 font-medium text-slate-700 max-w-[150px] truncate group-hover/row:text-blue-700 transition-colors"
+                        title={p.name}
+                      >
                         {p.name}
                       </td>
                       <td className="px-4 py-3 font-semibold text-slate-900 text-right">
-                        {p.sold?.toLocaleString("vi-VN")} <span className="text-[10px] text-slate-400 font-medium">Thùng</span>
+                        {p.sold?.toLocaleString("vi-VN")}{" "}
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          Thùng
+                        </span>
                       </td>
                       <td className="px-4 py-3 font-semibold text-emerald-600 text-right">
-                        {p.revenue?.toLocaleString("vi-VN")} <span className="text-[10px] text-emerald-400/80 font-medium">đ</span>
+                        {p.revenue?.toLocaleString("vi-VN")}{" "}
+                        <span className="text-[10px] text-emerald-400/80 font-medium">
+                          đ
+                        </span>
                       </td>
                     </tr>
                   ))}
                   {topProducts.length === 0 && (
                     <tr>
-                      <td colSpan={3} className="py-8 text-center text-slate-400 text-sm">Không có dữ liệu</td>
+                      <td
+                        colSpan={3}
+                        className="py-8 text-center text-slate-400 text-sm"
+                      >
+                        Không có dữ liệu
+                      </td>
                     </tr>
                   )}
                 </tbody>
@@ -791,7 +902,8 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between gap-4 mb-6 relative z-10">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                  <Filter size={20} className="text-purple-600" /> Màu sơn được ưa chuộng
+                  <Filter size={20} className="text-purple-600" /> Màu sơn được
+                  ưa chuộng
                 </h3>
                 <p className="text-[13px] text-slate-500 font-medium mt-1">
                   Top mã màu xuất hiện nhiều nhất trong đơn hàng
@@ -802,25 +914,45 @@ export default function DashboardPage() {
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-100/50 text-slate-400">
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px]">Mã màu</th>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">Số lượt mua</th>
+                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px]">
+                      Mã màu
+                    </th>
+                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">
+                      Số lượt mua
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {topColors.slice(0, 5).map((c: any, i: number) => (
-                    <tr key={i} className="hover:bg-purple-50/50 transition-colors group/row">
+                    <tr
+                      key={i}
+                      className="hover:bg-purple-50/50 transition-colors group/row"
+                    >
                       <td className="px-4 py-3 font-medium text-slate-700 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg shadow-sm border border-slate-200" style={{ background: c.name }} />
-                        <span className="group-hover/row:text-purple-700 transition-colors">{c.name}</span>
+                        <div
+                          className="w-8 h-8 rounded-lg shadow-sm border border-slate-200"
+                          style={{ background: c.name }}
+                        />
+                        <span className="group-hover/row:text-purple-700 transition-colors">
+                          {c.name}
+                        </span>
                       </td>
                       <td className="px-4 py-3 font-semibold text-slate-900 text-right">
-                        {c.count?.toLocaleString("vi-VN")} <span className="text-[10px] text-slate-400 font-medium">Lượt</span>
+                        {c.count?.toLocaleString("vi-VN")}{" "}
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          Lượt
+                        </span>
                       </td>
                     </tr>
                   ))}
                   {topColors.length === 0 && (
                     <tr>
-                      <td colSpan={2} className="py-8 text-center text-slate-400 text-sm">Không có dữ liệu</td>
+                      <td
+                        colSpan={2}
+                        className="py-8 text-center text-slate-400 text-sm"
+                      >
+                        Không có dữ liệu
+                      </td>
                     </tr>
                   )}
                 </tbody>
