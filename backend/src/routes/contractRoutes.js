@@ -10,7 +10,8 @@ const {
   signContract,
   updateStatus,
   verifyOnChain,
-  signContractByServer
+  signContractByServer,
+  updatePaymentTerms
 } = require('../controllers/contractController');
 
 const router = express.Router();
@@ -42,6 +43,9 @@ router.route('/')
 
 // Chi tiết hợp đồng
 router.get('/:id', authorize('Admin', 'NhanVien', 'KhachHangB2B', 'KhachHangB2C'), getContractById);
+
+// Cập nhật điều khoản thanh toán
+router.put('/:id/payment-terms', authorize('Admin', 'NhanVien'), updatePaymentTerms);
 
 // Sinh PDF → Hash → IPFS (chỉ Admin/NhanVien)
 router.post('/:id/preview', authorize('Admin', 'NhanVien'), generatePreviewPDF);
