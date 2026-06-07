@@ -492,12 +492,35 @@ export default function SanPhamPage() {
     );
   };
 
-  const STATS = {
-    total: allSanPhams.length || sanPhams.length,
-    tinhDien: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn tĩnh điện").length,
-    tauBien: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn tàu biển").length,
-    congNghiep: (allSanPhams.length ? allSanPhams : sanPhams).filter((t) => t.PhanLoai === "Sơn công nghiệp").length,
+  const dataSource = allSanPhams.length ? allSanPhams : sanPhams;
+
+  // Cấu hình icon & màu cho từng phân loại
+  const CATEGORY_CONFIG: Record<string, { icon: any; color: string; bgClass: string; textClass: string }> = {
+    'Sơn tĩnh điện': { icon: Layers, color: 'emerald', bgClass: 'bg-emerald-50', textClass: 'text-emerald-600' },
+    'Sơn tàu biển': { icon: Droplet, color: 'violet', bgClass: 'bg-violet-50', textClass: 'text-violet-600' },
+    'Sơn công nghiệp': { icon: Box, color: 'amber', bgClass: 'bg-amber-50', textClass: 'text-amber-600' },
+    'Sơn nội thất': { icon: Package, color: 'rose', bgClass: 'bg-rose-50', textClass: 'text-rose-600' },
   };
+
+  // Đếm số lượng theo từng phân loại thực tế từ DB
+  const categoryCounts: Record<string, number> = {};
+  dataSource.forEach((sp) => {
+    if (sp.PhanLoai) {
+      categoryCounts[sp.PhanLoai] = (categoryCounts[sp.PhanLoai] || 0) + 1;
+    }
+  });
+
+  // Tạo danh sách KPI cards động
+  const categoryCards = Object.entries(categoryCounts).map(([label, value]) => {
+    const config = CATEGORY_CONFIG[label] || { icon: Package, color: 'slate', bgClass: 'bg-slate-50', textClass: 'text-slate-600' };
+    return { label, value, icon: config.icon, bgClass: config.bgClass, textClass: config.textClass };
+  });
+
+  // Tạo danh sách filter tabs động
+  const filterTabs = [
+    { id: 'all', label: 'Tất cả' },
+    ...Object.keys(categoryCounts).map((cat) => ({ id: cat, label: cat.replace('Sơn ', '') })),
+  ];
 
   const getAvatarUrl = (path: string) => {
     return resolveImageUrl(path);
@@ -506,19 +529,25 @@ export default function SanPhamPage() {
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-sans text-slate-900 space-y-6">
       {/* 1. KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "Tổng sản phẩm", value: STATS.total, icon: Package, color: "blue" },
-          { label: "Sơn tĩnh điện", value: STATS.tinhDien, icon: Layers, color: "emerald" },
-          { label: "Sơn tàu biển", value: STATS.tauBien, icon: Droplet, color: "violet" },
-          { label: "Sơn công nghiệp", value: STATS.congNghiep, icon: Box, color: "amber" },
-        ].map((item, i) => (
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(categoryCards.length + 1, 5)} gap-4`}>
+        {/* Card tổng */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-500 mb-1">Tổng sản phẩm</p>
+            <h3 className="text-2xl font-bold text-slate-900">{dataSource.length}</h3>
+          </div>
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-blue-50 text-blue-600">
+            <Package strokeWidth={1.5} size={20} />
+          </div>
+        </div>
+        {/* Cards theo phân loại */}
+        {categoryCards.map((item, i) => (
           <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-slate-500 mb-1">{item.label}</p>
               <h3 className="text-2xl font-bold text-slate-900">{item.value}</h3>
             </div>
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-${item.color}-50 text-${item.color}-600`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${item.bgClass} ${item.textClass}`}>
               <item.icon strokeWidth={1.5} size={20} />
             </div>
           </div>
@@ -541,12 +570,7 @@ export default function SanPhamPage() {
 
         {/* Middle: Pill Tabs */}
         <div className="flex bg-slate-100 p-1 rounded-xl overflow-x-auto w-full lg:w-auto">
-          {[
-            { id: "all", label: "Tất cả" },
-            { id: "Sơn tĩnh điện", label: "Tĩnh điện" },
-            { id: "Sơn tàu biển", label: "Tàu biển" },
-            { id: "Sơn công nghiệp", label: "Công nghiệp" },
-          ].map((f) => (
+          {filterTabs.map((f) => (
             <button
               key={f.id}
               onClick={() => setFilterType(f.id)}
