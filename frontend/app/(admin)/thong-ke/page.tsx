@@ -10,10 +10,12 @@ import {
   TrendingUp, AlertTriangle, Boxes, Factory, ClipboardCheck,
   ArrowUpRight, ArrowDownRight, RefreshCw, Layers, History, Activity,
   CheckCircle, Clock, Smile, FileText, Scale, ShieldCheck, Copy,
-  Crown, Ticket, PieChart as PieChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon
+  Crown, Ticket, PieChart as PieChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon,
+  Trophy, Star, Box
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { exportDashboardToExcel, exportBusinessReportExcel, exportInventoryReportExcel, exportProductionReportExcel, exportCustomerServiceReportExcel, exportHrReportExcel, exportLegalReportExcel } from '@/lib/utils/excelExport';
+import { resolveImageUrl } from '@/lib/utils/imageUrl';
 
 // Formatting utilities
 const formatCurrency = (value: number) => {
@@ -383,6 +385,7 @@ function SalesDashboard({ data }: { data: any }) {
 function InventoryDashboard({ data }: { data: any }) {
   const inv = data.inventory?.summary || {};
   const catDist = data.inventory?.categoryDist || [];
+  const bestSellers = data.inventory?.bestSellers || [];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">

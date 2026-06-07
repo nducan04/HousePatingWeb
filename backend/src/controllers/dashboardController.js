@@ -481,6 +481,44 @@ exports.getInventoryStats = async (req, res) => {
       NhanVien: { HoTen: m.TenNguoiLap || 'Hệ thống' }
     }));
 
+    const bestSellers = await DonHang.aggregate([
+      {
+        $match: {
+          TrangThai: { $ne: 'DA_HUY' },
+          createdAt: { $gte: startDate, $lte: endDate }
+        }
+      },
+      { $unwind: "$Items" },
+      {
+        $group: {
+          _id: "$Items.SanPham",
+          SoLuongBan: { $sum: "$Items.SoLuong" },
+          TongDoanhThu: { $sum: "$Items.ThanhTien" }
+        }
+      },
+      {
+        $lookup: {
+          from: "SanPhamSons",
+          localField: "_id",
+          foreignField: "_id",
+          as: "SanPhamInfo"
+        }
+      },
+      { $unwind: "$SanPhamInfo" },
+      {
+        $project: {
+          _id: 1,
+          MaSanPham: "$SanPhamInfo.MaSanPham",
+          TenDongSon: "$SanPhamInfo.TenDongSon",
+          HinhAnh: { $arrayElemAt: ["$SanPhamInfo.HinhAnh", 0] },
+          SoLuongBan: 1,
+          TongDoanhThu: 1
+        }
+      },
+      { $sort: { SoLuongBan: -1 } },
+      { $limit: 10 }
+    ]);
+
     res.status(200).json({
       success: true,
       data: {
@@ -491,7 +529,8 @@ exports.getInventoryStats = async (req, res) => {
           totalKg: products.reduce((sum, p) => sum + ((p.TongTonKho > 0) ? p.TongTonKho : (p.TonKho || 0)), 0)
         },
         categoryDist,
-        recentMovements: formattedMovements
+        recentMovements: formattedMovements,
+        bestSellers
       }
     });
   } catch (error) {
