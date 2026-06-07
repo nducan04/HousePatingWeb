@@ -2434,7 +2434,7 @@ export default function QLKhoPage() {
 
         {selectedPaintProduct && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300 max-h-[90vh]">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300 max-h-[90vh]">
               {/* Header */}
               <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
