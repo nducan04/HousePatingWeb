@@ -145,20 +145,8 @@ export default function QLKhoPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Accordion state for paint product color variants
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-
-  const toggleRow = (id: string) => {
-    setExpandedRows((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
+  // Detail popup modal state for paint product color variants
+  const [selectedPaintProduct, setSelectedPaintProduct] = useState<KhoItem | null>(null);
 
   // Modals
   const [isKiemKhoModal, setIsKiemKhoModal] = useState(false);
@@ -1164,13 +1152,12 @@ export default function QLKhoPage() {
                         const tk = item.TongTonKho || 0;
                         const isLow = tk < 200; // MOQ is 200kg
                         const pct = Math.min((tk / 1000) * 100, 100); // 1000 is arbitrary healthy stock
-                        const isExpanded = expandedRows.has(item._id);
 
                         return (
                           <React.Fragment key={item._id}>
                             <tr
                               className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
-                              onClick={() => toggleRow(item._id)}
+                              onClick={() => setSelectedPaintProduct(item)}
                             >
                               <td className="px-6 py-4">
                                 <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-600">
@@ -1179,10 +1166,8 @@ export default function QLKhoPage() {
                               </td>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-2 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                  <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}>
-                                    ▶
-                                  </span>
                                   {item.TenDongSon}
+                                  <Eye size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity ml-1 shrink-0" />
                                 </div>
                               </td>
                               <td className="px-6 py-4">
@@ -1218,52 +1203,6 @@ export default function QLKhoPage() {
                                 </span>
                               </td>
                             </tr>
-                            {isExpanded && (
-                              <tr className="bg-slate-50/20">
-                                <td colSpan={5} className="px-8 py-4 border-b border-slate-100">
-                                  <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                      Chi tiết số lượng tồn kho từng màu (SKU)
-                                    </h4>
-                                    {item.DanhSachMaMau && item.DanhSachMaMau.length > 0 ? (
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                        {item.DanhSachMaMau.map((mau, mIdx) => (
-                                          <div
-                                            key={mIdx}
-                                            className="flex items-center justify-between p-3 bg-slate-50/50 border border-slate-200/40 rounded-xl hover:border-blue-200 hover:bg-slate-50 transition-colors"
-                                          >
-                                            <div className="flex items-center gap-2.5 min-w-0">
-                                              <span
-                                                className="w-4 h-4 rounded-full border border-slate-200 shrink-0"
-                                                style={{ backgroundColor: mau.HexCode || "#cccccc" }}
-                                              />
-                                              <div className="text-left min-w-0">
-                                                <p className="text-[12px] font-bold text-slate-800 truncate leading-none">
-                                                  {mau.TenMau}
-                                                </p>
-                                                <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">
-                                                  {mau.MaMau}
-                                                </p>
-                                              </div>
-                                            </div>
-                                            <div className="text-right shrink-0 ml-2">
-                                              <span className="text-xs font-bold text-slate-800">
-                                                {mau.TonKhoKhaDung || 0}
-                                              </span>
-                                              <span className="text-[9px] text-slate-400 font-medium ml-0.5">thùng</span>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <p className="text-xs text-slate-400 italic">
-                                        Chưa có thông tin màu sắc nào cho dòng sơn này.
-                                      </p>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
                           </React.Fragment>
                         );
                       })}
@@ -2505,6 +2444,103 @@ export default function QLKhoPage() {
           phieu={selectedPhieu}
           onClose={() => setSelectedPhieu(null)}
         />
+
+        {selectedPaintProduct && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300 max-h-[90vh]">
+              {/* Header */}
+              <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm">
+                    <Package size={20} />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-lg font-black text-slate-900">{selectedPaintProduct.TenDongSon}</div>
+                    <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-0.5">{selectedPaintProduct.MaSanPham}</div>
+                  </div>
+                </h2>
+                <button
+                  onClick={() => setSelectedPaintProduct(null)}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-slate-100 active:scale-95 transition-all text-slate-400 hover:text-slate-600"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-150 flex items-center justify-between">
+                  <div>
+                    <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wide">Tổng tồn kho dòng sơn</p>
+                    <p className="text-3xl font-black text-slate-800 mt-1">
+                      {(selectedPaintProduct.TongTonKho || 0).toLocaleString("vi-VN")}{" "}
+                      <span className="text-sm text-slate-500 font-bold">{selectedPaintProduct.DonViTinh}</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wide text-right">Phân loại</p>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-blue-50 text-blue-600 mt-1 border border-blue-100">
+                      {selectedPaintProduct.PhanLoai}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Beaker size={16} className="text-blue-500" />
+                    Bản đồ Tồn kho theo Mã Màu (SKUs)
+                  </h3>
+
+                  {selectedPaintProduct.DanhSachMaMau && selectedPaintProduct.DanhSachMaMau.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {selectedPaintProduct.DanhSachMaMau.map((mau, mIdx) => (
+                        <div
+                          key={mIdx}
+                          className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-blue-300 hover:shadow-md transition-all duration-200"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <span
+                              className="w-5 h-5 rounded-full border border-slate-200 shadow-sm shrink-0"
+                              style={{ backgroundColor: mau.HexCode || "#cccccc" }}
+                            />
+                            <div className="text-left min-w-0">
+                              <p className="text-sm font-black text-slate-800 truncate">
+                                {mau.TenMau}
+                              </p>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-0.5">
+                                {mau.MaMau}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0 ml-3">
+                            <span className="text-sm font-black text-slate-800">
+                              {mau.TonKhoKhaDung || 0}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-bold ml-1">{selectedPaintProduct.DonViTinh}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                      <p className="text-sm text-slate-400 italic">Chưa có thông tin màu sắc nào cho dòng sơn này.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-8 py-5 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end">
+                <button
+                  onClick={() => setSelectedPaintProduct(null)}
+                  className="px-6 py-2.5 rounded-xl font-bold text-sm bg-slate-800 text-white hover:bg-slate-900 shadow-lg shadow-slate-900/10 transition-all active:scale-95 cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <PhieuDetailModal
         phieu={selectedPhieuNX}
