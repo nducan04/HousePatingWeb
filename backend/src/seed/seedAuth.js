@@ -39,9 +39,9 @@ const seedAuth = async () => {
     // === 2. TẠO TÀI KHOẢN NHÂN VIÊN ===
     console.log('Tạo tài khoản Nhân viên...');
     const staffAccount = await TaiKhoan.create({
-      TenDangNhap: 'staff',
+      TenDangNhap: 'nhanvien',
       MatKhau: '123456',
-      Email: 'staff@vtsc.vn',
+      Email: 'nhanvien@vtsc.vn',
       VaiTro: 'NhanVien',
       TrangThai: true,
     });
@@ -49,47 +49,18 @@ const seedAuth = async () => {
     await NhanVien.create({
       AccountID: staffAccount._id,
       MaNV: 'NV002',
-      HoTen: 'Nguyễn Duy Dũng',
-      Email: 'nguyenduydung@vtsc.vn',
+      HoTen: 'nhanvien',
+      Email: 'nhanvien@vtsc.vn',
       SDT: '0902345678',
-      ChucVu: 'Nhân viên Kinh doanh',
+      ChucVu: 'Nhân viên',
     });
-
-    // === 3. TẠO TÀI KHOẢN KHÁCH HÀNG B2B MẪU ===
-    console.log('Tạo tài khoản Khách hàng B2B mẫu...');
-    const b2bAccount = await TaiKhoan.create({
-      TenDangNhap: 'khachhang_ncc',
-      MatKhau: '123456',
-      Email: 'b2b@vtsc.vn',
-      VaiTro: 'KhachHangB2B',
-      TrangThai: true,
-    });
-
-    // Kiểm tra KhachHang đã tồn tại chưa (tránh lỗi duplicate)
-    const existingKH = await KhachHang.findOne({ MaKH: 'KH-B2B-001' });
-    if (!existingKH) {
-      await KhachHang.create({
-        AccountID: b2bAccount._id,
-        MaKH: 'KH-B2B-001',
-        PhanLoai: 'B2B',
-        TenKhachHang: 'Công ty TNHH NCC Aluminium',
-        Email: 'contact@ncc-aluminium.vn',
-        SDT: '0243456789',
-        DiaChi: 'KCN Phố Nối A, Hưng Yên'
-      });
-    } else {
-      // Cập nhật AccountID nếu KH đã tồn tại
-      existingKH.AccountID = b2bAccount._id;
-      await existingKH.save();
-    }
 
     console.log('');
     console.log('═══════════════════════════════════════');
     console.log('  ✅ SEED HOÀN TẤT — Tài khoản mẫu:');
     console.log('═══════════════════════════════════════');
     console.log('  Admin:      admin / 123456');
-    console.log('  Nhân viên:  staff / 123456');
-    console.log('  Khách B2B:  khachhang_ncc / 123456');
+    console.log('  Nhân viên:  nhanvien / 123456');
     console.log('═══════════════════════════════════════');
     console.log('');
 
