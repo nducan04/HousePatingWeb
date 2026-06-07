@@ -30,30 +30,6 @@ export default function MyContractsPage() {
     fetchContracts();
   }, []);
 
-  const handlePayContractMomo = async (contract: any) => {
-    const remaining = contract.value - (contract.daThanhToan || 0);
-    if (remaining <= 0) {
-      toast.warning('Hợp đồng đã được thanh toán đầy đủ');
-      return;
-    }
-
-    try {
-      const res = await api.post('/thanh-toan/momo/create', {
-        type: 'CONTRACT',
-        id: contract._id,
-        amount: remaining,
-      });
-      if (res.data.success && res.data.payUrl) {
-        window.location.href = res.data.payUrl;
-      } else {
-        toast.error('Lỗi tạo link thanh toán MoMo: ' + (res.data.message || 'Không xác định'));
-      }
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi tạo thanh toán MoMo');
-    }
-  };
-
   const handlePrint = async () => {
     try {
       setIsExportingPDF(true);
@@ -181,13 +157,13 @@ export default function MyContractsPage() {
                             <Eye size={14} /> Xem
                           </button>
                           {['signed', 'delivering'].includes(contract.status) && (contract.value - (contract.daThanhToan || 0)) > 0 && (
-                            <button
-                              onClick={() => handlePayContractMomo(contract)}
-                              className="inline-flex items-center gap-1 text-xs font-black bg-[#A50064] text-white hover:bg-[#850050] transition-colors cursor-pointer px-3 py-2 rounded-xl border-none shadow-sm shadow-[#A50064]/10"
+                            <Link
+                              href={`/my-contracts/${contract._id}/payment`}
+                              className="inline-flex items-center gap-1 text-xs font-black bg-[#A50064] text-white hover:bg-[#850050] transition-colors cursor-pointer px-3 py-2 rounded-xl border-none shadow-sm shadow-[#A50064]/10 no-underline"
                             >
                               <div className="w-3.5 h-3.5 rounded bg-white flex items-center justify-center text-[7px] font-black text-[#A50064]">M</div>
                               Thanh toán
-                            </button>
+                            </Link>
                           )}
                         </div>
                       </td>
@@ -200,6 +176,7 @@ export default function MyContractsPage() {
         </div>
       </div>
 
+      {/* Detail Modal */}
       {selectedContract && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-8 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden relative">

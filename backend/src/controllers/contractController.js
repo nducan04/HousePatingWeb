@@ -158,6 +158,7 @@ exports.getContracts = async (req, res) => {
       slaDeadline: c.slaDeadline,
       terms: c.terms,
       chiTietHopDong: c.ChiTietHopDong,
+      paymentTerms: c.paymentTerms,
       vtscSignature: c.vtscSignature,
       clientSignature: c.clientSignature,
       createdAt: c.createdAt,
@@ -191,6 +192,37 @@ exports.getContractById = async (req, res) => {
       if (!kh || String(contract.CustomerID?._id) !== String(kh._id)) {
         return res.status(403).json({ success: false, error: 'Bạn không có quyền xem hợp đồng này' });
       }
+    }
+
+    // Auto-generate default paymentTerms if empty
+    if (!contract.paymentTerms || contract.paymentTerms.length === 0) {
+      const total = contract.TongGiaTri || 0;
+      const date = new Date(contract.createdAt || Date.now());
+      
+      contract.paymentTerms = [
+        {
+          name: 'Đợt 1',
+          percentage: 30,
+          amount: total * 0.3,
+          dueDate: new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000),
+          paidAmount: Math.min(total * 0.3, contract.DaThanhToan || 0)
+        },
+        {
+          name: 'Đợt 2',
+          percentage: 40,
+          amount: total * 0.4,
+          dueDate: new Date(date.getTime() + 30 * 24 * 60 * 60 * 1000),
+          paidAmount: Math.max(0, Math.min(total * 0.4, (contract.DaThanhToan || 0) - (total * 0.3)))
+        },
+        {
+          name: 'Đợt 3',
+          percentage: 30,
+          amount: total * 0.3,
+          dueDate: new Date(date.getTime() + 60 * 24 * 60 * 60 * 1000),
+          paidAmount: Math.max(0, (contract.DaThanhToan || 0) - (total * 0.7))
+        }
+      ];
+      await contract.save();
     }
 
     const data = {
@@ -227,6 +259,7 @@ exports.getContractById = async (req, res) => {
       slaDeadline: contract.slaDeadline,
       terms: contract.terms,
       chiTietHopDong: contract.ChiTietHopDong,
+      paymentTerms: contract.paymentTerms,
       vtscSignature: contract.vtscSignature,
       clientSignature: contract.clientSignature,
       createdAt: contract.createdAt,
@@ -236,6 +269,41 @@ exports.getContractById = async (req, res) => {
     res.status(200).json({ success: true, data });
   } catch (error) {
     console.error('getContractById error:', error);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Update payment terms of a contract
+// @route   PUT /api/contracts/:id/payment-terms
+// @access  Private (Admin, NhanVien)
+exports.updatePaymentTerms = async (req, res) => {
+  try {
+    const { paymentTerms } = req.body;
+    if (!Array.isArray(paymentTerms)) {
+      return res.status(400).json({ success: false, error: 'paymentTerms must be an array' });
+    }
+
+    const contract = await HopDong.findById(req.params.id);
+    if (!contract) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy hợp đồng' });
+    }
+
+    // Replace payment terms
+    contract.paymentTerms = paymentTerms;
+
+    // Recalculate total DaThanhToan based on the new payment terms
+    const totalPaid = paymentTerms.reduce((sum, term) => sum + (Number(term.paidAmount) || 0), 0);
+    contract.DaThanhToan = totalPaid;
+
+    if (contract.DaThanhToan >= contract.TongGiaTri && contract.TrangThai === 'delivering') {
+      contract.TrangThai = 'completed';
+    }
+
+    await contract.save();
+
+    res.status(200).json({ success: true, data: contract.paymentTerms, daThanhToan: contract.DaThanhToan });
+  } catch (error) {
+    console.error('updatePaymentTerms error:', error);
     res.status(500).json({ success: false, error: 'Server Error' });
   }
 };

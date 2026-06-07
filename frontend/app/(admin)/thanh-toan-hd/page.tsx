@@ -40,7 +40,30 @@ export default function ThanhToanHopDongPage() {
   const [data, setData] = useState<ThanhToanHD[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState<'ALL' | 'DA_QUYET_TOAN' | 'CHO_THU' | 'KHACH_CHAM_TRA'>('ALL');
+
+  const fetchContracts = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/contracts');
+      if (res.data.success) {
+        setContracts(res.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching contracts:', error);
+      toast.error('Lỗi khi lấy danh sách hợp đồng');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchContracts();
+  }, []);
+
+  // 1. Flatten the data: One row per Payment Term
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   // Modals state
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -218,28 +241,29 @@ export default function ThanhToanHopDongPage() {
   }
 
   return (
-    <div>
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{ marginBottom: '2.25rem' }}>
-        <div className="kpi-card emerald">
-          <div className="kpi-icon"><Landmark size={22} /></div>
-          <div className="kpi-label">Tổng Dòng Tiền Đã Nhập Quỹ</div>
-          <div className="kpi-value">{(STATS.totalReceived / 1000000000).toFixed(2)} Tỷ</div>
+    <div className="space-y-6 animate-in fade-in duration-500 w-full pb-10">
+      
+      {/* 1. Stats Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+        <div className="flex flex-col gap-2 border-r border-slate-100 last:border-0 pr-4">
+          <Landmark className="text-slate-500" size={24} />
+          <div className="text-sm font-semibold text-slate-500">Tổng Dòng Tiền Đã Nhập Quỹ</div>
+          <div className="text-2xl font-semibold text-slate-800">{formatTy(totalReceived)}</div>
         </div>
-        <div className="kpi-card cyan">
-          <div className="kpi-icon"><DollarSign size={22} /></div>
-          <div className="kpi-label">Dự Kiến Thu Về Hợp Đồng</div>
-          <div className="kpi-value">{(STATS.totalExpected / 1000000000).toFixed(2)} Tỷ</div>
+        <div className="flex flex-col gap-2 border-r border-slate-100 last:border-0 pr-4 pl-0 sm:pl-4">
+          <DollarSign className="text-slate-500" size={24} />
+          <div className="text-sm font-semibold text-slate-500">Dự Kiến Thu Về Hợp Đồng</div>
+          <div className="text-2xl font-semibold text-slate-800">{formatTy(totalExpected)}</div>
         </div>
-        <div className="kpi-card amber">
-          <div className="kpi-icon"><Wallet size={22} /></div>
-          <div className="kpi-label">Số Đợt Chờ Thu</div>
-          <div className="kpi-value">{STATS.pendingItems} Lần</div>
+        <div className="flex flex-col gap-2 border-r border-slate-100 last:border-0 pr-4 pl-0 lg:pl-4">
+          <FileText className="text-slate-500" size={24} />
+          <div className="text-sm font-semibold text-slate-500">Số Đợt Chờ Thu</div>
+          <div className="text-2xl font-semibold text-slate-800">{pendingTermsCount} Lần</div>
         </div>
-        <div className="kpi-card purple">
-          <div className="kpi-icon"><FileCheck size={22} /></div>
-          <div className="kpi-label">Gia Vốn Bị Kẹt Quá Hạn</div>
-          <div className="kpi-value">{(STATS.totalOverdue / 1000000000).toFixed(2)} Tỷ</div>
+        <div className="flex flex-col gap-2 pl-0 sm:pl-4 lg:pl-4">
+          <AlertTriangle className="text-slate-500" size={24} />
+          <div className="text-sm font-semibold text-slate-500">Giá Vốn Bị Kẹt Quá Hạn</div>
+          <div className="text-2xl font-semibold text-slate-800">{formatTy(overdueDebt)}</div>
         </div>
       </div>
 
@@ -254,7 +278,8 @@ export default function ThanhToanHopDongPage() {
                 className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                 placeholder="Truy vấn số Hợp Đồng, Tên Đối Tác..."
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-medium"
               />
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -283,7 +308,6 @@ export default function ThanhToanHopDongPage() {
             </button>
           )}
         </div>
-      </div>
 
       {/* Table */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-x-auto rounded-none" style={{ borderRadius: '1rem', marginTop: '1rem' }}>
@@ -331,9 +355,62 @@ export default function ThanhToanHopDongPage() {
                   </div>
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin mb-3"></div>
+                      Đang tải dữ liệu...
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium">
+                    Không tìm thấy khoản thu nào
+                  </td>
+                </tr>
+              ) : (
+                filteredData.map((item, idx) => {
+                  // Fake a long ID like in the picture just for UI matching, or use termId
+                  const transactionId = `${item.contractId.replace('VTSC-', '')}-${item.termId.slice(0, 10)}...`;
+                  
+                  return (
+                    <tr 
+                      key={`${item.contractId}_${item.termId}`} 
+                      className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                      onClick={() => router.push(`/thanh-toan-hd/${item.contractMongoId}`)}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-blue-600 text-sm">{transactionId}</div>
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-slate-700 text-sm">
+                        {item.contractId}
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-slate-800 text-sm">
+                        {item.customerName}
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-slate-800 text-sm">
+                        {item.termName}
+                      </td>
+                      <td className="px-6 py-4 font-bold text-emerald-600 text-sm">
+                        {item.amount.toLocaleString()} ₫
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-slate-800 text-sm">
+                        {item.dueDate ? new Date(item.dueDate).toLocaleDateString('vi-VN') : '—'}
+                      </td>
+                      <td className="px-6 py-4">
+                        {getStatusBadge(item.status)}
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Cập Nhật Thanh Toán Modal */}

@@ -324,10 +324,32 @@ exports.momoIPN = async (req, res) => {
                     await order.save();
                     console.log(`Order ${order.MaDonHang} status updated to paid.`);
                 }
-            } else if (type === 'CONTRACT') {
-                const contract = await HopDong.findById(id);
+            } else if (type === 'CONTRACT' || type === 'CONTRACT_INSTALLMENT') {
+                let contractId = id;
+                let termId = null;
+                if (type === 'CONTRACT_INSTALLMENT') {
+                    const parts = id.split('_');
+                    contractId = parts[0];
+                    termId = parts[1];
+                }
+
+                const contract = await HopDong.findById(contractId);
                 if (contract) {
+                    if (termId && contract.paymentTerms && contract.paymentTerms.length > 0) {
+                        const term = contract.paymentTerms.id(termId);
+                        if (term) {
+                            term.paidAmount = (term.paidAmount || 0) + Number(paidVal);
+                            term.paidDate = new Date();
+                        }
+                    }
+
                     contract.DaThanhToan = (contract.DaThanhToan || 0) + Number(paidVal);
+                    
+                    // Recalculate based on terms to be safe
+                    if (contract.paymentTerms && contract.paymentTerms.length > 0) {
+                        contract.DaThanhToan = contract.paymentTerms.reduce((sum, t) => sum + (t.paidAmount || 0), 0);
+                    }
+
                     if (contract.DaThanhToan >= contract.TongGiaTri) {
                         contract.DaThanhToan = contract.TongGiaTri;
                         if (contract.TrangThai === 'delivering') {
@@ -378,10 +400,32 @@ exports.momoConfirm = async (req, res) => {
                 await order.save();
                 console.log(`[MoMo Confirm] Order ${order.MaDonHang} updated to DA_THANH_TOAN`);
             }
-        } else if (type === 'CONTRACT') {
-            const contract = await HopDong.findById(id);
+        } else if (type === 'CONTRACT' || type === 'CONTRACT_INSTALLMENT') {
+            let contractId = id;
+            let termId = null;
+            if (type === 'CONTRACT_INSTALLMENT') {
+                const parts = id.split('_');
+                contractId = parts[0];
+                termId = parts[1];
+            }
+
+            const contract = await HopDong.findById(contractId);
             if (contract) {
+                if (termId && contract.paymentTerms && contract.paymentTerms.length > 0) {
+                    const term = contract.paymentTerms.id(termId);
+                    if (term) {
+                        term.paidAmount = (term.paidAmount || 0) + Number(paidVal);
+                        term.paidDate = new Date();
+                    }
+                }
+
                 contract.DaThanhToan = (contract.DaThanhToan || 0) + Number(paidVal);
+                
+                // Recalculate based on terms to be safe
+                if (contract.paymentTerms && contract.paymentTerms.length > 0) {
+                    contract.DaThanhToan = contract.paymentTerms.reduce((sum, t) => sum + (t.paidAmount || 0), 0);
+                }
+
                 if (contract.DaThanhToan >= contract.TongGiaTri) {
                     contract.DaThanhToan = contract.TongGiaTri;
                     if (contract.TrangThai === 'delivering') {
