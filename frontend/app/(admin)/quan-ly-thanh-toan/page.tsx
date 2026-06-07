@@ -198,7 +198,7 @@ export default function ThanhToanPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-2xl overflow-x-auto max-w-full">
               {[
                 { id: 'all', label: 'Tất cả' },
@@ -209,19 +209,18 @@ export default function ThanhToanPage() {
                 <button
                   key={f.id}
                   onClick={() => setFilter(f.id)}
-                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
-                    filter === f.id
-                      ? "bg-white text-blue-600 shadow-sm"
-                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
-                  }`}
+                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${filter === f.id
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                    }`}
                 >
                   {f.label}
                 </button>
               ))}
             </div>
           </div>
-          
-          <button 
+
+          <button
             className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-[14px] bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border border-slate-100 cursor-pointer"
             onClick={fetchRecords}
           >
@@ -259,81 +258,115 @@ export default function ThanhToanPage() {
                     Không tìm thấy dữ liệu phù hợp.
                   </td>
                 </tr>
-              ) : filteredData.map(item => (
-                <tr key={item._id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${
-                        item.type === 'ORDER' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-amber-50 text-amber-600 border-amber-100'
-                      }`}>
-                        {item.type === 'ORDER' ? <Package size={18} /> : <FileCheck size={18} />}
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                          {item.type === 'ORDER' ? 'ĐƠN HÀNG' : 'HỢP ĐỒNG'}
+              ) : (
+                filteredData.map((item) => (
+                  <tr
+                    key={item._id}
+                    className="hover:bg-slate-50/50 transition-colors group"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center border ${item.type === "ORDER"
+                              ? "bg-blue-50 text-blue-600 border-blue-100"
+                              : "bg-amber-50 text-amber-600 border-amber-100"
+                            }`}
+                        >
+                          {item.type === "ORDER" ? (
+                            <Package size={18} />
+                          ) : (
+                            <FileCheck size={18} />
+                          )}
                         </div>
-                        <div className="font-bold text-slate-900 text-[14px]">
-                          {item.code}
+                        <div>
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                            {item.type === "ORDER" ? "ĐƠN HÀNG" : "HỢP ĐỒNG"}
+                          </div>
+                          <div className="font-bold text-slate-900 text-[14px]">
+                            {item.code}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-slate-900 text-[14px]">
-                      {item.customer?.name || 'Vãng lai'}
-                    </div>
-                    <div className="text-[12px] text-slate-400 font-medium mt-0.5">
-                      {item.customer?.code || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-bold text-slate-900 text-[14px]">
-                    {item.totalAmount.toLocaleString()} ₫
-                  </td>
-                  <td className="px-6 py-4 font-bold text-blue-600 text-[14px]">
-                    {item.paidAmount.toLocaleString()} ₫
-                  </td>
-                  <td className={`px-6 py-4 font-black text-[14px] ${
-                    item.debtAmount > 0 ? 'text-rose-600' : 'text-emerald-600'
-                  }`}>
-                    {item.debtAmount === 0 ? '—' : `${item.debtAmount.toLocaleString()} ₫`}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      onClick={() => handleTogglePayment(item)}
-                      className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider cursor-pointer transition-all ${
-                        item.debtAmount === 0 
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100' 
-                          : item.paidAmount > 0 
-                            ? 'bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100' 
-                            : 'bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100'
-                      }`}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-900 text-[14px]">
+                        {item.customer?.name || "Vãng lai"}
+                      </div>
+                      <div className="text-[12px] text-slate-400 font-medium mt-0.5">
+                        {item.customer?.code || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 font-bold text-slate-900 text-[14px]">
+                      {item.totalAmount.toLocaleString()} ₫
+                    </td>
+                    <td className="px-6 py-4 font-bold text-blue-600 text-[14px]">
+                      {item.paidAmount.toLocaleString()} ₫
+                    </td>
+                    <td
+                      className={`px-6 py-4 font-black text-[14px] ${item.debtAmount > 0
+                          ? "text-rose-600"
+                          : "text-emerald-600"
+                        }`}
                     >
-                      {item.debtAmount === 0 ? 'Đã quyết toán' : item.paidAmount > 0 ? 'Đang thanh toán' : 'Chưa thanh toán'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-[13px] text-slate-400 font-medium">
-                    {new Date(item.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => setSelectedTransaction(item)}
-                        className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-100 hover:border-emerald-100 transition-all cursor-pointer"
-                        title="Xem chi tiết"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
+                      {item.debtAmount === 0
+                        ? "—"
+                        : `${item.debtAmount.toLocaleString()} ₫`}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
                         onClick={() => handleTogglePayment(item)}
-                        className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 border border-slate-100 hover:border-blue-100 transition-all cursor-pointer"
-                        title={item.type === 'ORDER' ? 'Thay đổi trạng thái' : 'Cập nhật số tiền'}
+                        className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider cursor-pointer transition-all ${item.debtAmount === 0
+                            ? "bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100"
+                            : item.paidAmount > 0
+                              ? "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+                              : "bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100"
+                          }`}
                       >
-                        {item.type === 'ORDER' ? <ArrowRight size={16} /> : <CreditCard size={16} />}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {item.debtAmount === 0
+                          ? "Đã quyết toán"
+                          : item.paidAmount > 0
+                            ? "Đang thanh toán"
+                            : "Chưa thanh toán"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-[13px] text-slate-400 font-medium">
+                      {new Date(item.date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            if (item.type === "CONTRACT") {
+                              router.push(`/thanh-toan-hd/${item._id}`);
+                            } else {
+                              setSelectedTransaction(item);
+                            }
+                          }}
+                          className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-100 hover:border-emerald-100 transition-all cursor-pointer"
+                          title="Xem chi tiết"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleTogglePayment(item)}
+                          className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 border border-slate-100 hover:border-blue-100 transition-all cursor-pointer"
+                          title={
+                            item.type === "ORDER"
+                              ? "Thay đổi trạng thái"
+                              : "Cập nhật số tiền"
+                          }
+                        >
+                          {item.type === "ORDER" ? (
+                            <ArrowRight size={16} />
+                          ) : (
+                            <CreditCard size={16} />
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -345,15 +378,27 @@ export default function ThanhToanPage() {
           <div className="bg-white w-[90%] max-w-lg rounded-xl shadow-2xl overflow-hidden border border-slate-200">
             <div className="bg-slate-50 px-5 py-4 border-b border-slate-200 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-base flex items-center gap-2">
-                <FileCheck size={18} className="text-blue-600"/> Chi Tiết Giao Dịch
+                <FileCheck size={18} className="text-blue-600" /> Chi Tiết Giao
+                Dịch
               </h3>
-              <button onClick={() => setSelectedTransaction(null)} className="text-slate-400 hover:text-rose-600 transition-colors p-1"><XCircle size={22}/></button>
+              <button
+                onClick={() => setSelectedTransaction(null)}
+                className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+              >
+                <XCircle size={22} />
+              </button>
             </div>
-            
+
             <div className="p-5 space-y-4">
               <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-                <div className={`w-10 h-10 rounded-md flex items-center justify-center shadow-sm border ${selectedTransaction.type === 'ORDER' ? 'text-blue-600 border-blue-100 bg-blue-50' : 'text-amber-600 border-amber-100 bg-amber-50'}`}>
-                   {selectedTransaction.type === 'ORDER' ? <Package size={20} /> : <FileCheck size={20} />}
+                <div
+                  className={`w-10 h-10 rounded-md flex items-center justify-center shadow-sm border ${selectedTransaction.type === "ORDER" ? "text-blue-600 border-blue-100 bg-blue-50" : "text-amber-600 border-amber-100 bg-amber-50"}`}
+                >
+                  {selectedTransaction.type === "ORDER" ? (
+                    <Package size={20} />
+                  ) : (
+                    <FileCheck size={20} />
+                  )}
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{selectedTransaction.type === 'ORDER' ? 'Đơn hàng' : 'Hợp đồng'}</div>
@@ -389,15 +434,22 @@ export default function ThanhToanPage() {
               </div>
 
               <div className="flex justify-between items-center px-1 pt-2">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng Thái:</div>
-                <div className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${
-                  selectedTransaction.debtAmount === 0 
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                    : selectedTransaction.paidAmount > 0 
-                      ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                }`}>
-                  {selectedTransaction.debtAmount === 0 ? 'Đã quyết toán' : selectedTransaction.paidAmount > 0 ? 'Đang thanh toán' : 'Chưa thanh toán'}
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Trạng Thái:
+                </div>
+                <div
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${selectedTransaction.debtAmount === 0
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : selectedTransaction.paidAmount > 0
+                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                >
+                  {selectedTransaction.debtAmount === 0
+                    ? "Đã quyết toán"
+                    : selectedTransaction.paidAmount > 0
+                      ? "Đang thanh toán"
+                      : "Chưa thanh toán"}
                 </div>
               </div>
             </div>

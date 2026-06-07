@@ -17,7 +17,15 @@ const mongoose = require('mongoose');
  *   - TransactionHash → Sepolia TX
  */
 
-// Embedded sub-document: Chi tiết Hợp đồng (sản phẩm, khối lượng, đơn giá)
+const paymentTermSchema = new mongoose.Schema({
+  name: { type: String, required: true }, // VD: Đợt 1, Đợt 2
+  percentage: { type: Number, required: true }, // % thanh toán
+  amount: { type: Number, required: true }, // Giá trị đợt
+  dueDate: { type: Date, required: true }, // Hạn thanh toán
+  paidAmount: { type: Number, default: 0 }, // Đã thanh toán của đợt này
+  paidDate: { type: Date } // Ngày thanh toán gần nhất cho đợt này
+}, { _id: true }); // Keep _id to identify terms when updating
+
 const chiTietHopDongSchema = new mongoose.Schema({
   productName: { type: String, required: true },     // Tên sản phẩm / Dòng sơn
   colorCode: { type: String, default: '' },           // Mã màu sơn
@@ -86,6 +94,7 @@ const hopDongSchema = new mongoose.Schema({
     default: 0,
     min: 0,
   },
+  paymentTerms: [paymentTermSchema],
   // === Điều khoản SLA ===
   TrangThai: {
     type: String,
