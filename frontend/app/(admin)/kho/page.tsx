@@ -1724,7 +1724,7 @@ export default function QLKhoPage() {
                     </label>
                     <input
                       type="text"
-                      placeholder="VD: NVL001"
+                      placeholder="VD: NVL-001"
                       className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-medium disabled:opacity-50"
                       value={nvlForm.MaNVL}
                       onChange={(e) =>
