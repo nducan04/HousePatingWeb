@@ -6,6 +6,7 @@ import Link from 'next/link';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
 import { toast } from '@/lib/utils/notification';
+import { paintColors } from '@/lib/data/colors-data';
 
 export default function MyContractsPage() {
   const { user } = useAuthStore();
@@ -253,7 +254,7 @@ export default function MyContractsPage() {
                       {selectedContract.chiTietHopDong?.map((it: any, idx: number) => (
                         <tr key={idx}>
                           <td style={{ border: '1px solid #003399', padding: 8 }}>{it.productName}</td>
-                          <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'center', fontWeight: 'bold' }}>{it.colorCode || '—'}</td>
+                          <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'center', fontWeight: 'bold' }}>{it.colorCode} {paintColors.find(c => c.code === it.colorCode) ? `(${paintColors.find(c => c.code === it.colorCode)?.name})` : ''}</td>
                           <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'center' }}>{it.quantity}</td>
                           <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>{(it.unitPrice || 0).toLocaleString('vi-VN')}đ</td>
                           <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right', fontWeight: 'bold' }}>{((it.quantity || 0) * (it.unitPrice || 0)).toLocaleString('vi-VN')}đ</td>

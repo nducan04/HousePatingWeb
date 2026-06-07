@@ -337,7 +337,10 @@ export default function SanPhamPage() {
         DonViTinh: item.DonViTinh || "Thùng",
         HinhAnh: Array.isArray(item.HinhAnh) ? item.HinhAnh : (item.HinhAnh ? [item.HinhAnh] : []),
         MoTaSanPham: item.MoTaSanPham || "",
-        DanhSachMaMau: item.DanhSachMaMau || [],
+        DanhSachMaMau: (item.DanhSachMaMau || []).map((m: any) => ({
+          ...m,
+          TenMau: paintColors.find(c => c.code === m.MaMau)?.name || m.TenMau
+        })),
         TruyXuatNguonGoc: {
           HoaDonMuaSon: item.TruyXuatNguonGoc?.HoaDonMuaSon || "",
           QuyTrinhSanXuat: item.TruyXuatNguonGoc?.QuyTrinhSanXuat || "",
@@ -945,7 +948,7 @@ export default function SanPhamPage() {
                                 className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-left focus:outline-none focus:border-blue-500 transition-all flex items-center justify-between"
                               >
                                 <span className="truncate pr-4">
-                                  {mau.MaMau ? `${mau.MaMau} - ${mau.TenMau}` : '-- Chọn mã màu --'}
+                                  {mau.MaMau ? `${mau.MaMau} - ${paintColors.find(c => c.code === mau.MaMau)?.name || mau.TenMau}` : '-- Chọn mã màu --'}
                                 </span>
                                 <span className="text-[10px] text-slate-400 pointer-events-none absolute right-3">▼</span>
                               </button>
@@ -1201,7 +1204,7 @@ export default function SanPhamPage() {
                               style={{ backgroundColor: mau.HexCode || "#cccccc" }}
                             />
                             <div className="text-left">
-                              <p className="text-xs font-bold text-slate-800 leading-none">{mau.TenMau}</p>
+                              <p className="text-xs font-bold text-slate-800 leading-none">{paintColors.find(c => c.code === mau.MaMau)?.name || mau.TenMau}</p>
                               <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">{mau.MaMau} {mau.TonKhoKhaDung > 0 ? `(Còn ${mau.TonKhoKhaDung})` : '(Hết hàng)'}</p>
                             </div>
                           </div>

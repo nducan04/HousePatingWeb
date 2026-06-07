@@ -1,6 +1,7 @@
 "use client";
 import React, { useRef } from "react";
 import { X, Printer } from "lucide-react";
+import { paintColors } from "@/lib/data/colors-data";
 
 interface ChiTietItem {
   MaItem?: string;
@@ -230,7 +231,7 @@ export default function PhieuDetailModal({ phieu, onClose }: Props) {
                             <div style={{ fontWeight: 600 }}>{it.TenItem || "—"}</div>
                             {it.MaMau && (
                               <div style={{ fontSize: 11, color: "#666" }}>
-                                Màu: {it.TenMau ? `${it.TenMau} (${it.MaMau})` : it.MaMau}
+                                Màu: {it.MaMau ? `${paintColors.find(c => c.code === it.MaMau)?.name || it.TenMau || "Không xác định"} (${it.MaMau})` : "—"}
                               </div>
                             )}
                           </td>
