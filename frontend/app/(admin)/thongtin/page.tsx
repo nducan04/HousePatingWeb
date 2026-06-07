@@ -159,6 +159,13 @@ export default function ThongTinCaNhanPage() {
             </div>
             <div className="flex gap-3">
               <button
+                type="button"
+                onClick={() => setIsChangePasswordOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 shadow-sm"
+              >
+                <Lock size={16} /> Đổi mật khẩu
+              </button>
+              <button
                 onClick={handleSave}
                 disabled={loading}
                 className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm px-6 flex items-center gap-2 shadow-lg shadow-blue-500/20"
@@ -220,21 +227,27 @@ export default function ThongTinCaNhanPage() {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-slate-500 mb-1">Phòng ban</label>
-                      <input
-                        type="text"
-                        className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all opacity-70"
-                        value={formData.department}
-                        readOnly
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-500 outline-none cursor-not-allowed pl-10 opacity-80"
+                          value={formData.department}
+                          readOnly
+                        />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-500 mb-1">Chức vụ</label>
-                      <input
-                        type="text"
-                        className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all opacity-70"
-                        value={formData.jobTitle}
-                        readOnly
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-500 outline-none cursor-not-allowed pl-10 opacity-80"
+                          value={formData.jobTitle}
+                          readOnly
+                        />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                      </div>
                     </div>
                   </>
                 )}
@@ -291,15 +304,7 @@ export default function ThongTinCaNhanPage() {
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsChangePasswordOpen(true)}
-                  className="text-blue-600 hover:text-blue-500 flex items-center gap-2 text-sm font-semibold transition-colors bg-transparent border-none cursor-pointer"
-                >
-                  <Lock size={14} /> Đổi mật khẩu đăng nhập
-                </button>
-              </div>
+
             </div>
           </form>
         </div>
