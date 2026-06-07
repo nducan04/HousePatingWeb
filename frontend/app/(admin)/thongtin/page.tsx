@@ -8,7 +8,7 @@ import { useAuthStore, type User } from '@/lib/store/authStore';
 import api from '@/lib/utils/axiosAuth';
 
 export default function ThongTinCaNhanPage() {
-  const { user, loginState } = useAuthStore();
+  const { user, loginState, accessToken } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export default function ThongTinCaNhanPage() {
   useEffect(() => {
     if (user && user.profile) {
       const p = user.profile;
-      const isEmployee = user.role === 'Admin' || user.role === 'NhanVien';
+      const isEmployee = user.role === 'Admin' || user.role === 'NhanVien' || user.role === 'Director';
 
       setFormData({
         displayName: isEmployee ? p.HoTen : p.TenKhachHang,
@@ -59,7 +59,7 @@ export default function ThongTinCaNhanPage() {
     setSuccess(null);
 
     try {
-      const isEmployee = user?.role === 'Admin' || user?.role === 'NhanVien';
+      const isEmployee = user?.role === 'Admin' || user?.role === 'NhanVien' || user?.role === 'Director';
       const endpoint = isEmployee ? `/staff/${user?.profile?._id}` : `/khach-hang/${user?.profile?._id}`;
 
       const payload: any = {
@@ -82,8 +82,7 @@ export default function ThongTinCaNhanPage() {
         const updatedUser: User = { ...user!, profile: res.data.data };
         // We use loginState to sync store, but we need the token too. 
         // Assuming we can get it from storage or just keep existing one.
-        const token = localStorage.getItem('accessToken') || '';
-        loginState(updatedUser, token);
+        loginState(updatedUser, accessToken || '');
 
         setSuccess('Cập nhật thông tin thành công!');
         setTimeout(() => setSuccess(null), 3000);
@@ -131,7 +130,7 @@ export default function ThongTinCaNhanPage() {
 
   if (!user) return <div className="p-8 text-center">Đang tải thông tin...</div>;
 
-  const isEmployee = user.role === 'Admin' || user.role === 'NhanVien';
+  const isEmployee = user.role === 'Admin' || user.role === 'NhanVien' || user.role === 'Director';
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">

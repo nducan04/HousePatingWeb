@@ -12,8 +12,8 @@ router.route('/')
   .post(authorize('Admin'), create);
 
 router.route('/:id')
-  .get(authorize('Admin', 'NhanVien'), getById)
-  .put(authorize('Admin', 'NhanVien'), update)
+  .get(authorize('Admin', 'Director', 'NhanVien'), getById)
+  .put(authorize('Admin', 'Director', 'NhanVien'), update)
   .delete(authorize('Admin'), remove);
 
 router.route('/account/:accountId')
