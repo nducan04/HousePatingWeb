@@ -170,11 +170,6 @@ const allNavItems: NavSection[] = [
         roles: ["Admin", "NhanVien"],
       },
       {
-        href: "/doi-tra",
-        label: "Trung Tâm Giải Quyết Khiếu Nại",
-        roles: ["Admin", "NhanVien"],
-      },
-      {
         href: "/khuyen-mai",
         label: "Quản lý khuyến mãi",
         roles: ["Admin", "NhanVien"],
@@ -372,8 +367,6 @@ export default function AdminLayout({
     if (pathname?.startsWith("/quan-ly-san-pham"))
       return "📦 Quản lý sản phẩm sơn";
     if (pathname?.startsWith("/kho")) return "🏭 Quản lý kho";
-    if (pathname?.startsWith("/doi-tra"))
-      return "🎯 Trung tâm Giải quyết khiếu nại";
     if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý khách hàng";
     if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý nhân sự";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
