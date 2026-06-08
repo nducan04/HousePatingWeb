@@ -25,10 +25,21 @@ exports.checkoutFromCart = async (req, res) => {
         for (let item of cart.Items) {
             const sp = await SanPhamSon.findById(item.SanPham._id).session(session);
             if (!sp) throw new Error(`Sản phẩm ${item.SanPham.TenDongSon} không còn tồn tại`);
-            if (sp.TongTonKho < item.SoLuong) throw new Error(`Sản phẩm ${item.SanPham.TenDongSon} không đủ tồn kho (Còn: ${sp.TongTonKho})`);
+            
+            const maMauUpper = item.MaMau ? item.MaMau.toUpperCase() : '';
+            let colorItem = sp.DanhSachMaMau.find(m => m.MaMau.toUpperCase() === maMauUpper);
+            if (!colorItem && sp.DanhSachMaMau && sp.DanhSachMaMau.length > 0) {
+                colorItem = sp.DanhSachMaMau[0];
+            }
+            
+            if (!colorItem) throw new Error(`Dòng sơn ${sp.TenDongSon} không có sẵn màu sắc nào để trừ kho`);
+            
+            if (colorItem.TonKhoKhaDung < item.SoLuong) {
+                throw new Error(`Sản phẩm ${sp.TenDongSon} (Màu: ${colorItem.MaMau}) không đủ tồn kho (Còn: ${colorItem.TonKhoKhaDung})`);
+            }
 
-            // Trừ kho ngay lập tức
-            sp.TongTonKho -= item.SoLuong;
+            // Trừ kho ở cấp độ mã màu
+            colorItem.TonKhoKhaDung -= item.SoLuong;
             sp.SoLuongDaBan += item.SoLuong;
             await sp.save({ session });
 
@@ -251,11 +262,20 @@ exports.updateStatus = async (req, res) => {
                 for (let item of order.Items) {
                     const sp = await SanPhamSon.findById(item.SanPham).session(session);
                     if (!sp) throw new Error(`Không tìm thấy sản phẩm ${item.TenSanPham}`);
-                    if (sp.TongTonKho < item.SoLuong) {
-                        throw new Error(`Sản phẩm ${item.TenSanPham} không đủ tồn kho (Cần: ${item.SoLuong}, Kho có: ${sp.TongTonKho})`);
+                    
+                    const maMauUpper = item.MaMau ? item.MaMau.toUpperCase() : '';
+                    let colorItem = sp.DanhSachMaMau.find(m => m.MaMau.toUpperCase() === maMauUpper);
+                    if (!colorItem && sp.DanhSachMaMau && sp.DanhSachMaMau.length > 0) {
+                        colorItem = sp.DanhSachMaMau[0];
+                    }
+                    
+                    if (!colorItem) throw new Error(`Dòng sơn ${sp.TenDongSon} không có sẵn màu sắc nào để trừ kho`);
+                    
+                    if (colorItem.TonKhoKhaDung < item.SoLuong) {
+                        throw new Error(`Sản phẩm ${sp.TenDongSon} (Màu: ${colorItem.MaMau}) không đủ tồn kho (Cần: ${item.SoLuong}, Kho có: ${colorItem.TonKhoKhaDung})`);
                     }
 
-                    sp.TongTonKho -= item.SoLuong;
+                    colorItem.TonKhoKhaDung -= item.SoLuong;
                     sp.SoLuongDaBan += item.SoLuong;
                     await sp.save({ session });
                 }
@@ -268,7 +288,14 @@ exports.updateStatus = async (req, res) => {
             for (let item of order.Items) {
                 const sp = await SanPhamSon.findById(item.SanPham).session(session);
                 if (sp) {
-                    sp.TongTonKho += item.SoLuong;
+                    const maMauUpper = item.MaMau ? item.MaMau.toUpperCase() : '';
+                    let colorItem = sp.DanhSachMaMau.find(m => m.MaMau.toUpperCase() === maMauUpper);
+                    if (!colorItem && sp.DanhSachMaMau && sp.DanhSachMaMau.length > 0) {
+                        colorItem = sp.DanhSachMaMau[0];
+                    }
+                    if (colorItem) {
+                        colorItem.TonKhoKhaDung += item.SoLuong;
+                    }
                     sp.SoLuongDaBan -= item.SoLuong;
                     await sp.save({ session });
                 }
@@ -468,7 +495,14 @@ exports.cancelOrder = async (req, res) => {
             for (let item of order.Items) {
                 const sp = await SanPhamSon.findById(item.SanPham);
                 if (sp) {
-                    sp.TongTonKho += item.SoLuong;
+                    const maMauUpper = item.MaMau ? item.MaMau.toUpperCase() : '';
+                    let colorItem = sp.DanhSachMaMau.find(m => m.MaMau.toUpperCase() === maMauUpper);
+                    if (!colorItem && sp.DanhSachMaMau && sp.DanhSachMaMau.length > 0) {
+                        colorItem = sp.DanhSachMaMau[0];
+                    }
+                    if (colorItem) {
+                        colorItem.TonKhoKhaDung += item.SoLuong;
+                    }
                     sp.SoLuongDaBan -= item.SoLuong;
                     await sp.save();
                 }
