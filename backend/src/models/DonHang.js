@@ -90,6 +90,10 @@ const donHangSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'KhuyenMai'
   },
+  DaTruKho: {
+    type: Boolean,
+    default: false
+  },
   TechnicalSpecs: {
     LoaiBot: { type: String, default: 'AkzoNobel Interpon' },
     NhietDoSay: { type: String, default: '195°C / 15 phút' },
