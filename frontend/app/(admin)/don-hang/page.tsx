@@ -2022,7 +2022,7 @@ export default function OrderManagementPage() {
           </div>
           <div>
             <h2 className="text-xl font-semibold text-slate-900 tracking-tight">
-              Theo Dõi Đơn Hàng Mới Nhất
+              Theo dõi đơn hàng mới nhất
             </h2>
             <p className="text-xs text-slate-400 font-semibold mt-0.5">
               Click vào kiện hàng để xem chi tiết lộ trình vận chuyển trên toàn
@@ -2034,7 +2034,9 @@ export default function OrderManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {trackingData.length > 0 ? (
             trackingData.map((t) => {
-              const currentStep = t.steps.find((s: any) => s.status === "current");
+              const currentStep = t.steps.find(
+                (s: any) => s.status === "current",
+              );
               const completedSteps = t.steps.filter(
                 (s: any) => s.status === "completed",
               ).length;
