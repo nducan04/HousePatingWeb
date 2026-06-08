@@ -27,18 +27,29 @@ async function autoCreateDownstreamData(contract) {
       const subtotalForTaxCalculation = contract.ChiTietHopDong.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
       
       const randomHDCode = `HD${Math.floor(1000 + Math.random() * 9000)}${Date.now().toString().slice(-2)}`;
-      order = await DonHang.create({
-        MaDonHang: randomHDCode,
-        KhachHang: contract.CustomerID,
-        NhanVienPhuTrach: defaultNvId,
-        Items: contract.ChiTietHopDong.map(item => ({
-          SanPham: defaultSpId, 
+      
+      // Resolve actual product IDs for the items in the order
+      const resolvedItems = [];
+      for (let item of contract.ChiTietHopDong) {
+        let matchedSp = await SanPhamSon.findOne({ TenDongSon: item.productName });
+        if (!matchedSp) {
+          matchedSp = await SanPhamSon.findOne({ MaSanPham: item.productName });
+        }
+        resolvedItems.push({
+          SanPham: matchedSp ? matchedSp._id : defaultSpId, 
           TenSanPham: item.productName,
           MaMau: item.colorCode,
           SoLuong: item.quantity,
           DonGia: item.unitPrice,
           ThanhTien: item.quantity * item.unitPrice
-        })),
+        });
+      }
+
+      order = await DonHang.create({
+        MaDonHang: randomHDCode,
+        KhachHang: contract.CustomerID,
+        NhanVienPhuTrach: defaultNvId,
+        Items: resolvedItems,
         TienThue: contract.TongGiaTri > subtotalForTaxCalculation ? contract.TongGiaTri - subtotalForTaxCalculation : 0,
         TongTien: contract.TongGiaTri,
         TrangThai: contract.TrangThai === 'signed' ? 'DANG_XU_LY' : 'CHO_XAC_NHAN',
@@ -47,6 +58,27 @@ async function autoCreateDownstreamData(contract) {
         DiaChiGiaoHang: contract.partyBAddress || 'Kho khách hàng',
         GhiChu: `Người nhận: ${contract.partyBRepresentative || 'Khách hàng'} - SĐT: ${contract.partyBPhoneNumber || '0987654321'}. Đơn hàng tự động từ Hợp đồng R&D ${contract.MaHopDong}`
       });
+    }
+
+    // Deduct inventory immediately if not already deducted
+    if (order && !order.DaTruKho) {
+      for (let item of order.Items) {
+        const sp = await SanPhamSon.findById(item.SanPham);
+        if (sp) {
+          const maMauUpper = item.MaMau ? item.MaMau.toUpperCase() : '';
+          let colorItem = sp.DanhSachMaMau.find(m => m.MaMau.toUpperCase() === maMauUpper);
+          if (!colorItem && sp.DanhSachMaMau && sp.DanhSachMaMau.length > 0) {
+            colorItem = sp.DanhSachMaMau[0];
+          }
+          if (colorItem) {
+            colorItem.TonKhoKhaDung = Math.max(0, colorItem.TonKhoKhaDung - item.SoLuong);
+            sp.SoLuongDaBan += item.SoLuong;
+            await sp.save();
+          }
+        }
+      }
+      order.DaTruKho = true;
+      await order.save();
     }
 
     if (contract.TrangThai === 'signed') {

@@ -94,6 +94,14 @@ exports.getDashboardStats = async (req, res) => {
     const getStatsForRange = async (start, end) => {
       const orders = await DonHang.aggregate([
         { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: start, $lte: end } } },
+        { $lookup: {
+          from: 'KhachHangs',
+          localField: 'KhachHang',
+          foreignField: '_id',
+          as: 'customer'
+        }},
+        { $unwind: '$customer' },
+        { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
         { $group: {
           _id: null,
           totalRevenue: { 
@@ -146,7 +154,18 @@ exports.getDashboardStats = async (req, res) => {
       }
 
       // Revenue for this bin (Based on actual payments)
-      const ordersM = await DonHang.aggregate([{ $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $cond: [{ $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, '$TongTien', { $ifNull: ['$DaCoc', 0] }] } } } }]);
+      const ordersM = await DonHang.aggregate([
+        { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } },
+        { $lookup: {
+          from: 'KhachHangs',
+          localField: 'KhachHang',
+          foreignField: '_id',
+          as: 'customer'
+        }},
+        { $unwind: '$customer' },
+        { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
+        { $group: { _id: null, total: { $sum: { $cond: [{ $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, '$TongTien', { $ifNull: ['$DaCoc', 0] }] } } } }
+      ]);
       const contractsM = await HopDong.aggregate([{ $match: { createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $ifNull: ['$DaThanhToan', 0] } } } }]);
       
       // Target matching for this bin
@@ -156,7 +175,18 @@ exports.getDashboardStats = async (req, res) => {
       const targetProdVal = matchedProdTarget ? matchedProdTarget.targetAmount : 2000;
 
       // Volume for this bin
-      const ordersVolM = await DonHang.aggregate([{ $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $sum: '$Items.SoLuong' } } } }]);
+      const ordersVolM = await DonHang.aggregate([
+        { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } },
+        { $lookup: {
+          from: 'KhachHangs',
+          localField: 'KhachHang',
+          foreignField: '_id',
+          as: 'customer'
+        }},
+        { $unwind: '$customer' },
+        { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
+        { $group: { _id: null, total: { $sum: { $sum: '$Items.SoLuong' } } } }
+      ]);
       const contractsVolM = await HopDong.aggregate([{ $match: { createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $sum: '$ChiTietHopDong.quantity' } } } }]);
 
       const revActual = ((ordersM[0]?.total || 0) + (contractsM[0]?.total || 0)) / 1000000; // In Millions
@@ -243,6 +273,14 @@ exports.getDetailedStats = async (req, res) => {
     // 2. Revenue by Product Category (Unified from Orders & Contracts)
     const dhRevenueByCat = await DonHang.aggregate([
       { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } } },
+      { $lookup: {
+        from: 'KhachHangs',
+        localField: 'KhachHang',
+        foreignField: '_id',
+        as: 'customer'
+      }},
+      { $unwind: '$customer' },
+      { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
       { $unwind: '$Items' },
       { $lookup: {
         from: 'SanPhamSons',
@@ -285,6 +323,14 @@ exports.getDetailedStats = async (req, res) => {
     // 5. Unified Top 5 Products (Combined from DonHang & HopDong)
     const dhProductStats = await DonHang.aggregate([
       { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } } },
+      { $lookup: {
+        from: 'KhachHangs',
+        localField: 'KhachHang',
+        foreignField: '_id',
+        as: 'customer'
+      }},
+      { $unwind: '$customer' },
+      { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
       { $unwind: '$Items' },
       { $group: {
         _id: '$Items.TenSanPham', 
@@ -342,6 +388,14 @@ exports.getDetailedStats = async (req, res) => {
     // 8. Top Popular Colors (Combined from DonHang & HopDong)
     const dhColorStats = await DonHang.aggregate([
       { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+      { $lookup: {
+        from: 'KhachHangs',
+        localField: 'KhachHang',
+        foreignField: '_id',
+        as: 'customer'
+      }},
+      { $unwind: '$customer' },
+      { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
       { $unwind: '$Items' },
       { $match: { 'Items.MaMau': { $exists: true, $ne: '' } } },
       { $group: { _id: '$Items.MaMau', count: { $sum: 1 } } }

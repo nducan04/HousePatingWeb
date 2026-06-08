@@ -3223,83 +3223,101 @@ export default function OrderManagementPage() {
                       </div>
                     </div>
                     <div className="space-y-3 text-[13px] font-medium text-slate-650 pt-4 md:pt-0 md:pl-8">
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400">
-                          Khách đã đặt cọc:
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-900">
-                            {(selectedOrder.DaCoc || 0).toLocaleString()}đ (
-                            {Math.round(
-                              ((selectedOrder.DaCoc || 0) /
-                                selectedOrder.TongTien) *
-                                100,
-                            )}
-                            %)
-                          </span>
-                          {selectedOrder.TrangThai === "CHO_XAC_NHAN" && (
-                            <button
-                              onClick={() => {
-                                setDepositAmount(selectedOrder.DaCoc || 0);
-                                setIsPaymentModalOpen(true);
-                              }}
-                              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                              style={{
-                                padding: "2px 8px",
-                                fontSize: "10px",
-                                color: "#2563eb",
-                                border: "1px solid #2563eb",
-                              }}
-                            >
-                              Cập nhật
-                            </button>
-                          )}
+                      {selectedOrder.KhachHang?.PhanLoai === "B2B" ? (
+                        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 space-y-2">
+                          <p className="font-bold flex items-center gap-1">
+                            ℹ️ Đơn hàng thuộc Hợp đồng B2B
+                          </p>
+                          <p className="text-xs text-amber-700 font-medium leading-relaxed">
+                            Thanh toán của đơn hàng này được đối soát trực tiếp theo tiến độ thanh toán của Hợp đồng tương ứng.
+                          </p>
+                          <p className="text-[11px] text-amber-600 italic leading-relaxed">
+                            * Vui lòng quản lý thanh toán tại trang <strong>Quản lý thanh toán</strong> (mục Hợp đồng).
+                          </p>
                         </div>
-                      </div>
-                      <div className="flex justify-between border-t border-slate-100 pt-4 text-[16px]">
-                        <span className="font-bold text-slate-900">
-                          SỐ TIỀN CÒN LẠI:
-                        </span>
-                        <span className="font-semibold text-rose-500">
-                          {Math.max(
-                            0,
-                            selectedOrder.TongTien - (selectedOrder.DaCoc || 0),
-                          ).toLocaleString()}
-                          đ
-                        </span>
-                      </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-400">
+                              Khách đã đặt cọc:
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-slate-900">
+                                {(selectedOrder.DaCoc || 0).toLocaleString()}đ (
+                                {Math.round(
+                                  ((selectedOrder.DaCoc || 0) /
+                                    selectedOrder.TongTien) *
+                                    100,
+                                )}
+                                %)
+                              </span>
+                              {selectedOrder.TrangThai === "CHO_XAC_NHAN" && (
+                                <button
+                                  onClick={() => {
+                                    setDepositAmount(selectedOrder.DaCoc || 0);
+                                    setIsPaymentModalOpen(true);
+                                  }}
+                                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
+                                  style={{
+                                    padding: "2px 8px",
+                                    fontSize: "10px",
+                                    color: "#2563eb",
+                                    border: "1px solid #2563eb",
+                                  }}
+                                >
+                                  Cập nhật
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex justify-between border-t border-slate-100 pt-4 text-[16px]">
+                            <span className="font-bold text-slate-900">
+                              SỐ TIỀN CÒN LẠI:
+                            </span>
+                            <span className="font-semibold text-rose-500">
+                              {Math.max(
+                                0,
+                                selectedOrder.TongTien - (selectedOrder.DaCoc || 0),
+                              ).toLocaleString()}
+                              đ
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Timeline / Action Section */}
                 <div className="space-y-3.5">
-                  <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-lg">
-                    <Calendar size={18} className="text-blue-500" />
-                    <div className="flex-1 text-sm font-medium text-slate-700">
-                      <span className="text-slate-400">
-                        [
-                        {new Date(selectedOrder.createdAt).toLocaleDateString()}
-                        ]
-                      </span>{" "}
-                      Đã đặt cọc đơn hàng{" "}
-                      <span className="font-bold text-emerald-600">
-                        [{(selectedOrder.DaCoc || 0).toLocaleString()}đ]
-                      </span>
+                  {selectedOrder.KhachHang?.PhanLoai !== "B2B" && (
+                    <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-lg">
+                      <Calendar size={18} className="text-blue-500" />
+                      <div className="flex-1 text-sm font-medium text-slate-700">
+                        <span className="text-slate-400">
+                          [
+                          {new Date(selectedOrder.createdAt).toLocaleDateString()}
+                          ]
+                        </span>{" "}
+                        Đã đặt cọc đơn hàng{" "}
+                        <span className="font-bold text-emerald-600">
+                          [{(selectedOrder.DaCoc || 0).toLocaleString()}đ]
+                        </span>
+                      </div>
+                      <button
+                        onClick={handleDownloadPhieuCoc}
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          color: "#2563eb",
+                        }}
+                      >
+                        <FileCheck size={14} /> In Phiếu Cọc (Word)
+                      </button>
                     </div>
-                    <button
-                      onClick={handleDownloadPhieuCoc}
-                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        color: "#2563eb",
-                      }}
-                    >
-                      <FileCheck size={14} /> In Phiếu Cọc (Word)
-                    </button>
-                  </div>
+                  )}
 
                   <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-lg">
                     <FileText size={18} className="text-purple-500" />

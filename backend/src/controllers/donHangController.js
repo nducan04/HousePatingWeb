@@ -186,7 +186,7 @@ exports.getOrders = async (req, res) => {
         }
 
         const orders = await DonHang.find(query)
-            .populate('KhachHang', 'MaKH TenKhachHang DiaChi SDT')
+            .populate('KhachHang', 'MaKH TenKhachHang DiaChi SDT PhanLoai')
             .populate('KhuyenMai', 'MaVoucher LoaiGiamGia MucGiam')
             .populate('NhanVienPhuTrach', 'MaNV HoTen')
             .sort({ createdAt: -1 });
