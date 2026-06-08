@@ -79,6 +79,17 @@ exports.getDashboardStats = async (req, res) => {
     });
     const customerChange = prevCustomers === 0 ? 100 : Math.round(((totalCustomers - prevCustomers) / prevCustomers) * 100);
 
+    // 1b. KPI: Order Count (Filtered by period)
+    const totalOrders = await DonHang.countDocuments({
+      TrangThai: { $ne: 'DA_HUY' },
+      createdAt: { $gte: startDate, $lte: endDate }
+    });
+    const prevOrders = await DonHang.countDocuments({
+      TrangThai: { $ne: 'DA_HUY' },
+      createdAt: { $gte: prevStartDate, $lte: prevEndDate }
+    });
+    const orderChange = prevOrders === 0 ? 100 : Math.round(((totalOrders - prevOrders) / prevOrders) * 100);
+
     // 2. KPI: Revenue & Volume (Filtered by period)
     const getStatsForRange = async (start, end) => {
       const orders = await DonHang.aggregate([
@@ -203,6 +214,7 @@ exports.getDashboardStats = async (req, res) => {
           totalRevenue: { value: Math.round(globalRevenue / 1000000), unit: 'Tr VNĐ', change: revChange, label: 'Tổng Doanh Thu' },
           totalProduction: { value: globalVolume, unit: 'thùng', change: volChange, label: 'Tổng Sản Lượng' },
           customerCount: { value: totalCustomers, unit: 'Đối tác', change: customerChange, label: 'Tổng Khách Hàng' },
+          orderCount: { value: totalOrders, unit: 'đơn', change: orderChange, label: 'Đơn đặt hàng' },
           avgOrderValue: { value: Math.round(globalRevenue / (totalCustomers || 1) / 1000000), unit: 'Tr/Khách', change: 0, label: 'Giá trị Trung bình' }
         },
         monthlyTrends: monthlySeries,
