@@ -91,7 +91,7 @@ export default function CustomerProductModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-5xl md:h-[80vh] max-h-[750px] min-h-[500px] overflow-hidden flex flex-col md:flex-row relative animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-6xl md:h-[85vh] max-h-[800px] min-h-[550px] overflow-hidden flex flex-col md:flex-row relative animate-in fade-in zoom-in-95 duration-200">
         
         {/* Nút đóng */}
         <button 
@@ -205,12 +205,14 @@ export default function CustomerProductModal({
                     {product.DanhSachMaMau.map((c: any) => (
                       <tr 
                         key={c.MaMau} 
-                        onClick={() => setSelectedColorCode(c.MaMau)}
+                        onClick={() => setSelectedColorCode(prev => prev === c.MaMau ? "" : c.MaMau)}
                         className={`cursor-pointer transition-colors hover:bg-slate-50/80 ${selectedColorCode === c.MaMau ? 'bg-blue-50/80' : ''}`}
                       >
                         <td className="py-3 px-4">
-                          <div className="w-7 h-7 rounded-full shadow-inner border border-slate-300 flex items-center justify-center" style={{ backgroundColor: c.HexCode || '#ccc' }}>
-                            {selectedColorCode === c.MaMau && <CheckCircle2 size={14} className="text-white drop-shadow-md" />}
+                          <div className="w-7 h-7 rounded-full shadow-inner border border-slate-300 flex items-center justify-center relative" style={{ backgroundColor: c.HexCode || '#ccc' }}>
+                            {selectedColorCode === c.MaMau && (
+                              <CheckCircle2 size={16} className="text-white fill-blue-600 drop-shadow-sm absolute" />
+                            )}
                           </div>
                         </td>
                         <td className="py-3 px-4 text-slate-800 font-bold">{c.MaMau}</td>
