@@ -27,11 +27,7 @@ export default function CustomerProductModal({
   const [selectedColorCode, setSelectedColorCode] = useState<string>("");
 
   React.useEffect(() => {
-    if (product && product.DanhSachMaMau && product.DanhSachMaMau.length > 0) {
-      setSelectedColorCode(product.DanhSachMaMau[0].MaMau);
-    } else {
-      setSelectedColorCode("");
-    }
+    setSelectedColorCode("");
   }, [product]);
 
   if (!isOpen || !product) return null;
@@ -79,6 +75,10 @@ export default function CustomerProductModal({
   const handleAddToCart = () => {
     if (quantity > product.TongTonKho) {
       alert(`Trong kho chỉ còn ${product.TongTonKho} sản phẩm!`);
+      return;
+    }
+    if (product.DanhSachMaMau && product.DanhSachMaMau.length > 0 && !selectedColorCode) {
+      alert("Vui lòng chọn màu sơn mong muốn ở bên dưới trước khi thêm vào giỏ hàng!");
       return;
     }
     onAddToCart(product, quantity, selectedColorCode);
