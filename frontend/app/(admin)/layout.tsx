@@ -439,7 +439,12 @@ export default function AdminLayout({
                         const Icon = item.icon;
                         const isActive =
                           pathname === item.href ||
-                          pathname?.startsWith(item.href + "/");
+                          (pathname?.startsWith(item.href + "/") &&
+                            !section.items.some(
+                              (otherItem) =>
+                                otherItem.href !== item.href &&
+                                pathname.startsWith(otherItem.href),
+                            ));
                         return (
                           <Link
                             key={item.href}
