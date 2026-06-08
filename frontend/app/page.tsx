@@ -680,7 +680,7 @@ export default function HomePage() {
               <br />
               <span className="text-blue-600">Sơn tĩnh điện</span>
               <br />
-              hàng đầu Thế Giới
+              hàng đầu Việt Nam
             </h1>
             <p className="text-lg sm:text-xl text-slate-500 font-medium leading-relaxed max-w-2xl">
               Giải pháp sơn tĩnh điện AkzoNobel Interpon chuyên nghiệp. Đảm bảo
