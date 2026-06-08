@@ -1005,7 +1005,7 @@ export default function QLKhoPage() {
                 <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
                   {STATS.tonTotal}
                   <span className="text-sm font-bold text-slate-400 ml-1">
-                    ĐV
+                    đơn vị
                   </span>
                 </h3>
               </div>
@@ -1790,7 +1790,9 @@ export default function QLKhoPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                      {editingNVLId ? "Số lượng tồn kho" : "Số lượng tồn ban đầu"}
+                      {editingNVLId
+                        ? "Số lượng tồn kho"
+                        : "Số lượng tồn ban đầu"}
                     </label>
                     <input
                       type="number"
@@ -1807,7 +1809,8 @@ export default function QLKhoPage() {
                     />
                     {editingNVLId && (
                       <p className="text-[11px] text-amber-500 font-medium mt-1 ml-1">
-                        * Để thay đổi số tồn kho, vui lòng lập phiếu nhập/xuất kho.
+                        * Để thay đổi số tồn kho, vui lòng lập phiếu nhập/xuất
+                        kho.
                       </p>
                     )}
                   </div>
@@ -2532,7 +2535,8 @@ export default function QLKhoPage() {
                             />
                             <div className="text-left min-w-0">
                               <p className="text-sm font-black text-slate-800">
-                                {paintColors.find((c) => c.code === mau.MaMau)?.name || mau.TenMau}
+                                {paintColors.find((c) => c.code === mau.MaMau)
+                                  ?.name || mau.TenMau}
                               </p>
                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-0.5">
                                 {mau.MaMau}

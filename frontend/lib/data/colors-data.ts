@@ -100,31 +100,4 @@ export const paintColors: PaintColor[] = [
   { code: 'NEO-202', name: 'Cyber Pink (Hồng Cyber)', hex: '#FF007F', category: 'Neon', gloss: '90% Gloss', surface: 'Thép', application: 'Biển quảng cáo', coverage: '8 - 10 m²/thùng', packaging: '1 Thùng (20kg)', mixing: 'Khuấy đều 5 phút trước khi phun (Không pha dung môi)' }
 ];
 
-export const trackingData = [
-  {
-    code: 'VTSC-240601-001',
-    customer: 'NCC Aluminium',
-    product: 'INT-D2525 Bạc Ánh Kim',
-    quantity: '2,25 thùng',
-    steps: [
-      { label: 'Đặt hàng', status: 'completed' as const, time: '01/04/2026' },
-      { label: 'Sản xuất', status: 'completed' as const, time: '05/04/2026' },
-      { label: 'QC Pass', status: 'completed' as const, time: '08/04/2026' },
-      { label: 'Đang giao', status: 'current' as const, time: '10/04/2026' },
-      { label: 'Đã nhận', status: 'upcoming' as const, time: '' },
-    ]
-  },
-  {
-    code: 'VTSC-240610-002',
-    customer: 'Daikin Vietnam',
-    product: 'INT-B7035 Xám Than',
-    quantity: '1,800 thùng',
-    steps: [
-      { label: 'Đặt hàng', status: 'completed' as const, time: '10/03/2026' },
-      { label: 'Sản xuất', status: 'completed' as const, time: '13/03/2026' },
-      { label: 'QC Pass', status: 'current' as const, time: '16/03/2026' },
-      { label: 'Đang giao', status: 'upcoming' as const, time: '' },
-      { label: 'Đã nhận', status: 'upcoming' as const, time: '' },
-    ]
-  }
-];
+export const trackingData: any[] = [];

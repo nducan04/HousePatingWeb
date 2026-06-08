@@ -2032,65 +2032,73 @@ export default function OrderManagementPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {trackingData.map((t) => {
-            const currentStep = t.steps.find((s) => s.status === "current");
-            const completedSteps = t.steps.filter(
-              (s) => s.status === "completed",
-            ).length;
-            const totalSteps = t.steps.length;
-            return (
-              <div
-                key={t.code}
-                className="bg-white border border-slate-100 rounded-3xl p-6 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between group relative overflow-hidden"
-                onClick={() => {
-                  window.location.href = `/tracking?code=${t.code}`;
-                }}
-              >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/20 rounded-md blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+          {trackingData.length > 0 ? (
+            trackingData.map((t) => {
+              const currentStep = t.steps.find((s: any) => s.status === "current");
+              const completedSteps = t.steps.filter(
+                (s: any) => s.status === "completed",
+              ).length;
+              const totalSteps = t.steps.length;
+              return (
+                <div
+                  key={t.code}
+                  className="bg-white border border-slate-100 rounded-3xl p-6 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between group relative overflow-hidden"
+                  onClick={() => {
+                    window.location.href = `/tracking?code=${t.code}`;
+                  }}
+                >
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/20 rounded-md blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
 
-                <div className="relative z-10 flex-1">
-                  <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
-                    {t.code}
-                  </span>
-                  <div className="font-medium text-slate-800 mt-3 text-[14px]">
-                    {t.customer}
-                  </div>
-                  <div className="text-[12px] text-slate-400 font-semibold mt-0.5">
-                    {t.product}
-                  </div>
-
-                  <div className="flex items-center gap-2 mt-4">
-                    <div className="w-28 h-1.5 bg-slate-100 rounded-md overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 rounded-md transition-all duration-500"
-                        style={{
-                          width: `${(completedSteps / totalSteps) * 100}%`,
-                        }}
-                      />
+                  <div className="relative z-10 flex-1">
+                    <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                      {t.code}
+                    </span>
+                    <div className="font-medium text-slate-800 mt-3 text-[14px]">
+                      {t.customer}
                     </div>
-                    <span className="text-[11px] font-bold text-slate-400">
-                      {completedSteps}/{totalSteps} chặng
-                    </span>
-                  </div>
-                  {currentStep && (
-                    <span className="inline-block mt-3 px-3 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-bold shadow-sm">
-                      • {currentStep.label.toUpperCase()}
-                    </span>
-                  )}
-                </div>
+                    <div className="text-[12px] text-slate-400 font-semibold mt-0.5">
+                      {t.product}
+                    </div>
 
-                <div className="relative z-10 bg-white p-3 rounded-lg border border-slate-100 group-hover:border-blue-200 transition-colors shadow-sm ml-4">
-                  <QRCodeSVG
-                    value={`https://vtsc.vn/tracking/${t.code}`}
-                    size={75}
-                    bgColor="#ffffff"
-                    fgColor="#0c102a"
-                    level="M"
-                  />
+                    <div className="flex items-center gap-2 mt-4">
+                      <div className="w-28 h-1.5 bg-slate-100 rounded-md overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 rounded-md transition-all duration-500"
+                          style={{
+                            width: `${(completedSteps / totalSteps) * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-400">
+                        {completedSteps}/{totalSteps} chặng
+                      </span>
+                    </div>
+                    {currentStep && (
+                      <span className="inline-block mt-3 px-3 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-bold shadow-sm">
+                        • {currentStep.label.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="relative z-10 bg-white p-3 rounded-lg border border-slate-100 group-hover:border-blue-200 transition-colors shadow-sm ml-4">
+                    <QRCodeSVG
+                      value={`https://vtsc.vn/tracking/${t.code}`}
+                      size={75}
+                      bgColor="#ffffff"
+                      fgColor="#0c102a"
+                      level="M"
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="col-span-2 text-center py-12 bg-white border border-slate-100 rounded-3xl">
+              <p className="text-slate-400 font-medium text-sm">
+                Không có kiện hàng nào đang vận chuyển.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
