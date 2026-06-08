@@ -70,11 +70,17 @@ exports.getAllFinancialRecords = async (req, res) => {
 // @route   GET /api/thanh-toan/my-payments
 exports.getMyFinancialRecords = async (req, res) => {
     try {
-        if (!req.user || !req.user.profile) {
+        if (!req.user) {
             return res.status(401).json({ success: false, message: 'Not authorized' });
         }
-        
-        const customerId = req.user.profile._id;
+
+        const KhachHang = require('../models/KhachHang');
+        const khProfile = await KhachHang.findOne({ AccountID: req.user._id });
+        if (!khProfile) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy hồ sơ khách hàng' });
+        }
+
+        const customerId = khProfile._id;
 
         const [orders, contracts] = await Promise.all([
             DonHang.find({ KhachHang: customerId }).populate('KhachHang', 'MaKH TenKhachHang PhanLoai').sort({ createdAt: -1 }),
