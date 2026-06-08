@@ -4,6 +4,8 @@ const KhachHang = require('../models/KhachHang');
 const SanPhamSon = require('../models/SanPhamSon');
 const NhatKyTestMau = require('../models/NhatKyTestMau');
 const SalesTarget = require('../models/SalesTarget');
+const RevenueTarget = require('../models/RevenueTarget');
+const ProductionTarget = require('../models/ProductionTarget');
 const BaoHanh = require('../models/BaoHanh');
 const PhanHoiHoTro = require('../models/PhanHoiHoTro');
 const DoiTra = require('../models/DoiTra');
@@ -115,6 +117,10 @@ exports.getDashboardStats = async (req, res) => {
     const globalRevenue = currentStats.revenue;
     const globalVolume = currentStats.volume;
 
+    // Fetch all revenue and production targets for the query year at once to avoid query inside loop
+    const allRevTargets = await RevenueTarget.find({ type: 'month', year: queryYear });
+    const allProdTargets = await ProductionTarget.find({ type: 'month', year: queryYear });
+
     // 3. Monthly/Daily Series for Charts (Adjusted by period bins)
     const monthlySeries = [];
 
@@ -132,8 +138,11 @@ exports.getDashboardStats = async (req, res) => {
       const ordersM = await DonHang.aggregate([{ $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $cond: [{ $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, '$TongTien', { $ifNull: ['$DaCoc', 0] }] } } } }]);
       const contractsM = await HopDong.aggregate([{ $match: { createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $ifNull: ['$DaThanhToan', 0] } } } }]);
       
-      // Target for this bin
-      const targetsM = await SalesTarget.aggregate([{ $match: { 'period.month': bin.month, 'period.year': bin.year } }, { $group: { _id: null, rev: { $sum: '$targetRevenue' }, vol: { $sum: '$targetKg' } } }]);
+      // Target matching for this bin
+      const matchedRevTarget = allRevTargets.find(t => t.month === bin.month);
+      const matchedProdTarget = allProdTargets.find(t => t.month === bin.month);
+      const targetRevVal = matchedRevTarget ? matchedRevTarget.targetAmount : 500000000;
+      const targetProdVal = matchedProdTarget ? matchedProdTarget.targetAmount : 2000;
 
       // Volume for this bin
       const ordersVolM = await DonHang.aggregate([{ $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $sum: '$Items.SoLuong' } } } }]);
@@ -145,9 +154,9 @@ exports.getDashboardStats = async (req, res) => {
       monthlySeries.push({
         month: bin.label,
         revenueActual: Math.round(revActual),
-        revenuePlan: Math.round((targetsM[0]?.rev || 500000000) / 1000000 / (granularity === 'day' ? 30 : 1)), 
+        revenuePlan: Math.round(targetRevVal / 1000000 / (granularity === 'day' ? 30 : 1)), 
         prodActual: Math.round(volActual),
-        prodPlan: Math.round((targetsM[0]?.vol || 2000) / (granularity === 'day' ? 30 : 1))
+        prodPlan: Math.round(targetProdVal / (granularity === 'day' ? 30 : 1))
       });
     }
 
