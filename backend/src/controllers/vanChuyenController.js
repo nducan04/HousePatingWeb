@@ -139,8 +139,7 @@ exports.updateTracking = async (req, res) => {
     // Nếu trạng thái mới là "Giao hàng thành công", cập nhật trạng thái đơn hàng tương ứng
     if (TrangThaiTongQuat === 'Giao hàng thành công') {
       await DonHang.findByIdAndUpdate(tracking.DonHang, {
-        TrangThai: 'DA_GIAO',
-        TrangThaiThanhToan: 'DA_THANH_TOAN' // Giả định giao xong là hoàn tất thanh toán nếu là COD
+        TrangThai: 'DA_GIAO'
       });
     }
 
