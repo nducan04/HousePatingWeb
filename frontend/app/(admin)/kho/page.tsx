@@ -1789,12 +1789,12 @@ export default function QLKhoPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                      Số lượng tồn ban đầu
+                      {editingNVLId ? "Số lượng tồn kho" : "Số lượng tồn ban đầu"}
                     </label>
                     <input
                       type="number"
                       min={0}
-                      className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-semibold"
+                      className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-semibold disabled:opacity-50"
                       value={nvlForm.TonKho}
                       onChange={(e) =>
                         setNvlForm({
@@ -1802,7 +1802,13 @@ export default function QLKhoPage() {
                           TonKho: Number(e.target.value),
                         })
                       }
+                      disabled={!!editingNVLId}
                     />
+                    {editingNVLId && (
+                      <p className="text-[11px] text-amber-500 font-medium mt-1 ml-1">
+                        * Để thay đổi số tồn kho, vui lòng lập phiếu nhập/xuất kho.
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
