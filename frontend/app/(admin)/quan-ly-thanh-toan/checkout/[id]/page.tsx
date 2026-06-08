@@ -86,6 +86,7 @@ export default function AdminCheckoutPage({ params }: { params: { id: string } }
 
   if (!order) return null;
 
+  const isB2B = order.KhachHang?.PhanLoai === 'B2B';
   const debt = Math.max(0, order.TongTien - (order.DaCoc || 0));
   const isPaid = order.TrangThaiThanhToan === 'DA_THANH_TOAN' || debt === 0;
 
@@ -107,7 +108,17 @@ export default function AdminCheckoutPage({ params }: { params: { id: string } }
         </div>
       </div>
 
-      {isPaid && (
+      {isB2B ? (
+        <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+          <AlertCircle className="text-amber-600 mt-0.5" size={20} />
+          <div>
+            <h4 className="font-bold text-amber-800">Đơn hàng thuộc Hợp đồng B2B</h4>
+            <p className="text-amber-700 text-sm mt-1">
+              Đơn hàng này được tạo ra từ hợp đồng R&D. Thanh toán sẽ được thực hiện trực tiếp dựa trên các điều khoản và đợt thanh toán của Hợp đồng, không áp dụng thanh toán lẻ từng đơn.
+            </p>
+          </div>
+        </div>
+      ) : isPaid ? (
         <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
           <CheckCircle2 className="text-emerald-600 mt-0.5" size={20} />
           <div>
@@ -115,7 +126,7 @@ export default function AdminCheckoutPage({ params }: { params: { id: string } }
             <p className="text-emerald-600 text-sm mt-1">Không có khoản công nợ nào cần thu thêm cho đơn hàng này.</p>
           </div>
         </div>
-      )}
+      ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Order details & Info */}
@@ -220,7 +231,23 @@ export default function AdminCheckoutPage({ params }: { params: { id: string } }
               <Wallet size={18} className="text-indigo-600"/> Phương thức thanh toán
             </h3>
 
-            {!isPaid ? (
+            {isB2B ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle size={32} />
+                </div>
+                <h4 className="text-base font-black text-slate-800">Thanh toán qua Hợp đồng</h4>
+                <p className="text-slate-500 mt-2 text-xs font-medium leading-relaxed">
+                  Đơn hàng B2B được quản lý công nợ và thanh toán theo từng đợt của Hợp đồng tương ứng.
+                </p>
+                <button
+                  onClick={() => router.push('/quan-ly-thanh-toan')}
+                  className="mt-6 px-6 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors cursor-pointer border-none"
+                >
+                  Đến trang Hợp đồng
+                </button>
+              </div>
+            ) : !isPaid ? (
               <div className="space-y-6">
                 <div className="space-y-3">
                   {[

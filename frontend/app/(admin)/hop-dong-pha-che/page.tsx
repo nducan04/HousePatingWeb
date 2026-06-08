@@ -430,7 +430,7 @@ export default function ContractsPage() {
             Giá Trị Đang Vận Hành
           </div>
           <div className="text-3xl font-semibold text-white mt-1">
-            {(TOTAL_STATS.value / 1000000).toFixed(0)}
+            {(TOTAL_STATS.value / 1000000).toLocaleString("vi-VN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
             <span className="text-lg text-slate-400 ml-1">Tr</span>
           </div>
         </div>
