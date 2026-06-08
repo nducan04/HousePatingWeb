@@ -115,14 +115,14 @@ export default function ShopPage() {
   const addToCart = async (sp: any, colorCode?: string) => {
     if (!isAuthenticated) {
       alert("Vui lòng đăng nhập để mua hàng");
-      return;
+      return false;
     }
     const qtyToAdd = productQuantities[sp._id] || 1;
 
     if (qtyToAdd > (sp.TongTonKho || 0)) {
       setCartMessage({ id: sp._id, text: `Kho chỉ còn ${sp.TongTonKho || 0}!` });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 3000);
-      return;
+      return false;
     }
 
     setCartLoading(sp._id);
@@ -131,10 +131,12 @@ export default function ShopPage() {
       await addToCartStore(sessionId, sp._id, qtyToAdd, colorCode || sp.DanhSachMaMau?.[0]?.MaMau || '');
       setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
+      return true;
     } catch (err: any) {
       console.error(err);
       setCartMessage({ id: sp._id, text: err.response?.data?.error || "Lỗi!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 3000);
+      return false;
     } finally {
       setCartLoading("");
     }
@@ -260,33 +262,11 @@ export default function ShopPage() {
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center bg-slate-100 rounded-xl p-1 h-10">
-                            <button
-                              onClick={() => updateQuantity(sp._id, -1, sp.TongTonKho)}
-                              className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer"
-                            >
-                              -
-                            </button>
-                            <input
-                              type="number"
-                              min="1"
-                              value={productQuantities[sp._id] || 1}
-                              onChange={(e) => handleQuantityChange(sp._id, e.target.value, sp.TongTonKho)}
-                              onBlur={() => handleQuantityBlur(sp._id)}
-                              className="w-8 text-center bg-transparent border-none text-sm font-bold text-slate-800 outline-none appearance-none"
-                            />
-                            <button
-                              onClick={() => updateQuantity(sp._id, 1, sp.TongTonKho)}
-                              className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer"
-                            >
-                              +
-                            </button>
-                          </div>
+                        <div className="flex justify-center mt-2">
                           <button
                             onClick={() => (sp.DanhSachMaMau?.length > 0 ? setSelectedProduct(sp) : addToCart(sp))}
                             disabled={cartLoading === sp._id}
-                            className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500 text-white" : "bg-red-500 text-white text-[10px]") : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
+                            className={`w-full h-11 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500 text-white" : "bg-red-500 text-white text-[10px]") : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
                           >
                             {cartLoading === sp._id ? (
                               <Loader2 size={16} className="animate-spin" />
@@ -294,7 +274,7 @@ export default function ShopPage() {
                               cartMessage.text === "Đã thêm vào giỏ!" ? <ShoppingCart size={16} /> : <span>{cartMessage.text}</span>
                             ) : (
                               <>
-                                <Plus size={16} /> Thêm
+                                <ShoppingCart size={16} /> Thêm vào giỏ hàng
                               </>
                             )}
                           </button>
@@ -313,9 +293,13 @@ export default function ShopPage() {
         product={selectedProduct}
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
-        onAddToCart={(sp, qty, colorCode) => {
-          handleQuantityChange(sp._id, qty.toString(), sp.TongTonKho);
-          addToCart(sp, colorCode);
+        onAddToCart={async (sp, qty, colorCode) => {
+          setProductQuantities((prev) => ({ ...prev, [sp._id]: qty }));
+          const success = await addToCart(sp, colorCode);
+          if (success) {
+            setSelectedProduct(null);
+            router.push("/cart");
+          }
         }}
         cartLoading={cartLoading}
       />
