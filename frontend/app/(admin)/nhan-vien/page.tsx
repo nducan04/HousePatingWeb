@@ -454,13 +454,13 @@ export default function NhanVienPage() {
               onClick={exportToExcel}
               className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg font-semibold text-[13px] border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all active:scale-95 cursor-pointer shadow-sm shadow-emerald-100"
             >
-              <Download size={16} /> Xuất Báo Cáo
+              <Download size={16} /> Xuất báo cáo
             </button>
             <button
               className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg font-semibold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/35 transition-all active:scale-95 cursor-pointer border-none"
               onClick={() => openForm()}
             >
-              <Plus size={16} /> Khai báo Nhân Sự
+              <Plus size={16} /> Thêm nhân sự
             </button>
           </div>
         </div>
@@ -897,6 +897,9 @@ export default function NhanVienPage() {
                     <option value="Kế Toán">Kế Toán</option>
                     <option value="CSKH Bảo Hành">CSKH Bảo Hành</option>
                     <option value="Kho / Logistics">Kho / Logistics</option>
+                    <option value="Vận chuyển">Vận chuyển</option>
+                    <option value="Vận tải">Vận tải</option>
+                    <option value="Giao nhận">Giao nhận</option>
                     <option value="R&D Kỹ Thuật Máy">R&D Kỹ Thuật Máy</option>
                   </select>
                 </div>
@@ -904,17 +907,30 @@ export default function NhanVienPage() {
                 {/* ChucVu */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest ml-1">
-                    Chức danh / Vị trí
+                    Chức vụ
                   </label>
                   <input
+                    list="chucvu-options"
                     type="text"
                     className="w-full bg-slate-50/80 border border-slate-100 rounded-md px-4 py-3 text-sm font-bold text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
-                    placeholder="Trưởng phòng, Chuyên viên..."
+                    placeholder="Chọn từ danh sách hoặc nhập mới..."
                     value={formData.ChucVu}
                     onChange={(e) =>
                       setFormData({ ...formData, ChucVu: e.target.value })
                     }
                   />
+                  <datalist id="chucvu-options">
+                    <option value="Tài xế" />
+                    <option value="Nhân viên giao hàng" />
+                    <option value="Nhân viên kỹ thuật" />
+                    <option value="Trưởng bộ phận kho / logistic" />
+                    <option value="Trưởng phòng" />
+                    <option value="Chuyên viên" />
+                    <option value="Nhân viên kinh doanh" />
+                    <option value="Nhân viên CSKH" />
+                    <option value="Kế toán viên" />
+                    <option value="Nhân viên" />
+                  </datalist>
                 </div>
 
                 {/* Email */}
