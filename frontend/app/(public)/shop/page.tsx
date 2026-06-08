@@ -149,39 +149,33 @@ export default function ShopPage() {
   return (
     <>
     <div
-      className="min-h-screen bg-transparent font-sans relative pb-20 text-white"
-      style={{
-        backgroundImage: 'url("/login-illustration.png")',
-        backgroundSize: 'cover',
-        backgroundAttachment: 'fixed',
-        backgroundPosition: 'center',
-      }}
+      className="min-h-screen bg-slate-50 font-sans relative pb-20 text-slate-900"
     >
       {/* Header Space for floating effect */}
       <div className="pt-24 px-4 sm:px-8 max-w-[1500px] mx-auto">
 
         {/* Navigation Back & Cart */}
         <div className="mb-6 flex justify-between items-center">
-          <Link href="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-lg font-bold text-blue-400 shadow-sm border border-white/20 hover:bg-white/20 hover:text-blue-300 transition-all no-underline">
+          <Link href="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white rounded-lg font-bold text-slate-600 shadow-sm border border-slate-200 hover:bg-slate-50 hover:text-blue-600 transition-all no-underline">
             ← Quay lại trang chủ
           </Link>
-          <Link href="/cart" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 rounded-lg font-bold text-white shadow-lg hover:bg-blue-500 transition-all no-underline">
+          <Link href="/cart" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 rounded-lg font-bold text-white shadow-lg hover:bg-blue-700 transition-all no-underline">
             <ShoppingCart size={20} /> 
             <span>Giỏ hàng {cartItems?.length > 0 && `(${cartItems.length})`}</span>
           </Link>
         </div>
 
-        <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-6 sm:p-8 min-h-[80vh] flex flex-col md:flex-row gap-10">
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8 min-h-[80vh] flex flex-col md:flex-row gap-10">
 
           {/* Sidebar */}
-          <aside className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-white/10 pb-8 md:pb-0 md:pr-8">
-            <h2 className="text-xl font-bold text-white mb-6 uppercase tracking-wider flex items-center gap-2">
-              <Filter size={20} className="text-blue-400" /> Danh mục
+          <aside className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-slate-100 pb-8 md:pb-0 md:pr-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-6 uppercase tracking-wider flex items-center gap-2">
+              <Filter size={20} className="text-blue-600" /> Danh mục
             </h2>
             <div className="space-y-2 flex flex-row md:flex-col overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-none">
               <button
                 onClick={() => setSelectedCategory(null)}
-                className={`flex-shrink-0 w-auto md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm transition-all border border-transparent ${!selectedCategory ? 'bg-blue-600 text-white shadow-lg border-blue-500/50' : 'text-slate-300 hover:bg-white/5 hover:border-white/10'}`}
+                className={`flex-shrink-0 w-auto md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm transition-all border border-transparent ${!selectedCategory ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
               >
                 Tất cả sản phẩm
               </button>
@@ -189,7 +183,7 @@ export default function ShopPage() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`flex-shrink-0 w-auto md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm transition-all border border-transparent ${selectedCategory === cat ? 'bg-blue-600 text-white shadow-lg border-blue-500/50' : 'text-slate-300 hover:bg-white/5 hover:border-white/10'}`}
+                  className={`flex-shrink-0 w-auto md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm transition-all border border-transparent ${selectedCategory === cat ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                 >
                   {cat}
                 </button>
@@ -199,9 +193,9 @@ export default function ShopPage() {
 
           {/* Main Content */}
           <div className="flex-1">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-white/10 gap-4">
-              <h1 className="text-2xl sm:text-3xl font-bold text-blue-400 uppercase tracking-tight">SẢN PHẨM NỔI BẬT</h1>
-              <div className="text-sm font-bold text-slate-300 bg-white/10 px-4 py-2 rounded-xl">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-slate-100 gap-4">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 uppercase tracking-tight">SẢN PHẨM NỔI BẬT</h1>
+              <div className="text-sm font-bold text-slate-500 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
                 Hiển thị {filteredProducts.length} sản phẩm
               </div>
             </div>
@@ -212,15 +206,15 @@ export default function ShopPage() {
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                <Package size={64} className="mb-4 opacity-50" />
-                <p className="text-lg font-bold">Không tìm thấy sản phẩm nào</p>
+                <Package size={64} className="mb-4 text-slate-300 opacity-100" />
+                <p className="text-lg font-bold text-slate-500">Không tìm thấy sản phẩm nào</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredProducts.map((sp) => (
-                  <div key={sp._id} className="bg-slate-800/60 rounded-xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 border border-white/10 group flex flex-col h-full">
+                  <div key={sp._id} className="bg-white rounded-3xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 group flex flex-col h-full hover:-translate-y-2">
                     <div
-                      className="relative aspect-square w-full rounded-lg overflow-hidden mb-4 bg-slate-900/50 cursor-pointer"
+                      className="relative aspect-square w-full rounded-2xl overflow-hidden mb-5 bg-slate-50 cursor-pointer"
                       onClick={() => setSelectedProduct(sp)}
                     >
                       <ProductImageCarousel product={sp} />
@@ -231,9 +225,9 @@ export default function ShopPage() {
                       </div>
                     </div>
                     <div className="flex flex-col flex-1 px-1">
-                      <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">{sp.PhanLoai}</div>
+                      <div className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">{sp.PhanLoai}</div>
                       <h3
-                        className="font-bold text-white text-base mb-1 line-clamp-1 hover:text-blue-400 transition-colors cursor-pointer"
+                        className="font-bold text-slate-900 text-lg mb-1 line-clamp-1 hover:text-blue-600 transition-colors cursor-pointer"
                         onClick={() => setSelectedProduct(sp)}
                       >
                         {sp.TenDongSon}
@@ -244,21 +238,21 @@ export default function ShopPage() {
                         const avgRating = ratings.length > 0 ? Number((ratings.reduce((acc: number, r: any) => acc + (r.SoSao || 0), 0) / ratings.length).toFixed(1)) : 0;
                         return (
                           <div className="flex items-center gap-1 mb-2">
-                            <Star size={14} className={avgRating > 0 ? "text-amber-400 fill-amber-400" : "text-slate-600"} />
-                            <span className="text-[11px] text-slate-300 font-bold">{avgRating > 0 ? `${avgRating} (${ratings.length} đánh giá)` : "Chưa có đánh giá"}</span>
+                            <Star size={14} className={avgRating > 0 ? "text-amber-400 fill-amber-400" : "text-slate-300"} />
+                            <span className="text-[11px] text-slate-500 font-bold">{avgRating > 0 ? `${avgRating} (${ratings.length} đánh giá)` : "Chưa có đánh giá"}</span>
                           </div>
                         );
                       })()}
                       <p className="text-[11px] text-slate-400 font-bold mb-1 uppercase tracking-widest mt-1">
                         {sp.ThuongHieu}
                       </p>
-                      <p className="text-[12px] text-slate-300 font-medium mb-4">
-                        Tồn kho: <span className="font-bold text-white">{sp.TongTonKho}</span> {sp.DonViTinh || "Thùng"}
+                      <p className="text-[12px] text-slate-500 font-medium mb-4">
+                        Tồn kho: <span className="font-bold text-slate-700">{sp.TongTonKho}</span> {sp.DonViTinh || "Thùng"}
                       </p>
                       <div className="mt-auto">
                         <div className="flex justify-between items-end mb-3">
                           <div className="flex flex-col">
-                            <span className="text-emerald-400 font-bold text-xl">
+                            <span className="text-emerald-600 font-bold text-xl">
                               {sp.DonGiaCoSo?.toLocaleString() || 0} ₫
                             </span>
                             <span className="text-xs text-slate-400 font-medium">
@@ -267,10 +261,10 @@ export default function ShopPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center bg-slate-900/50 rounded-lg p-1 h-10 border border-white/5">
+                          <div className="flex items-center bg-slate-100 rounded-xl p-1 h-10">
                             <button
                               onClick={() => updateQuantity(sp._id, -1, sp.TongTonKho)}
-                              className="w-8 h-full flex items-center justify-center text-slate-300 hover:bg-white/10 hover:shadow-sm rounded-md transition-all font-bold cursor-pointer"
+                              className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer"
                             >
                               -
                             </button>
@@ -280,11 +274,11 @@ export default function ShopPage() {
                               value={productQuantities[sp._id] || 1}
                               onChange={(e) => handleQuantityChange(sp._id, e.target.value, sp.TongTonKho)}
                               onBlur={() => handleQuantityBlur(sp._id)}
-                              className="w-8 text-center bg-transparent border-none text-sm font-bold text-white outline-none appearance-none"
+                              className="w-8 text-center bg-transparent border-none text-sm font-bold text-slate-800 outline-none appearance-none"
                             />
                             <button
                               onClick={() => updateQuantity(sp._id, 1, sp.TongTonKho)}
-                              className="w-8 h-full flex items-center justify-center text-slate-300 hover:bg-white/10 hover:shadow-sm rounded-md transition-all font-bold cursor-pointer"
+                              className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer"
                             >
                               +
                             </button>
@@ -292,7 +286,7 @@ export default function ShopPage() {
                           <button
                             onClick={() => (sp.DanhSachMaMau?.length > 0 ? setSelectedProduct(sp) : addToCart(sp))}
                             disabled={cartLoading === sp._id}
-                            className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500 text-white" : "bg-red-500 text-white text-[10px]") : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
+                            className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500 text-white" : "bg-red-500 text-white text-[10px]") : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
                           >
                             {cartLoading === sp._id ? (
                               <Loader2 size={16} className="animate-spin" />
