@@ -12,17 +12,26 @@ exports.checkoutFromCart = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, phuongThucThanhToan, ghiChu } = req.body;
+        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, phuongThucThanhToan, ghiChu, selectedItemKeys } = req.body;
 
         // 1. Lấy giỏ hàng
         const cart = await GioHang.findOne({ SessionId: sessionId }).populate('Items.SanPham');
         if (!cart || cart.Items.length === 0) throw new Error('Giỏ hàng trống');
 
+        let itemsToProcess = cart.Items;
+        if (selectedItemKeys && Array.isArray(selectedItemKeys)) {
+            itemsToProcess = cart.Items.filter(item => {
+                const key = `${item.SanPham?._id || item.SanPham}_${item.MaMau || ""}`;
+                return selectedItemKeys.includes(key);
+            });
+        }
+        if (itemsToProcess.length === 0) throw new Error('Không có sản phẩm nào được chọn để thanh toán');
+
         // 2. Tính toán tiền và check kho
         let orderItems = [];
         let subtotal = 0;
 
-        for (let item of cart.Items) {
+        for (let item of itemsToProcess) {
             const sp = await SanPhamSon.findById(item.SanPham._id).session(session);
             if (!sp) throw new Error(`Sản phẩm ${item.SanPham.TenDongSon} không còn tồn tại`);
             
@@ -126,8 +135,22 @@ exports.checkoutFromCart = async (req, res) => {
 
         await donHang.save({ session });
 
-        // 5. Xóa giỏ hàng
-        await GioHang.findOneAndDelete({ SessionId: sessionId }).session(session);
+        // 5. Xóa giỏ hàng hoặc chỉ xóa các items đã đặt
+        if (selectedItemKeys && Array.isArray(selectedItemKeys) && cart.Items.length > itemsToProcess.length) {
+            const itemsToKeep = cart.Items.filter(item => {
+                const key = `${item.SanPham?._id || item.SanPham}_${item.MaMau || ""}`;
+                return !selectedItemKeys.includes(key);
+            }).map(item => ({
+                SanPham: item.SanPham?._id || item.SanPham,
+                SoLuong: item.SoLuong,
+                MaMau: item.MaMau
+            }));
+            
+            cart.Items = itemsToKeep;
+            await cart.save({ session });
+        } else {
+            await GioHang.findOneAndDelete({ SessionId: sessionId }).session(session);
+        }
 
         await session.commitTransaction();
         session.endSession();
