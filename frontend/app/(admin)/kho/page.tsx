@@ -23,6 +23,7 @@ import {
   TrendingUp,
   Star,
   DollarSign,
+  ChevronDown,
 } from "lucide-react";
 import {
   BarChart,
@@ -1911,52 +1912,70 @@ export default function QLKhoPage() {
                     <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                       Mục Đích Lệnh
                     </label>
-                    <select
-                      className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none disabled:opacity-50"
-                      value={nxForm.LoaiPhieu}
-                      onChange={(e) =>
-                        setNxForm({ ...nxForm, LoaiPhieu: e.target.value })
-                      }
-                      disabled={!!editingNXId}
-                    >
-                      <option value="NHAP">Biên Bản Nhập Kho</option>
-                      <option value="XUAT">Biên Bản Xuất Tồn</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        className="w-full bg-slate-50 border-none rounded-lg pl-5 pr-10 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none disabled:opacity-50"
+                        value={nxForm.LoaiPhieu}
+                        onChange={(e) =>
+                          setNxForm({ ...nxForm, LoaiPhieu: e.target.value })
+                        }
+                        disabled={!!editingNXId}
+                      >
+                        <option value="NHAP">Biên Bản Nhập Kho</option>
+                        <option value="XUAT">Biên Bản Xuất Tồn</option>
+                      </select>
+                      <ChevronDown
+                        size={16}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                       Đối Tượng Lệnh
                     </label>
-                    <select
-                      className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none disabled:opacity-50"
-                      value={nxForm.LoaiHang}
-                      onChange={(e) =>
-                        setNxForm({ ...nxForm, LoaiHang: e.target.value })
-                      }
-                      disabled={!!editingNXId}
-                    >
-                      <option value="SAN_PHAM">Thành Phẩm Sơn</option>
-                      <option value="NGUYEN_VAT_LIEU">Nguyên Vật Liệu</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        className="w-full bg-slate-50 border-none rounded-lg pl-5 pr-10 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none disabled:opacity-50"
+                        value={nxForm.LoaiHang}
+                        onChange={(e) =>
+                          setNxForm({ ...nxForm, LoaiHang: e.target.value })
+                        }
+                        disabled={!!editingNXId}
+                      >
+                        <option value="SAN_PHAM">Thành Phẩm Sơn</option>
+                        <option value="NGUYEN_VAT_LIEU">Nguyên Vật Liệu</option>
+                      </select>
+                      <ChevronDown
+                        size={16}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
                       Nhà Cung Cấp (Nếu có)
                     </label>
-                    <select
-                      className="w-full bg-slate-50 border-none rounded-lg px-5 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none"
-                      value={nxForm.NhaCungCapID}
-                      onChange={(e) =>
-                        setNxForm({ ...nxForm, NhaCungCapID: e.target.value })
-                      }
-                    >
-                      <option value="">-- Không chỉ định --</option>
-                      {nccList.map((ncc) => (
-                        <option key={ncc._id} value={ncc._id}>
-                          {ncc.MaNCC} - {ncc.TenNCC}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        className="w-full bg-slate-50 border-none rounded-lg pl-5 pr-10 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none"
+                        value={nxForm.NhaCungCapID}
+                        onChange={(e) =>
+                          setNxForm({ ...nxForm, NhaCungCapID: e.target.value })
+                        }
+                      >
+                        <option value="">-- Không chỉ định --</option>
+                        {nccList.map((ncc) => (
+                          <option key={ncc._id} value={ncc._id}>
+                            {ncc.MaNCC} - {ncc.TenNCC}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown
+                        size={16}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+                      />
+                    </div>
                   </div>
                 </div>
 
