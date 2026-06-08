@@ -74,7 +74,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       const res = await api.post(`/gio-hang/${sessionId}`, {
         SanPhamId: sanPhamId,
         SoLuong: soLuong,
-        MaMau: maMau || 'N/A'
+        MaMau: maMau || ''
       });
       if (res.data.success) {
         const items = res.data.data.Items || res.data.data.items || [];
@@ -97,7 +97,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       const res = await api.post(`/gio-hang/${sessionId}`, {
         SanPhamId: sanPhamId,
         SoLuong: soLuong,
-        MaMau: maMau || 'N/A'
+        MaMau: maMau || ''
       });
       if (res.data.success) {
         const items = res.data.data.Items || res.data.data.items || [];
@@ -120,7 +120,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       const res = await api.post(`/gio-hang/${sessionId}`, {
         SanPhamId: sanPhamId,
         SoLuong: 0,
-        MaMau: maMau || 'N/A'
+        MaMau: maMau || ''
       });
       if (res.data.success) {
         const items = res.data.data.Items || res.data.data.items || [];

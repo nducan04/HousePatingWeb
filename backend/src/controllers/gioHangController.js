@@ -37,8 +37,8 @@ exports.getCart = async (req, res) => {
       const mergedItems = [];
       for (const item of cart.Items) {
         if (!item.SanPham) continue;
-        const itemMaMau = item.MaMau || 'N/A';
-        const existing = mergedItems.find(i => i.SanPham._id.toString() === item.SanPham._id.toString() && (i.MaMau || 'N/A') === itemMaMau);
+        const itemMaMau = item.MaMau || '';
+        const existing = mergedItems.find(i => i.SanPham._id.toString() === item.SanPham._id.toString() && (i.MaMau || '') === itemMaMau);
         if (existing) {
           existing.SoLuong += item.SoLuong;
           hasDuplicates = true;
@@ -67,21 +67,28 @@ exports.getCart = async (req, res) => {
 exports.updateCart = async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const { SanPhamId, SoLuong, MaMau = 'N/A' } = req.body;
+    let { SanPhamId, SoLuong, MaMau } = req.body;
+
+    const sp = await SanPhamSon.findById(SanPhamId);
+    if (!sp) throw new Error('Sản phẩm không tồn tại');
+
+    // Nếu không có MaMau hoặc là 'N/A', tự động lấy màu đầu tiên của sản phẩm làm mặc định
+    if (!MaMau || MaMau === 'N/A') {
+      if (sp.DanhSachMaMau && sp.DanhSachMaMau.length > 0) {
+        MaMau = sp.DanhSachMaMau[0].MaMau;
+      } else {
+        MaMau = '';
+      }
+    }
 
     let cart = await GioHang.findOne({ SessionId: sessionId });
     if (!cart) {
       cart = new GioHang({ SessionId: sessionId, Items: [] });
     }
 
-    // Tìm theo SanPhamId và MaMau (nếu có)
+    // Tìm theo SanPhamId và MaMau
     const itemIndex = cart.Items.findIndex(i => {
-      const sameProduct = i.SanPham.toString() === SanPhamId;
-      const itemMaMau = i.MaMau || 'N/A';
-      if (MaMau) {
-        return sameProduct && itemMaMau === MaMau;
-      }
-      return sameProduct;
+      return i.SanPham.toString() === SanPhamId && (i.MaMau || '') === MaMau;
     });
 
     if (itemIndex > -1) {
@@ -173,10 +180,10 @@ exports.mergeCart = async (req, res) => {
     for (const guestItem of guestCart.Items) {
       if (!guestItem.SanPham) continue;
       const guestProductStr = guestItem.SanPham.toString();
-      const guestMaMau = guestItem.MaMau || 'N/A';
+      const guestMaMau = guestItem.MaMau || '';
 
       const itemIndex = userCart.Items.findIndex(i => {
-        return i.SanPham.toString() === guestProductStr && (i.MaMau || 'N/A') === guestMaMau;
+        return i.SanPham.toString() === guestProductStr && (i.MaMau || '') === guestMaMau;
       });
 
       if (itemIndex > -1) {

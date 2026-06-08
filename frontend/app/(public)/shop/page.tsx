@@ -128,7 +128,7 @@ export default function ShopPage() {
     setCartLoading(sp._id);
     try {
       const sessionId = user?.id || getGuestSessionId();
-      await addToCartStore(sessionId, sp._id, qtyToAdd, colorCode || sp.DanhSachMaMau?.[0]?.MaMau || 'N/A');
+      await addToCartStore(sessionId, sp._id, qtyToAdd, colorCode || sp.DanhSachMaMau?.[0]?.MaMau || '');
       setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
     } catch (err: any) {
