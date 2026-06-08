@@ -314,13 +314,13 @@ export default function HomePage() {
 
   const router = useRouter();
 
-  const addToCart = async (sp: any) => {
+  const addToCart = async (sp: any, colorCode?: string) => {
     if (!isAuthenticated) {
       setIsLoginOpen(true);
       return;
     }
     const qtyToAdd = productQuantities[sp._id] || 1;
-    const existingItem = cartItems.find((item) => item.SanPham?._id === sp._id);
+    const existingItem = cartItems.find((item) => item.SanPham?._id === sp._id && (item.MaMau || '') === (colorCode || ''));
     const newQty = existingItem ? existingItem.SoLuong + qtyToAdd : qtyToAdd;
 
     if (newQty > (sp.TongTonKho || 0)) {
@@ -332,7 +332,7 @@ export default function HomePage() {
     setCartLoading(sp._id);
     try {
       const sessionId = user?.id || getGuestSessionId();
-      await addToCartStore(sessionId, sp._id, newQty);
+      await addToCartStore(sessionId, sp._id, newQty, colorCode || '');
       setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
     } catch (err: any) {
@@ -567,7 +567,7 @@ export default function HomePage() {
               Trang chủ
             </Link>
             <Link
-              href="#san-pham"
+              href="/shop"
               className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Sản phẩm
@@ -1036,7 +1036,7 @@ export default function HomePage() {
                           </button>
                         </div>
                         <button
-                          onClick={() => addToCart(sp)}
+                          onClick={() => (sp.DanhSachMaMau?.length > 0 ? handleViewProduct(sp) : addToCart(sp))}
                           disabled={cartLoading === sp._id}
                           className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500 text-white" : "bg-red-500 text-white text-[10px]") : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
                         >
@@ -1382,9 +1382,9 @@ export default function HomePage() {
                       <div className="flex flex-wrap gap-3">
                         {selectedProduct.DanhSachMaMau.map(
                           (m: any, i: number) => (
-                            <div key={i} className="group/item relative">
+                            <div key={i} className="group/item relative cursor-pointer" onClick={() => setSelectedColor(m)}>
                               <div
-                                className="w-10 h-10 rounded-xl border border-slate-200 shadow-sm transition-all hover:scale-110"
+                                className={`w-10 h-10 rounded-xl shadow-sm transition-all hover:scale-110 ${selectedColor?.MaMau === m.MaMau ? 'border-2 border-blue-600 scale-110 shadow-blue-600/30' : 'border border-slate-200'}`}
                                 style={{ background: m.HexCode }}
                               />
                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/item:opacity-100 transition-all whitespace-nowrap pointer-events-none">
@@ -1462,7 +1462,13 @@ export default function HomePage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => addToCart(selectedProduct)}
+                    onClick={() => {
+                      if (selectedProduct.DanhSachMaMau && selectedProduct.DanhSachMaMau.length > 0 && !selectedColor) {
+                        alert("Vui lòng chọn màu sơn mong muốn ở trên trước khi thêm vào giỏ hàng!");
+                        return;
+                      }
+                      addToCart(selectedProduct, selectedColor?.MaMau);
+                    }}
                     disabled={cartLoading === selectedProduct._id}
                     className={`w-full h-16 text-white rounded-2xl font-bold text-lg shadow-xl transition-all flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer ${cartMessage.id === selectedProduct._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500" : "bg-red-500 text-sm") : "bg-blue-600 hover:bg-blue-700 hover:-translate-y-1"}`}
                   >
