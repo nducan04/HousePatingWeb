@@ -1,7 +1,7 @@
 "use client";
 
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -62,12 +62,13 @@ export default function HomePage() {
   const achievements = [
     { title: "Tòa nhà hành chính mới Hải Phòng", img: "/images/tthanhchinh" },
     { title: "Phố Nam", img: "/images/phonam.jpg" },
-    { title: "Trung tâm tổ chức tiệc cưới và sự kiện Pandora", img: "/images/pandora.jpg" },
+    {
+      title: "Trung tâm tổ chức tiệc cưới và sự kiện Pandora",
+      img: "/images/pandora.jpg",
+    },
     { title: "Phố Bắc", img: "/images/phobac.jpg" },
     { title: "Dự án tương lai", img: "/images/gemini.jpg" },
   ];
-
-
 
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -275,10 +276,6 @@ export default function HomePage() {
     };
   }, [isCartOpen]);
 
-
-
-
-
   const updateQuantity = (id: string, delta: number, maxQuantity?: number) => {
     setProductQuantities((prev) => {
       const current = prev[id] || 1;
@@ -290,7 +287,11 @@ export default function HomePage() {
     });
   };
 
-  const handleQuantityChange = (id: string, value: string, maxQuantity?: number) => {
+  const handleQuantityChange = (
+    id: string,
+    value: string,
+    maxQuantity?: number,
+  ) => {
     const val = parseInt(value);
     if (!isNaN(val) && val > 0) {
       let finalVal = val;
@@ -320,11 +321,18 @@ export default function HomePage() {
       return;
     }
     const qtyToAdd = productQuantities[sp._id] || 1;
-    const existingItem = cartItems.find((item) => item.SanPham?._id === sp._id && (item.MaMau || '') === (colorCode || ''));
+    const existingItem = cartItems.find(
+      (item) =>
+        item.SanPham?._id === sp._id &&
+        (item.MaMau || "") === (colorCode || ""),
+    );
     const newQty = existingItem ? existingItem.SoLuong + qtyToAdd : qtyToAdd;
 
     if (newQty > (sp.TongTonKho || 0)) {
-      setCartMessage({ id: sp._id, text: `Kho chỉ còn ${sp.TongTonKho || 0}!` });
+      setCartMessage({
+        id: sp._id,
+        text: `Kho chỉ còn ${sp.TongTonKho || 0}!`,
+      });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 3000);
       return;
     }
@@ -332,7 +340,7 @@ export default function HomePage() {
     setCartLoading(sp._id);
     try {
       const sessionId = user?.id || getGuestSessionId();
-      await addToCartStore(sessionId, sp._id, newQty, colorCode || '');
+      await addToCartStore(sessionId, sp._id, newQty, colorCode || "");
       setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
     } catch (err: any) {
@@ -344,7 +352,6 @@ export default function HomePage() {
     }
   };
 
-
   const removeFromCart = async (sanPhamId: string) => {
     try {
       const sessionId = user?.id || getGuestSessionId();
@@ -354,7 +361,10 @@ export default function HomePage() {
     }
   };
 
-  const handleUpdateCartItemQuantity = async (sanPhamId: string, soLuong: number) => {
+  const handleUpdateCartItemQuantity = async (
+    sanPhamId: string,
+    soLuong: number,
+  ) => {
     if (soLuong < 1) return;
     try {
       const sessionId = user?.id || getGuestSessionId();
@@ -435,7 +445,11 @@ export default function HomePage() {
         if (redirectPath) {
           router.push(redirectPath);
           setRedirectPath(null);
-        } else if (role === "NhanVien" || role === "Admin" || role === "Director") {
+        } else if (
+          role === "NhanVien" ||
+          role === "Admin" ||
+          role === "Director"
+        ) {
           router.push("/dashboard");
         } else {
           router.push("/");
@@ -543,7 +557,7 @@ export default function HomePage() {
   const getImageUrl = (path: any) => {
     return resolveImageUrl(
       path,
-      "https://ui-avatars.com/api/?name=VTSC+Product&background=random"
+      "https://ui-avatars.com/api/?name=VTSC+Product&background=random",
     );
   };
 
@@ -552,11 +566,17 @@ export default function HomePage() {
       {/* ═══════ HEADER / NAVBAR ═══════ */}
       <header className="sticky top-0 z-[100] bg-white/70 backdrop-blur-xl border-b border-slate-200/40 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
         <div className="max-w-[1400px] mx-auto px-8 py-5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3.5 no-underline group">
+          <Link
+            href="/"
+            className="flex items-center gap-3.5 no-underline group"
+          >
             <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-110 px-3">
-              <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+              <img
+                src="/vtsc.png"
+                alt="VTSC Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
-
           </Link>
 
           <nav className="hidden xl:flex items-center gap-0.5">
@@ -656,7 +676,7 @@ export default function HomePage() {
               </span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight uppercase text-slate-900">
-              Đại lý phân phối
+              Nhà cung cấp & Phân phối
               <br />
               <span className="text-blue-600">Sơn tĩnh điện</span>
               <br />
@@ -750,7 +770,10 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ QUY TRÌNH PHA CHẾ SƠN (Mới) ═══════ */}
-      <section id="quy-trinh" className="px-8 py-24 bg-slate-50 scroll-mt-[25px]">
+      <section
+        id="quy-trinh"
+        className="px-8 py-24 bg-slate-50 scroll-mt-[25px]"
+      >
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
@@ -853,7 +876,10 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ BẢNG MÀU XU HƯỚNG ═══════ */}
-      <section id="bang-mau" className="px-8 py-20 bg-slate-50 scroll-mt-[40px]">
+      <section
+        id="bang-mau"
+        className="px-8 py-20 bg-slate-50 scroll-mt-[40px]"
+      >
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
             <div>
@@ -905,30 +931,37 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ THÀNH TỰU NỔI BẬT (SLIDER) ═══════ */}
-      <section id="thanh-tuu" className="relative w-full h-[80vh] min-h-[500px] overflow-hidden bg-slate-900 group">
+      <section
+        id="thanh-tuu"
+        className="relative w-full h-[80vh] min-h-[500px] overflow-hidden bg-slate-900 group"
+      >
         {achievements.map((project, idx) => (
           <div
             key={idx}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeAchievement === idx ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-              }`}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              activeAchievement === idx
+                ? "opacity-100 z-10"
+                : "opacity-0 z-0 pointer-events-none"
+            }`}
           >
             <div className="absolute inset-0 bg-black/40 z-10"></div>
             <img
               src={project.img}
               alt={project.title}
-              className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-linear ${activeAchievement === idx ? "scale-110" : "scale-100"
-                }`}
+              className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-linear ${
+                activeAchievement === idx ? "scale-110" : "scale-100"
+              }`}
             />
             <div className="absolute inset-0 flex flex-col items-center justify-center z-20 text-center px-4">
               <h2
                 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-5 uppercase tracking-wide"
-                style={{ textShadow: '2px 4px 8px rgba(0,0,0,0.6)' }}
+                style={{ textShadow: "2px 4px 8px rgba(0,0,0,0.6)" }}
               >
                 {project.title}
               </h2>
               <p
                 className="text-base md:text-lg text-white font-medium max-w-2xl mb-10 tracking-wide"
-                style={{ textShadow: '1px 2px 4px rgba(0,0,0,0.8)' }}
+                style={{ textShadow: "1px 2px 4px rgba(0,0,0,0.8)" }}
               >
                 Nơi Nghệ Thuật Giao Thoa Cùng Chất Lượng Vượt Trội
               </p>
@@ -945,8 +978,11 @@ export default function HomePage() {
             <button
               key={idx}
               onClick={() => setActiveAchievement(idx)}
-              className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${activeAchievement === idx ? "w-8 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" : "w-4 bg-white/40 hover:bg-white/80"
-                }`}
+              className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${
+                activeAchievement === idx
+                  ? "w-8 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                  : "w-4 bg-white/40 hover:bg-white/80"
+              }`}
             />
           ))}
         </div>
@@ -1027,7 +1063,7 @@ export default function HomePage() {
         id="footer"
         className="relative text-white pt-20 pb-10 scroll-mt-[40px] bg-cover bg-center overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.94)), url('/login-illustration.png')`
+          backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.94)), url('/login-illustration.png')`,
         }}
       >
         <div className="max-w-[1300px] mx-auto px-10">
@@ -1036,7 +1072,11 @@ export default function HomePage() {
             <div className="lg:col-span-5">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-[200px] h-[68px] flex-shrink-0 rounded-[16px] bg-white flex items-center justify-center shadow-lg shadow-black/20 overflow-hidden px-4">
-                  <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+                  <img
+                    src="/vtsc.png"
+                    alt="VTSC Logo"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <span className="font-bold text-xl tracking-tight uppercase text-white">
                   CÔNG TY CP TMDV VOSCO (VTSC)
@@ -1218,13 +1258,19 @@ export default function HomePage() {
                       <div className="flex flex-wrap gap-3">
                         {selectedProduct.DanhSachMaMau.map(
                           (m: any, i: number) => (
-                            <div key={i} className="group/item relative cursor-pointer" onClick={() => setSelectedColor(m)}>
+                            <div
+                              key={i}
+                              className="group/item relative cursor-pointer"
+                              onClick={() => setSelectedColor(m)}
+                            >
                               <div
-                                className={`w-10 h-10 rounded-xl shadow-sm transition-all hover:scale-110 ${selectedColor?.MaMau === m.MaMau ? 'border-2 border-blue-600 scale-110 shadow-blue-600/30' : 'border border-slate-200'}`}
+                                className={`w-10 h-10 rounded-xl shadow-sm transition-all hover:scale-110 ${selectedColor?.MaMau === m.MaMau ? "border-2 border-blue-600 scale-110 shadow-blue-600/30" : "border border-slate-200"}`}
                                 style={{ background: m.HexCode }}
                               />
                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/item:opacity-100 transition-all whitespace-nowrap pointer-events-none">
-                                {m.MaMau} — {paintColors.find((c) => c.code === m.MaMau)?.name || m.TenMau}
+                                {m.MaMau} —{" "}
+                                {paintColors.find((c) => c.code === m.MaMau)
+                                  ?.name || m.TenMau}
                               </div>
                             </div>
                           ),
@@ -1237,7 +1283,7 @@ export default function HomePage() {
                 <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-start gap-4">
                   <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm shrink-0">
                     <QRCodeCanvas
-                      value={`${typeof window !== 'undefined' ? window.location.origin : ''}/trace/${selectedProduct._id}`}
+                      value={`${typeof window !== "undefined" ? window.location.origin : ""}/trace/${selectedProduct._id}`}
                       size={70}
                       bgColor={"#ffffff"}
                       fgColor={"#0f172a"}
@@ -1250,7 +1296,8 @@ export default function HomePage() {
                       Truy xuất nguồn gốc
                     </h4>
                     <p className="text-xs text-slate-500 leading-relaxed mb-2">
-                      Khách hàng có thể quét mã QR này để xem thông tin hóa đơn, ngày sản xuất, hạn sử dụng và quy trình.
+                      Khách hàng có thể quét mã QR này để xem thông tin hóa đơn,
+                      ngày sản xuất, hạn sử dụng và quy trình.
                     </p>
                     <a
                       href={`/trace/${selectedProduct._id}`}
@@ -1270,7 +1317,13 @@ export default function HomePage() {
                     </span>
                     <div className="flex items-center bg-slate-100 rounded-xl p-1 w-32">
                       <button
-                        onClick={() => updateQuantity(selectedProduct._id, -1, selectedProduct.TongTonKho)}
+                        onClick={() =>
+                          updateQuantity(
+                            selectedProduct._id,
+                            -1,
+                            selectedProduct.TongTonKho,
+                          )
+                        }
                         className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
                       >
                         -
@@ -1283,14 +1336,20 @@ export default function HomePage() {
                           handleQuantityChange(
                             selectedProduct._id,
                             e.target.value,
-                            selectedProduct.TongTonKho
+                            selectedProduct.TongTonKho,
                           )
                         }
                         onBlur={() => handleQuantityBlur(selectedProduct._id)}
                         className="w-12 text-center bg-transparent border-none text-base font-bold text-slate-900 outline-none appearance-none"
                       />
                       <button
-                        onClick={() => updateQuantity(selectedProduct._id, 1, selectedProduct.TongTonKho)}
+                        onClick={() =>
+                          updateQuantity(
+                            selectedProduct._id,
+                            1,
+                            selectedProduct.TongTonKho,
+                          )
+                        }
                         className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
                       >
                         +
@@ -1299,8 +1358,14 @@ export default function HomePage() {
                   </div>
                   <button
                     onClick={() => {
-                      if (selectedProduct.DanhSachMaMau && selectedProduct.DanhSachMaMau.length > 0 && !selectedColor) {
-                        alert("Vui lòng chọn màu sơn mong muốn ở trên trước khi thêm vào giỏ hàng!");
+                      if (
+                        selectedProduct.DanhSachMaMau &&
+                        selectedProduct.DanhSachMaMau.length > 0 &&
+                        !selectedColor
+                      ) {
+                        alert(
+                          "Vui lòng chọn màu sơn mong muốn ở trên trước khi thêm vào giỏ hàng!",
+                        );
                         return;
                       }
                       addToCart(selectedProduct, selectedColor?.MaMau);
@@ -1422,8 +1487,6 @@ export default function HomePage() {
           </div>
         </div>
       )}
-
-
 
       {isLoginOpen && (
         <div className="fixed inset-0 z-[400] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -1576,7 +1639,6 @@ export default function HomePage() {
                     </button>
                   </p>
                 </div>
-
               </form>
             ) : (
               <form onSubmit={handlePageRegister} className="space-y-4">
@@ -1833,10 +1895,7 @@ function ServiceCard({
   }
 
   return (
-    <Link
-      href={href || "#"}
-      className="no-underline text-inherit h-full block"
-    >
+    <Link href={href || "#"} className="no-underline text-inherit h-full block">
       {CardContent}
     </Link>
   );
