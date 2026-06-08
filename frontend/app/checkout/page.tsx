@@ -29,16 +29,15 @@ export default function CheckoutPage() {
   const [existingOrderId, setExistingOrderId] = useState<string | null>(null);
   const sessionId = useMemo(() => user?.id || getGuestSessionId(), [user]);
 
-  const handleUpdateQuantity = (productId: string, currentQty: number, change: number) => {
+  const handleUpdateQuantity = (productId: string, currentQty: number, change: number, maMau?: string) => {
     if (existingOrderId) return; // Không cho phép sửa nếu là đơn hàng cũ
     const newQty = currentQty + change;
     
-    const targetItem = selectedItems.find(item => item.SanPham?._id === productId);
-    const maMau = targetItem?.MaMau;
+    const targetMaMau = maMau || "";
 
     if (newQty < 1) {
       // Remove item if quantity becomes 0
-      setSelectedItems(prev => prev.filter(item => item.SanPham?._id !== productId));
+      setSelectedItems(prev => prev.filter(item => !(item.SanPham?._id === productId && (item.MaMau || "") === targetMaMau)));
       if (removeFromCart) {
         removeFromCart(sessionId, productId, maMau);
       }
@@ -47,7 +46,7 @@ export default function CheckoutPage() {
     
     // Update local state
     setSelectedItems(prev => prev.map(item => {
-      if (item.SanPham?._id === productId) {
+      if (item.SanPham?._id === productId && (item.MaMau || "") === targetMaMau) {
         return { ...item, SoLuong: newQty };
       }
       return item;
@@ -105,7 +104,10 @@ export default function CheckoutPage() {
         const itemIds = JSON.parse(storedItems);
         // Wait for cartItems to be loaded if not yet
         if (cartItems.length > 0) {
-          const itemsToCheckout = cartItems.filter((item: any) => itemIds.includes(item.SanPham?._id));
+          const itemsToCheckout = cartItems.filter((item: any) => {
+            const key = `${item.SanPham?._id}_${item.MaMau || ""}`;
+            return itemIds.includes(key);
+          });
           setSelectedItems(itemsToCheckout);
           if (itemsToCheckout.length === 0) {
             router.push('/cart'); // Redirect back if empty
@@ -198,7 +200,8 @@ export default function CheckoutPage() {
         khachHangId: user?.profile?._id || null, // Will be guest if not logged in
         diaChiGiaoHang: `${fullName} - ${phone} - ${address}`,
         discountCode: discountInfo?.MaVoucher,
-        ghiChu: note || `Đơn hàng từ hệ thống web - Phương thức: ${paymentMethod}`
+        ghiChu: note || `Đơn hàng từ hệ thống web - Phương thức: ${paymentMethod}`,
+        selectedItemKeys: selectedItems.map((item: any) => `${item.SanPham?._id}_${item.MaMau || ""}`)
       });
 
       if (res.data.success) {
@@ -499,7 +502,7 @@ export default function CheckoutPage() {
                         {!existingOrderId && (
                           <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white">
                             <button 
-                              onClick={() => handleUpdateQuantity(item.SanPham?._id, item.SoLuong, -1)}
+                              onClick={() => handleUpdateQuantity(item.SanPham?._id, item.SoLuong, -1, item.MaMau)}
                               className="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-[#1c3c77] transition-colors font-bold"
                             >
                               -
@@ -508,7 +511,7 @@ export default function CheckoutPage() {
                               {item.SoLuong}
                             </div>
                             <button 
-                              onClick={() => handleUpdateQuantity(item.SanPham?._id, item.SoLuong, 1)}
+                              onClick={() => handleUpdateQuantity(item.SanPham?._id, item.SoLuong, 1, item.MaMau)}
                               className="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-[#1c3c77] transition-colors font-bold"
                             >
                               +
