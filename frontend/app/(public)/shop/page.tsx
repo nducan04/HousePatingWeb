@@ -397,8 +397,8 @@ export default function ShopPage() {
               </Link>
             </li>
             <li>
-              <Link
-                href="/admin/contracts"
+               <Link
+                href="/hop-dong-pha-che"
                 className="hover:text-blue-400 transition-colors no-underline text-slate-300"
               >
                 - Tra cứu hợp đồng
@@ -406,7 +406,7 @@ export default function ShopPage() {
             </li>
             <li>
               <Link
-                href="/admin/rd-tracking"
+                href="/rd-tracking"
                 className="hover:text-blue-400 transition-colors no-underline text-slate-300"
               >
                 - Gửi yêu cầu R&D
