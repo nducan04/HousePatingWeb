@@ -175,6 +175,7 @@ export default function QLKhoPage() {
   const [openColorDropdownIdx, setOpenColorDropdownIdx] = useState<
     number | null
   >(null);
+  const [colorSearchQuery, setColorSearchQuery] = useState("");
   const [nxForm, setNxForm] = useState({
     MaPhieu: "",
     LoaiPhieu: "NHAP",
@@ -1878,7 +1879,7 @@ export default function QLKhoPage() {
         {/* Modal Lập Phiếu Nhập Xuất */}
         {isNXModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-md shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300 max-h-[90vh]">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300 max-h-[95vh]">
               {/* Header */}
               <div
                 className={`px-8 py-6 border-b border-slate-50 flex items-center justify-between ${nxForm.LoaiPhieu === "NHAP" ? "bg-emerald-50/50" : "bg-rose-50/50"}`}
@@ -1909,7 +1910,7 @@ export default function QLKhoPage() {
               </div>
 
               {/* Content */}
-              <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar">
+              <div className="p-8 pb-48 space-y-8 overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
@@ -2076,9 +2077,12 @@ export default function QLKhoPage() {
                                 type="button"
                                 onClick={() => {
                                   if (!k.ItemId || !!editingNXId) return;
-                                  setOpenColorDropdownIdx(
-                                    openColorDropdownIdx === idx ? null : idx,
-                                  );
+                                  if (openColorDropdownIdx === idx) {
+                                    setOpenColorDropdownIdx(null);
+                                  } else {
+                                    setOpenColorDropdownIdx(idx);
+                                    setColorSearchQuery("");
+                                  }
                                 }}
                                 className={`w-full bg-white border border-slate-200 rounded-md pl-9 pr-6 py-2.5 text-[13px] text-slate-800 text-left outline-none focus:border-blue-500 transition-all font-bold ${!k.ItemId || !!editingNXId ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                               >
@@ -2128,68 +2132,96 @@ export default function QLKhoPage() {
                                       setOpenColorDropdownIdx(null)
                                     }
                                   />
-                                  <div className="absolute z-50 top-full left-0 mt-1 min-w-[450px] w-max max-w-[90vw] max-h-72 overflow-y-auto bg-white border border-slate-200 rounded-md shadow-2xl p-1 custom-scrollbar">
-                                    {k.ItemId &&
-                                      paintColors.map((c, cIdx) => {
-                                        const sp = data.find(
-                                          (d) => d._id === k.ItemId,
-                                        );
-                                        const currentSpColor =
-                                          sp?.DanhSachMaMau?.find(
-                                            (m: any) =>
-                                              m.MaMau.toUpperCase() ===
-                                              c.code.toUpperCase(),
-                                          );
-                                        const stock = currentSpColor
-                                          ? currentSpColor.TonKhoKhaDung || 0
-                                          : 0;
+                                  <div className="absolute z-50 top-full left-0 mt-1.5 w-[500px] max-w-[90vw] bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {/* Search Box */}
+                                    <div className="p-3 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10">
+                                      <input
+                                        type="text"
+                                        placeholder="Tìm nhanh mã màu hoặc tên màu..."
+                                        value={colorSearchQuery}
+                                        onChange={(e) => setColorSearchQuery(e.target.value)}
+                                        className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-medium bg-white placeholder:text-slate-400"
+                                        onClick={(e) => e.stopPropagation()}
+                                        autoFocus
+                                      />
+                                    </div>
+                                    {/* Colors List */}
+                                    <div className="max-h-80 overflow-y-auto p-1.5 custom-scrollbar">
+                                      {(() => {
+                                        const sp = data.find((d) => d._id === k.ItemId);
+                                        const filteredColors = paintColors.filter(c => {
+                                          const query = colorSearchQuery.toLowerCase().trim();
+                                          if (!query) return true;
+                                          return c.code.toLowerCase().includes(query) || c.name.toLowerCase().includes(query) || (c.category && c.category.toLowerCase().includes(query));
+                                        });
 
-                                        return (
-                                          <div
-                                            key={cIdx}
-                                            onClick={() => {
-                                              handleNXItemChange(
-                                                idx,
-                                                "MaMau",
-                                                c.code,
-                                              );
-                                              setOpenColorDropdownIdx(null);
-                                            }}
-                                            className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer rounded-lg transition-colors"
-                                          >
-                                            {currentSpColor?.HinhAnh ? (
-                                              <img
-                                                src={resolveImageUrl(
-                                                  currentSpColor.HinhAnh,
-                                                )}
-                                                className="w-6 h-6 rounded-md object-cover border border-slate-200 shadow-sm shrink-0"
-                                              />
-                                            ) : (
-                                              <div
-                                                className="w-5 h-5 rounded-md border border-slate-200 shadow-sm shrink-0"
-                                                style={{
-                                                  backgroundColor: c.hex,
-                                                }}
-                                              />
-                                            )}
-                                            <div className="text-[12px] text-slate-700 truncate">
-                                              <span className="font-bold">
-                                                {c.code}
-                                              </span>{" "}
-                                              - {c.name} ({c.category}){" "}
-                                              {currentSpColor ? (
-                                                <span className="text-emerald-600 font-bold ml-1">
-                                                  [Sẵn có: {stock}]
-                                                </span>
-                                              ) : (
-                                                <span className="text-blue-500 font-bold ml-1">
-                                                  [Mới]
-                                                </span>
-                                              )}
+                                        if (filteredColors.length === 0) {
+                                          return (
+                                            <div className="text-center py-6 text-sm text-slate-400 font-medium">
+                                              Không tìm thấy màu phù hợp
                                             </div>
-                                          </div>
-                                        );
-                                      })}
+                                          );
+                                        }
+
+                                        return filteredColors.map((c, cIdx) => {
+                                          const currentSpColor = sp?.DanhSachMaMau?.find(
+                                            (m: any) => m.MaMau.toUpperCase() === c.code.toUpperCase(),
+                                          );
+                                          const stock = currentSpColor ? currentSpColor.TonKhoKhaDung || 0 : 0;
+                                          const isSelected = k.MaMau === c.code;
+
+                                          return (
+                                            <div
+                                              key={cIdx}
+                                              onClick={() => {
+                                                handleNXItemChange(idx, "MaMau", c.code);
+                                                setOpenColorDropdownIdx(null);
+                                              }}
+                                              className={`flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-all border-b border-slate-50/50 last:border-b-0 ${
+                                                isSelected 
+                                                  ? "bg-blue-50/70 border-blue-100/50 hover:bg-blue-50" 
+                                                  : "hover:bg-slate-50"
+                                              }`}
+                                            >
+                                              {currentSpColor?.HinhAnh ? (
+                                                <img
+                                                  src={resolveImageUrl(currentSpColor.HinhAnh)}
+                                                  className="w-8 h-8 rounded-lg object-cover border border-slate-200 shadow-sm shrink-0"
+                                                  alt={c.code}
+                                                />
+                                              ) : (
+                                                <div
+                                                  className="w-7 h-7 rounded-lg border border-slate-200 shadow-sm shrink-0"
+                                                  style={{ backgroundColor: c.hex }}
+                                                />
+                                              )}
+                                              <div className="text-[13px] text-slate-700 truncate flex-1 flex items-center justify-between">
+                                                <div className="truncate">
+                                                  <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-[11px] mr-2">
+                                                    {c.code}
+                                                  </span>
+                                                  <span className="font-semibold text-slate-800">{c.name}</span>
+                                                  <span className="text-slate-400 text-[11px] ml-1.5">
+                                                    ({c.category})
+                                                  </span>
+                                                </div>
+                                                <div>
+                                                  {currentSpColor ? (
+                                                    <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded text-[11px] border border-emerald-100/30">
+                                                      Sẵn có: {stock}
+                                                    </span>
+                                                  ) : (
+                                                    <span className="text-blue-500 font-semibold bg-blue-50 px-2 py-0.5 rounded text-[11px] border border-blue-100/30">
+                                                      Mới
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        });
+                                      })()}
+                                    </div>
                                   </div>
                                 </>
                               )}
