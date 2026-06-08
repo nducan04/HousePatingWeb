@@ -405,12 +405,14 @@ export default function OrderManagementPage() {
               nv.BoPhan === "Kho" ||
               nv.BoPhan === "Logistic" ||
               nv.BoPhan === "Vận tải" ||
+              nv.BoPhan === "Vận chuyển" ||
               nv.BoPhan === "Giao nhận") &&
             (nv.ChucVu === "Nhân viên giao hàng" ||
               nv.ChucVu === "Tài xế" ||
               nv.ChucVu === "Nhân viên kỹ thuật" ||
               nv.ChucVu === "Trưởng bộ phận kho / logistic" ||
               nv.BoPhan === "Vận tải" ||
+              nv.BoPhan === "Vận chuyển" ||
               nv.BoPhan === "Giao nhận"),
         );
         setDrivers(eligibleDrivers);
@@ -1822,7 +1824,7 @@ export default function OrderManagementPage() {
     driverId?: string,
   ) => {
     // If switching to DANG_GIAO and no driver provided yet, open picker
-    if (status === "DANG_GIAO" && !driverId) {
+    if (status === "DANG_GIAO" && driverId === undefined) {
       setPendingStatusUpdate({ id, status });
       setIsDriverModalOpen(true);
       return;
@@ -3897,8 +3899,7 @@ export default function OrderManagementPage() {
                         selectedDriverId,
                       )
                     }
-                    disabled={!selectedDriverId}
-                    className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-md shadow-blue-600/20 disabled:opacity-50 transition-all cursor-pointer border-none"
+                    className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer border-none"
                   >
                     Xác nhận giao hàng
                   </button>
