@@ -1005,7 +1005,7 @@ export default function QLKhoPage() {
                 <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
                   {STATS.tonTotal}
                   <span className="text-sm font-bold text-slate-400 ml-1">
-                    đơn vị
+                    thùng
                   </span>
                 </h3>
               </div>
