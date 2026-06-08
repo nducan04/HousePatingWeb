@@ -482,9 +482,9 @@ export default function DashboardPage() {
               icon: <FileSpreadsheet size={20} />,
               color: "violet",
               label: "Đơn đặt hàng",
-              value: stats.kpi.customerCount.value,
+              value: stats.kpi.orderCount?.value ?? 0,
               unit: "đơn",
-              change: stats.kpi.customerCount.change,
+              change: stats.kpi.orderCount?.change ?? 0,
               sub: "vs tháng trước",
             },
             {
