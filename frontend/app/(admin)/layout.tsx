@@ -369,6 +369,7 @@ export default function AdminLayout({
     if (pathname?.startsWith("/kho")) return "🏭 Quản lý kho";
     if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý khách hàng";
     if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý nhân sự";
+    if (pathname?.startsWith("/production")) return "🏭 Hệ thống MES";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
     if (pathname?.startsWith("/hop-dong-pha-che")) return "📝 Hợp đồng B2B";
     if (pathname === "/colors") return "🎨 Tra cứu mã màu";
