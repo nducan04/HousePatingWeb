@@ -19,7 +19,7 @@ const app = express();
 // Middleware
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://house-pating-web.vercel.app',
+  'https://house-painting-web.vercel.app',
 ];
 if (process.env.FRONTEND_URL) {
   allowedOrigins.push(process.env.FRONTEND_URL);
