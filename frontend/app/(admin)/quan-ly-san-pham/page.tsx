@@ -72,80 +72,7 @@ interface SanPham {
   };
 }
 
-// Mock Data để render giao diện đẹp mắt
-const MOCK_DATA: SanPham[] = [
-  {
-    _id: "1",
-    MaSanPham: "STD-EP01",
-    TenDongSon: "Sơn Tĩnh Điện Epoxy Bóng Trong Nhà",
-    ThuongHieu: "AkzoNobel",
-    PhanLoai: "Sơn tĩnh điện",
-    DonGiaCoSo: 65000,
-    MoTa: "Sơn bột tĩnh điện Epoxy có độ bóng cao, chịu va đập tốt, chuyên dùng cho nội thất gia đình và văn phòng.",
-    DonViTinh: "Thùng",
-    TongTonKho: 1250,
-    HinhAnh: [
-      "https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?auto=format&fit=crop&q=80&w=400&h=400",
-      "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400&h=400",
-    ],
-    DanhSachMaMau: [
-      {
-        MaMau: "WHT01",
-        TenMau: "Trắng",
-        HexCode: "#FFFFFF",
-        TonKhoKhaDung: 500,
-        TonKhoTamGiu: 0,
-        NguongCanhBao: 100,
-        TrangThai: true,
-      },
-    ],
-  },
-  {
-    _id: "2",
-    MaSanPham: "STB-PU05",
-    TenDongSon: "Sơn Tàu Biển Chống Hà PU",
-    ThuongHieu: "Jotun",
-    PhanLoai: "Sơn tàu biển",
-    DonGiaCoSo: 145000,
-    MoTa: "Sơn phủ Polyurethane chống hà, chống ăn mòn nước biển, độ bền màu cao dùng cho mạn tàu.",
-    DonViTinh: "Lít",
-    TongTonKho: 0, // Test case hết hàng
-    HinhAnh: [
-      "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400&h=400",
-    ],
-    DanhSachMaMau: [],
-  },
-  {
-    _id: "3",
-    MaSanPham: "SCN-AK03",
-    TenDongSon: "Sơn Công Nghiệp Alkyd Nhanh Khô",
-    ThuongHieu: "Nippon",
-    PhanLoai: "Sơn công nghiệp",
-    DonGiaCoSo: 85000,
-    MoTa: "Hệ sơn Alkyd khô nhanh, phù hợp sơn kết cấu thép mạ kẽm trong nhà xưởng.",
-    DonViTinh: "Thùng",
-    TongTonKho: 45,
-    HinhAnh: [
-      "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&q=80&w=400&h=400",
-    ],
-    DanhSachMaMau: [],
-  },
-  {
-    _id: "4",
-    MaSanPham: "STD-PE02",
-    TenDongSon: "Sơn Tĩnh Điện Polyester Ngoài Trời",
-    ThuongHieu: "KCC",
-    PhanLoai: "Sơn tĩnh điện",
-    DonGiaCoSo: 72000,
-    MoTa: "Kháng UV cực tốt, chống phai màu, chịu thời tiết khắc nghiệt. Phù hợp cho khung nhôm cửa kính.",
-    DonViTinh: "Thùng",
-    TongTonKho: 320,
-    HinhAnh: [
-      "https://images.unsplash.com/photo-1502325966718-85a90488dc29?auto=format&fit=crop&q=80&w=400&h=400",
-    ],
-    DanhSachMaMau: [],
-  },
-];
+
 
 // Helper: Tự động format đoạn text dài có chứa gạch đầu dòng, dấu sao hoặc chữ in hoa thành HTML dễ nhìn
 const formatTextToHTML = (text: string) => {
@@ -185,8 +112,9 @@ export default function SanPhamPage() {
   const { user } = useAuthStore();
   const isAdminOrEmployee = user?.role === "Admin" || user?.role === "NhanVien";
 
-  const [sanPhams, setSanPhams] = useState<SanPham[]>(MOCK_DATA);
+  const [sanPhams, setSanPhams] = useState<SanPham[]>([]);
   const [allSanPhams, setAllSanPhams] = useState<SanPham[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -226,6 +154,13 @@ export default function SanPhamPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
+  // --- Modal Danh Mục Sơn ---
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [categoryFormData, setCategoryFormData] = useState({ _id: "", TenDanhMuc: "", MoTa: "", TrangThai: true });
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [categoryErrorMsg, setCategoryErrorMsg] = useState("");
+  // -------------------------
+
   const fetchStatsData = async () => {
     try {
       const res = await api.get("/san-pham-son?limit=100000000");
@@ -234,6 +169,68 @@ export default function SanPhamPage() {
       }
     } catch (error) {
       console.error("Error fetching all products for stats:", error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get("/danh-muc-son");
+      if (res.data.success) {
+        setCategories(res.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
+  const handleOpenCategoryModal = (cat: any = null) => {
+    setCategoryErrorMsg("");
+    if (cat) {
+      setEditingCategory(cat);
+      setCategoryFormData({ _id: cat._id, TenDanhMuc: cat.TenDanhMuc, MoTa: cat.MoTa || "", TrangThai: cat.TrangThai });
+    } else {
+      setEditingCategory(null);
+      setCategoryFormData({ _id: "", TenDanhMuc: "", MoTa: "", TrangThai: true });
+    }
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleSaveCategory = async () => {
+    try {
+      setCategoryErrorMsg("");
+      if (!categoryFormData.TenDanhMuc.trim()) {
+        setCategoryErrorMsg("Vui lòng nhập tên danh mục");
+        return;
+      }
+      if (editingCategory) {
+        const res = await api.put(`/danh-muc-son/${editingCategory._id}`, categoryFormData);
+        if (res.data.success) {
+          setCategories(categories.map(c => c._id === editingCategory._id ? res.data.data : c));
+          setEditingCategory(null);
+          setCategoryFormData({ _id: "", TenDanhMuc: "", MoTa: "", TrangThai: true });
+        }
+      } else {
+        const res = await api.post("/danh-muc-son", categoryFormData);
+        if (res.data.success) {
+          setCategories([res.data.data, ...categories]);
+          setCategoryFormData({ _id: "", TenDanhMuc: "", MoTa: "", TrangThai: true });
+        }
+      }
+    } catch (error: any) {
+      setCategoryErrorMsg(error.response?.data?.message || "Có lỗi xảy ra");
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (confirm("Xác nhận xóa danh mục này? Hệ thống có thể gặp lỗi nếu danh mục đang được sử dụng.")) {
+      try {
+        const res = await api.delete(`/danh-muc-son/${id}`);
+        if (res.data.success) {
+          setCategories(categories.filter(c => c._id !== id));
+        }
+      } catch (error) {
+        alert("Không thể xóa danh mục");
+      }
     }
   };
 
@@ -261,6 +258,7 @@ export default function SanPhamPage() {
 
   useEffect(() => {
     fetchStatsData();
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -391,7 +389,7 @@ export default function SanPhamPage() {
         MaSanPham: "SP" + Date.now().toString().slice(-4),
         TenDongSon: "",
         ThuongHieu: "AkzoNobel",
-        PhanLoai: "Sơn tĩnh điện",
+        PhanLoai: categories.length > 0 ? categories[0].TenDanhMuc : "Sơn tĩnh điện",
         DonGiaCoSo: 0,
         MoTa: "",
         DonViTinh: "Thùng",
@@ -574,7 +572,9 @@ export default function SanPhamPage() {
   });
 
   // Tạo danh sách KPI cards động
-  const categoryCards = Object.entries(categoryCounts).map(([label, value]) => {
+  const categoryCards = categories.filter(cat => cat.TrangThai).map(cat => {
+    const label = cat.TenDanhMuc;
+    const value = categoryCounts[label] || 0;
     const config = CATEGORY_CONFIG[label] || {
       icon: Package,
       color: "slate",
@@ -593,9 +593,9 @@ export default function SanPhamPage() {
   // Tạo danh sách filter tabs động
   const filterTabs = [
     { id: "all", label: "Tất cả" },
-    ...Object.keys(categoryCounts).map((cat) => ({
-      id: cat,
-      label: cat.replace("Sơn ", ""),
+    ...categories.filter(cat => cat.TrangThai).map((cat) => ({
+      id: cat.TenDanhMuc,
+      label: cat.TenDanhMuc.replace("Sơn ", ""),
     })),
   ];
 
@@ -690,12 +690,20 @@ export default function SanPhamPage() {
             <Download strokeWidth={1.5} size={16} /> Xuất Excel
           </button>
           {isAdminOrEmployee && (
-            <button
-              onClick={() => openForm()}
-              className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-            >
-              <Plus strokeWidth={2} size={16} /> Thêm Sản phẩm
-            </button>
+            <>
+              <button
+                onClick={() => handleOpenCategoryModal()}
+                className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-lg text-sm font-medium transition-colors shadow-sm"
+              >
+                <Layers strokeWidth={2} size={16} /> Thêm Loại Sơn
+              </button>
+              <button
+                onClick={() => openForm()}
+                className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              >
+                <Plus strokeWidth={2} size={16} /> Thêm Sản phẩm
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -1027,10 +1035,18 @@ export default function SanPhamPage() {
                       setFormData({ ...formData, PhanLoai: e.target.value })
                     }
                   >
-                    <option value="Sơn tĩnh điện">Sơn tĩnh điện</option>
-                    <option value="Sơn tàu biển">Sơn tàu biển</option>
-                    <option value="Sơn công nghiệp">Sơn công nghiệp</option>
-                    <option value="Sơn nội thất">Sơn nội thất</option>
+                    {categories.length > 0 ? (
+                      categories.filter(cat => cat.TrangThai).map(cat => (
+                        <option key={cat._id} value={cat.TenDanhMuc}>{cat.TenDanhMuc}</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Sơn tĩnh điện">Sơn tĩnh điện</option>
+                        <option value="Sơn tàu biển">Sơn tàu biển</option>
+                        <option value="Sơn công nghiệp">Sơn công nghiệp</option>
+                        <option value="Sơn nội thất">Sơn nội thất</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 <div className="space-y-1.5">
@@ -1625,6 +1641,91 @@ export default function SanPhamPage() {
               >
                 Đóng
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 5. Category Management Modal */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 className="text-lg font-medium text-slate-800">Quản lý Phân Loại Sơn</h3>
+              <button
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex flex-col md:flex-row h-full overflow-hidden">
+              {/* Form Side */}
+              <div className="p-5 border-r border-slate-100 md:w-1/2 flex flex-col gap-4 overflow-y-auto">
+                <h4 className="font-semibold text-slate-700 text-sm">{editingCategory ? "Sửa loại sơn" : "Thêm loại sơn mới"}</h4>
+                {categoryErrorMsg && (
+                  <div className="p-2 bg-rose-50 text-rose-600 text-xs rounded border border-rose-100">
+                    {categoryErrorMsg}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 uppercase mb-1">Tên loại <span className="text-rose-500">*</span></label>
+                  <input
+                    type="text"
+                    value={categoryFormData.TenDanhMuc}
+                    onChange={e => setCategoryFormData({...categoryFormData, TenDanhMuc: e.target.value})}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    placeholder="VD: Sơn nội thất"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 uppercase mb-1">Mô tả</label>
+                  <textarea
+                    value={categoryFormData.MoTa}
+                    onChange={e => setCategoryFormData({...categoryFormData, MoTa: e.target.value})}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-20 resize-none"
+                    placeholder="Mô tả..."
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="catStatus"
+                    checked={categoryFormData.TrangThai}
+                    onChange={e => setCategoryFormData({...categoryFormData, TrangThai: e.target.checked})}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="catStatus" className="text-sm font-medium text-slate-700 cursor-pointer">Trạng thái Hoạt động</label>
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <button onClick={handleSaveCategory} className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+                    {editingCategory ? "Lưu thay đổi" : "Thêm mới"}
+                  </button>
+                  {editingCategory && (
+                    <button onClick={() => { setEditingCategory(null); setCategoryFormData({ _id: "", TenDanhMuc: "", MoTa: "", TrangThai: true }); setCategoryErrorMsg(""); }} className="px-3 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200">
+                      Hủy sửa
+                    </button>
+                  )}
+                </div>
+              </div>
+              {/* List Side */}
+              <div className="md:w-1/2 bg-slate-50 overflow-y-auto p-4">
+                <h4 className="font-semibold text-slate-700 text-sm mb-3">Danh sách hiện tại</h4>
+                <div className="space-y-2">
+                  {categories.map(cat => (
+                    <div key={cat._id} className="bg-white border border-slate-200 rounded-lg p-3 flex items-center justify-between shadow-sm">
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">{cat.TenDanhMuc}</p>
+                        {!cat.TrangThai && <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-semibold">Đã ẩn</span>}
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => handleOpenCategoryModal(cat)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition-colors"><Edit size={14} /></button>
+                        <button onClick={() => handleDeleteCategory(cat._id)} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded transition-colors"><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  ))}
+                  {categories.length === 0 && <p className="text-xs text-slate-400 text-center py-4">Chưa có loại sơn nào</p>}
+                </div>
+              </div>
             </div>
           </div>
         </div>
