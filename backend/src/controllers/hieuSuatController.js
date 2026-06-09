@@ -14,7 +14,7 @@ exports.getPerformanceStats = async (req, res) => {
 
         // 2. TỔNG HỢP DOANH SỐ (Kinh doanh)
         const salesStats = await DonHang.aggregate([
-            { $match: { TrangThai: { $ne: 'DA_HUY' } } },
+            { $match: { TrangThai: { $nin: ['DA_HUY', 'CHO_XAC_NHAN'] } } },
             {
                 $group: {
                     _id: '$NhanVienPhuTrach',
@@ -113,6 +113,33 @@ exports.getPerformanceStats = async (req, res) => {
             // CSKH
             const support = supportStats.find(su => su._id && su._id.toString() === nvId) || { ticketCount: 0 };
 
+            // Dynamic KPI calculation
+            let dynamicKPI = 0;
+            const hasActivity = sales.orderCount > 0 || logistics.deliveryCount > 0 || rd.testCount > 0 || support.ticketCount > 0;
+            
+            if (hasActivity) {
+                const isSale = nv.BoPhan === 'Kinh doanh' || nv.BoPhan === 'Sale / MKT';
+                const isTech = nv.BoPhan === 'Kỹ thuật' || nv.BoPhan === 'Sản xuất';
+                const isLogistic = nv.BoPhan === 'Vận chuyển' || nv.BoPhan === 'Kho';
+                
+                if (isSale) {
+                    dynamicKPI = 50 + (sales.orderCount * 5) + Math.floor(sales.totalRevenue / 1000000);
+                } else if (isTech) {
+                    dynamicKPI = 50 + Math.floor((rd.passCount / rd.testCount) * 50);
+                } else if (isLogistic) {
+                    dynamicKPI = 50 + (logistics.deliveryCount * 10);
+                } else {
+                    const totalActivity = sales.orderCount + logistics.deliveryCount + rd.testCount + support.ticketCount;
+                    dynamicKPI = 50 + (totalActivity * 5);
+                }
+                dynamicKPI = Math.min(100, dynamicKPI);
+            } else {
+                dynamicKPI = nv.HieuSuatKPI?.diemKPI ?? 0;
+            }
+            
+            const finalKPI = Math.max(dynamicKPI, nv.HieuSuatKPI?.diemKPI ?? 0);
+            const kpiLevel = finalKPI >= 95 ? 'Excellent' : (finalKPI >= 85 ? 'Good' : (finalKPI >= 50 ? 'Average' : 'Poor'));
+
             return {
                 id: nv._id,
                 maNV: nv.MaNV,
@@ -126,8 +153,8 @@ exports.getPerformanceStats = async (req, res) => {
                 deliveries: logistics.deliveryCount,
                 tests: rd.testCount,
                 customers: support.ticketCount,
-                satisfaction: nv.HieuSuatKPI?.diemKPI || 90,
-                level: nv.HieuSuatKPI?.diemKPI >= 95 ? 'Excellent' : (nv.HieuSuatKPI?.diemKPI >= 85 ? 'Good' : 'Average')
+                satisfaction: finalKPI,
+                level: kpiLevel
             };
         });
 
@@ -138,7 +165,7 @@ exports.getPerformanceStats = async (req, res) => {
             .sort((a, b) => b.revenue - a.revenue)
             .slice(0, 5)
             .map(s => ({
-                name: s.name.split(' ').slice(-1)[0], // Lấy tên cuối
+                name: s.name, // Lấy tên đầy đủ
                 fullName: s.name,
                 value: Math.round(s.revenue / 1000000), // Triệu VNĐ
                 color: 'var(--accent-cyan)'
