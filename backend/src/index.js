@@ -113,8 +113,11 @@ app.use('/api/van-chuyen', vanChuyenRouter);
 app.use('/api/shipping', vanChuyenRouter);
 
 const hieuSuatRouter = require('./routes/hieuSuatRoutes');
+const danhMucSonRouter = require('./routes/danhMucSonRoutes');
+
 app.use('/api/hieu-suat', hieuSuatRouter);
 app.use('/api/performance', hieuSuatRouter);
+app.use('/api/danh-muc-son', danhMucSonRouter);
 
 const doiTraRouter = require('./routes/doiTraRoutes');
 app.use('/api/doi-tra', doiTraRouter);
