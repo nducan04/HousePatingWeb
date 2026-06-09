@@ -716,7 +716,7 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
             <div>
               <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                Bảng dữ liệu: Sản lượng thực tế vs kế hoạch
+                Bảng dữ liệu: Sản lượng bán ra vs kế hoạch
               </h3>
               <p className="text-[13px] text-slate-500 font-medium mt-1">
                 Đơn vị: Thùng{" "}
@@ -767,7 +767,7 @@ export default function DashboardPage() {
                     Mục tiêu (Kế hoạch)
                   </th>
                   <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-right">
-                    Sản lượng thực tế
+                    Sản lượng bán ra
                   </th>
                   <th className="px-4 py-3 font-bold uppercase tracking-wider text-[11px] text-center">
                     Tỷ lệ hoàn thành
