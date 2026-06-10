@@ -676,7 +676,7 @@ export default function HomePage() {
               </span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight uppercase text-slate-900">
-              Nhà cung cấp & Phân phối
+              Nhà cung cấp & Đại lý
               <br />
               <span className="text-blue-600">Sơn tĩnh điện</span>
               <br />
