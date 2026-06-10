@@ -59,6 +59,7 @@ import {
   Box,
   Target,
   X,
+  Calendar,
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -372,8 +373,8 @@ export default function StatisticsDashboard() {
             : "N/A",
           status:
             c.status === "signed" ||
-            c.status === "delivering" ||
-            c.status === "completed"
+              c.status === "delivering" ||
+              c.status === "completed"
               ? "Đã xác minh"
               : "Chờ ký số",
         }));
@@ -451,11 +452,10 @@ export default function StatisticsDashboard() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
-                  activeTab === tab
-                    ? "bg-slate-900 text-white shadow-md"
-                    : "text-slate-500 hover:bg-slate-50"
-                }`}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === tab
+                  ? "bg-slate-900 text-white shadow-md"
+                  : "text-slate-500 hover:bg-slate-50"
+                  }`}
               >
                 {tab === "SALES"
                   ? "Kinh doanh"
@@ -464,10 +464,10 @@ export default function StatisticsDashboard() {
                     : tab === "PRODUCTION"
                       ? "Sản xuất & R&D"
                       : tab === "CUSTOMER_SERVICE"
-                        ? "Hậu mãi & CSKH"
+                        ? "Hậu mãi & Khuyến mãi"
                         : tab === "HR"
                           ? "Nhân sự"
-                          : "Pháp lý"}
+                          : "Hợp đồng Blockchain"}
               </button>
             ))}
           </div>
@@ -921,11 +921,10 @@ function InventoryDashboard({ data }: { data: any }) {
                     </td>
                     <td className="py-3">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                          m.LoaiPhieu === "NHAP"
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-blue-50 text-blue-600"
-                        }`}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${m.LoaiPhieu === "NHAP"
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-blue-50 text-blue-600"
+                          }`}
                       >
                         {m.LoaiPhieu === "NHAP" ? "Nhập" : "Xuất"}
                       </span>
@@ -1047,15 +1046,14 @@ function InventoryDashboard({ data }: { data: any }) {
                     >
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm shrink-0
-                        ${
-                          idx === 0
+                        ${idx === 0
                             ? "bg-amber-100 text-amber-600 border border-amber-200"
                             : idx === 1
                               ? "bg-slate-200 text-slate-600 border border-slate-300"
                               : idx === 2
                                 ? "bg-orange-100 text-orange-700 border border-orange-200"
                                 : "bg-slate-50 text-slate-400 border border-slate-100"
-                        }`}
+                          }`}
                       >
                         {idx + 1}
                       </div>
@@ -1309,32 +1307,118 @@ function CustomerServiceDashboard({ data }: { data: any }) {
   const supportTrends = csData.supportTrends || [];
   const pendingComplaints = csData.pendingComplaints || [];
 
+  const campaigns = (loyalty.campaignsList || []).map((c: any) => {
+    let statusColor = "bg-emerald-100 text-emerald-700 border-emerald-200";
+    if (c.status === "Tạm dừng") statusColor = "bg-orange-100 text-orange-700 border-orange-200";
+    else if (c.status === "Hết ngân sách" || c.status === "DA_KET_THUC" || c.status === "Đã kết thúc") statusColor = "bg-rose-100 text-rose-700 border-rose-200";
+
+    let targetColor = "bg-blue-100 text-blue-700";
+    if (c.target === "VIP") targetColor = "bg-amber-100 text-amber-700";
+    else if (c.target === "B2B") targetColor = "bg-purple-100 text-purple-700";
+
+    return { ...c, targetColor, statusColor };
+  });
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Loyalty & Vouchers Stats */}
-      <h3 className="text-lg font-black text-slate-900 -mb-2 pb-2">
-        Khuyến mãi & Khách hàng thân thiết
-      </h3>
+
+      {/* 1. Header Portion */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2 pb-2">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Khuyến mãi</h2>
+          <p className="text-slate-500 font-medium mt-1">Báo cáo hiệu suất các chương trình kích cầu thương mại</p>
+        </div>
+      </div>
+
+      {/* 2. KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <KpiCard
-          title="Khách hàng VIP"
-          value={loyalty.vipCustomers}
-          icon={<Crown />}
-          color="orange"
-        />
-        <KpiCard
-          title="Cảnh báo rời bỏ"
-          value={loyalty.churnAlerts}
-          icon={<AlertTriangle />}
+          title="Tổng chi phí khuyến mãi"
+          value={`${(loyalty.totalDiscountValue || 0).toLocaleString('vi-VN')} VNĐ`}
+          valueColor="text-rose-500"
+          icon={<DollarSign />}
           color="rose"
-          isAlert={loyalty.churnAlerts > 0}
+          note="Tổng số tiền hệ thống đã giảm giá/chiết khấu"
         />
         <KpiCard
-          title="Voucher đang kích hoạt"
-          value={loyalty.activeVouchers}
-          icon={<Ticket />}
+          title="Doanh thu từ khuyến mãi"
+          value={`${(loyalty.totalVoucherRevenue || 0).toLocaleString('vi-VN')} VNĐ`}
+          valueColor="text-emerald-500"
+          icon={<TrendingUp />}
           color="emerald"
+          note="Tổng giá trị đơn hàng có áp dụng mã"
         />
+        <KpiCard
+          title="Tổng lượt sử dụng"
+          value={`${loyalty.totalVouchersUsed > 0 ? loyalty.totalVouchersUsed.toLocaleString('vi-VN') : "0"} lượt`}
+          valueColor="text-blue-500"
+          icon={<Ticket />}
+          color="blue"
+          note="Số lượng mã đã được kích hoạt thành công"
+        />
+      </div>
+
+      {/* 3. Data Table "Chi tiết chiến dịch" */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 min-w-0">
+        <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+          <Target className="text-blue-600" size={20} /> Chi tiết chiến dịch
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left border-collapse">
+            <thead>
+              <tr className="text-slate-400 uppercase text-[10px] font-bold tracking-widest border-b border-slate-100">
+                <th className="pb-4 px-4 font-semibold whitespace-nowrap">Mã & Tên chiến dịch</th>
+                <th className="pb-4 px-4 font-semibold whitespace-nowrap">Thời hạn áp dụng</th>
+                <th className="pb-4 px-4 font-semibold whitespace-nowrap w-[30%]">Tiến độ sử dụng</th>
+                <th className="pb-4 px-4 font-semibold whitespace-nowrap">Trạng thái hoạt động</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {campaigns.length > 0 ? campaigns.map((camp: any, idx: number) => {
+                const percent = camp.total > 0 ? Math.round((camp.used / camp.total) * 100) : 0;
+                return (
+                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-4 px-4">
+                      <p className="font-bold text-slate-900">{camp.id}</p>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">{camp.name}</p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex flex-col gap-1 w-40 text-xs font-medium text-slate-600">
+                        <span className="flex items-center gap-1.5"><Calendar size={13} className="text-slate-400" /> {camp.startDate ? new Date(camp.startDate).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                        <span className="flex items-center gap-1.5 text-slate-400 ml-[19px]">Đến: {camp.endDate ? new Date(camp.endDate).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex flex-col gap-1.5 w-48">
+                        <div className="flex justify-between text-xs font-semibold text-slate-600">
+                          <span>{camp.used} / {camp.total > 0 ? camp.total : '∞'} mã</span>
+                          <span className={percent >= 100 ? 'text-rose-600' : 'text-slate-600'}>{percent}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${percent >= 100 ? 'bg-rose-500' : percent > 80 ? 'bg-orange-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${Math.min(percent, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[10px] font-black uppercase border ${camp.statusColor}`}>
+                        {camp.status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              }) : (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-slate-400 font-medium text-sm">
+                    Không có chiến dịch khuyến mãi nào
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <h3 className="text-lg font-black text-slate-900 -mb-2 pb-2 mt-8 border-t border-slate-200 pt-6">
@@ -1665,7 +1749,7 @@ function LegalDashboard({ data }: { data: any }) {
 
 // --- Helper UI Components ---
 
-function KpiCard({ title, value, trend, icon, color, isAlert }: any) {
+function KpiCard({ title, value, trend, icon, color, isAlert, note, valueColor }: any) {
   const colorMap: any = {
     blue: "bg-blue-50 text-blue-600",
     emerald: "bg-emerald-50 text-emerald-600",
@@ -1676,39 +1760,45 @@ function KpiCard({ title, value, trend, icon, color, isAlert }: any) {
 
   return (
     <div
-      className={`bg-white p-6 rounded-3xl shadow-sm border ${isAlert ? "border-rose-200 animate-pulse" : "border-slate-100"} hover:shadow-md transition-all`}
+      className={`bg-white p-6 rounded-3xl shadow-sm border ${isAlert ? "border-rose-200 animate-pulse" : "border-slate-100"} hover:shadow-md transition-all flex flex-col justify-between`}
     >
-      <div className="flex justify-between items-start mb-4">
-        <div
-          className={`w-12 h-12 rounded-2xl ${colorMap[color]} flex items-center justify-center`}
-        >
-          {React.cloneElement(icon, { size: 24 })}
-        </div>
-        {trend !== undefined && (
+      <div>
+        <div className="flex justify-between items-start mb-4">
           <div
-            className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg ${
-              trend >= 0
+            className={`w-12 h-12 rounded-2xl ${colorMap[color]} flex items-center justify-center`}
+          >
+            {React.cloneElement(icon, { size: 24 })}
+          </div>
+          {trend !== undefined && (
+            <div
+              className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg ${trend >= 0
                 ? "text-emerald-600 bg-emerald-50"
                 : "text-rose-600 bg-rose-50"
-            }`}
-          >
-            {trend >= 0 ? (
-              <ArrowUpRight size={14} />
-            ) : (
-              <ArrowDownRight size={14} />
-            )}
-            {Math.abs(trend)}%
-          </div>
-        )}
+                }`}
+            >
+              {trend >= 0 ? (
+                <ArrowUpRight size={14} />
+              ) : (
+                <ArrowDownRight size={14} />
+              )}
+              {Math.abs(trend)}%
+            </div>
+          )}
+        </div>
+        <div>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+            {title}
+          </p>
+          <h3 className={`text-2xl font-black ${valueColor ? valueColor : 'text-slate-900'} tracking-tight`}>
+            {value}
+          </h3>
+        </div>
       </div>
-      <div>
-        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-          {title}
+      {note && (
+        <p className="text-xs font-medium text-slate-500 mt-4 border-t border-slate-100 pt-3">
+          {note}
         </p>
-        <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-          {value}
-        </h3>
-      </div>
+      )}
     </div>
   );
 }
