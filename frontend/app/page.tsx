@@ -153,7 +153,7 @@ export default function HomePage() {
           </section>
           <section>
             <h4 class="text-slate-900 font-bold mb-3">2. Quy trình đổi trả</h4>
-            <p class="text-slate-500 leading-relaxed text-sm">Quý khách vui lòng liên hệ hotline: <strong>+84 (028) 3888 9999</strong> hoặc gửi email về <strong>contact@vtscpaint.com</strong> kèm theo hóa đơn và hình ảnh sản phẩm để được hỗ trợ xử lý trong 24h.</p>
+            <p class="text-slate-500 leading-relaxed text-sm">Quý khách vui lòng liên hệ hotline: <strong>0225.3842.160 - 0225.3747.226</strong> hoặc gửi email về <strong>vtsc@vtschp.vn</strong> kèm theo hóa đơn và hình ảnh sản phẩm để được hỗ trợ xử lý trong 24h.</p>
           </section>
         </div>
       `,
@@ -1089,15 +1089,18 @@ export default function HomePage() {
                 />
                 <ContactItem
                   icon={<Phone size={20} className="text-blue-400" />}
-                  text="+84 (028) 3888 9999"
+                  text="0225.3842.160 - 0225.3747.226"
                 />
                 <ContactItem
                   icon={<Mail size={20} className="text-blue-400" />}
-                  text="contact@vtscpaint.com"
+                  text="vtsc@vtschp.vn"
                 />
               </div>
               <div className="flex gap-4 mt-10">
-                <SocialLink icon={<Facebook size={20} />} href="#" />
+                <SocialLink
+                  icon={<Facebook size={20} />}
+                  href="https://www.facebook.com/VOSCO.VTSC"
+                />
                 <SocialLink icon={<Twitter size={20} />} href="#" />
                 <SocialLink icon={<Instagram size={20} />} href="#" />
               </div>
