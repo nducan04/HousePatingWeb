@@ -737,6 +737,10 @@ exports.getCustomerServiceStats = async (req, res) => {
     let voucherTypes = { PHAN_TRAM: 0, GIAM_THANG: 0, TANG_KEM: 0 };
     let voucherUsagesList = [];
     let topVouchers = [];
+    let campaignsList = [];
+    let totalDiscountValue = 0;
+    let totalVoucherRevenue = 0;
+    let totalVouchersUsed = 0;
     
     try {
       const KhuyenMai = require('../models/KhuyenMai');
@@ -790,11 +794,17 @@ exports.getCustomerServiceStats = async (req, res) => {
         status: u.TrangThai
       }));
 
-      // Top 5 used vouchers
-      const allOrdersWithVouchers = await DonHang.find({ KhuyenMai: { $ne: null }, TrangThai: { $ne: 'DA_HUY' } })
+      // Top 5 used vouchers and revenue stats
+      const allOrdersWithVouchers = await DonHang.find({ KhuyenMai: { $ne: null }, TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } })
         .populate('KhuyenMai', 'MaVoucher');
+        
+      totalVouchersUsed = allOrdersWithVouchers.length;
+      
       const voucherUsageCounts = {};
       allOrdersWithVouchers.forEach(o => {
+        totalDiscountValue += (o.GiamGia || 0);
+        totalVoucherRevenue += (o.TongTien || 0);
+        
         const code = o.KhuyenMai?.MaVoucher;
         if (code) {
           voucherUsageCounts[code] = (voucherUsageCounts[code] || 0) + 1;
@@ -804,6 +814,23 @@ exports.getCustomerServiceStats = async (req, res) => {
         code,
         count: voucherUsageCounts[code]
       })).sort((a, b) => b.count - a.count).slice(0, 5);
+
+      const allCampaigns = await KhuyenMai.find({
+        NgayBatDau: { $lte: endDate },
+        NgayHetHan: { $gte: startDate }
+      }).sort({ createdAt: -1 }).limit(10);
+      campaignsList = allCampaigns.map(c => {
+        return {
+          id: c.MaVoucher,
+          name: c.GhiChu || (c.LoaiGiamGia === 'PHAN_TRAM' ? `Giảm ${c.MucGiam}%` : `Giảm ${c.MucGiam}đ`),
+          target: 'B2C',
+          used: c.SoLuongDaDung || 0,
+          total: c.SoLuongToiDa || 0,
+          status: c.TrangThai === 'DANG_DIEN_RA' ? 'Đang chạy' : (c.TrangThai === 'LEN_LICH' ? 'Tạm dừng' : 'Hết ngân sách'),
+          startDate: c.NgayBatDau,
+          endDate: c.NgayHetHan
+        };
+      });
 
     } catch (err) {
       console.log('Error fetching loyalty stats:', err.message);
@@ -825,7 +852,11 @@ exports.getCustomerServiceStats = async (req, res) => {
           totalVouchers,
           voucherTypes,
           voucherUsagesList,
-          topVouchers
+          topVouchers,
+          campaignsList,
+          totalDiscountValue,
+          totalVoucherRevenue,
+          totalVouchersUsed
         },
         supportTrends: formattedTrends,
         pendingComplaints
