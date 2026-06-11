@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FileText, Eye, CheckCircle2, Clock, XCircle, Search, Building, ArrowLeft, X, Download, Loader2 } from 'lucide-react';
+import { FileText, Eye, CheckCircle2, Clock, XCircle, Search, Building, ArrowLeft, X, Download, Loader2, Shield } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -36,17 +36,17 @@ export default function MyContractsPage() {
       setIsExportingPDF(true);
       const element = document.getElementById('printable-contract');
       if (!element) return;
-      
+
       const html2pdf = (await import('html2pdf.js')).default;
       const opt = {
-        margin:       [10, 10, 10, 10] as [number, number, number, number],
-        filename:     `HopDong_NguyenTac_${selectedContract?.contractId || 'VTSC'}.pdf`,
-        image:        { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        pagebreak:    { mode: ['css', 'legacy'] }
+        margin: [10, 10, 10, 10] as [number, number, number, number],
+        filename: `HopDong_NguyenTac_${selectedContract?.contractId || 'VTSC'}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        pagebreak: { mode: ['css', 'legacy'] }
       };
-      
+
       const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       window.open(pdfUrl, '_blank');
@@ -77,10 +77,10 @@ export default function MyContractsPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 relative">
       <div className="max-w-7xl mx-auto space-y-6">
-      {/* Back Button (Top Left) */}
-      <Link href="/" className="absolute top-8 left-4 lg:left-8 flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all z-10 shadow-sm cursor-pointer no-underline">
-        <ArrowLeft size={16} /> Quay lại
-      </Link>
+        {/* Back Button (Top Left) */}
+        <Link href="/" className="absolute top-8 left-4 lg:left-8 flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all z-10 shadow-sm cursor-pointer no-underline">
+          <ArrowLeft size={16} /> Quay lại
+        </Link>
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -99,9 +99,9 @@ export default function MyContractsPage() {
           </Link>
         </div>
 
-        <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm">
+        <div className="bg-white border border-slate-200/60 rounded-xl p-6 shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full whitespace-nowrap">
               <thead>
                 <tr className="border-b border-slate-100">
                   <th className="py-4 px-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">Mã Hợp đồng</th>
@@ -154,16 +154,24 @@ export default function MyContractsPage() {
                       </td>
                       <td className="py-4 px-4 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <button className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer bg-slate-50 hover:bg-blue-50 px-3 py-2 rounded-xl" onClick={() => setSelectedContract(contract)}>
+                          <button className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer bg-slate-50 hover:bg-blue-50 px-3 py-2 rounded-lg" onClick={() => setSelectedContract(contract)}>
                             <Eye size={14} /> Xem
                           </button>
                           {['signed', 'delivering'].includes(contract.status) && (contract.value - (contract.daThanhToan || 0)) > 0 && (
                             <Link
                               href={`/my-contracts/${contract._id}/payment`}
-                              className="inline-flex items-center gap-1 text-xs font-black bg-[#A50064] text-white hover:bg-[#850050] transition-colors cursor-pointer px-3 py-2 rounded-xl border-none shadow-sm shadow-[#A50064]/10 no-underline"
+                              className="inline-flex items-center gap-1 text-xs font-black bg-[#A50064] text-white hover:bg-[#850050] transition-colors cursor-pointer px-3 py-2 rounded-lg border-none shadow-sm shadow-[#A50064]/10 no-underline"
                             >
                               <div className="w-3.5 h-3.5 rounded bg-white flex items-center justify-center text-[7px] font-black text-[#A50064]">M</div>
                               Thanh toán
+                            </Link>
+                          )}
+                          {(contract.txHash || contract.status !== 'draft') && (
+                            <Link
+                              href={`/my-contracts/${contract._id}`}
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors cursor-pointer bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg no-underline"
+                            >
+                              <Shield size={14} /> Xem tính minh bạch
                             </Link>
                           )}
                         </div>
@@ -196,7 +204,7 @@ export default function MyContractsPage() {
                 </button>
               </div>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-6 bg-slate-100/50">
               <div id="printable-contract" style={{ background: '#fff', color: '#000', padding: '50px', boxShadow: '0 20px 40px rgba(0,0,0,0.05)', minHeight: '1000px', fontSize: '13px', lineHeight: '1.4', position: 'relative', fontFamily: 'Arial, Helvetica, sans-serif', width: '100%', maxWidth: '210mm', margin: '0 auto' }}>
                 <div style={{ textAlign: 'center', marginBottom: 20 }}>
@@ -274,7 +282,7 @@ export default function MyContractsPage() {
 
                 {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(num => {
                   const defaultArticles = [
-                    "", "", 
+                    "", "",
                     "Bên B đặt hàng qua hệ thống VTSC. Địa điểm giao hàng tại kho Bên B hoặc chân công trình. Thời gian giao hàng trong vòng 24-48h kể từ khi xác nhận đơn hàng.",
                     "Mọi thông tin trao đổi qua email chính thức hoặc văn bản có ký đóng dấu.",
                     "Khi nhận hàng, hai bên thực hiện kiểm đếm và ký biên bản giao nhận. Mọi khiếu nại về số lượng phải được báo ngay lúc nhận hàng.",
@@ -316,7 +324,8 @@ export default function MyContractsPage() {
         </div>
       )}
 
-      <style>{`
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media print {
           @page { size: A4; margin: 5mm; }
           body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
@@ -354,7 +363,7 @@ export default function MyContractsPage() {
           .article-wrapper { page-break-inside: avoid; margin-bottom: 20px; }
           .signature-section { page-break-inside: avoid; margin-top: 50px; }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

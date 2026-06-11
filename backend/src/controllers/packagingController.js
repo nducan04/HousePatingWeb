@@ -120,8 +120,9 @@ exports.createPackagingSlip = async (req, res) => {
     }
 
     // B. Add Finished Product Inventory
+    let product = null;
     if (rdLog.MaMauYeuCau) {
-       const product = await SanPhamSon.findOneAndUpdate(
+       product = await SanPhamSon.findOneAndUpdate(
          { "DanhSachMaMau.MaMau": rdLog.MaMauYeuCau },
          { $inc: { TonKho: totalWeight } },
          { new: true }
@@ -147,12 +148,45 @@ exports.createPackagingSlip = async (req, res) => {
     }
 
     // 7. Update Statuses
-    if (ContractID) {
+    if (ContractID && !OrderID) {
+      await HopDong.findByIdAndUpdate(ContractID, { TrangThai: 'signed' }); 
+      
+      // Auto-generate Order (DonHang) for Delivery Management
+      const hopDong = await HopDong.findById(ContractID).populate('CustomerID');
+      if (hopDong && product) {
+        const orderItems = PackagingSpecs.filter(s => s.quantity > 0).map(s => ({
+          SanPham: product._id,
+          TenSanPham: `${product.TenDongSon} (${s.containerType})`,
+          MaMau: rdLog.MaMauYeuCau,
+          SoLuong: s.quantity,
+          DonGia: 0, 
+          ThanhTien: 0
+        }));
+
+        const newOrder = await DonHang.create({
+          MaDonHang: `#HD${Math.floor(100000 + Math.random() * 900000)}`,
+          KhachHang: hopDong.CustomerID._id,
+          NhanVienPhuTrach: hopDong.EmployeeID,
+          Items: orderItems,
+          TongTien: hopDong.TongGiaTri || 0,
+          TrangThai: 'DA_XU_LY_XONG',
+          PhuongThucThanhToan: 'CHUYEN_KHOAN',
+          DiaChiGiaoHang: hopDong.partyBAddress || hopDong.CustomerID.DiaChi || 'Địa chỉ công trình',
+          TenNguoiNhan: hopDong.partyBRepresentative || hopDong.CustomerID.TenKhachHang || 'Đại diện',
+          SDTNguoiNhan: hopDong.CustomerID.SDT || 'Chưa cập nhật',
+          GhiChu: `Đơn xuất từ Hợp đồng ${hopDong.MaHopDong} - Phiếu đóng gói ${MaPhieuDongGoi}`
+        });
+
+        // Link slip to new order
+        slip.OrderID = newOrder._id;
+        await slip.save();
+      }
+    } else if (ContractID) {
       await HopDong.findByIdAndUpdate(ContractID, { TrangThai: 'signed' }); 
     }
     
     if (OrderID) {
-      await DonHang.findByIdAndUpdate(OrderID, { TrangThai: 'DANG_GIAO' });
+      await DonHang.findByIdAndUpdate(OrderID, { TrangThai: 'DA_XU_LY_XONG' });
     }
 
     res.status(201).json({ success: true, data: slip });

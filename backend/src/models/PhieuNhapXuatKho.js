@@ -27,7 +27,7 @@ const chiTietPhieuSchema = new mongoose.Schema({
     MaMau: { type: String, trim: true, uppercase: true },  // VD: "INT-D2525"
     TenMau: { type: String, trim: true },                  // VD: "Silver Metallic"
 
-    SoLuong: { type: Number, required: true, min: 1 },
+    SoLuong: { type: Number, required: true, min: 0 },
     DonGia: { type: Number, default: 0, min: 0 },
     ThanhTien: { type: Number, default: 0 },
 }, { _id: true });

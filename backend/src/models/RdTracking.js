@@ -1,41 +1,27 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const rdTrackingSchema = new mongoose.Schema(
     {
-        MaNhatKy: {
-            type: String,
-            required: true,
-            unique: true,
+        MaNhatKy: { type: String, required: true, unique: true },
+        ContractID: { type: mongoose.Schema.Types.ObjectId, ref: 'HopDong' },
+        MaMauYeuCau: { type: String, required: true },
+        customerName: { type: String },
+        colorName: { type: String },
+        surface: { type: String },
+        substrate: { type: String },
+        deadline: { type: Date },
+        requirements: { type: String },
+        environmentType: { type: String },
+        imageUrl: { type: String },
+        TrangThai: { 
+            type: String, 
+            enum: ['pending', 'testing', 'approved', 'rejected', 'complete', 'completed'], 
+            default: 'pending' 
         },
-        ContractID: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'HopDong', // Liên kết tới bảng Hợp đồng
-            required: true,
-        },
-        MaMauYeuCau: {
-            type: String,
-            required: true,
-        },
-        TrangThai: {
-            type: String,
-            enum: ['pending', 'testing', 'completed', 'failed'],
-            default: 'pending',
-        },
-        // Có thể bổ sung thêm người phụ trách, kết quả KCS...
-        NguoiPhuTrach: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'NhanVien',
-        },
-        GhiChu: {
-            type: String,
-        }
+        NguoiPhuTrach: { type: mongoose.Schema.Types.ObjectId, ref: 'NhanVien' },
+        GhiChu: { type: String }
     },
-    {
-        timestamps: true, // Tự động có createdAt, updatedAt
-    }
+    { timestamps: true }
 );
 
-// Tránh lỗi đè model trong Next.js (do hot-reload)
-const RDTracking = mongoose.models.RDTracking || mongoose.model('RDTracking', rdTrackingSchema);
-
-export default RDTracking;
+module.exports = mongoose.model('RDTracking', rdTrackingSchema, 'RDTrackings');

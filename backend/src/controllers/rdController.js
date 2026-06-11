@@ -1,4 +1,5 @@
 const NhatKyTestMau = require('../models/NhatKyTestMau');
+const RDTracking = require('../models/RdTracking');
 const HopDong = require('../models/HopDong');
 const NhanVien = require('../models/NhanVien');
 const NguyenVatLieu = require('../models/NguyenVatLieu');
@@ -20,16 +21,13 @@ exports.getRDLogs = async (req, res) => {
       const kh = await KhachHang.findOne({ AccountID: req.user._id });
       if (kh) {
         if (req.query.type === 'standalone') {
-          // Lọc các yêu cầu có customerName giống với tên khách hàng
           query.customerName = { $regex: new RegExp(kh.TenKhachHang, 'i') };
         } else {
-          // Lọc hợp đồng
           const contracts = await HopDong.find({ CustomerID: kh._id });
           const contractIds = contracts.map(c => c._id);
           query.ContractID = { $in: contractIds };
         }
       } else {
-        // Nếu không phải Khách hàng cụ thể nhưng có tên trong User
         if (req.query.type === 'standalone' && req.user.username) {
             query.customerName = { $regex: new RegExp(req.user.username, 'i') };
         } else {
@@ -42,10 +40,20 @@ exports.getRDLogs = async (req, res) => {
       query.ContractID = req.query.contractId;
     }
 
-    const logs = await NhatKyTestMau.find(query)
+    const trackings = await RDTracking.find(query)
       .populate('ContractID', 'MaHopDong title')
-      .sort({ updatedAt: -1 });
-    res.status(200).json({ success: true, count: logs.length, data: logs });
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    // Fetch associated NhatKyTestMau for LichSuPhienBan
+    for (let t of trackings) {
+      const testMau = await NhatKyTestMau.findOne({ RDTrackingID: t._id }).lean();
+      t.LichSuPhienBan = testMau ? testMau.LichSuPhienBan : [];
+      t.signedBy = testMau ? testMau.signedBy : null;
+      t.signedAt = testMau ? testMau.signedAt : null;
+    }
+
+    res.status(200).json({ success: true, count: trackings.length, data: trackings });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -63,12 +71,18 @@ exports.getRDLogById = async (req, res) => {
       query = { MaNhatKy: id };
     }
 
-    const log = await NhatKyTestMau.findOne(query)
-      .populate('ContractID', 'MaHopDong title CustomerID ChiTietHopDong');
+    const log = await RDTracking.findOne(query)
+      .populate('ContractID', 'MaHopDong title CustomerID ChiTietHopDong')
+      .lean();
     
     if (!log) {
       return res.status(404).json({ success: false, message: 'Log not found' });
     }
+
+    const testMau = await NhatKyTestMau.findOne({ RDTrackingID: log._id }).lean();
+    log.LichSuPhienBan = testMau ? testMau.LichSuPhienBan : [];
+    log.signedBy = testMau ? testMau.signedBy : null;
+    log.signedAt = testMau ? testMau.signedAt : null;
 
     // RBAC check
     if (req.user && (req.user.VaiTro === 'KhachHangB2C' || req.user.VaiTro === 'KhachHangB2B')) {
@@ -86,7 +100,6 @@ exports.getRDLogById = async (req, res) => {
           return res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập dữ liệu pha chế này.' });
         }
       } else {
-        // Standalone request check
         const regex = new RegExp(kh.TenKhachHang, 'i');
         if (!regex.test(log.customerName) && log.customerName !== req.user.username) {
           return res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập dữ liệu pha chế này.' });
@@ -107,33 +120,32 @@ exports.createRDLog = async (req, res) => {
   try {
     const { 
       ContractID, MaMauYeuCau, customerName, colorName, 
-      surface, substrate, deadline, requirements, imageUrl 
+      surface, substrate, deadline, requirements, imageUrl,
+      environmentType
     } = req.body;
     
-    // Generate unique ID (standalone vs contract)
     const isStandalone = !ContractID;
     const prefix = isStandalone ? 'REQ' : 'RD';
     
-    // Tìm các documents bắt đầu bằng prefix
-    const count = await NhatKyTestMau.countDocuments({ MaNhatKy: { $regex: `^${prefix}` } });
+    const count = await RDTracking.countDocuments({ MaNhatKy: { $regex: `^${prefix}` } });
     const MaNhatKy = `${prefix}-${new Date().getFullYear() % 100}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(count + 1).padStart(3, '0')}`;
     
     const payload = {
       MaNhatKy,
       MaMauYeuCau: MaMauYeuCau || colorName || 'CUSTOM',
       TrangThai: ContractID ? 'testing' : 'pending',
-      LichSuPhienBan: [],
       customerName,
       colorName,
       surface,
       substrate,
       deadline,
       requirements,
-      imageUrl
+      imageUrl,
+      environmentType
     };
     if (ContractID) payload.ContractID = ContractID;
     
-    const log = await NhatKyTestMau.create(payload);
+    const log = await RDTracking.create(payload);
     
     res.status(201).json({ success: true, data: log });
   } catch (error) {
@@ -145,14 +157,28 @@ exports.createRDLog = async (req, res) => {
 // @route   POST /api/rd-tracking/:id/versions
 exports.addVersion = async (req, res) => {
   try {
-    const { result, parameters, feedback, inputWeight, outputWeight, imageUrl, nhietDo, hieuSuat, components } = req.body;
+    const { result, parameters, feedback, inputWeight, outputWeight, imageUrl, nhietDo, curingTime, maxHumidity, deltaE, hieuSuat, components } = req.body;
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(req.params.id);
-    const log = isObjectId 
-      ? await NhatKyTestMau.findById(req.params.id) 
-      : await NhatKyTestMau.findOne({ MaNhatKy: req.params.id });
     
-    if (!log) {
-      return res.status(404).json({ success: false, message: 'Log not found' });
+    const rdTracking = isObjectId 
+      ? await RDTracking.findById(req.params.id) 
+      : await RDTracking.findOne({ MaNhatKy: req.params.id });
+    
+    if (!rdTracking) {
+      return res.status(404).json({ success: false, message: 'RD Tracking Request not found' });
+    }
+
+    let testMau = await NhatKyTestMau.findOne({ RDTrackingID: rdTracking._id });
+    if (!testMau) {
+      const count = await NhatKyTestMau.countDocuments();
+      testMau = await NhatKyTestMau.create({
+        MaNhatKy: `TEST-${Date.now()}-${count}`,
+        RDTrackingID: rdTracking._id,
+        MaMauYeuCau: rdTracking.MaMauYeuCau,
+        ContractID: rdTracking.ContractID,
+        TrangThai: 'testing',
+        LichSuPhienBan: []
+      });
     }
 
     // Validate all stock levels first
@@ -186,7 +212,7 @@ exports.addVersion = async (req, res) => {
     }
     
     // Auto-versioning
-    const nextVer = `V${log.LichSuPhienBan.length + 1}.0`;
+    const nextVer = `V${testMau.LichSuPhienBan.length + 1}.0`;
     
     // Find tester details
     let testerName = 'Unknown Tester';
@@ -199,7 +225,7 @@ exports.addVersion = async (req, res) => {
       }
     }
 
-    log.LichSuPhienBan.push({
+    testMau.LichSuPhienBan.push({
       version: nextVer,
       date: new Date(),
       result,
@@ -209,14 +235,27 @@ exports.addVersion = async (req, res) => {
       outputWeight: parseFloat(outputWeight) || 0,
       imageUrl,
       nhietDo: parseFloat(nhietDo) || 195,
+      curingTime: parseFloat(curingTime) || 15,
+      maxHumidity: parseFloat(maxHumidity) || 80,
+      deltaE: parseFloat(deltaE) || 0,
       hieuSuat: parseFloat(hieuSuat) || 98,
       components: components || [],
       tester: testerName,
       testerCode: testerCode
     });
     
-    await log.save();
-    res.status(200).json({ success: true, data: log });
+    await testMau.save();
+
+    // Update RD Tracking status if needed
+    if (rdTracking.TrangThai === 'pending') {
+      rdTracking.TrangThai = 'testing';
+      await rdTracking.save();
+    }
+
+    const rdData = rdTracking.toObject();
+    rdData.LichSuPhienBan = testMau.LichSuPhienBan;
+
+    res.status(200).json({ success: true, data: rdData });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
@@ -227,55 +266,53 @@ exports.addVersion = async (req, res) => {
 exports.signKCS = async (req, res) => {
   try {
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(req.params.id);
-    const log = isObjectId 
-      ? await NhatKyTestMau.findById(req.params.id) 
-      : await NhatKyTestMau.findOne({ MaNhatKy: req.params.id });
+    const rdTracking = isObjectId 
+      ? await RDTracking.findById(req.params.id) 
+      : await RDTracking.findOne({ MaNhatKy: req.params.id });
+      
+    if (!rdTracking) {
+      return res.status(404).json({ success: false, message: 'RD Tracking not found' });
+    }
+
+    const log = await NhatKyTestMau.findOne({ RDTrackingID: rdTracking._id });
     if (!log) {
-      return res.status(404).json({ success: false, message: 'Log not found' });
+      return res.status(404).json({ success: false, message: 'NhatKyTestMau not found for this request' });
     }
     
-    // Check permission (Middleware should handle this usually, but we implement logic here)
-    // Temporarily disabled to unblock user
-    /*
-    if (req.user?.VaiTro?.toLowerCase() !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Only Admin/KCS Manager can sign off.' });
-    }
-    */
-    
-    // Verify there is at least one "pass" version
     const hasPass = log.LichSuPhienBan.some(v => v.result === 'pass');
     if (!hasPass) {
       return res.status(400).json({ success: false, message: 'Cannot sign off without at least one PASSED version.' });
     }
     
-    // Find reviewer name
     let reviewerName = 'Admin';
     if (req.user) {
       const nv = await NhanVien.findOne({ AccountID: req.user._id });
       if (nv) reviewerName = nv.HoTen;
     }
     
-    // Update Log Status
     log.TrangThai = 'approved';
     log.signedBy = reviewerName;
     log.signedAt = new Date();
     await log.save();
-    
-    // Check if ALL logs for this contract are approved
-    const allLogs = await NhatKyTestMau.find({ ContractID: log.ContractID });
-    const allApproved = allLogs.every(l => l.TrangThai === 'approved');
 
-    if (allApproved) {
-      // Update Contract Status to 'delivering'
-      await HopDong.findByIdAndUpdate(log.ContractID, { TrangThai: 'delivering' });
-      
-      const DonHang = require('../models/DonHang');
-      const contract = await HopDong.findById(log.ContractID);
-      if (contract) {
-         await DonHang.findOneAndUpdate(
-             { GhiChu: { $regex: contract.MaHopDong, $options: 'i' } },
-             { TrangThai: 'DA_XU_LY_XONG' }
-         );
+    rdTracking.TrangThai = 'approved';
+    await rdTracking.save();
+    
+    if (log.ContractID) {
+      const allLogs = await NhatKyTestMau.find({ ContractID: log.ContractID });
+      const allApproved = allLogs.every(l => l.TrangThai === 'approved');
+
+      if (allApproved) {
+        await HopDong.findByIdAndUpdate(log.ContractID, { TrangThai: 'delivering' });
+        
+        const DonHang = require('../models/DonHang');
+        const contract = await HopDong.findById(log.ContractID);
+        if (contract) {
+           await DonHang.findOneAndUpdate(
+               { GhiChu: { $regex: contract.MaHopDong, $options: 'i' } },
+               { TrangThai: 'DANG_XU_LY' }
+           );
+        }
       }
     }
     

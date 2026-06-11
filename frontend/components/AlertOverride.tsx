@@ -45,15 +45,26 @@ export default function AlertOverride() {
       };
 
       // Suppress annoying MetaMask extension unhandled rejections
+      const handleError = (event: ErrorEvent) => {
+        if (event.message && String(event.message).includes('MetaMask')) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      };
+
       const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
         if (event.reason && String(event.reason).includes('MetaMask')) {
           event.preventDefault();
+          event.stopImmediatePropagation();
         }
       };
-      window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+      window.addEventListener('error', handleError, true);
+      window.addEventListener('unhandledrejection', handleUnhandledRejection, true);
 
       return () => {
-        window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+        window.removeEventListener('error', handleError, true);
+        window.removeEventListener('unhandledrejection', handleUnhandledRejection, true);
       };
     }
   }, []);

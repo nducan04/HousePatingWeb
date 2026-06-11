@@ -59,6 +59,7 @@ interface HopDong {
   partyBPosition?: string;
   articles?: any;
   txHash?: string;
+  contractType?: string;
 }
 
 const DEFAULT_ARTICLES = {
@@ -102,6 +103,7 @@ export default function ContractsPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [typeFilter, setTypeFilter] = useState("mua-ban");
 
   const [formData, setFormData] = useState<any>({
     contractId: "",
@@ -169,7 +171,7 @@ export default function ContractsPage() {
         new Date().getFullYear() +
         "-" +
         Math.floor(Math.random() * 9000 + 1000),
-      title: "Hợp đồng nguyên tắc mua bán sơn VTSC-KSM",
+      title: typeFilter === "mua-ban" ? "Hợp đồng nguyên tắc mua bán sơn VTSC-KSM" : "Hợp đồng pha chế sơn VTSC-KSM",
       customer: "",
       partyBAddress: "",
       partyBTaxCode: "",
@@ -179,6 +181,7 @@ export default function ContractsPage() {
       partyBPosition: "",
       chiTietHopDong: [],
       articles: { ...DEFAULT_ARTICLES },
+      contractType: typeFilter,
     });
     setCurrentStep(1);
     setIsModalOpen(true);
@@ -213,6 +216,7 @@ export default function ContractsPage() {
       articles: { ...DEFAULT_ARTICLES, ...(item.articles || {}) },
       status: item.status, // Keep track of status to conditionally render approve button
       txHash: item.txHash || "",
+      contractType: item.contractType || "mua-ban",
     });
     setCurrentStep(4);
     setIsModalOpen(true);
@@ -339,6 +343,10 @@ export default function ContractsPage() {
 
   const filteredData = useMemo(() => {
     return data.filter((item) => {
+      // Filter by contractType (default to mua-ban if undefined for old contracts)
+      const itemType = item.contractType || "mua-ban";
+      if (itemType !== typeFilter) return false;
+
       const matchSearch =
         (item.customer?.name || "")
           .toLowerCase()
@@ -351,25 +359,45 @@ export default function ContractsPage() {
         (filter === "done" && item.status === "completed");
       return matchSearch && matchFilter;
     });
-  }, [data, searchTerm, filter]);
+  }, [data, searchTerm, filter, typeFilter]);
 
-  const TOTAL_STATS = useMemo(
-    () => ({
-      count: data.length,
-      active: data.filter(
+  const TOTAL_STATS = useMemo(() => {
+    const typeFilteredData = data.filter((item) => (item.contractType || "mua-ban") === typeFilter);
+    return {
+      count: typeFilteredData.length,
+      active: typeFilteredData.filter(
         (d) => d.status === "signed" || d.status === "delivering",
       ).length,
-      pending: data.filter(
+      pending: typeFilteredData.filter(
         (d) => d.status === "draft" || d.status === "created",
       ).length,
-      value: data.reduce((sum, d) => sum + d.value, 0),
-    }),
-    [data],
-  );
+      value: typeFilteredData.reduce((sum, d) => sum + d.value, 0),
+    };
+  }, [data, typeFilter]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 relative">
       {/* Background decoration removed as per prism removal request */}
+
+      {/* Contract Type Tabs */}
+      <div className="flex bg-slate-200/50 p-1.5 rounded-xl w-full sm:w-auto inline-flex overflow-x-auto no-print">
+        {[
+          { id: "mua-ban", label: "Hợp đồng nguyên tắc mua bán sơn" },
+          { id: "pha-che", label: "Hợp đồng pha chế sơn" },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTypeFilter(t.id)}
+            className={`whitespace-nowrap px-6 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 ${
+              typeFilter === t.id
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       {/* Premium KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 no-print">
@@ -613,7 +641,7 @@ export default function ContractsPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-slate-800 tracking-tight">
-                    Soạn Thảo Hợp Đồng Nguyên Tắc
+                    Soạn Thảo Hợp Đồng Nguyên Tắc Mua Bán Pha Chế Sơn
                   </h3>
                   <div className="text-sm font-bold text-blue-600 mt-0.5">
                     Mã số: {formData.contractId}

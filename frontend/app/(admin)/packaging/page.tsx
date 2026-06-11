@@ -8,8 +8,10 @@ import {
 import api from '@/lib/utils/axiosAuth';
 import { toast } from '@/lib/utils/notification';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function PackagingPage() {
+  const router = useRouter();
   const [slips, setSlips] = useState<any[]>([]);
   const [pendingRD, setPendingRD] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +88,7 @@ export default function PackagingPage() {
           ]
         });
         fetchData();
+        router.push('/don-hang');
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || '❌ Lỗi khi thực hiện đóng gói');
@@ -117,23 +120,23 @@ export default function PackagingPage() {
 
       {/* Overview Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 30 }}>
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
           <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>CHỜ ĐÓNG GÓI</div>
           <div style={{ fontSize: 28, fontWeight: 800, color: '#2563eb' }}>{pendingRD.length}</div>
           <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>Từ mẫu KCS đã duyệt</div>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
           <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>ĐÃ ĐÓNG GÓI</div>
           <div style={{ fontSize: 28, fontWeight: 800, color: '#059669' }}>{slips.length}</div>
           <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>Tổng sản lượng tháng này</div>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
           <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>KHỐI LƯỢNG TỊNH</div>
           <div style={{ fontSize: 28, fontWeight: 800, color: '#d97706' }}>
             {slips.reduce((acc, s) => acc + s.NetWeightTotal, 0).toLocaleString()} <span style={{ fontSize: 14 }}>Thùng</span>
           </div>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
           <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>TỶ LỆ HAO HỤT B/Q</div>
           <div style={{ fontSize: 28, fontWeight: 800, color: '#7c3aed' }}>2.4<span style={{ fontSize: 14 }}>%</span></div>
         </div>
@@ -142,62 +145,72 @@ export default function PackagingPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 30 }}>
         
         {/* Left: Main Logs Table */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-300 overflow-hidden" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 10 }}>
               <CheckCircle2 className="text-[#059669]" size={20} /> LỊCH SỬ ĐÓNG GÓI & XUẤT KHO
             </h3>
-            <div className="relative" style={{ maxWidth: 300 }}>
-              <Search size={16} />
-              <input type="text" placeholder="Tìm theo mã phiếu/log R&D..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <div className="relative flex-1 max-w-[300px] ml-4">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
+                <Search size={16} />
+              </div>
+              <input 
+                type="text" 
+                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                placeholder="Tìm theo mã phiếu/log R&D..." 
+                value={searchTerm} 
+                onChange={e => setSearchTerm(e.target.value)} 
+              />
             </div>
           </div>
 
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Mã Phiếu</th>
-                <th>Mẫu R&D</th>
-                <th>Đối Tượng</th>
-                <th>Quy Cách</th>
-                <th>Khối Lượng</th>
-                <th>Ngày Đóng</th>
-                <th>Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSlips.map(s => (
-                <tr key={s._id}>
-                  <td style={{ fontWeight: 800, color: '#2563eb' }}>{s.MaPhieuDongGoi}</td>
-                  <td>{s.RDLogID?.MaNhatKy}</td>
-                  <td>
-                    {s.ContractID ? (
-                      <div style={{ fontSize: 11 }}>
-                        <span style={{ color: '#7c3aed', fontWeight: 700 }}>HĐ:</span> {s.ContractID.MaHopDong}
-                      </div>
-                    ) : s.OrderID ? (
-                      <div style={{ fontSize: 11 }}>
-                        <span style={{ color: '#d97706', fontWeight: 700 }}>ĐH:</span> {s.OrderID.MaDonHang}
-                      </div>
-                    ) : 'N/A'}
-                  </td>
-                  <td>
-                    {s.PackagingSpecs?.map((spec: any, idx: number) => (
-                      <div key={idx} style={{ fontSize: 11 }}>{spec.containerType} x {spec.quantity}</div>
-                    ))}
-                  </td>
-                  <td style={{ fontWeight: 700 }}>{s.NetWeightTotal} thùng</td>
-                  <td style={{ fontSize: 12 }}>{new Date(s.createdAt).toLocaleDateString()}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <Link href={`/packaging/${s._id}`} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-2 py-1 rounded-md text-xs"><Eye size={14} /></Link>
-                      <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-2 py-1 rounded-md text-xs"><Printer size={14} /></button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="admin-table w-full">
+              <thead>
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-3 text-left">Mã Phiếu</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-left">Mẫu R&D</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-left">Đối Tượng</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-left">Quy Cách</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-left">Khối Lượng</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-left">Ngày Đóng</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-center">Thao Tác</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredSlips.map(s => (
+                  <tr key={s._id} className="hover:bg-slate-50 transition-colors">
+                    <td className="whitespace-nowrap px-4 py-3" style={{ fontWeight: 800, color: '#2563eb' }}>{s.MaPhieuDongGoi}</td>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-700">{s.RDLogID?.MaNhatKy}</td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {s.ContractID ? (
+                        <div style={{ fontSize: 11 }}>
+                          <span style={{ color: '#7c3aed', fontWeight: 700 }}>HĐ:</span> {s.ContractID.MaHopDong}
+                        </div>
+                      ) : s.OrderID ? (
+                        <div style={{ fontSize: 11 }}>
+                          <span style={{ color: '#d97706', fontWeight: 700 }}>ĐH:</span> {s.OrderID.MaDonHang}
+                        </div>
+                      ) : 'N/A'}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {s.PackagingSpecs?.map((spec: any, idx: number) => (
+                        <div key={idx} style={{ fontSize: 11 }}>{spec.containerType} x <span className="font-bold">{spec.quantity}</span></div>
+                      ))}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3" style={{ fontWeight: 700 }}>{s.NetWeightTotal} thùng</td>
+                    <td className="whitespace-nowrap px-4 py-3" style={{ fontSize: 12 }}>{new Date(s.createdAt).toLocaleDateString()}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-center">
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                        <Link href={`/packaging/${s._id}`} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Eye size={16} /></Link>
+                        <button className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors"><Printer size={16} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Right: Pending Packaging Queue */}
@@ -208,7 +221,7 @@ export default function PackagingPage() {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
             {pendingRD.map(rd => (
-              <div key={rd._id} className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden hover:border-[#2563eb]/50 transition-all" style={{ padding: 15 }}>
+              <div key={rd._id} className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden hover:border-[#2563eb]/50" style={{ padding: 15 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#2563eb', marginBottom: 2 }}>{rd.MaNhatKy}</div>
@@ -257,7 +270,7 @@ export default function PackagingPage() {
       {/* Modal: Create Packing Slip */}
       {showModal && selectedRD && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ maxWidth: 600 }}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-200 transition-all duration-300 overflow-hidden" style={{ maxWidth: 600 }}>
             <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <h2 className="text-lg font-bold text-slate-800">KHỞI TẠO PHIẾU ĐÓNG GÓI & XUẤT KHO</h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>&times;</button>
@@ -282,7 +295,7 @@ export default function PackagingPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {packagingData.specs.map((spec, idx) => (
                     <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 12, alignItems: 'center' }}>
-                      <div className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ background: '#ffffff', fontSize: 12 }}>{spec.containerType} ( {spec.unitWeight} thùng )</div>
+                      <div className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" style={{ background: '#ffffff', fontSize: 12 }}>{spec.containerType}</div>
                       <input 
                         type="number" 
                         className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
@@ -291,7 +304,7 @@ export default function PackagingPage() {
                         onChange={e => updateSpec(idx, 'quantity', parseInt(e.target.value) || 0)}
                       />
                       <div style={{ textAlign: 'right', fontWeight: 700, fontSize: 14 }}>
-                        {(spec.quantity * spec.unitWeight).toLocaleString()} <span style={{ fontSize: 10, color: '#94a3b8' }}>Thùng</span>
+                        {spec.quantity.toLocaleString()} <span style={{ fontSize: 10, color: '#94a3b8' }}>Thùng</span>
                       </div>
                     </div>
                   ))}
@@ -319,9 +332,9 @@ export default function PackagingPage() {
               </div>
 
               <div style={{ marginTop: 10, padding: 15, borderRadius: 8, background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>TỔNG KHỐI LƯỢNG THỰC XUẤT:</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>TỔNG SỐ LƯỢNG THỰC XUẤT:</div>
                 <div style={{ fontSize: 24, fontWeight: 900, color: '#059669' }}>
-                  {packagingData.specs.reduce((acc, s) => acc + (s.quantity * s.unitWeight), 0).toLocaleString()} <span style={{ fontSize: 14 }}>Thùng</span>
+                  {packagingData.specs.reduce((acc, s) => acc + s.quantity, 0).toLocaleString()} <span style={{ fontSize: 14 }}>Thùng</span>
                 </div>
               </div>
 
@@ -341,8 +354,8 @@ export default function PackagingPage() {
       )}
 
       <style jsx>{`
-        .admin-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
-        .badge.success { background: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2); font-size: 10px; padding: 2px 8px; }
+        .admin-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; border-bottom: 1px solid #f1f5f9; }
+        .badge.success { background: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2); font-size: 10px; padding: 2px 8px; border-radius: 6px; }
       `}</style>
     </div>
   );

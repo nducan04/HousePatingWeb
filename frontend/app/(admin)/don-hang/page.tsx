@@ -1956,8 +1956,8 @@ export default function OrderManagementPage() {
 
   const STATUS_MAP = {
     CHO_XAC_NHAN: { label: "Chờ xác nhận", color: "#d97706", icon: Clock },
-    DANG_XU_LY: { label: "Đang xử lý", color: "#3b82f6", icon: Package },
-    DA_XU_LY_XONG: { label: "Đã xử lý xong", color: "#2563eb", icon: Package },
+    DANG_XU_LY: { label: "Đã xác nhận", color: "#3b82f6", icon: Package },
+    DA_XU_LY_XONG: { label: "Đã đóng gói - Chờ giao hàng", color: "#10b981", icon: Package },
     DANG_GIAO: { label: "Đang vận chuyển", color: "#7c3aed", icon: Truck },
     DA_GIAO: { label: "Đã giao hàng", color: "#059669", icon: CheckCircle },
     DA_HUY: { label: "Đã hủy", color: "#e11d48", icon: XCircle },
@@ -1966,7 +1966,8 @@ export default function OrderManagementPage() {
   const TABS = [
     { key: "ALL", label: "Tất cả" },
     { key: "CHO_XAC_NHAN", label: "Chờ xác nhận" },
-    { key: "DANG_XU_LY", label: "Đã xử lý xong" },
+    { key: "DANG_XU_LY", label: "Đã xác nhận" },
+    { key: "DA_XU_LY_XONG", label: "Đã đóng gói - Chờ giao hàng" },
     { key: "DANG_GIAO", label: "Đang vận chuyển" },
     { key: "DA_GIAO", label: "Đã giao hàng" },
     { key: "DA_HUY", label: "Đã hủy" },
@@ -2219,12 +2220,12 @@ export default function OrderManagementPage() {
                     key={order._id}
                     className="hover:bg-slate-50/50 transition-colors group"
                   >
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-600">
                         #{order.MaDonHang}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-bold text-slate-900 text-[14px]">
                         {order.KhachHang?.TenKhachHang || "Vãng lai"}
                       </div>
@@ -2232,11 +2233,11 @@ export default function OrderManagementPage() {
                         {order.KhachHang?.SDT}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600 font-medium text-[14px]">
+                    <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-medium text-[14px]">
                       {order.Items.reduce((acc, curr) => acc + curr.SoLuong, 0)}{" "}
                       sản phẩm
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-semibold text-emerald-600 text-[15px]">
                         {order.TongTien.toLocaleString()} ₫
                       </div>
@@ -2246,7 +2247,7 @@ export default function OrderManagementPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-slate-600 font-medium text-[14px]">
+                    <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-medium text-[14px]">
                       {order.PhuongThucThanhToan === "TIEN_MAT"
                         ? "Tiền mặt"
                         : order.PhuongThucThanhToan === "CHUYEN_KHOAN"
@@ -2255,7 +2256,7 @@ export default function OrderManagementPage() {
                             ? "Ghi nợ"
                             : order.PhuongThucThanhToan || "COD"}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className="inline-flex items-center px-3 py-1 rounded-md text-[11px] font-bold border"
                         style={{
@@ -2267,7 +2268,7 @@ export default function OrderManagementPage() {
                         {STATUS_MAP[order.TrangThai].label}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-[13px] font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-[13px] font-medium">
                       {order.TrangThai === "CHO_XAC_NHAN" ? (
                         <span
                           style={{
@@ -2283,7 +2284,7 @@ export default function OrderManagementPage() {
                         <span className="text-slate-300">—</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center gap-2 justify-end">
                         <button
                           onClick={() => {
@@ -2309,17 +2310,35 @@ export default function OrderManagementPage() {
                         {isAdminOrEmployee && (
                           <>
                             {order.TrangThai === "CHO_XAC_NHAN" && (
-                              <button
-                                onClick={() => {
-                                  handleUpdateStatus(order._id, "DANG_XU_LY");
-                                }}
-                                className="inline-flex items-center px-3 py-1.5 rounded-md font-bold text-[11px] bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-all cursor-pointer border-none"
-                                title="Xác nhận đơn"
-                              >
-                                XÁC NHẬN
-                              </button>
+                              order.GhiChu?.toLowerCase().includes('hợp đồng') ? (
+                                order.GhiChu?.toLowerCase().includes('pha chế') ? (
+                                  <span
+                                    className="inline-flex items-center px-3 py-1.5 rounded-md font-bold text-[11px] bg-slate-100 text-slate-500 shadow-sm"
+                                    title="Đơn hàng đang chờ phòng R&D kiểm định và phê duyệt (KCS)"
+                                  >
+                                    <Clock size={12} className="mr-1" /> CHỜ R&D
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="inline-flex items-center px-3 py-1.5 rounded-md font-bold text-[11px] bg-amber-50 text-amber-600 shadow-sm border border-amber-200"
+                                    title="Đơn hàng đang chờ khách hàng ký hợp đồng trên Blockchain"
+                                  >
+                                    <Clock size={12} className="mr-1" /> CHỜ KÝ HỢP ĐỒNG
+                                  </span>
+                                )
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    handleUpdateStatus(order._id, "DANG_XU_LY");
+                                  }}
+                                  className="inline-flex items-center px-3 py-1.5 rounded-md font-bold text-[11px] bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-all cursor-pointer border-none"
+                                  title="Xác nhận đơn"
+                                >
+                                  XÁC NHẬN
+                                </button>
+                              )
                             )}
-                            {order.TrangThai === "DANG_XU_LY" && (
+                            {(order.TrangThai === "DANG_XU_LY" || order.TrangThai === "DA_XU_LY_XONG") && (
                               <button
                                 onClick={() =>
                                   handleUpdateStatus(order._id, "DANG_GIAO")
