@@ -18,7 +18,6 @@ const TABS = [
     { id: 'overview', label: 'Tổng quan', icon: BarChart3 },
     { id: 'staff', label: 'Nhân sự', icon: Users },
     { id: 'performance', label: 'Hiệu suất', icon: SignalHigh },
-    { id: 'rewards', label: 'Vinh danh', icon: Award },
 ];
 
 const CHART_COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981'];
@@ -91,7 +90,7 @@ export default function PerformanceDashboard() {
             'Số Mẫu Test R&D': staff.tests,
             'Số Yêu Cầu CSKH': staff.customers,
             'Điểm KPI': staff.satisfaction,
-            'Đánh Giá': staff.level === 'Excellent' ? 'Xuất sắc' : (staff.level === 'Good' ? 'Tốt' : 'Đạt')
+            'Đánh Giá': staff.level === 'Excellent' ? 'Xuất sắc' : (staff.level === 'Good' ? 'Tốt' : (staff.level === 'Average' ? 'Đạt' : 'Chưa đạt'))
         }));
 
         const ws = XLSX.utils.json_to_sheet(exportData);
@@ -457,9 +456,11 @@ export default function PerformanceDashboard() {
                                                             ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
                                                             : s.level === 'Good'
                                                                 ? 'bg-blue-50 text-blue-600 border-blue-100'
-                                                                : 'bg-amber-50 text-amber-600 border-amber-100'
+                                                                : s.level === 'Average'
+                                                                    ? 'bg-amber-50 text-amber-600 border-amber-100'
+                                                                    : 'bg-rose-50 text-rose-600 border-rose-100'
                                                         }`}>
-                                                        {s.level === 'Excellent' ? 'XUẤT SẮC' : s.level === 'Good' ? 'TỐT' : 'ĐẠT'}
+                                                        {s.level === 'Excellent' ? 'XUẤT SẮC' : s.level === 'Good' ? 'TỐT' : s.level === 'Average' ? 'ĐẠT' : 'CHƯA ĐẠT'}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -472,95 +473,7 @@ export default function PerformanceDashboard() {
                 </div>
             )}
 
-            {/* TAB CONTENT: REWARDS (KHEN THƯỞNG) */}
-            {activeTab === 'rewards' && (
-                <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="bg-gradient-to-b from-amber-50 to-white border border-amber-100/50 rounded-3xl p-8 text-center relative overflow-hidden shadow-sm">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500"></div>
-                        <Award size={40} className="text-amber-500 mx-auto mb-4 animate-bounce drop-shadow-sm" />
-                        <h3 className="text-xl font-light text-slate-800 mb-2 tracking-wide">
-                            BẢNG VÀNG VINH DANH <span className="font-medium text-amber-600">THÁNG NÀY</span>
-                        </h3>
-                        <p className="text-sm text-slate-500 font-light max-w-lg mx-auto">
-                            Tôn vinh những cá nhân xuất sắc có chỉ số KPI (kết hợp doanh thu, tỷ lệ pass mẫu và số chuyến) cao nhất toàn công ty.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-col md:flex-row justify-center items-end gap-6 md:gap-8 px-4 pb-8">
-                        {/* Hạng 2: Bạc */}
-                        {top3Staff[1] && (
-                            <div className="w-full md:w-72 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 p-6 text-center relative flex flex-col items-center order-2 md:order-1 hover:-translate-y-1 transition-transform duration-300">
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-200 text-slate-600 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
-                                    Hạng 2
-                                </div>
-                                <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-slate-200 to-slate-400 mb-4 mt-2">
-                                    <div className="w-full h-full bg-white rounded-full overflow-hidden flex items-center justify-center">
-                                        {top3Staff[1].avatar ? (
-                                            <img src={getAvatarUrl(top3Staff[1].avatar)} alt="Silver" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="text-2xl font-light text-slate-400">{top3Staff[1].name.split(' ').slice(-1)[0][0]}</span>
-                                        )}
-                                    </div>
-                                </div>
-                                <h4 className="text-lg font-medium text-slate-700 mb-1">{top3Staff[1].name}</h4>
-                                <p className="text-xs text-slate-400 font-light mb-4">{top3Staff[1].dept}</p>
-                                <div className="w-full bg-slate-50/50 rounded-xl p-3 border border-slate-100">
-                                    <div className="text-[10px] text-slate-400 uppercase tracking-widest font-medium mb-1">Điểm Tích Lũy</div>
-                                    <div className="text-xl font-light text-slate-700">{top3Staff[1].satisfaction}</div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Hạng 1: Vàng */}
-                        {top3Staff[0] && (
-                            <div className="w-full md:w-80 bg-white rounded-3xl shadow-[0_12px_40px_rgb(0,0,0,0.08)] border border-amber-100 p-8 text-center relative flex flex-col items-center order-1 md:order-2 md:-translate-y-8 z-10 hover:-translate-y-10 transition-transform duration-300">
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-[11px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-md">
-                                    Vô Địch
-                                </div>
-                                <div className="w-28 h-28 rounded-full p-1.5 bg-gradient-to-tr from-amber-300 via-yellow-400 to-orange-400 mb-5 mt-2 shadow-lg shadow-amber-200/50">
-                                    <div className="w-full h-full bg-white rounded-full overflow-hidden flex items-center justify-center">
-                                        {top3Staff[0].avatar ? (
-                                            <img src={getAvatarUrl(top3Staff[0].avatar)} alt="Gold" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="text-3xl font-light text-amber-500">{top3Staff[0].name.split(' ').slice(-1)[0][0]}</span>
-                                        )}
-                                    </div>
-                                </div>
-                                <h4 className="text-2xl font-medium text-slate-800 mb-1">{top3Staff[0].name}</h4>
-                                <p className="text-sm text-slate-500 font-light mb-6">{top3Staff[0].dept}</p>
-                                <div className="w-full bg-amber-50/50 rounded-2xl p-4 border border-amber-100/50">
-                                    <div className="text-[11px] text-amber-600/80 uppercase tracking-widest font-medium mb-1">Điểm Tích Lũy</div>
-                                    <div className="text-3xl font-light text-amber-600">{top3Staff[0].satisfaction}</div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Hạng 3: Đồng */}
-                        {top3Staff[2] && (
-                            <div className="w-full md:w-72 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 p-6 text-center relative flex flex-col items-center order-3 hover:-translate-y-1 transition-transform duration-300">
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-100 border border-orange-200 text-orange-600 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
-                                    Hạng 3
-                                </div>
-                                <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-orange-200 to-orange-400 mb-4 mt-2">
-                                    <div className="w-full h-full bg-white rounded-full overflow-hidden flex items-center justify-center">
-                                        {top3Staff[2].avatar ? (
-                                            <img src={getAvatarUrl(top3Staff[2].avatar)} alt="Bronze" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="text-2xl font-light text-orange-400">{top3Staff[2].name.split(' ').slice(-1)[0][0]}</span>
-                                        )}
-                                    </div>
-                                </div>
-                                <h4 className="text-lg font-medium text-slate-700 mb-1">{top3Staff[2].name}</h4>
-                                <p className="text-xs text-slate-400 font-light mb-4">{top3Staff[2].dept}</p>
-                                <div className="w-full bg-orange-50/50 rounded-xl p-3 border border-orange-100/50">
-                                    <div className="text-[10px] text-orange-800/60 uppercase tracking-widest font-medium mb-1">Điểm Tích Lũy</div>
-                                    <div className="text-xl font-light text-orange-600">{top3Staff[2].satisfaction}</div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+            {/* TAB CONTENT: REWARDS (KHEN THƯỞNG) REMOVED AS PER REQUEST */}
         </div>
     );
 }

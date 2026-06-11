@@ -1,3 +1,6 @@
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -16,7 +19,7 @@ const app = express();
 // Middleware
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://house-pating-web.vercel.app',
+  'https://house-painting-web.vercel.app',
 ];
 if (process.env.FRONTEND_URL) {
   allowedOrigins.push(process.env.FRONTEND_URL);
@@ -110,8 +113,11 @@ app.use('/api/van-chuyen', vanChuyenRouter);
 app.use('/api/shipping', vanChuyenRouter);
 
 const hieuSuatRouter = require('./routes/hieuSuatRoutes');
+const danhMucSonRouter = require('./routes/danhMucSonRoutes');
+
 app.use('/api/hieu-suat', hieuSuatRouter);
 app.use('/api/performance', hieuSuatRouter);
+app.use('/api/danh-muc-son', danhMucSonRouter);
 
 const doiTraRouter = require('./routes/doiTraRoutes');
 app.use('/api/doi-tra', doiTraRouter);

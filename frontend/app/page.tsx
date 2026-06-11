@@ -1,7 +1,7 @@
 "use client";
 
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -62,12 +62,13 @@ export default function HomePage() {
   const achievements = [
     { title: "Tòa nhà hành chính mới Hải Phòng", img: "/images/tthanhchinh" },
     { title: "Phố Nam", img: "/images/phonam.jpg" },
-    { title: "Trung tâm tổ chức tiệc cưới và sự kiện Pandora", img: "/images/pandora.jpg" },
+    {
+      title: "Trung tâm tổ chức tiệc cưới và sự kiện Pandora",
+      img: "/images/pandora.jpg",
+    },
     { title: "Phố Bắc", img: "/images/phobac.jpg" },
     { title: "Dự án tương lai", img: "/images/gemini.jpg" },
   ];
-
-
 
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -152,7 +153,7 @@ export default function HomePage() {
           </section>
           <section>
             <h4 class="text-slate-900 font-bold mb-3">2. Quy trình đổi trả</h4>
-            <p class="text-slate-500 leading-relaxed text-sm">Quý khách vui lòng liên hệ hotline: <strong>+84 (028) 3888 9999</strong> hoặc gửi email về <strong>contact@vtscpaint.com</strong> kèm theo hóa đơn và hình ảnh sản phẩm để được hỗ trợ xử lý trong 24h.</p>
+            <p class="text-slate-500 leading-relaxed text-sm">Quý khách vui lòng liên hệ hotline: <strong>0225.3842.160 - 0225.3747.226</strong> hoặc gửi email về <strong>vtsc@vtschp.vn</strong> kèm theo hóa đơn và hình ảnh sản phẩm để được hỗ trợ xử lý trong 24h.</p>
           </section>
         </div>
       `,
@@ -275,10 +276,6 @@ export default function HomePage() {
     };
   }, [isCartOpen]);
 
-
-
-
-
   const updateQuantity = (id: string, delta: number, maxQuantity?: number) => {
     setProductQuantities((prev) => {
       const current = prev[id] || 1;
@@ -290,7 +287,11 @@ export default function HomePage() {
     });
   };
 
-  const handleQuantityChange = (id: string, value: string, maxQuantity?: number) => {
+  const handleQuantityChange = (
+    id: string,
+    value: string,
+    maxQuantity?: number,
+  ) => {
     const val = parseInt(value);
     if (!isNaN(val) && val > 0) {
       let finalVal = val;
@@ -314,17 +315,24 @@ export default function HomePage() {
 
   const router = useRouter();
 
-  const addToCart = async (sp: any) => {
+  const addToCart = async (sp: any, colorCode?: string) => {
     if (!isAuthenticated) {
       setIsLoginOpen(true);
       return;
     }
     const qtyToAdd = productQuantities[sp._id] || 1;
-    const existingItem = cartItems.find((item) => item.SanPham?._id === sp._id);
+    const existingItem = cartItems.find(
+      (item) =>
+        item.SanPham?._id === sp._id &&
+        (item.MaMau || "") === (colorCode || ""),
+    );
     const newQty = existingItem ? existingItem.SoLuong + qtyToAdd : qtyToAdd;
 
     if (newQty > (sp.TongTonKho || 0)) {
-      setCartMessage({ id: sp._id, text: `Kho chỉ còn ${sp.TongTonKho || 0}!` });
+      setCartMessage({
+        id: sp._id,
+        text: `Kho chỉ còn ${sp.TongTonKho || 0}!`,
+      });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 3000);
       return;
     }
@@ -332,7 +340,7 @@ export default function HomePage() {
     setCartLoading(sp._id);
     try {
       const sessionId = user?.id || getGuestSessionId();
-      await addToCartStore(sessionId, sp._id, newQty);
+      await addToCartStore(sessionId, sp._id, newQty, colorCode || "");
       setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
     } catch (err: any) {
@@ -344,7 +352,6 @@ export default function HomePage() {
     }
   };
 
-
   const removeFromCart = async (sanPhamId: string) => {
     try {
       const sessionId = user?.id || getGuestSessionId();
@@ -354,7 +361,10 @@ export default function HomePage() {
     }
   };
 
-  const handleUpdateCartItemQuantity = async (sanPhamId: string, soLuong: number) => {
+  const handleUpdateCartItemQuantity = async (
+    sanPhamId: string,
+    soLuong: number,
+  ) => {
     if (soLuong < 1) return;
     try {
       const sessionId = user?.id || getGuestSessionId();
@@ -435,7 +445,11 @@ export default function HomePage() {
         if (redirectPath) {
           router.push(redirectPath);
           setRedirectPath(null);
-        } else if (role === "NhanVien" || role === "Admin" || role === "Director") {
+        } else if (
+          role === "NhanVien" ||
+          role === "Admin" ||
+          role === "Director"
+        ) {
           router.push("/dashboard");
         } else {
           router.push("/");
@@ -543,7 +557,7 @@ export default function HomePage() {
   const getImageUrl = (path: any) => {
     return resolveImageUrl(
       path,
-      "https://ui-avatars.com/api/?name=VTSC+Product&background=random"
+      "https://ui-avatars.com/api/?name=VTSC+Product&background=random",
     );
   };
 
@@ -552,11 +566,17 @@ export default function HomePage() {
       {/* ═══════ HEADER / NAVBAR ═══════ */}
       <header className="sticky top-0 z-[100] bg-white/70 backdrop-blur-xl border-b border-slate-200/40 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
         <div className="max-w-[1400px] mx-auto px-8 py-5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3.5 no-underline group">
+          <Link
+            href="/"
+            className="flex items-center gap-3.5 no-underline group"
+          >
             <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-110 px-3">
-              <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+              <img
+                src="/vtsc.png"
+                alt="VTSC Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
-
           </Link>
 
           <nav className="hidden xl:flex items-center gap-0.5">
@@ -567,7 +587,7 @@ export default function HomePage() {
               Trang chủ
             </Link>
             <Link
-              href="#san-pham"
+              href="/shop"
               className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Sản phẩm
@@ -656,7 +676,7 @@ export default function HomePage() {
               </span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight uppercase text-slate-900">
-              Đại lý phân phối
+              Nhà cung cấp & Đại lý
               <br />
               <span className="text-blue-600">Sơn tĩnh điện</span>
               <br />
@@ -750,7 +770,10 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ QUY TRÌNH PHA CHẾ SƠN (Mới) ═══════ */}
-      <section id="quy-trinh" className="px-8 py-24 bg-slate-50 scroll-mt-[25px]">
+      <section
+        id="quy-trinh"
+        className="px-8 py-24 bg-slate-50 scroll-mt-[25px]"
+      >
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
@@ -853,7 +876,10 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ BẢNG MÀU XU HƯỚNG ═══════ */}
-      <section id="bang-mau" className="px-8 py-20 bg-slate-50 scroll-mt-[40px]">
+      <section
+        id="bang-mau"
+        className="px-8 py-20 bg-slate-50 scroll-mt-[40px]"
+      >
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
             <div>
@@ -904,195 +930,38 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ PRODUCTS SECTION (Balanced) ═══════ */}
-      <section id="san-pham" className="px-8 py-20 bg-white scroll-mt-[40px]">
-        <div className="max-w-[1300px] mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
-            <div>
-              <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-3 uppercase">
-                Danh Mục Sản Phẩm
-              </h2>
-              <p className="text-slate-500 max-w-md font-medium text-base">
-                Khám phá các dòng sơn tĩnh điện cao cấp quốc tế.
-              </p>
-            </div>
-            <Link
-              href="/shop"
-              className="text-blue-600 font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline"
-            >
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {loadingProducts ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="animate-pulse bg-white rounded-3xl h-[400px]"
-                ></div>
-              ))
-            ) : products.filter((sp) => {
-              const search = searchTerm.toLowerCase();
-              return (
-                sp.TenDongSon?.toLowerCase().includes(search) ||
-                sp.MaSanPham?.toLowerCase().includes(search) ||
-                sp.PhanLoai?.toLowerCase().includes(search) ||
-                sp.ThuongHieu?.toLowerCase().includes(search)
-              );
-            }).length === 0 ? (
-              <div className="col-span-full p-12 text-center bg-white rounded-[40px] border border-slate-100">
-                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
-                  <Search size={40} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                  Không tìm thấy sản phẩm phù hợp
-                </h3>
-                <p className="text-slate-500 font-medium">
-                  Vui lòng thử lại với từ khóa khác như "màu đỏ", "sơn bóng",
-                  "RAL..."
-                </p>
-              </div>
-            ) : (
-              products
-                .filter((sp) => {
-                  const search = searchTerm.toLowerCase();
-                  return (
-                    sp.TenDongSon?.toLowerCase().includes(search) ||
-                    sp.MaSanPham?.toLowerCase().includes(search) ||
-                    sp.PhanLoai?.toLowerCase().includes(search) ||
-                    sp.ThuongHieu?.toLowerCase().includes(search)
-                  );
-                })
-                .slice(0, 8)
-                .map((sp) => (
-                  <div
-                    key={sp._id}
-                    className="group bg-white rounded-3xl border border-slate-100 p-5 transition-all hover:shadow-xl hover:-translate-y-2 relative"
-                  >
-                    <div
-                      className="aspect-square rounded-2xl overflow-hidden mb-6 bg-slate-50 relative cursor-pointer"
-                      onClick={() => handleViewProduct(sp)}
-                    >
-                      <img
-                        src={getImageUrl(sp.HinhAnh)}
-                        alt={sp.TenDongSon}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute top-4 left-4 bg-white/95 px-3 py-1 rounded-lg text-[10px] font-bold text-blue-600 uppercase tracking-widest shadow-sm">
-                        {sp.PhanLoai}
-                      </div>
-                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-xl scale-75 group-hover:scale-100 transition-all duration-300">
-                          <Eye size={24} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="px-1">
-                      <h3
-                        className="text-lg font-bold text-slate-900 mb-1 cursor-pointer hover:text-blue-600 transition-colors line-clamp-1"
-                        onClick={() => handleViewProduct(sp)}
-                      >
-                        {sp.TenDongSon}
-                      </h3>
-                      <p className="text-[11px] text-slate-400 font-bold mb-1 uppercase tracking-widest">
-                        {sp.ThuongHieu}
-                      </p>
-                      <p className="text-[12px] text-slate-500 font-medium mb-4">
-                        Tồn kho: <span className="font-bold text-slate-700">{sp.TongTonKho}</span> {sp.DonViTinh || "Thùng"}
-                      </p>
-                      <div className="flex justify-between items-end">
-                        <div className="flex flex-col">
-                          <span className="text-emerald-600 font-bold text-xl">
-                            {sp.DonGiaCoSo?.toLocaleString()} ₫
-                          </span>
-                          <span className="text-xs text-slate-400 font-medium">
-                            / {sp.DonViTinh || "Thùng"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-3">
-                        <div className="flex items-center bg-slate-100 rounded-xl p-1 h-10">
-                          <button
-                            onClick={() => updateQuantity(sp._id, -1, sp.TongTonKho)}
-                            className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            min="1"
-                            value={productQuantities[sp._id] || 1}
-                            onChange={(e) =>
-                              handleQuantityChange(sp._id, e.target.value, sp.TongTonKho)
-                            }
-                            onBlur={() => handleQuantityBlur(sp._id)}
-                            className="w-8 text-center bg-transparent border-none text-sm font-bold text-slate-800 outline-none appearance-none"
-                          />
-                          <button
-                            onClick={() => updateQuantity(sp._id, 1, sp.TongTonKho)}
-                            className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold cursor-pointer"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <button
-                          onClick={() => addToCart(sp)}
-                          disabled={cartLoading === sp._id}
-                          className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500 text-white" : "bg-red-500 text-white text-[10px]") : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
-                        >
-                          {cartLoading === sp._id ? (
-                            <Loader2 size={16} className="animate-spin" />
-                          ) : cartMessage.id === sp._id ? (
-                            cartMessage.text === "Đã thêm vào giỏ!" ? <ShoppingCart size={16} /> : <span>{cartMessage.text}</span>
-                          ) : (
-                            <>
-                              <Plus size={16} /> Thêm
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-            )}
-          </div>
-
-          <div className="mt-12 flex justify-center">
-            <Link
-              href="/shop"
-              className="px-8 py-3.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-2xl font-bold text-[14px] transition-all shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center gap-2 no-underline"
-            >
-              Xem tất cả sản phẩm <ArrowRight size={18} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* ═══════ THÀNH TỰU NỔI BẬT (SLIDER) ═══════ */}
-      <section id="thanh-tuu" className="relative w-full h-[80vh] min-h-[500px] overflow-hidden bg-slate-900 group">
+      <section
+        id="thanh-tuu"
+        className="relative w-full h-[80vh] min-h-[500px] overflow-hidden bg-slate-900 group"
+      >
         {achievements.map((project, idx) => (
           <div
             key={idx}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeAchievement === idx ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-              }`}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              activeAchievement === idx
+                ? "opacity-100 z-10"
+                : "opacity-0 z-0 pointer-events-none"
+            }`}
           >
             <div className="absolute inset-0 bg-black/40 z-10"></div>
             <img
               src={project.img}
               alt={project.title}
-              className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-linear ${activeAchievement === idx ? "scale-110" : "scale-100"
-                }`}
+              className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-linear ${
+                activeAchievement === idx ? "scale-110" : "scale-100"
+              }`}
             />
             <div className="absolute inset-0 flex flex-col items-center justify-center z-20 text-center px-4">
               <h2
                 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-5 uppercase tracking-wide"
-                style={{ textShadow: '2px 4px 8px rgba(0,0,0,0.6)' }}
+                style={{ textShadow: "2px 4px 8px rgba(0,0,0,0.6)" }}
               >
                 {project.title}
               </h2>
               <p
                 className="text-base md:text-lg text-white font-medium max-w-2xl mb-10 tracking-wide"
-                style={{ textShadow: '1px 2px 4px rgba(0,0,0,0.8)' }}
+                style={{ textShadow: "1px 2px 4px rgba(0,0,0,0.8)" }}
               >
                 Nơi Nghệ Thuật Giao Thoa Cùng Chất Lượng Vượt Trội
               </p>
@@ -1109,8 +978,11 @@ export default function HomePage() {
             <button
               key={idx}
               onClick={() => setActiveAchievement(idx)}
-              className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${activeAchievement === idx ? "w-8 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" : "w-4 bg-white/40 hover:bg-white/80"
-                }`}
+              className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${
+                activeAchievement === idx
+                  ? "w-8 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                  : "w-4 bg-white/40 hover:bg-white/80"
+              }`}
             />
           ))}
         </div>
@@ -1191,7 +1063,7 @@ export default function HomePage() {
         id="footer"
         className="relative text-white pt-20 pb-10 scroll-mt-[40px] bg-cover bg-center overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.94)), url('/login-illustration.png')`
+          backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.94)), url('/login-illustration.png')`,
         }}
       >
         <div className="max-w-[1300px] mx-auto px-10">
@@ -1200,7 +1072,11 @@ export default function HomePage() {
             <div className="lg:col-span-5">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-[200px] h-[68px] flex-shrink-0 rounded-[16px] bg-white flex items-center justify-center shadow-lg shadow-black/20 overflow-hidden px-4">
-                  <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
+                  <img
+                    src="/vtsc.png"
+                    alt="VTSC Logo"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <span className="font-bold text-xl tracking-tight uppercase text-white">
                   CÔNG TY CP TMDV VOSCO (VTSC)
@@ -1213,15 +1089,18 @@ export default function HomePage() {
                 />
                 <ContactItem
                   icon={<Phone size={20} className="text-blue-400" />}
-                  text="+84 (028) 3888 9999"
+                  text="0225.3842.160 - 0225.3747.226"
                 />
                 <ContactItem
                   icon={<Mail size={20} className="text-blue-400" />}
-                  text="contact@vtscpaint.com"
+                  text="vtsc@vtschp.vn"
                 />
               </div>
               <div className="flex gap-4 mt-10">
-                <SocialLink icon={<Facebook size={20} />} href="#" />
+                <SocialLink
+                  icon={<Facebook size={20} />}
+                  href="https://www.facebook.com/VOSCO.VTSC"
+                />
                 <SocialLink icon={<Twitter size={20} />} href="#" />
                 <SocialLink icon={<Instagram size={20} />} href="#" />
               </div>
@@ -1382,13 +1261,19 @@ export default function HomePage() {
                       <div className="flex flex-wrap gap-3">
                         {selectedProduct.DanhSachMaMau.map(
                           (m: any, i: number) => (
-                            <div key={i} className="group/item relative">
+                            <div
+                              key={i}
+                              className="group/item relative cursor-pointer"
+                              onClick={() => setSelectedColor(m)}
+                            >
                               <div
-                                className="w-10 h-10 rounded-xl border border-slate-200 shadow-sm transition-all hover:scale-110"
+                                className={`w-10 h-10 rounded-xl shadow-sm transition-all hover:scale-110 ${selectedColor?.MaMau === m.MaMau ? "border-2 border-blue-600 scale-110 shadow-blue-600/30" : "border border-slate-200"}`}
                                 style={{ background: m.HexCode }}
                               />
                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/item:opacity-100 transition-all whitespace-nowrap pointer-events-none">
-                                {m.MaMau} — {m.TenMau}
+                                {m.MaMau} —{" "}
+                                {paintColors.find((c) => c.code === m.MaMau)
+                                  ?.name || m.TenMau}
                               </div>
                             </div>
                           ),
@@ -1401,7 +1286,7 @@ export default function HomePage() {
                 <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-start gap-4">
                   <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm shrink-0">
                     <QRCodeCanvas
-                      value={`${typeof window !== 'undefined' ? window.location.origin : ''}/trace/${selectedProduct._id}`}
+                      value={`${typeof window !== "undefined" ? window.location.origin : ""}/trace/${selectedProduct._id}`}
                       size={70}
                       bgColor={"#ffffff"}
                       fgColor={"#0f172a"}
@@ -1414,7 +1299,8 @@ export default function HomePage() {
                       Truy xuất nguồn gốc
                     </h4>
                     <p className="text-xs text-slate-500 leading-relaxed mb-2">
-                      Khách hàng có thể quét mã QR này để xem thông tin hóa đơn, ngày sản xuất, hạn sử dụng và quy trình.
+                      Khách hàng có thể quét mã QR này để xem thông tin hóa đơn,
+                      ngày sản xuất, hạn sử dụng và quy trình.
                     </p>
                     <a
                       href={`/trace/${selectedProduct._id}`}
@@ -1434,7 +1320,13 @@ export default function HomePage() {
                     </span>
                     <div className="flex items-center bg-slate-100 rounded-xl p-1 w-32">
                       <button
-                        onClick={() => updateQuantity(selectedProduct._id, -1, selectedProduct.TongTonKho)}
+                        onClick={() =>
+                          updateQuantity(
+                            selectedProduct._id,
+                            -1,
+                            selectedProduct.TongTonKho,
+                          )
+                        }
                         className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
                       >
                         -
@@ -1447,14 +1339,20 @@ export default function HomePage() {
                           handleQuantityChange(
                             selectedProduct._id,
                             e.target.value,
-                            selectedProduct.TongTonKho
+                            selectedProduct.TongTonKho,
                           )
                         }
                         onBlur={() => handleQuantityBlur(selectedProduct._id)}
                         className="w-12 text-center bg-transparent border-none text-base font-bold text-slate-900 outline-none appearance-none"
                       />
                       <button
-                        onClick={() => updateQuantity(selectedProduct._id, 1, selectedProduct.TongTonKho)}
+                        onClick={() =>
+                          updateQuantity(
+                            selectedProduct._id,
+                            1,
+                            selectedProduct.TongTonKho,
+                          )
+                        }
                         className="flex-1 h-10 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all font-bold text-lg cursor-pointer"
                       >
                         +
@@ -1462,7 +1360,19 @@ export default function HomePage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => addToCart(selectedProduct)}
+                    onClick={() => {
+                      if (
+                        selectedProduct.DanhSachMaMau &&
+                        selectedProduct.DanhSachMaMau.length > 0 &&
+                        !selectedColor
+                      ) {
+                        alert(
+                          "Vui lòng chọn màu sơn mong muốn ở trên trước khi thêm vào giỏ hàng!",
+                        );
+                        return;
+                      }
+                      addToCart(selectedProduct, selectedColor?.MaMau);
+                    }}
                     disabled={cartLoading === selectedProduct._id}
                     className={`w-full h-16 text-white rounded-2xl font-bold text-lg shadow-xl transition-all flex items-center justify-center gap-4 disabled:opacity-50 cursor-pointer ${cartMessage.id === selectedProduct._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500" : "bg-red-500 text-sm") : "bg-blue-600 hover:bg-blue-700 hover:-translate-y-1"}`}
                   >
@@ -1580,8 +1490,6 @@ export default function HomePage() {
           </div>
         </div>
       )}
-
-
 
       {isLoginOpen && (
         <div className="fixed inset-0 z-[400] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -1734,7 +1642,6 @@ export default function HomePage() {
                     </button>
                   </p>
                 </div>
-
               </form>
             ) : (
               <form onSubmit={handlePageRegister} className="space-y-4">
@@ -1991,10 +1898,7 @@ function ServiceCard({
   }
 
   return (
-    <Link
-      href={href || "#"}
-      className="no-underline text-inherit h-full block"
-    >
+    <Link href={href || "#"} className="no-underline text-inherit h-full block">
       {CardContent}
     </Link>
   );

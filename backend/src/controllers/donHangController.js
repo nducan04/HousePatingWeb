@@ -12,23 +12,43 @@ exports.checkoutFromCart = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, phuongThucThanhToan, ghiChu } = req.body;
+        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, phuongThucThanhToan, ghiChu, selectedItemKeys } = req.body;
 
         // 1. Lấy giỏ hàng
         const cart = await GioHang.findOne({ SessionId: sessionId }).populate('Items.SanPham');
         if (!cart || cart.Items.length === 0) throw new Error('Giỏ hàng trống');
 
+        let itemsToProcess = cart.Items;
+        if (selectedItemKeys && Array.isArray(selectedItemKeys)) {
+            itemsToProcess = cart.Items.filter(item => {
+                const key = `${item.SanPham?._id || item.SanPham}_${item.MaMau || ""}`;
+                return selectedItemKeys.includes(key);
+            });
+        }
+        if (itemsToProcess.length === 0) throw new Error('Không có sản phẩm nào được chọn để thanh toán');
+
         // 2. Tính toán tiền và check kho
         let orderItems = [];
         let subtotal = 0;
 
-        for (let item of cart.Items) {
+        for (let item of itemsToProcess) {
             const sp = await SanPhamSon.findById(item.SanPham._id).session(session);
             if (!sp) throw new Error(`Sản phẩm ${item.SanPham.TenDongSon} không còn tồn tại`);
-            if (sp.TongTonKho < item.SoLuong) throw new Error(`Sản phẩm ${item.SanPham.TenDongSon} không đủ tồn kho (Còn: ${sp.TongTonKho})`);
+            
+            const maMauUpper = item.MaMau ? item.MaMau.toUpperCase() : '';
+            let colorItem = sp.DanhSachMaMau.find(m => m.MaMau.toUpperCase() === maMauUpper);
+            if (!colorItem && sp.DanhSachMaMau && sp.DanhSachMaMau.length > 0) {
+                colorItem = sp.DanhSachMaMau[0];
+            }
+            
+            if (!colorItem) throw new Error(`Dòng sơn ${sp.TenDongSon} không có sẵn màu sắc nào để trừ kho`);
+            
+            if (colorItem.TonKhoKhaDung < item.SoLuong) {
+                throw new Error(`Sản phẩm ${sp.TenDongSon} (Màu: ${colorItem.MaMau}) không đủ tồn kho (Còn: ${colorItem.TonKhoKhaDung})`);
+            }
 
-            // Trừ kho ngay lập tức
-            sp.TongTonKho -= item.SoLuong;
+            // Trừ kho ở cấp độ mã màu
+            colorItem.TonKhoKhaDung -= item.SoLuong;
             sp.SoLuongDaBan += item.SoLuong;
             await sp.save({ session });
 
@@ -106,6 +126,7 @@ exports.checkoutFromCart = async (req, res) => {
             TongTien: totalAmount,
             GiamGia: discountAmount,
             KhuyenMai: appliedVoucherId,
+            DaTruKho: true,
             TrangThai: 'CHO_XAC_NHAN',
             PhuongThucThanhToan: phuongThucThanhToan || 'TIEN_MAT',
             DiaChiGiaoHang: diaChiGiaoHang,
@@ -114,8 +135,22 @@ exports.checkoutFromCart = async (req, res) => {
 
         await donHang.save({ session });
 
-        // 5. Xóa giỏ hàng
-        await GioHang.findOneAndDelete({ SessionId: sessionId }).session(session);
+        // 5. Xóa giỏ hàng hoặc chỉ xóa các items đã đặt
+        if (selectedItemKeys && Array.isArray(selectedItemKeys) && cart.Items.length > itemsToProcess.length) {
+            const itemsToKeep = cart.Items.filter(item => {
+                const key = `${item.SanPham?._id || item.SanPham}_${item.MaMau || ""}`;
+                return !selectedItemKeys.includes(key);
+            }).map(item => ({
+                SanPham: item.SanPham?._id || item.SanPham,
+                SoLuong: item.SoLuong,
+                MaMau: item.MaMau
+            }));
+            
+            cart.Items = itemsToKeep;
+            await cart.save({ session });
+        } else {
+            await GioHang.findOneAndDelete({ SessionId: sessionId }).session(session);
+        }
 
         await session.commitTransaction();
         session.endSession();
@@ -151,7 +186,7 @@ exports.getOrders = async (req, res) => {
         }
 
         const orders = await DonHang.find(query)
-            .populate('KhachHang', 'MaKH TenKhachHang DiaChi SDT')
+            .populate('KhachHang', 'MaKH TenKhachHang DiaChi SDT PhanLoai')
             .populate('KhuyenMai', 'MaVoucher LoaiGiamGia MucGiam')
             .populate('NhanVienPhuTrach', 'MaNV HoTen')
             .sort({ createdAt: -1 });
@@ -244,31 +279,51 @@ exports.updateStatus = async (req, res) => {
 
         const oldStatus = order.TrangThai;
 
-        // 1. Nếu đơn hàng được giao (DANG_GIAO hoặc DA_GIAO), trừ tồn kho tạm giữ
-        if ((status === 'DANG_GIAO' || status === 'DA_GIAO') && (oldStatus === 'CHO_XAC_NHAN' || oldStatus === 'DANG_XU_LY')) {
-            for (let item of order.Items) {
-                const sp = await SanPhamSon.findById(item.SanPham).session(session);
-                if (!sp) throw new Error(`Không tìm thấy sản phẩm ${item.TenSanPham}`);
-                if (sp.TongTonKho < item.SoLuong) {
-                    throw new Error(`Sản phẩm ${item.TenSanPham} không đủ tồn kho (Cần: ${item.SoLuong}, Kho có: ${sp.TongTonKho})`);
-                }
+        // 1. Nếu đơn hàng được giao (DANG_GIAO hoặc DA_GIAO), trừ tồn kho tạm giữ nếu chưa trừ
+        if ((status === 'DANG_GIAO' || status === 'DA_GIAO') && (oldStatus === 'CHO_XAC_NHAN' || oldStatus === 'DANG_XU_LY' || oldStatus === 'DA_XU_LY_XONG')) {
+            if (!order.DaTruKho) {
+                for (let item of order.Items) {
+                    const sp = await SanPhamSon.findById(item.SanPham).session(session);
+                    if (!sp) throw new Error(`Không tìm thấy sản phẩm ${item.TenSanPham}`);
+                    
+                    const maMauUpper = item.MaMau ? item.MaMau.toUpperCase() : '';
+                    let colorItem = sp.DanhSachMaMau.find(m => m.MaMau.toUpperCase() === maMauUpper);
+                    if (!colorItem && sp.DanhSachMaMau && sp.DanhSachMaMau.length > 0) {
+                        colorItem = sp.DanhSachMaMau[0];
+                    }
+                    
+                    if (!colorItem) throw new Error(`Dòng sơn ${sp.TenDongSon} không có sẵn màu sắc nào để trừ kho`);
+                    
+                    if (colorItem.TonKhoKhaDung < item.SoLuong) {
+                        throw new Error(`Sản phẩm ${sp.TenDongSon} (Màu: ${colorItem.MaMau}) không đủ tồn kho (Cần: ${item.SoLuong}, Kho có: ${colorItem.TonKhoKhaDung})`);
+                    }
 
-                sp.TongTonKho -= item.SoLuong;
-                sp.SoLuongDaBan += item.SoLuong;
-                await sp.save({ session });
+                    colorItem.TonKhoKhaDung -= item.SoLuong;
+                    sp.SoLuongDaBan += item.SoLuong;
+                    await sp.save({ session });
+                }
+                order.DaTruKho = true;
             }
         }
 
         // Nếu HỦY mà trạng thái trước đó đã trừ kho thì phải HOÀN KHO
-        if (status === 'DA_HUY' && (oldStatus === 'DANG_XU_LY' || oldStatus === 'DANG_GIAO')) {
+        if (status === 'DA_HUY' && order.DaTruKho) {
             for (let item of order.Items) {
                 const sp = await SanPhamSon.findById(item.SanPham).session(session);
                 if (sp) {
-                    sp.TongTonKho += item.SoLuong;
+                    const maMauUpper = item.MaMau ? item.MaMau.toUpperCase() : '';
+                    let colorItem = sp.DanhSachMaMau.find(m => m.MaMau.toUpperCase() === maMauUpper);
+                    if (!colorItem && sp.DanhSachMaMau && sp.DanhSachMaMau.length > 0) {
+                        colorItem = sp.DanhSachMaMau[0];
+                    }
+                    if (colorItem) {
+                        colorItem.TonKhoKhaDung += item.SoLuong;
+                    }
                     sp.SoLuongDaBan -= item.SoLuong;
                     await sp.save({ session });
                 }
             }
+            order.DaTruKho = false;
         }
 
         order.TrangThai = status;
@@ -456,6 +511,26 @@ exports.cancelOrder = async (req, res) => {
 
         if (order.TrangThai !== 'CHO_XAC_NHAN') {
             return res.status(400).json({ success: false, message: 'Chỉ có thể hủy đơn hàng khi đang ở trạng thái Chờ xác nhận' });
+        }
+
+        // Hoàn kho nếu đã trừ
+        if (order.DaTruKho) {
+            for (let item of order.Items) {
+                const sp = await SanPhamSon.findById(item.SanPham);
+                if (sp) {
+                    const maMauUpper = item.MaMau ? item.MaMau.toUpperCase() : '';
+                    let colorItem = sp.DanhSachMaMau.find(m => m.MaMau.toUpperCase() === maMauUpper);
+                    if (!colorItem && sp.DanhSachMaMau && sp.DanhSachMaMau.length > 0) {
+                        colorItem = sp.DanhSachMaMau[0];
+                    }
+                    if (colorItem) {
+                        colorItem.TonKhoKhaDung += item.SoLuong;
+                    }
+                    sp.SoLuongDaBan -= item.SoLuong;
+                    await sp.save();
+                }
+            }
+            order.DaTruKho = false;
         }
 
         order.TrangThai = 'DA_HUY';

@@ -211,7 +211,7 @@ export default function ProductionPlanChart({ year, filter, onFilterChange, onYe
               </div>
               <div>
                 <h3 className="text-[18px] font-black text-slate-900 tracking-tight">
-                  {selectedFilter === "year" ? "So sánh Sản lượng các Năm" : `Sản lượng Thực tế vs Kế hoạch ${selectedYear}`}
+                  {selectedFilter === "year" ? "So sánh Sản lượng các Năm" : `Sản lượng Bán ra vs Mục tiêu ${selectedYear}`}
                 </h3>
                 <p className="text-xs font-semibold text-slate-400 mt-0.5">
                   {selectedFilter === "year" ? "Đơn vị: Thùng" : "Đơn vị: Thùng"}
@@ -224,7 +224,7 @@ export default function ProductionPlanChart({ year, filter, onFilterChange, onYe
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-black bg-purple-50 text-purple-600 border border-purple-100/50 shadow-sm">
                 <Package size={12} />
-                Thực tế: {totalThucTe.toLocaleString("vi-VN")} thùng
+                Bán ra: {totalThucTe.toLocaleString("vi-VN")} thùng
               </span>
               <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100/50 shadow-sm">
                 <Award size={12} />
@@ -293,7 +293,7 @@ export default function ProductionPlanChart({ year, filter, onFilterChange, onYe
                 <Legend verticalAlign="top" align="right" iconType="circle" iconSize={10}
                   wrapperStyle={{ paddingBottom: 16, fontSize: 12, fontWeight: 700, color: "#64748b" }}
                 />
-                <Bar dataKey="prodActual" name="Sản lượng thực tế" fill="#ff0000ff" radius={[4, 4, 0, 0]} barSize={44} />
+                <Bar dataKey="prodActual" name="Sản lượng bán ra" fill="#ff0000ff" radius={[4, 4, 0, 0]} barSize={44} />
                 <Bar dataKey="prodPlan" name="Kế hoạch" fill="#0065fcff" radius={[4, 4, 0, 0]} barSize={44} />
               </BarChart>
             </ResponsiveContainer>
@@ -326,7 +326,7 @@ export default function ProductionPlanChart({ year, filter, onFilterChange, onYe
                 <Legend verticalAlign="top" align="right" iconType="circle" iconSize={10}
                   wrapperStyle={{ paddingBottom: 16, fontSize: 12, fontWeight: 700, color: "#64748b" }}
                 />
-                <Bar dataKey="prodActual" name="Sản lượng thực tế" fill="url(#colorProdActual)"
+                <Bar dataKey="prodActual" name="Sản lượng bán ra" fill="url(#colorProdActual)"
                   radius={[6, 6, 0, 0]} barSize={selectedFilter === "quarter" ? 40 : 24}
                 />
                 <Line type="monotone" dataKey="prodPlan" name="Kế hoạch đề ra"

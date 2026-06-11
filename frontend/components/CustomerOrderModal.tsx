@@ -101,7 +101,7 @@ export default function CustomerOrderModal({ order, onClose }: { order: any, onC
                                             return (
                                                 <div key={idx} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-md border border-slate-100">
                                                     <span className="w-3 h-3 rounded-full border border-slate-200" style={{ backgroundColor: cInfo?.hex || '#ccc' }}></span>
-                                                    <span className="font-black text-blue-600 text-xs">{item.MaMau || 'N/A'}</span>
+                                                    <span className="font-black text-blue-600 text-xs">{item.MaMau || 'N/A'} — {cInfo?.name || 'Màu chuẩn'}</span>
                                                     <span className="text-[10px] text-slate-400">x{item.SoLuong}</span>
                                                 </div>
                                             );

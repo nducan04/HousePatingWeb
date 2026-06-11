@@ -57,7 +57,7 @@ const addVTSCHeader = async (workbook: ExcelJS.Workbook, sheet: ExcelJS.Workshee
   headerCell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'left' };
   
   sheet.getRow(1).height = 80;
-  sheet.getRow(2).height = 80;
+  sheet.getRow(2).height = 50;
 };
 
 /**
@@ -776,62 +776,156 @@ export const exportCustomerServiceReportExcel = async (
     const headerFont = { name: 'Times New Roman', size: 11, bold: true, color: { argb: 'FFFFFFFF' } }; // Chữ trắng
     const titleFont = { name: 'Times New Roman', size: 16, bold: true };
 
-    const sheet = workbook.addWorksheet('Báo Cáo Hậu Mãi CSKH', {
+    // ============================================================================
+    // SHEET 1: KHUYẾN MÃI
+    // ============================================================================
+    const sheet1 = workbook.addWorksheet('Báo Cáo Khuyến Mãi', {
+      views: [{ showGridLines: false }]
+    });
+
+    await addVTSCHeader(workbook, sheet1, 'H');
+
+    sheet1.mergeCells('A4:H4');
+    const titleCell1 = sheet1.getCell('A4');
+    titleCell1.value = 'BÁO CÁO HIỆU SUẤT KHUYẾN MÃI & KHÁCH HÀNG THÂN THIẾT';
+    titleCell1.font = titleFont;
+    titleCell1.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    sheet1.mergeCells('A5:H5');
+    const subTitleCell1 = sheet1.getCell('A5');
+    subTitleCell1.value = `Kỳ báo cáo: ${period} - Thời gian xuất: ${exportDate}`;
+    subTitleCell1.font = italicFont;
+    subTitleCell1.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    const kpiTitleRow1 = sheet1.getRow(7);
+    kpiTitleRow1.values = ['', 'Tổng chi phí khuyến mãi (VNĐ)', 'Doanh thu từ khuyến mãi (VNĐ)', 'Lượt sử dụng Voucher đang kích hoạt'];
+    kpiTitleRow1.font = headerFont;
+    kpiTitleRow1.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    [2, 3, 4].forEach(colIdx => {
+      const cell = kpiTitleRow1.getCell(colIdx);
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } };
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    });
+
+    const kpiDataRow1 = sheet1.getRow(8);
+    kpiDataRow1.values = [
+      '',
+      summaryData?.loyalty?.totalDiscountValue || 0,
+      summaryData?.loyalty?.totalVoucherRevenue || 0,
+      summaryData?.loyalty?.activeVouchers || 0
+    ];
+    kpiDataRow1.font = boldFont;
+    kpiDataRow1.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    [2, 3, 4].forEach(colIdx => {
+      const cell = kpiDataRow1.getCell(colIdx);
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      if (colIdx === 2 || colIdx === 3) {
+        cell.numFmt = '#,##0';
+      }
+    });
+
+    const tableStartRow1 = 11;
+    const headers1 = [
+      'STT',
+      'Mã & Tên chiến dịch',
+      'Thời hạn áp dụng',
+      'Đã sử dụng',
+      'Tổng số lượng',
+      'Trạng thái hoạt động'
+    ];
+
+    const headerRow1 = sheet1.getRow(tableStartRow1);
+    headerRow1.values = headers1;
+    headerRow1.font = headerFont;
+    headerRow1.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    headers1.forEach((_, idx) => {
+      const cell = headerRow1.getCell(idx + 1);
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } };
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    });
+
+    const campaigns = summaryData?.loyalty?.campaignsList || [];
+    campaigns.forEach((camp: any, idx: number) => {
+      const r = sheet1.getRow(tableStartRow1 + 1 + idx);
+      const startDate = camp.startDate ? new Date(camp.startDate).toLocaleDateString('vi-VN') : 'N/A';
+      const endDate = camp.endDate ? new Date(camp.endDate).toLocaleDateString('vi-VN') : 'N/A';
+      
+      r.values = [
+        idx + 1,
+        `${camp.id} - ${camp.name}`,
+        `${startDate} đến ${endDate}`,
+        camp.used,
+        camp.total > 0 ? camp.total : 'Không giới hạn',
+        camp.status
+      ];
+      r.font = baseFont;
+      
+      [1, 2, 3, 4, 5, 6].forEach(colIdx => {
+        const cell = r.getCell(colIdx);
+        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        if ([1, 4, 5, 6].includes(colIdx)) {
+          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        } else {
+          cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        }
+      });
+    });
+
+    autoFitColumnWidths(sheet1, 7);
+
+    const currentLastRow1 = tableStartRow1 + campaigns.length + 3;
+    const sigRow1 = sheet1.getRow(currentLastRow1);
+    sigRow1.getCell(2).value = 'NGƯỜI LẬP BIỂU';
+    sigRow1.getCell(2).font = boldFont;
+    sigRow1.getCell(2).alignment = { horizontal: 'center' };
+    sheet1.getRow(currentLastRow1 + 1).getCell(2).value = '(Ký, ghi rõ họ tên)';
+    sheet1.getRow(currentLastRow1 + 1).getCell(2).font = italicFont;
+    sheet1.getRow(currentLastRow1 + 1).getCell(2).alignment = { horizontal: 'center' };
+
+    sigRow1.getCell(4).value = 'TRƯỞNG BỘ PHẬN MARKETING';
+    sigRow1.getCell(4).font = boldFont;
+    sigRow1.getCell(4).alignment = { horizontal: 'center' };
+    sheet1.getRow(currentLastRow1 + 1).getCell(4).value = '(Ký, ghi rõ họ tên)';
+    sheet1.getRow(currentLastRow1 + 1).getCell(4).font = italicFont;
+    sheet1.getRow(currentLastRow1 + 1).getCell(4).alignment = { horizontal: 'center' };
+
+    sigRow1.getCell(6).value = 'GIÁM ĐỐC PHÊ DUYỆT';
+    sigRow1.getCell(6).font = boldFont;
+    sigRow1.getCell(6).alignment = { horizontal: 'center' };
+    sheet1.getRow(currentLastRow1 + 1).getCell(6).value = '(Ký, ghi rõ họ tên)';
+    sheet1.getRow(currentLastRow1 + 1).getCell(6).font = italicFont;
+    sheet1.getRow(currentLastRow1 + 1).getCell(6).alignment = { horizontal: 'center' };
+
+    // ============================================================================
+    // SHEET 2: HẬU MÃI CSKH
+    // ============================================================================
+    const sheet2 = workbook.addWorksheet('Báo Cáo Hậu Mãi CSKH', {
       views: [{ showGridLines: false }]
     });
 
     // --- 1. KHỐI TIÊU ĐỀ HÀNH CHÍNH ---
-    await addVTSCHeader(workbook, sheet, 'H');
+    await addVTSCHeader(workbook, sheet2, 'H');
 
     // Ô A4:H4
-    sheet.mergeCells('A4:H4');
-    const titleCell = sheet.getCell('A4');
+    sheet2.mergeCells('A4:H4');
+    const titleCell = sheet2.getCell('A4');
     titleCell.value = 'BÁO CÁO TÌNH HÌNH HẬU MÃI VÀ CHĂM SÓC KHÁCH HÀNG';
     titleCell.font = titleFont;
     titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
     // Ô A5:H5
-    sheet.mergeCells('A5:H5');
-    const subTitleCell = sheet.getCell('A5');
+    sheet2.mergeCells('A5:H5');
+    const subTitleCell = sheet2.getCell('A5');
     subTitleCell.value = `Kỳ báo cáo: ${period} - Thời gian xuất: ${exportDate}`;
     subTitleCell.font = italicFont;
     subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
-    // --- 2. KHỐI 1: BẢNG TÓM TẮT SỐ LIỆU KPI ---
-    // Bắt đầu từ dòng 7
-    const kpiTitleRow = sheet.getRow(7);
-    kpiTitleRow.values = ['', 'Tổng ca bảo hành/đổi trả', 'Tỷ lệ xử lý thành công', 'Thời gian phản hồi TB', 'Điểm hài lòng CSAT'];
-    kpiTitleRow.font = headerFont;
-    kpiTitleRow.alignment = { horizontal: 'center', vertical: 'middle' };
-
-    // Format header bảng KPI (Màu xanh dương đậm, chữ trắng)
-    [2, 3, 4, 5].forEach(colIdx => {
-      const cell = kpiTitleRow.getCell(colIdx);
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } }; // Dark Blue
-      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-    });
-
-    const kpiDataRow = sheet.getRow(8);
-    // Render dữ liệu thực từ object summaryData
-    kpiDataRow.values = [
-      '',
-      summaryData?.kpi?.totalReturns || 0,
-      `${summaryData?.kpi?.successRate || 0}%`,
-      `${summaryData?.kpi?.avgResponseTime || 0}h`,
-      `${summaryData?.kpi?.csatScore || 0}/5`
-    ];
-    kpiDataRow.font = boldFont;
-    kpiDataRow.alignment = { horizontal: 'center', vertical: 'middle' };
-
-    // Format data KPI
-    [2, 3, 4, 5].forEach(colIdx => {
-      const cell = kpiDataRow.getCell(colIdx);
-      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-    });
-
-    // --- 3. KHỐI 2: BẢNG DANH SÁCH CHI TIẾT ---
-    // Cách khối 1 khoảng 2 dòng => Bắt đầu từ dòng 11
-    const tableStartRow = 11;
+    // Bỏ đi dữ liệu bảng KPI dòng 7, 8 theo yêu cầu.
+    // Bắt đầu thẳng vào bảng chi tiết ở dòng 7
+    const tableStartRow = 7;
     const headers = [
       'STT',
       'Mã Phiếu',
@@ -843,7 +937,7 @@ export const exportCustomerServiceReportExcel = async (
       'Ghi Chú / Phương Án Xử Lý'
     ];
 
-    const headerRow = sheet.getRow(tableStartRow);
+    const headerRow = sheet2.getRow(tableStartRow);
     headerRow.values = headers;
     headerRow.font = headerFont;
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -857,7 +951,7 @@ export const exportCustomerServiceReportExcel = async (
 
     // Đổ dữ liệu từ mảng ticketList
     ticketList.forEach((ticket, idx) => {
-      const r = sheet.getRow(tableStartRow + 1 + idx);
+      const r = sheet2.getRow(tableStartRow + 1 + idx);
       r.values = [
         idx + 1, // A: STT
         ticket.id, // B: Mã Phiếu
@@ -883,46 +977,46 @@ export const exportCustomerServiceReportExcel = async (
       });
     });
 
-    // Căn lề theo content
-    autoFitColumnWidths(sheet, 7);
+    // Căn lề theo content cho sheet 2
+    autoFitColumnWidths(sheet2, 7);
 
     // --- 5. KHỐI CHỮ KÝ HÀNH CHÍNH ---
     // Cách bảng dữ liệu 3 dòng
     const currentLastRow = tableStartRow + ticketList.length + 3;
 
-    const sigRow = sheet.getRow(currentLastRow);
+    const sigRow = sheet2.getRow(currentLastRow);
     // Cột B: NGƯỜI LẬP BIỂU
     sigRow.getCell(2).value = 'NGƯỜI LẬP BIỂU';
     sigRow.getCell(2).font = boldFont;
     sigRow.getCell(2).alignment = { horizontal: 'center' };
-    sheet.getRow(currentLastRow + 1).getCell(2).value = '(Ký, ghi rõ họ tên)';
-    sheet.getRow(currentLastRow + 1).getCell(2).font = italicFont;
-    sheet.getRow(currentLastRow + 1).getCell(2).alignment = { horizontal: 'center' };
+    sheet2.getRow(currentLastRow + 1).getCell(2).value = '(Ký, ghi rõ họ tên)';
+    sheet2.getRow(currentLastRow + 1).getCell(2).font = italicFont;
+    sheet2.getRow(currentLastRow + 1).getCell(2).alignment = { horizontal: 'center' };
 
     // Cột E: TRƯỞNG BỘ PHẬN CSKH
     sigRow.getCell(5).value = 'TRƯỞNG BỘ PHẬN CSKH';
     sigRow.getCell(5).font = boldFont;
     sigRow.getCell(5).alignment = { horizontal: 'center' };
-    sheet.getRow(currentLastRow + 1).getCell(5).value = '(Ký, ghi rõ họ tên)';
-    sheet.getRow(currentLastRow + 1).getCell(5).font = italicFont;
-    sheet.getRow(currentLastRow + 1).getCell(5).alignment = { horizontal: 'center' };
+    sheet2.getRow(currentLastRow + 1).getCell(5).value = '(Ký, ghi rõ họ tên)';
+    sheet2.getRow(currentLastRow + 1).getCell(5).font = italicFont;
+    sheet2.getRow(currentLastRow + 1).getCell(5).alignment = { horizontal: 'center' };
 
     // Cột H: GIÁM ĐỐC PHÊ DUYỆT
     sigRow.getCell(8).value = 'GIÁM ĐỐC PHÊ DUYỆT';
     sigRow.getCell(8).font = boldFont;
     sigRow.getCell(8).alignment = { horizontal: 'center' };
-    sheet.getRow(currentLastRow + 1).getCell(8).value = '(Ký, ghi rõ họ tên)';
-    sheet.getRow(currentLastRow + 1).getCell(8).font = italicFont;
-    sheet.getRow(currentLastRow + 1).getCell(8).alignment = { horizontal: 'center' };
+    sheet2.getRow(currentLastRow + 1).getCell(8).value = '(Ký, ghi rõ họ tên)';
+    sheet2.getRow(currentLastRow + 1).getCell(8).font = italicFont;
+    sheet2.getRow(currentLastRow + 1).getCell(8).alignment = { horizontal: 'center' };
 
     // --- LƯU FILE EXCEL ---
     const buffer = await workbook.xlsx.writeBuffer();
-    const fileName = `VTSC_Bao_Cao_Hau_Mai_CSKH_2026.xlsx`;
+    const safePeriod = period.replace(/[^a-zA-Z0-9]/g, '_');
+    const fileName = `VTSC_Bao_Cao_Hau_Mai_Khuyen_Mai_${safePeriod}.xlsx`;
     saveAs(new Blob([buffer]), fileName);
 
   } catch (error) {
     console.error("Lỗi khi kết xuất file Excel:", error);
-    // throw new Error("Không thể kết xuất báo cáo Excel Hậu mãi & CSKH");
   }
 };
 

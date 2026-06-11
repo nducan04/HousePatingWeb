@@ -10,27 +10,29 @@ exports.getAllFinancialRecords = async (req, res) => {
             HopDong.find({}).populate('CustomerID', 'MaKH TenKhachHang PhanLoai').sort({ createdAt: -1 })
         ]);
 
-        // Normalize Orders
-        const normalizedOrders = orders.map(o => {
-            const total = o.TongTien || 0;
-            const paid = o.TrangThaiThanhToan === 'DA_THANH_TOAN' ? total : 0;
-            return {
-                _id: o._id,
-                type: 'ORDER',
-                code: o.MaDonHang,
-                customer: o.KhachHang ? {
-                    name: o.KhachHang.TenKhachHang,
-                    code: o.KhachHang.MaKH,
-                    segment: o.KhachHang.PhanLoai
-                } : { name: 'Khách lẻ', code: 'KL' },
-                totalAmount: total,
-                paidAmount: paid,
-                debtAmount: total - paid,
-                status: o.TrangThaiThanhToan,
-                orderStatus: o.TrangThai,
-                date: o.createdAt
-            };
-        });
+        // Normalize Orders (filter out B2B orders since they are tracked under Contracts)
+        const normalizedOrders = orders
+            .filter(o => o.KhachHang?.PhanLoai !== 'B2B')
+            .map(o => {
+                const total = o.TongTien || 0;
+                const paid = o.TrangThaiThanhToan === 'DA_THANH_TOAN' ? total : 0;
+                return {
+                    _id: o._id,
+                    type: 'ORDER',
+                    code: o.MaDonHang,
+                    customer: o.KhachHang ? {
+                        name: o.KhachHang.TenKhachHang,
+                        code: o.KhachHang.MaKH,
+                        segment: o.KhachHang.PhanLoai
+                    } : { name: 'Khách lẻ', code: 'KL' },
+                    totalAmount: total,
+                    paidAmount: paid,
+                    debtAmount: total - paid,
+                    status: o.TrangThaiThanhToan,
+                    orderStatus: o.TrangThai,
+                    date: o.createdAt
+                };
+            });
 
         // Normalize Contracts
         const normalizedContracts = contracts.map(c => {
@@ -70,32 +72,40 @@ exports.getAllFinancialRecords = async (req, res) => {
 // @route   GET /api/thanh-toan/my-payments
 exports.getMyFinancialRecords = async (req, res) => {
     try {
-        if (!req.user || !req.user.profile) {
+        if (!req.user) {
             return res.status(401).json({ success: false, message: 'Not authorized' });
         }
-        
-        const customerId = req.user.profile._id;
+
+        const KhachHang = require('../models/KhachHang');
+        const khProfile = await KhachHang.findOne({ AccountID: req.user._id });
+        if (!khProfile) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy hồ sơ khách hàng' });
+        }
+
+        const customerId = khProfile._id;
 
         const [orders, contracts] = await Promise.all([
             DonHang.find({ KhachHang: customerId }).populate('KhachHang', 'MaKH TenKhachHang PhanLoai').sort({ createdAt: -1 }),
             HopDong.find({ CustomerID: customerId }).populate('CustomerID', 'MaKH TenKhachHang PhanLoai').sort({ createdAt: -1 })
         ]);
 
-        // Normalize Orders
-        const normalizedOrders = orders.map(o => {
-            const total = o.TongTien || 0;
-            const paid = o.TrangThaiThanhToan === 'DA_THANH_TOAN' ? total : (o.DaCoc || 0);
-            return {
-                _id: o._id,
-                type: 'ORDER',
-                code: o.MaDonHang,
-                totalAmount: total,
-                paidAmount: paid,
-                debtAmount: total - paid,
-                status: o.TrangThaiThanhToan,
-                date: o.createdAt
-            };
-        });
+        // Normalize Orders (filter out B2B orders since they are tracked under Contracts)
+        const normalizedOrders = orders
+            .filter(o => o.KhachHang?.PhanLoai !== 'B2B')
+            .map(o => {
+                const total = o.TongTien || 0;
+                const paid = o.TrangThaiThanhToan === 'DA_THANH_TOAN' ? total : (o.DaCoc || 0);
+                return {
+                    _id: o._id,
+                    type: 'ORDER',
+                    code: o.MaDonHang,
+                    totalAmount: total,
+                    paidAmount: paid,
+                    debtAmount: total - paid,
+                    status: o.TrangThaiThanhToan,
+                    date: o.createdAt
+                };
+            });
 
         // Normalize Contracts
         const normalizedContracts = contracts.map(c => {

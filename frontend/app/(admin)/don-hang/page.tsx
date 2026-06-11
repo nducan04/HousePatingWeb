@@ -405,12 +405,14 @@ export default function OrderManagementPage() {
               nv.BoPhan === "Kho" ||
               nv.BoPhan === "Logistic" ||
               nv.BoPhan === "Vận tải" ||
+              nv.BoPhan === "Vận chuyển" ||
               nv.BoPhan === "Giao nhận") &&
             (nv.ChucVu === "Nhân viên giao hàng" ||
               nv.ChucVu === "Tài xế" ||
               nv.ChucVu === "Nhân viên kỹ thuật" ||
               nv.ChucVu === "Trưởng bộ phận kho / logistic" ||
               nv.BoPhan === "Vận tải" ||
+              nv.BoPhan === "Vận chuyển" ||
               nv.BoPhan === "Giao nhận"),
         );
         setDrivers(eligibleDrivers);
@@ -1822,7 +1824,7 @@ export default function OrderManagementPage() {
     driverId?: string,
   ) => {
     // If switching to DANG_GIAO and no driver provided yet, open picker
-    if (status === "DANG_GIAO" && !driverId) {
+    if (status === "DANG_GIAO" && driverId === undefined) {
       setPendingStatusUpdate({ id, status });
       setIsDriverModalOpen(true);
       return;
@@ -2023,7 +2025,7 @@ export default function OrderManagementPage() {
           </div>
           <div>
             <h2 className="text-xl font-semibold text-slate-900 tracking-tight">
-              Theo Dõi Đơn Hàng Mới Nhất
+              Theo dõi đơn hàng mới nhất
             </h2>
             <p className="text-xs text-slate-400 font-semibold mt-0.5">
               Click vào kiện hàng để xem chi tiết lộ trình vận chuyển trên toàn
@@ -2033,65 +2035,75 @@ export default function OrderManagementPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {trackingData.map((t) => {
-            const currentStep = t.steps.find((s) => s.status === "current");
-            const completedSteps = t.steps.filter(
-              (s) => s.status === "completed",
-            ).length;
-            const totalSteps = t.steps.length;
-            return (
-              <div
-                key={t.code}
-                className="bg-white border border-slate-100 rounded-3xl p-6 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between group relative overflow-hidden"
-                onClick={() => {
-                  window.location.href = `/tracking?code=${t.code}`;
-                }}
-              >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/20 rounded-md blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+          {trackingData.length > 0 ? (
+            trackingData.map((t) => {
+              const currentStep = t.steps.find(
+                (s: any) => s.status === "current",
+              );
+              const completedSteps = t.steps.filter(
+                (s: any) => s.status === "completed",
+              ).length;
+              const totalSteps = t.steps.length;
+              return (
+                <div
+                  key={t.code}
+                  className="bg-white border border-slate-100 rounded-3xl p-6 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between group relative overflow-hidden"
+                  onClick={() => {
+                    window.location.href = `/tracking?code=${t.code}`;
+                  }}
+                >
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/20 rounded-md blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
 
-                <div className="relative z-10 flex-1">
-                  <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
-                    {t.code}
-                  </span>
-                  <div className="font-medium text-slate-800 mt-3 text-[14px]">
-                    {t.customer}
-                  </div>
-                  <div className="text-[12px] text-slate-400 font-semibold mt-0.5">
-                    {t.product}
-                  </div>
-
-                  <div className="flex items-center gap-2 mt-4">
-                    <div className="w-28 h-1.5 bg-slate-100 rounded-md overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 rounded-md transition-all duration-500"
-                        style={{
-                          width: `${(completedSteps / totalSteps) * 100}%`,
-                        }}
-                      />
+                  <div className="relative z-10 flex-1">
+                    <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                      {t.code}
+                    </span>
+                    <div className="font-medium text-slate-800 mt-3 text-[14px]">
+                      {t.customer}
                     </div>
-                    <span className="text-[11px] font-bold text-slate-400">
-                      {completedSteps}/{totalSteps} chặng
-                    </span>
-                  </div>
-                  {currentStep && (
-                    <span className="inline-block mt-3 px-3 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-bold shadow-sm">
-                      • {currentStep.label.toUpperCase()}
-                    </span>
-                  )}
-                </div>
+                    <div className="text-[12px] text-slate-400 font-semibold mt-0.5">
+                      {t.product}
+                    </div>
 
-                <div className="relative z-10 bg-white p-3 rounded-lg border border-slate-100 group-hover:border-blue-200 transition-colors shadow-sm ml-4">
-                  <QRCodeSVG
-                    value={`https://vtsc.vn/tracking/${t.code}`}
-                    size={75}
-                    bgColor="#ffffff"
-                    fgColor="#0c102a"
-                    level="M"
-                  />
+                    <div className="flex items-center gap-2 mt-4">
+                      <div className="w-28 h-1.5 bg-slate-100 rounded-md overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 rounded-md transition-all duration-500"
+                          style={{
+                            width: `${(completedSteps / totalSteps) * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-400">
+                        {completedSteps}/{totalSteps} chặng
+                      </span>
+                    </div>
+                    {currentStep && (
+                      <span className="inline-block mt-3 px-3 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-bold shadow-sm">
+                        • {currentStep.label.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="relative z-10 bg-white p-3 rounded-lg border border-slate-100 group-hover:border-blue-200 transition-colors shadow-sm ml-4">
+                    <QRCodeSVG
+                      value={`https://vtsc.vn/tracking/${t.code}`}
+                      size={75}
+                      bgColor="#ffffff"
+                      fgColor="#0c102a"
+                      level="M"
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="col-span-2 text-center py-12 bg-white border border-slate-100 rounded-3xl">
+              <p className="text-slate-400 font-medium text-sm">
+                Không có kiện hàng nào đang vận chuyển.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -3230,83 +3242,101 @@ export default function OrderManagementPage() {
                       </div>
                     </div>
                     <div className="space-y-3 text-[13px] font-medium text-slate-650 pt-4 md:pt-0 md:pl-8">
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400">
-                          Khách đã đặt cọc:
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-900">
-                            {(selectedOrder.DaCoc || 0).toLocaleString()}đ (
-                            {Math.round(
-                              ((selectedOrder.DaCoc || 0) /
-                                selectedOrder.TongTien) *
-                                100,
-                            )}
-                            %)
-                          </span>
-                          {selectedOrder.TrangThai === "CHO_XAC_NHAN" && (
-                            <button
-                              onClick={() => {
-                                setDepositAmount(selectedOrder.DaCoc || 0);
-                                setIsPaymentModalOpen(true);
-                              }}
-                              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                              style={{
-                                padding: "2px 8px",
-                                fontSize: "10px",
-                                color: "#2563eb",
-                                border: "1px solid #2563eb",
-                              }}
-                            >
-                              Cập nhật
-                            </button>
-                          )}
+                      {selectedOrder.KhachHang?.PhanLoai === "B2B" ? (
+                        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 space-y-2">
+                          <p className="font-bold flex items-center gap-1">
+                            ℹ️ Đơn hàng thuộc Hợp đồng B2B
+                          </p>
+                          <p className="text-xs text-amber-700 font-medium leading-relaxed">
+                            Thanh toán của đơn hàng này được đối soát trực tiếp theo tiến độ thanh toán của Hợp đồng tương ứng.
+                          </p>
+                          <p className="text-[11px] text-amber-600 italic leading-relaxed">
+                            * Vui lòng quản lý thanh toán tại trang <strong>Quản lý thanh toán</strong> (mục Hợp đồng).
+                          </p>
                         </div>
-                      </div>
-                      <div className="flex justify-between border-t border-slate-100 pt-4 text-[16px]">
-                        <span className="font-bold text-slate-900">
-                          SỐ TIỀN CÒN LẠI:
-                        </span>
-                        <span className="font-semibold text-rose-500">
-                          {Math.max(
-                            0,
-                            selectedOrder.TongTien - (selectedOrder.DaCoc || 0),
-                          ).toLocaleString()}
-                          đ
-                        </span>
-                      </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-400">
+                              Khách đã đặt cọc:
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-slate-900">
+                                {(selectedOrder.DaCoc || 0).toLocaleString()}đ (
+                                {Math.round(
+                                  ((selectedOrder.DaCoc || 0) /
+                                    selectedOrder.TongTien) *
+                                    100,
+                                )}
+                                %)
+                              </span>
+                              {selectedOrder.TrangThai === "CHO_XAC_NHAN" && (
+                                <button
+                                  onClick={() => {
+                                    setDepositAmount(selectedOrder.DaCoc || 0);
+                                    setIsPaymentModalOpen(true);
+                                  }}
+                                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
+                                  style={{
+                                    padding: "2px 8px",
+                                    fontSize: "10px",
+                                    color: "#2563eb",
+                                    border: "1px solid #2563eb",
+                                  }}
+                                >
+                                  Cập nhật
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex justify-between border-t border-slate-100 pt-4 text-[16px]">
+                            <span className="font-bold text-slate-900">
+                              SỐ TIỀN CÒN LẠI:
+                            </span>
+                            <span className="font-semibold text-rose-500">
+                              {Math.max(
+                                0,
+                                selectedOrder.TongTien - (selectedOrder.DaCoc || 0),
+                              ).toLocaleString()}
+                              đ
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Timeline / Action Section */}
                 <div className="space-y-3.5">
-                  <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-lg">
-                    <Calendar size={18} className="text-blue-500" />
-                    <div className="flex-1 text-sm font-medium text-slate-700">
-                      <span className="text-slate-400">
-                        [
-                        {new Date(selectedOrder.createdAt).toLocaleDateString()}
-                        ]
-                      </span>{" "}
-                      Đã đặt cọc đơn hàng{" "}
-                      <span className="font-bold text-emerald-600">
-                        [{(selectedOrder.DaCoc || 0).toLocaleString()}đ]
-                      </span>
+                  {selectedOrder.KhachHang?.PhanLoai !== "B2B" && (
+                    <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-lg">
+                      <Calendar size={18} className="text-blue-500" />
+                      <div className="flex-1 text-sm font-medium text-slate-700">
+                        <span className="text-slate-400">
+                          [
+                          {new Date(selectedOrder.createdAt).toLocaleDateString()}
+                          ]
+                        </span>{" "}
+                        Đã đặt cọc đơn hàng{" "}
+                        <span className="font-bold text-emerald-600">
+                          [{(selectedOrder.DaCoc || 0).toLocaleString()}đ]
+                        </span>
+                      </div>
+                      <button
+                        onClick={handleDownloadPhieuCoc}
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          color: "#2563eb",
+                        }}
+                      >
+                        <FileCheck size={14} /> In Phiếu Cọc (Word)
+                      </button>
                     </div>
-                    <button
-                      onClick={handleDownloadPhieuCoc}
-                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        color: "#2563eb",
-                      }}
-                    >
-                      <FileCheck size={14} /> In Phiếu Cọc (Word)
-                    </button>
-                  </div>
+                  )}
 
                   <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-lg">
                     <FileText size={18} className="text-purple-500" />
@@ -3906,8 +3936,7 @@ export default function OrderManagementPage() {
                         selectedDriverId,
                       )
                     }
-                    disabled={!selectedDriverId}
-                    className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-md shadow-blue-600/20 disabled:opacity-50 transition-all cursor-pointer border-none"
+                    className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer border-none"
                   >
                     Xác nhận giao hàng
                   </button>

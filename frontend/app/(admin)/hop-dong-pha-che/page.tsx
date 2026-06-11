@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
+import { paintColors } from "@/lib/data/colors-data";
 
 interface HopDong {
   _id: string;
@@ -457,7 +458,7 @@ export default function ContractsPage() {
             Giá Trị Đang Vận Hành
           </div>
           <div className="text-3xl font-semibold text-white mt-1">
-            {(TOTAL_STATS.value / 1000000).toFixed(0)}
+            {(TOTAL_STATS.value / 1000000).toLocaleString("vi-VN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
             <span className="text-lg text-slate-400 ml-1">Tr</span>
           </div>
         </div>
@@ -963,7 +964,7 @@ export default function ContractsPage() {
                               : getAllUniqueColors()
                             ).map((c: any, idx: number) => (
                               <option key={`${c.MaMau}-${idx}`} value={c.MaMau}>
-                                {c.TenMau}
+                                {paintColors.find(pc => pc.code === c.MaMau)?.name || c.TenMau}
                               </option>
                             ))}
                           </datalist>
@@ -1082,7 +1083,7 @@ export default function ContractsPage() {
                                     color: "#7c3aed",
                                   }}
                                 >
-                                  {item.colorCode}
+                                  {item.colorCode} {paintColors.find(c => c.code === item.colorCode) ? `— ${paintColors.find(c => c.code === item.colorCode)?.name}` : ""}
                                 </span>
                               </td>
                               <td>
@@ -1549,7 +1550,7 @@ export default function ContractsPage() {
                                   fontWeight: "bold",
                                 }}
                               >
-                                {it.colorCode}
+                                {it.colorCode} {paintColors.find(c => c.code === it.colorCode) ? `— ${paintColors.find(c => c.code === it.colorCode)?.name}` : ""}
                               </td>
                               <td
                                 style={{

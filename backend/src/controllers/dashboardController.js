@@ -4,6 +4,8 @@ const KhachHang = require('../models/KhachHang');
 const SanPhamSon = require('../models/SanPhamSon');
 const NhatKyTestMau = require('../models/NhatKyTestMau');
 const SalesTarget = require('../models/SalesTarget');
+const RevenueTarget = require('../models/RevenueTarget');
+const ProductionTarget = require('../models/ProductionTarget');
 const BaoHanh = require('../models/BaoHanh');
 const PhanHoiHoTro = require('../models/PhanHoiHoTro');
 const DoiTra = require('../models/DoiTra');
@@ -77,10 +79,29 @@ exports.getDashboardStats = async (req, res) => {
     });
     const customerChange = prevCustomers === 0 ? 100 : Math.round(((totalCustomers - prevCustomers) / prevCustomers) * 100);
 
+    // 1b. KPI: Order Count (Filtered by period)
+    const totalOrders = await DonHang.countDocuments({
+      TrangThai: { $ne: 'DA_HUY' },
+      createdAt: { $gte: startDate, $lte: endDate }
+    });
+    const prevOrders = await DonHang.countDocuments({
+      TrangThai: { $ne: 'DA_HUY' },
+      createdAt: { $gte: prevStartDate, $lte: prevEndDate }
+    });
+    const orderChange = prevOrders === 0 ? 100 : Math.round(((totalOrders - prevOrders) / prevOrders) * 100);
+
     // 2. KPI: Revenue & Volume (Filtered by period)
     const getStatsForRange = async (start, end) => {
       const orders = await DonHang.aggregate([
         { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: start, $lte: end } } },
+        { $lookup: {
+          from: 'KhachHangs',
+          localField: 'KhachHang',
+          foreignField: '_id',
+          as: 'customer'
+        }},
+        { $unwind: '$customer' },
+        { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
         { $group: {
           _id: null,
           totalRevenue: { 
@@ -115,6 +136,10 @@ exports.getDashboardStats = async (req, res) => {
     const globalRevenue = currentStats.revenue;
     const globalVolume = currentStats.volume;
 
+    // Fetch all revenue and production targets for the query year at once to avoid query inside loop
+    const allRevTargets = await RevenueTarget.find({ type: 'month', year: queryYear });
+    const allProdTargets = await ProductionTarget.find({ type: 'month', year: queryYear });
+
     // 3. Monthly/Daily Series for Charts (Adjusted by period bins)
     const monthlySeries = [];
 
@@ -129,14 +154,39 @@ exports.getDashboardStats = async (req, res) => {
       }
 
       // Revenue for this bin (Based on actual payments)
-      const ordersM = await DonHang.aggregate([{ $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $cond: [{ $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, '$TongTien', { $ifNull: ['$DaCoc', 0] }] } } } }]);
+      const ordersM = await DonHang.aggregate([
+        { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } },
+        { $lookup: {
+          from: 'KhachHangs',
+          localField: 'KhachHang',
+          foreignField: '_id',
+          as: 'customer'
+        }},
+        { $unwind: '$customer' },
+        { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
+        { $group: { _id: null, total: { $sum: { $cond: [{ $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, '$TongTien', { $ifNull: ['$DaCoc', 0] }] } } } }
+      ]);
       const contractsM = await HopDong.aggregate([{ $match: { createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $ifNull: ['$DaThanhToan', 0] } } } }]);
       
-      // Target for this bin
-      const targetsM = await SalesTarget.aggregate([{ $match: { 'period.month': bin.month, 'period.year': bin.year } }, { $group: { _id: null, rev: { $sum: '$targetRevenue' }, vol: { $sum: '$targetKg' } } }]);
+      // Target matching for this bin
+      const matchedRevTarget = allRevTargets.find(t => t.month === bin.month);
+      const matchedProdTarget = allProdTargets.find(t => t.month === bin.month);
+      const targetRevVal = matchedRevTarget ? matchedRevTarget.targetAmount : 500000000;
+      const targetProdVal = matchedProdTarget ? matchedProdTarget.targetAmount : 2000;
 
       // Volume for this bin
-      const ordersVolM = await DonHang.aggregate([{ $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $sum: '$Items.SoLuong' } } } }]);
+      const ordersVolM = await DonHang.aggregate([
+        { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } },
+        { $lookup: {
+          from: 'KhachHangs',
+          localField: 'KhachHang',
+          foreignField: '_id',
+          as: 'customer'
+        }},
+        { $unwind: '$customer' },
+        { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
+        { $group: { _id: null, total: { $sum: { $sum: '$Items.SoLuong' } } } }
+      ]);
       const contractsVolM = await HopDong.aggregate([{ $match: { createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $sum: '$ChiTietHopDong.quantity' } } } }]);
 
       const revActual = ((ordersM[0]?.total || 0) + (contractsM[0]?.total || 0)) / 1000000; // In Millions
@@ -145,9 +195,9 @@ exports.getDashboardStats = async (req, res) => {
       monthlySeries.push({
         month: bin.label,
         revenueActual: Math.round(revActual),
-        revenuePlan: Math.round((targetsM[0]?.rev || 500000000) / 1000000 / (granularity === 'day' ? 30 : 1)), 
+        revenuePlan: Math.round(targetRevVal / 1000000 / (granularity === 'day' ? 30 : 1)), 
         prodActual: Math.round(volActual),
-        prodPlan: Math.round((targetsM[0]?.vol || 2000) / (granularity === 'day' ? 30 : 1))
+        prodPlan: Math.round(targetProdVal / (granularity === 'day' ? 30 : 1))
       });
     }
 
@@ -194,6 +244,7 @@ exports.getDashboardStats = async (req, res) => {
           totalRevenue: { value: Math.round(globalRevenue / 1000000), unit: 'Tr VNĐ', change: revChange, label: 'Tổng Doanh Thu' },
           totalProduction: { value: globalVolume, unit: 'thùng', change: volChange, label: 'Tổng Sản Lượng' },
           customerCount: { value: totalCustomers, unit: 'Đối tác', change: customerChange, label: 'Tổng Khách Hàng' },
+          orderCount: { value: totalOrders, unit: 'đơn', change: orderChange, label: 'Đơn đặt hàng' },
           avgOrderValue: { value: Math.round(globalRevenue / (totalCustomers || 1) / 1000000), unit: 'Tr/Khách', change: 0, label: 'Giá trị Trung bình' }
         },
         monthlyTrends: monthlySeries,
@@ -222,6 +273,14 @@ exports.getDetailedStats = async (req, res) => {
     // 2. Revenue by Product Category (Unified from Orders & Contracts)
     const dhRevenueByCat = await DonHang.aggregate([
       { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } } },
+      { $lookup: {
+        from: 'KhachHangs',
+        localField: 'KhachHang',
+        foreignField: '_id',
+        as: 'customer'
+      }},
+      { $unwind: '$customer' },
+      { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
       { $unwind: '$Items' },
       { $lookup: {
         from: 'SanPhamSons',
@@ -264,6 +323,14 @@ exports.getDetailedStats = async (req, res) => {
     // 5. Unified Top 5 Products (Combined from DonHang & HopDong)
     const dhProductStats = await DonHang.aggregate([
       { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } } },
+      { $lookup: {
+        from: 'KhachHangs',
+        localField: 'KhachHang',
+        foreignField: '_id',
+        as: 'customer'
+      }},
+      { $unwind: '$customer' },
+      { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
       { $unwind: '$Items' },
       { $group: {
         _id: '$Items.TenSanPham', 
@@ -321,6 +388,14 @@ exports.getDetailedStats = async (req, res) => {
     // 8. Top Popular Colors (Combined from DonHang & HopDong)
     const dhColorStats = await DonHang.aggregate([
       { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+      { $lookup: {
+        from: 'KhachHangs',
+        localField: 'KhachHang',
+        foreignField: '_id',
+        as: 'customer'
+      }},
+      { $unwind: '$customer' },
+      { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
       { $unwind: '$Items' },
       { $match: { 'Items.MaMau': { $exists: true, $ne: '' } } },
       { $group: { _id: '$Items.MaMau', count: { $sum: 1 } } }
@@ -481,6 +556,44 @@ exports.getInventoryStats = async (req, res) => {
       NhanVien: { HoTen: m.TenNguoiLap || 'Hệ thống' }
     }));
 
+    const bestSellers = await DonHang.aggregate([
+      {
+        $match: {
+          TrangThai: { $ne: 'DA_HUY' },
+          createdAt: { $gte: startDate, $lte: endDate }
+        }
+      },
+      { $unwind: "$Items" },
+      {
+        $group: {
+          _id: "$Items.SanPham",
+          SoLuongBan: { $sum: "$Items.SoLuong" },
+          TongDoanhThu: { $sum: "$Items.ThanhTien" }
+        }
+      },
+      {
+        $lookup: {
+          from: "SanPhamSons",
+          localField: "_id",
+          foreignField: "_id",
+          as: "SanPhamInfo"
+        }
+      },
+      { $unwind: "$SanPhamInfo" },
+      {
+        $project: {
+          _id: 1,
+          MaSanPham: "$SanPhamInfo.MaSanPham",
+          TenDongSon: "$SanPhamInfo.TenDongSon",
+          HinhAnh: { $arrayElemAt: ["$SanPhamInfo.HinhAnh", 0] },
+          SoLuongBan: 1,
+          TongDoanhThu: 1
+        }
+      },
+      { $sort: { SoLuongBan: -1 } },
+      { $limit: 10 }
+    ]);
+
     res.status(200).json({
       success: true,
       data: {
@@ -491,7 +604,8 @@ exports.getInventoryStats = async (req, res) => {
           totalKg: products.reduce((sum, p) => sum + ((p.TongTonKho > 0) ? p.TongTonKho : (p.TonKho || 0)), 0)
         },
         categoryDist,
-        recentMovements: formattedMovements
+        recentMovements: formattedMovements,
+        bestSellers
       }
     });
   } catch (error) {
@@ -623,6 +737,10 @@ exports.getCustomerServiceStats = async (req, res) => {
     let voucherTypes = { PHAN_TRAM: 0, GIAM_THANG: 0, TANG_KEM: 0 };
     let voucherUsagesList = [];
     let topVouchers = [];
+    let campaignsList = [];
+    let totalDiscountValue = 0;
+    let totalVoucherRevenue = 0;
+    let totalVouchersUsed = 0;
     
     try {
       const KhuyenMai = require('../models/KhuyenMai');
@@ -676,11 +794,17 @@ exports.getCustomerServiceStats = async (req, res) => {
         status: u.TrangThai
       }));
 
-      // Top 5 used vouchers
-      const allOrdersWithVouchers = await DonHang.find({ KhuyenMai: { $ne: null }, TrangThai: { $ne: 'DA_HUY' } })
+      // Top 5 used vouchers and revenue stats
+      const allOrdersWithVouchers = await DonHang.find({ KhuyenMai: { $ne: null }, TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } })
         .populate('KhuyenMai', 'MaVoucher');
+        
+      totalVouchersUsed = allOrdersWithVouchers.length;
+      
       const voucherUsageCounts = {};
       allOrdersWithVouchers.forEach(o => {
+        totalDiscountValue += (o.GiamGia || 0);
+        totalVoucherRevenue += (o.TongTien || 0);
+        
         const code = o.KhuyenMai?.MaVoucher;
         if (code) {
           voucherUsageCounts[code] = (voucherUsageCounts[code] || 0) + 1;
@@ -690,6 +814,23 @@ exports.getCustomerServiceStats = async (req, res) => {
         code,
         count: voucherUsageCounts[code]
       })).sort((a, b) => b.count - a.count).slice(0, 5);
+
+      const allCampaigns = await KhuyenMai.find({
+        NgayBatDau: { $lte: endDate },
+        NgayHetHan: { $gte: startDate }
+      }).sort({ createdAt: -1 }).limit(10);
+      campaignsList = allCampaigns.map(c => {
+        return {
+          id: c.MaVoucher,
+          name: c.GhiChu || (c.LoaiGiamGia === 'PHAN_TRAM' ? `Giảm ${c.MucGiam}%` : `Giảm ${c.MucGiam}đ`),
+          target: 'B2C',
+          used: c.SoLuongDaDung || 0,
+          total: c.SoLuongToiDa || 0,
+          status: c.TrangThai === 'DANG_DIEN_RA' ? 'Đang chạy' : (c.TrangThai === 'LEN_LICH' ? 'Tạm dừng' : 'Hết ngân sách'),
+          startDate: c.NgayBatDau,
+          endDate: c.NgayHetHan
+        };
+      });
 
     } catch (err) {
       console.log('Error fetching loyalty stats:', err.message);
@@ -711,7 +852,11 @@ exports.getCustomerServiceStats = async (req, res) => {
           totalVouchers,
           voucherTypes,
           voucherUsagesList,
-          topVouchers
+          topVouchers,
+          campaignsList,
+          totalDiscountValue,
+          totalVoucherRevenue,
+          totalVouchersUsed
         },
         supportTrends: formattedTrends,
         pendingComplaints

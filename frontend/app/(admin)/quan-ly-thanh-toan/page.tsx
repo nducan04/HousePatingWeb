@@ -123,7 +123,7 @@ export default function ThanhToanPage() {
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Tổng Doanh Thu (HĐ + ĐH)
+                Tổng Doanh Thu
               </p>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">
                 {STATS.totalExpected.toLocaleString()}{" "}
@@ -186,7 +186,7 @@ export default function ThanhToanPage() {
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Đơn/HĐ Còn Lại
+                Hóa Đơn Còn Lại
               </p>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">
                 {STATS.pendingCount}{" "}
@@ -230,10 +230,11 @@ export default function ThanhToanPage() {
                 <button
                   key={f.id}
                   onClick={() => setFilter(f.id)}
-                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${filter === f.id
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
-                    }`}
+                  className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                    filter === f.id
+                      ? "bg-white text-blue-600 shadow-sm"
+                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                  }`}
                 >
                   {f.label}
                 </button>

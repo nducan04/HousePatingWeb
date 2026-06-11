@@ -106,7 +106,7 @@ const allNavItems: NavSection[] = [
     items: [
       {
         href: "/quan-ly-san-pham",
-        label: "Sản phẩm sơn",
+        label: "Quản lý sản phẩm",
         roles: ["Admin", "NhanVien"],
       },
       {
@@ -167,11 +167,6 @@ const allNavItems: NavSection[] = [
       {
         href: "/hieu-suat",
         label: "Theo dõi hiệu suất",
-        roles: ["Admin", "NhanVien"],
-      },
-      {
-        href: "/doi-tra",
-        label: "Trung Tâm Giải Quyết Khiếu Nại",
         roles: ["Admin", "NhanVien"],
       },
       {
@@ -372,10 +367,9 @@ export default function AdminLayout({
     if (pathname?.startsWith("/quan-ly-san-pham"))
       return "📦 Quản lý sản phẩm sơn";
     if (pathname?.startsWith("/kho")) return "🏭 Quản lý kho";
-    if (pathname?.startsWith("/doi-tra"))
-      return "🎯 Trung tâm Giải quyết khiếu nại";
     if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý khách hàng";
     if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý nhân sự";
+    if (pathname?.startsWith("/production")) return "🏭 Hệ thống MES";
     if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
     if (pathname?.startsWith("/hop-dong-pha-che")) return "📝 Hợp đồng nguyên tắc mua bán & pha chế";
     if (pathname === "/colors") return "🎨 Tra cứu mã màu";
@@ -446,7 +440,12 @@ export default function AdminLayout({
                         const Icon = item.icon;
                         const isActive =
                           pathname === item.href ||
-                          pathname?.startsWith(item.href + "/");
+                          (pathname?.startsWith(item.href + "/") &&
+                            !section.items.some(
+                              (otherItem) =>
+                                otherItem.href !== item.href &&
+                                pathname.startsWith(otherItem.href),
+                            ));
                         return (
                           <Link
                             key={item.href}

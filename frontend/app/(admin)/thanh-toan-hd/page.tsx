@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Eye, DollarSign, Wallet, FileCheck, Landmark, Plus, X, Save, Edit, FileText, AlertTriangle } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
+import toast from 'react-hot-toast';
 
 // Types
 interface HopDongData {
@@ -40,7 +41,7 @@ export default function ThanhToanHopDongPage() {
   const [data, setData] = useState<ThanhToanHD[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'ALL' | 'DA_QUYET_TOAN' | 'CHO_THU' | 'KHACH_CHAM_TRA'>('ALL');
+  const [filter, setFilter] = useState<string>('all');
 
 
 
@@ -282,7 +283,6 @@ export default function ThanhToanHopDongPage() {
                 placeholder="Truy vấn số Hợp Đồng, Tên Đối Tác..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-medium"
               />
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -337,11 +337,21 @@ export default function ThanhToanHopDongPage() {
                       Đang tải dữ liệu...
                     </div>
                   </td>
-                </tr>
-              ) : filteredData.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium">
-                    Không tìm thấy khoản thu nào
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      {canEdit && (
+                        <button
+                          title="Cập nhật thanh toán"
+                          onClick={() => openUpdateModal(item)}
+                          className="inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                        >
+                          <Edit size={16} />
+                        </button>
+                      )}
+                      <button title="Xem chi tiết" className="inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors">
+                        <Eye size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ) : (

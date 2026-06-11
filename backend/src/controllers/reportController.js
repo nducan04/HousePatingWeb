@@ -247,18 +247,18 @@ exports.getProductionChartData = async (req, res) => {
     const startDate = new Date(`${queryYear}-01-01T00:00:00.000Z`);
     const endDate = new Date(`${queryYear}-12-31T23:59:59.999Z`);
 
-    const actualProductionAgg = await LenhSanXuat.aggregate([
+    const orderAgg = await DonHang.aggregate([
       {
         $match: {
-          TrangThai: 'completed',
-          CompletionTime: { $gte: startDate, $lte: endDate }
+          TrangThai: { $ne: 'DA_HUY' },
+          createdAt: { $gte: startDate, $lte: endDate }
         }
       },
       {
         $project: {
-          TargetWeight: 1,
-          month: { $month: "$CompletionTime" },
-          year: { $year: "$CompletionTime" }
+          volume: { $sum: '$Items.SoLuong' },
+          month: { $month: "$createdAt" },
+          year: { $year: "$createdAt" }
         }
       },
       {
@@ -269,7 +269,7 @@ exports.getProductionChartData = async (req, res) => {
       {
         $group: {
           _id: filter === 'month' ? "$month" : (filter === 'quarter' ? "$quarter" : "$year"),
-          totalProduction: { $sum: "$TargetWeight" }
+          totalProduction: { $sum: "$volume" }
         }
       }
     ]);
@@ -279,33 +279,36 @@ exports.getProductionChartData = async (req, res) => {
 
     if (filter === 'month') {
       for (let i = 1; i <= 12; i++) {
-        const actual = actualProductionAgg.find(item => item._id === i);
+        const actualItem = orderAgg.find(item => item._id === i);
+        const actualVal = actualItem ? actualItem.totalProduction : 0;
         const plan = targets.find(item => item.month === i);
 
         chartData.push({
           name: `Tháng ${i}`,
-          prodActual: actual ? actual.totalProduction : 0,
+          prodActual: actualVal,
           prodPlan: plan ? plan.targetAmount : 0
         });
       }
     } else if (filter === 'quarter') {
       for (let i = 1; i <= 4; i++) {
-        const actual = actualProductionAgg.find(item => item._id === i);
+        const actualItem = orderAgg.find(item => item._id === i);
+        const actualVal = actualItem ? actualItem.totalProduction : 0;
         const plan = targets.find(item => item.quarter === i);
 
         chartData.push({
           name: `Quý ${i}`,
-          prodActual: actual ? actual.totalProduction : 0,
+          prodActual: actualVal,
           prodPlan: plan ? plan.targetAmount : 0
         });
       }
     } else if (filter === 'year') {
-      const actual = actualProductionAgg.find(item => item._id === queryYear);
+      const actualItem = orderAgg.find(item => item._id === queryYear);
+      const actualVal = actualItem ? actualItem.totalProduction : 0;
       const plan = targets.find(item => item.year === queryYear);
 
       chartData.push({
         name: `Năm ${queryYear}`,
-        prodActual: actual ? actual.totalProduction : 0,
+        prodActual: actualVal,
         prodPlan: plan ? plan.targetAmount : 0
       });
     }

@@ -33,10 +33,7 @@ const sanPhamSonSchema = new mongoose.Schema({
   ThuongHieu: { type: String, default: 'AkzoNobel' },
   PhanLoai: { 
     type: String, 
-    enum: {
-      values: ['Sơn tĩnh điện', 'Sơn tàu biển', 'Sơn công nghiệp', 'Sơn nội thất'],
-      message: 'Phân loại sản phẩm không hợp lệ'
-    }
+    required: [true, 'Vui lòng chọn phân loại sản phẩm']
   },
   MoTa: { type: String, trim: true },
   DonViTinh: { 
