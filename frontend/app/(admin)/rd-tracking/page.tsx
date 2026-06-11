@@ -38,8 +38,6 @@ export default function RDTrackingPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
 
-
-
   const [sampleRequests, setSampleRequests] = useState<any[]>([]);
 
   useEffect(() => {
@@ -79,8 +77,6 @@ export default function RDTrackingPage() {
       setLoading(false);
     }
   };
-
-
 
   const STATS = useMemo(() => {
     const contractLogs = data.filter((d) => d.ContractID);
@@ -302,6 +298,7 @@ export default function RDTrackingPage() {
                         {req.id}
                       </span>
                     </td>
+
                     <td className="px-6 py-4 font-bold text-slate-900 text-[14px]">
                       {req.customer}
                     </td>
@@ -437,7 +434,10 @@ export default function RDTrackingPage() {
                                 background:
                                   paintColors.find(
                                     (c) => c.code === item.MaMauYeuCau,
-                                  )?.hex || (/^#[0-9A-F]{6}$/i.test(item.MaMauYeuCau) ? item.MaMauYeuCau : "#333"),
+                                  )?.hex ||
+                                  (/^#[0-9A-F]{6}$/i.test(item.MaMauYeuCau)
+                                    ? item.MaMauYeuCau
+                                    : "#333"),
                               }}
                             />
                             <div>
