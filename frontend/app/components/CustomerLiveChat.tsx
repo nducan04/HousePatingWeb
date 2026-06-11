@@ -81,7 +81,7 @@ export default function CustomerLiveChat() {
 
     const newMsg = {
       sessionId: activeSession._id,
-      senderId: user?._id,
+      senderId: user?.id,
       senderRole: userRole,
       senderName: user?.username || 'User',
       content: input.trim()
@@ -107,7 +107,7 @@ export default function CustomerLiveChat() {
     setSendingBot(true);
 
     try {
-      const sessionId = user?._id || getGuestSessionId();
+      const sessionId = user?.id || getGuestSessionId();
       const res = await api.post("/chatbot/message", { sessionId, message: userMsg });
       if (res.data.success) {
         setBotHistory((prev) => [
