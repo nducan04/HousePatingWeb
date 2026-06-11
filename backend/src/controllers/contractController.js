@@ -14,6 +14,8 @@ async function autoCreateDownstreamData(contract) {
     const SanPhamSon = require('../models/SanPhamSon');
     const NhatKyTestMau = require('../models/NhatKyTestMau');
     
+    const isPhaChe = contract.contractType === 'pha-che';
+    
     // Check if DonHang already exists to avoid duplicates by checking GhiChu for the contract ID
     let order = await DonHang.findOne({ GhiChu: { $regex: contract.MaHopDong, $options: 'i' } });
     
@@ -52,11 +54,11 @@ async function autoCreateDownstreamData(contract) {
         Items: resolvedItems,
         TienThue: contract.TongGiaTri > subtotalForTaxCalculation ? contract.TongGiaTri - subtotalForTaxCalculation : 0,
         TongTien: contract.TongGiaTri,
-        TrangThai: contract.TrangThai === 'signed' ? 'DANG_XU_LY' : 'CHO_XAC_NHAN',
+        TrangThai: contract.TrangThai === 'signed' ? (isPhaChe ? 'CHO_XAC_NHAN' : 'DANG_XU_LY') : 'CHO_XAC_NHAN',
         PhuongThucThanhToan: 'CHUYEN_KHOAN',
         TrangThaiThanhToan: 'CHUA_THANH_TOAN',
         DiaChiGiaoHang: contract.partyBAddress || 'Kho khách hàng',
-        GhiChu: `Người nhận: ${contract.partyBRepresentative || 'Khách hàng'} - SĐT: ${contract.partyBPhoneNumber || '0987654321'}. Đơn hàng tự động từ Hợp đồng R&D ${contract.MaHopDong}`
+        GhiChu: `Người nhận: ${contract.partyBRepresentative || 'Khách hàng'} - SĐT: ${contract.partyBPhoneNumber || '0987654321'}. Đơn hàng tự động từ Hợp đồng ${isPhaChe ? 'Pha chế' : 'Mua bán'} ${contract.MaHopDong}`
       });
     }
 
@@ -83,8 +85,10 @@ async function autoCreateDownstreamData(contract) {
 
     if (contract.TrangThai === 'signed') {
       if (order.TrangThai === 'CHO_XAC_NHAN') {
-        order.TrangThai = 'DANG_XU_LY';
-        await order.save();
+        if (!isPhaChe) {
+          order.TrangThai = 'DANG_XU_LY';
+          await order.save();
+        }
       }
 
       const existingVC = await VanChuyen.findOne({ DonHang: order._id });
@@ -103,27 +107,29 @@ async function autoCreateDownstreamData(contract) {
           },
           LoTrinh: [{
             ThoiGian: new Date(),
-            NoiDung: 'Tiếp nhận đơn hàng R&D từ Hợp đồng',
+            NoiDung: `Tiếp nhận đơn hàng ${isPhaChe ? 'R&D' : 'Mua bán'} từ Hợp đồng`,
             Status: 'COMPLETE',
             Icon: 'Package'
           }],
-          TrangThaiTongQuat: 'Chờ sản xuất R&D'
+          TrangThaiTongQuat: isPhaChe ? 'Chờ sản xuất R&D' : 'Đang chuẩn bị hàng'
         });
       }
 
-      const existingRD = await NhatKyTestMau.findOne({ ContractID: contract._id });
-      if (!existingRD) {
-        for (let i = 0; i < contract.ChiTietHopDong.length; i++) {
-          const item = contract.ChiTietHopDong[i];
-          const count = await NhatKyTestMau.countDocuments();
-          const MaNhatKy = `RD-${new Date().getFullYear() % 100}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(count + i + 1).padStart(2, '0')}`;
-          await NhatKyTestMau.create({
-            MaNhatKy,
-            ContractID: contract._id,
-            MaMauYeuCau: item.colorCode || 'CustomColor',
-            TrangThai: 'testing',
-            LichSuPhienBan: []
-          });
+      if (isPhaChe) {
+        const existingRD = await NhatKyTestMau.findOne({ ContractID: contract._id });
+        if (!existingRD) {
+          for (let i = 0; i < contract.ChiTietHopDong.length; i++) {
+            const item = contract.ChiTietHopDong[i];
+            const count = await NhatKyTestMau.countDocuments();
+            const MaNhatKy = `RD-${new Date().getFullYear() % 100}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(count + i + 1).padStart(2, '0')}`;
+            await NhatKyTestMau.create({
+              MaNhatKy,
+              ContractID: contract._id,
+              MaMauYeuCau: item.colorCode || 'CustomColor',
+              TrangThai: 'testing',
+              LichSuPhienBan: []
+            });
+          }
         }
       }
     }
@@ -160,6 +166,7 @@ exports.getContracts = async (req, res) => {
       _id: c._id,
       contractId: c.MaHopDong,
       title: c.title,
+      contractType: c.contractType,
       customer: c.CustomerID ? {
         _id: c.CustomerID._id,
         name: c.CustomerID.TenKhachHang,
@@ -261,6 +268,7 @@ exports.getContractById = async (req, res) => {
       _id: contract._id,
       contractId: contract.MaHopDong,
       title: contract.title,
+      contractType: contract.contractType,
       customer: contract.CustomerID ? {
         _id: contract.CustomerID._id,
         name: contract.CustomerID.TenKhachHang,
@@ -349,7 +357,7 @@ exports.createContract = async (req, res) => {
       contractId, title, customer, clientAddress,
       chiTietHopDong, slaDeadline, terms,
       partyBAddress, partyBTaxCode, partyBBankAccount, partyBBankName,
-      partyBRepresentative, partyBPosition, articles
+      partyBRepresentative, partyBPosition, articles, contractType
     } = req.body;
 
     // Validate Ethereum address format (Optional)
@@ -412,7 +420,8 @@ exports.createContract = async (req, res) => {
       partyBBankName,
       partyBRepresentative,
       partyBPosition,
-      articles: articles || {}
+      articles: articles || {},
+      contractType: contractType || 'mua-ban'
     };
 
     const contract = await HopDong.create(contractData);

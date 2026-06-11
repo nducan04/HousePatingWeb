@@ -151,6 +151,8 @@ app.use('/api/production', productionRouter);
 app.use('/api/ipfs', require('./routes/ipfsRoutes'));
 app.use('/api/files', require('./routes/fileRoutes'));
 app.use('/api/export', require('./routes/exportRoutes'));
+const chatRouter = require('./routes/chatRoutes');
+app.use('/api/chat', chatRouter);
 
 app.get('/', (req, res) => {
   res.send('VTSC PaintPro Backend API is running...');
@@ -162,4 +164,65 @@ startRiskAlertJob();
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
+// Setup Socket.io
+const http = require('http');
+const { Server } = require('socket.io');
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"]
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log('A user connected via socket:', socket.id);
+
+  socket.on('join_chat', (sessionId) => {
+    socket.join(sessionId);
+    console.log(`Socket ${socket.id} joined session ${sessionId}`);
+  });
+
+  socket.on('send_message', async (data) => {
+    try {
+      const { sessionId, senderId, senderRole, senderName, content } = data;
+      const PhanHoiHoTro = require('./models/PhanHoiHoTro');
+      
+      let nguoiTraLoi = 'KhachHang';
+      if (senderRole === 'Admin' || senderRole === 'NhanVien' || senderRole === 'Director') {
+        nguoiTraLoi = 'NhanVien';
+      }
+
+      const newMsg = {
+        NguoiTraLoi: nguoiTraLoi,
+        NoiDung: content,
+        ThoiGian: new Date()
+      };
+
+      await PhanHoiHoTro.findByIdAndUpdate(sessionId, {
+        $push: { LichSuTraLoi: newMsg }
+      });
+
+      // Broadcast to the room using the format frontend expects
+      const broadcastMsg = {
+        senderId,
+        senderRole,
+        senderName,
+        content,
+        timestamp: newMsg.ThoiGian
+      };
+      
+      io.to(sessionId).emit('receive_message', broadcastMsg);
+    } catch (error) {
+      console.error('Socket send_message error:', error);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
+
+server.listen(PORT, console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
+

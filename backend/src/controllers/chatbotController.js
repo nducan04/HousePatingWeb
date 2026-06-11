@@ -1790,4 +1790,33 @@ const replyTicket = async (req, res) => {
   }
 };
 
-module.exports = { getChatbotResponse, getChatHistory, getTickets, replyTicket };
+// API for dynamically resolving a color name to a hex code using Gemini
+const resolveColor = async (req, res) => {
+  try {
+    const { colorName } = req.body;
+    if (!colorName) return res.status(400).json({ success: false, error: 'Thiếu tên màu' });
+
+    if (!genAI) {
+      return res.status(200).json({ success: true, hexCode: '#cccccc' }); // fallback
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const prompt = `Bạn là chuyên gia về màu sắc. Trả về DUY NHẤT mã màu Hex (6 ký tự, có dấu # ở đầu) tương ứng với tên màu tiếng Việt sau: "${colorName}". 
+Tuyệt đối không giải thích, không in thêm bất cứ chữ nào ngoài mã Hex. Ví dụ: "#FF0000".`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    
+    // Validate hex code format
+    if (/^#[0-9A-Fa-f]{6}$/.test(text)) {
+      return res.status(200).json({ success: true, hexCode: text });
+    } else {
+      return res.status(200).json({ success: true, hexCode: '#cccccc' });
+    }
+  } catch (error) {
+    console.error('[Chatbot] resolveColor error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+module.exports = { getChatbotResponse, getChatHistory, getTickets, replyTicket, resolveColor };

@@ -12,7 +12,7 @@ import CustomerTicketDetailModal from '@/components/CustomerTicketDetailModal';
 
 const STATUS_MAP: Record<string, { label: string, color: string, icon: React.ReactNode }> = {
   CHO_XAC_NHAN: { label: 'Chờ xử lý', color: 'bg-amber-50 text-amber-700 border border-amber-200', icon: <Clock size={13} /> },
-  DANG_XU_LY: { label: 'Đang xử lý', color: 'bg-blue-50 text-blue-700 border border-blue-200', icon: <Package size={13} /> },
+  DANG_XU_LY: { label: 'Đã xác nhận', color: 'bg-blue-50 text-blue-700 border border-blue-200', icon: <Package size={13} /> },
   DA_XU_LY_XONG: { label: 'Đã xử lý xong', color: 'bg-purple-50 text-purple-700 border border-purple-200', icon: <FileCheck size={13} /> },
   DANG_GIAO: { label: 'Đang giao', color: 'bg-indigo-50 text-indigo-700 border border-indigo-200', icon: <Truck size={13} /> },
   DA_GIAO: { label: 'Đã giao', color: 'bg-emerald-50 text-emerald-700 border border-emerald-200', icon: <CheckCircle2 size={13} /> },
@@ -126,7 +126,7 @@ export default function CustomerOrderPage() {
   const tabs = [
     { key: 'ALL', label: 'Tất cả đơn' },
     { key: 'CHO_XAC_NHAN', label: 'Chờ xử lý' },
-    { key: 'DANG_XU_LY', label: 'Đang xử lý' },
+    { key: 'DANG_XU_LY', label: 'Đã xác nhận' },
     { key: 'DA_XU_LY_XONG', label: 'Đã xử lý xong' },
     { key: 'DANG_GIAO', label: 'Đang giao' },
     { key: 'DA_GIAO', label: 'Đã giao' },

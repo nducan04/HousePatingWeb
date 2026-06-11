@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import AlertOverride from '@/components/AlertOverride';
 import GlobalChatbot from '@/components/GlobalChatbot';
+import CustomerLiveChat from '@/app/components/CustomerLiveChat';
 
 const inter = Inter({
   subsets: ['latin', 'vietnamese'],
@@ -28,11 +29,19 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              window.addEventListener('error', function(event) {
+                if (event.message && String(event.message).includes('MetaMask')) {
+                  event.preventDefault();
+                  event.stopImmediatePropagation();
+                  return true;
+                }
+              }, true);
               window.addEventListener('unhandledrejection', function(event) {
                 if (event.reason && String(event.reason).includes('MetaMask')) {
                   event.preventDefault();
+                  event.stopImmediatePropagation();
                 }
-              });
+              }, true);
             `,
           }}
         />
@@ -41,6 +50,7 @@ export default function RootLayout({
         <AuthProvider>
           <AlertOverride />
           {children}
+          <CustomerLiveChat />
           <Toaster
             position="top-center"
             toastOptions={{

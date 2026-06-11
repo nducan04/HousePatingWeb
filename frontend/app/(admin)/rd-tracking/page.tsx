@@ -38,20 +38,12 @@ export default function RDTrackingPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedSampleRequest, setSelectedSampleRequest] = useState<any>(null);
-  const [contracts, setContracts] = useState<any[]>([]);
-  const [selectedContract, setSelectedContract] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
-  const [availableColors, setAvailableColors] = useState<string[]>([]);
-  const [creating, setCreating] = useState(false);
+
 
   const [sampleRequests, setSampleRequests] = useState<any[]>([]);
 
   useEffect(() => {
     fetchLogs();
-    fetchContracts();
     fetchSampleRequests();
   }, []);
 
@@ -88,54 +80,7 @@ export default function RDTrackingPage() {
     }
   };
 
-  const fetchContracts = async () => {
-    try {
-      const res = await api.get("/contracts");
-      if (res.data.success) {
-        const fetchedContracts = res.data.data;
-        setContracts(fetchedContracts);
-      }
-    } catch (err) {
-      console.error("Failed to fetch contracts:", err);
-    }
-  };
 
-  const handleContractChange = (contractId: string) => {
-    setSelectedContract(contractId);
-    const contract = contracts.find((c) => c._id === contractId);
-    if (contract && contract.chiTietHopDong) {
-      const colors = contract.chiTietHopDong
-        .map((item: any) => item.colorCode)
-        .filter(Boolean);
-      setAvailableColors(Array.from(new Set(colors)));
-    } else {
-      setAvailableColors([]);
-    }
-    setSelectedColor("");
-  };
-
-  const handleCreateLog = async () => {
-    if (!selectedContract || !selectedColor) {
-      alert("Vui lòng chọn hợp đồng và mã màu!");
-      return;
-    }
-    try {
-      setCreating(true);
-      const res = await api.post("/rd-tracking", {
-        ContractID: selectedContract,
-        MaMauYeuCau: selectedColor,
-      });
-      if (res.data.success) {
-        setIsModalOpen(false);
-        fetchLogs();
-        alert("Đã tạo Log R&D mới thành công!");
-      }
-    } catch (err) {
-      alert("Lỗi khi tạo log mới");
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const STATS = useMemo(() => {
     const contractLogs = data.filter((d) => d.ContractID);
@@ -305,126 +250,9 @@ export default function RDTrackingPage() {
             >
               <Package size={18} className="text-amber-600" /> Nguyên vật liệu
             </Link>
-            <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <Plus size={18} /> Tạo Log R&D Mới
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Create Log Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in duration-300">
-            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
-              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                  <Beaker size={18} />
-                </div>
-                KHỞI TẠO LOG TRUY XUẤT R&D
-              </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-8 space-y-6">
-              <div className="space-y-2">
-                <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                  Chọn Hợp đồng Kinh doanh/Gia công
-                </label>
-                <select
-                  className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
-                  value={selectedContract}
-                  onChange={(e) => handleContractChange(e.target.value)}
-                >
-                  <option value="">-- Chọn hợp đồng --</option>
-                  {contracts.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.contractId || c.MaHopDong} - {c.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                  Mã màu yêu cầu pha chế
-                </label>
-                <select
-                  className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all disabled:opacity-50"
-                  value={selectedColor}
-                  onChange={(e) => setSelectedColor(e.target.value)}
-                  disabled={!selectedContract}
-                >
-                  <option value="">-- Chọn mã màu --</option>
-                  {availableColors.map((color) => {
-                    const info = paintColors.find((c) => c.code === color);
-                    return (
-                      <option key={color} value={color}>
-                        {color} {info ? `- ${info.name}` : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-
-                {!selectedContract && (
-                  <p className="text-[11px] text-rose-500 font-bold ml-1 mt-1">
-                    * Vui lòng chọn hợp đồng trước
-                  </p>
-                )}
-
-                {selectedColor && (
-                  <div className="mt-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center gap-4">
-                    <div
-                      className="w-12 h-12 rounded-xl shadow-inner border border-slate-100"
-                      style={{
-                        background:
-                          paintColors.find((c) => c.code === selectedColor)
-                            ?.hex || "#333",
-                      }}
-                    />
-                    <div>
-                      <div className="text-[14px] font-black text-slate-900">
-                        {paintColors.find((c) => c.code === selectedColor)
-                          ?.name || "Custom Color"}
-                      </div>
-                      <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                        {selectedColor} |{" "}
-                        {paintColors.find((c) => c.code === selectedColor)
-                          ?.category || "Mixed"}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="p-8 bg-slate-50/50 border-t border-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                disabled={creating}
-                className="px-6 py-3 bg-white text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleCreateLog}
-                disabled={creating || !selectedContract || !selectedColor}
-                className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {creating ? "Đang tạo..." : "Xác nhận Khởi tạo"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Sample Requests Table */}
       <div className="space-y-4">
@@ -609,7 +437,7 @@ export default function RDTrackingPage() {
                                 background:
                                   paintColors.find(
                                     (c) => c.code === item.MaMauYeuCau,
-                                  )?.hex || "#333",
+                                  )?.hex || (/^#[0-9A-F]{6}$/i.test(item.MaMauYeuCau) ? item.MaMauYeuCau : "#333"),
                               }}
                             />
                             <div>

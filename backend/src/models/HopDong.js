@@ -58,6 +58,11 @@ const hopDongSchema = new mongoose.Schema({
     enum: ['B2B', 'Đại lý', 'B2C'],
     default: 'B2B',
   },
+  contractType: {
+    type: String,
+    enum: ['mua-ban', 'pha-che'],
+    default: 'mua-ban'
+  },
   // Đối với Đại lý
   TaxCode: {
     type: String,

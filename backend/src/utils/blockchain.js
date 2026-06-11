@@ -140,7 +140,9 @@ async function createContractOnChain(contractId, clientAddress, valueVnd, slaTim
     const contractWithSigner = contract;
 
     // Chuyển giá trị VNĐ sang Wei (1 VNĐ = 1 Wei cho mục đích ghi nhận)
-    const valueWei = ethers.parseUnits(String(valueVnd), 0);
+    // Dùng Math.round để tránh lỗi số thập phân do Javascript floating point (ví dụ: 16200000.000000002)
+    const safeValueVnd = Math.round(Number(valueVnd)).toString();
+    const valueWei = ethers.parseUnits(safeValueVnd, 0);
     
     // Lowercase address to bypass ethers.js strict checksum validation for mixed-case user inputs
     const formattedClientAddress = clientAddress ? clientAddress.toLowerCase() : clientAddress;
