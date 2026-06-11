@@ -75,7 +75,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
       </Link>
 
       {/* Contract Header */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '2.25rem', marginBottom: '1.75rem' }}>
+      <div className="bg-white border border-slate-200 rounded-xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '2.25rem', marginBottom: '1.75rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.125rem' }}>
           <div>
             <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 8 }}>{contract.title}</h2>
@@ -134,7 +134,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
         {/* Left Column: Contract Details & ChiTietHopDong */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
           {/* Contract Terms */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+          <div className="bg-white border border-slate-200 rounded-lg shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
             <h3 style={{ fontWeight: 700, marginBottom: '1.125rem', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Shield size={18} style={{ color: '#2563eb' }} /> Điều khoản Hợp đồng
             </h3>
@@ -176,34 +176,36 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
 
           {/* Chi tiết sản phẩm */}
           {contract.chiTietHopDong && contract.chiTietHopDong.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+            <div className="bg-white border border-slate-200 rounded-lg shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
               <h3 style={{ fontWeight: 700, marginBottom: '1.125rem', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Package size={18} style={{ color: '#7c3aed' }} /> Chi tiết Sản phẩm
               </h3>
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="pb-3 text-slate-500">Sản phẩm</th>
-                    <th className="pb-3 text-slate-500">Mã màu</th>
-                    <th className="pb-3 text-slate-500">Khối lượng</th>
-                    <th className="pb-3 text-slate-500">Đơn giá</th>
-                    <th className="pb-3 text-slate-500">Thành tiền</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contract.chiTietHopDong.map((item: any, i: number) => (
-                    <tr key={i} className="border-b border-slate-100 last:border-0">
-                      <td style={{ fontWeight: 600, color: '#0f172a' }} className="py-3">{item.productName}</td>
-                      <td className="py-3">{item.colorCode || '—'}</td>
-                      <td className="py-3">{item.quantity?.toLocaleString('vi-VN')} thùng</td>
-                      <td className="py-3">{item.unitPrice?.toLocaleString('vi-VN')}</td>
-                      <td style={{ fontWeight: 600, color: '#d97706' }} className="py-3">
-                        {(item.quantity * item.unitPrice).toLocaleString('vi-VN')}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="pb-3 px-2 text-slate-500">Sản phẩm</th>
+                      <th className="pb-3 px-2 text-slate-500">Mã màu</th>
+                      <th className="pb-3 px-2 text-slate-500">Khối lượng</th>
+                      <th className="pb-3 px-2 text-slate-500">Đơn giá</th>
+                      <th className="pb-3 px-2 text-slate-500">Thành tiền</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {contract.chiTietHopDong.map((item: any, i: number) => (
+                      <tr key={i} className="border-b border-slate-100 last:border-0">
+                        <td style={{ fontWeight: 600, color: '#0f172a' }} className="py-3 px-2">{item.productName}</td>
+                        <td className="py-3 px-2">{item.colorCode || '—'}</td>
+                        <td className="py-3 px-2">{item.quantity?.toLocaleString('vi-VN')} thùng</td>
+                        <td className="py-3 px-2">{item.unitPrice?.toLocaleString('vi-VN')}</td>
+                        <td style={{ fontWeight: 600, color: '#d97706' }} className="py-3 px-2">
+                          {(item.quantity * item.unitPrice).toLocaleString('vi-VN')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -212,7 +214,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
 
           {/* Contract PDF Info (IPFS) */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+          <div className="bg-white border border-slate-200 rounded-lg shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
             <h3 style={{ fontWeight: 700, marginBottom: '1.125rem', display: 'flex', alignItems: 'center', gap: 8 }}>
               <FileText size={18} style={{ color: '#d97706' }} /> Thông tin tài liệu
             </h3>
@@ -245,7 +247,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
           </div>
 
           {/* Server-side Signing */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
+          <div className="bg-white border border-slate-200 rounded-lg shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '1.75rem' }}>
             <h3 style={{ fontWeight: 700, marginBottom: '1.125rem', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Wallet size={18} style={{ color: '#7c3aed' }} /> Ký Hợp đồng nguyên tắc
             </h3>

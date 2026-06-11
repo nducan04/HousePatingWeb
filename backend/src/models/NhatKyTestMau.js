@@ -10,6 +10,9 @@ const lichSuPhienBanSchema = new mongoose.Schema({
   inputWeight: { type: Number, default: 0 }, // Khối lượng đầu vào (kg)
   outputWeight: { type: Number, default: 0 }, // Khối lượng thực thu (kg)
   nhietDo: { type: Number, default: 195 },
+  curingTime: { type: Number },
+  maxHumidity: { type: Number },
+  deltaE: { type: Number },
   hieuSuat: { type: Number, default: 98 },
   components: [
     {
@@ -37,7 +40,9 @@ const nhatKyTestMauSchema = new mongoose.Schema({
   substrate: { type: String },
   deadline: { type: Date },
   requirements: { type: String },
+  environmentType: { type: String },
   imageUrl: { type: String },
+  RDTrackingID: { type: mongoose.Schema.Types.ObjectId, ref: 'RDTracking' },
   // ──────────────────────────────────────────────────────────────
   TrangThai: { 
     type: String, 

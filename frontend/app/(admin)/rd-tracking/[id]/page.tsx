@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, CheckCircle2, XCircle, Clock, Plus, PenTool, User,
   Calendar, Layers, MessageSquare, Image as ImageIcon, Scale, AlertTriangle,
-  Beaker, Trash2
+  Beaker, Trash2, Package
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -31,6 +31,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
     inputWeight: '',
     outputWeight: '',
     nhietDo: '',
+    curingTime: '',
+    maxHumidity: '',
+    deltaE: '',
     hieuSuat: '',
     result: 'pending' as 'pass' | 'fail' | 'pending',
     components: [{ materialId: '', quantity: 0 }],
@@ -39,6 +42,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
   });
 
   const [isSigned, setIsSigned] = useState(false);
+  const [showPackaging, setShowPackaging] = useState(false);
+  const [packagingSpecs, setPackagingSpecs] = useState([{ containerType: 'Thùng 20L', quantity: 1, unitWeight: 20 }]);
+  const [packagingMaterial, setPackagingMaterial] = useState('Thùng nhựa tiêu chuẩn AkzoNobel');
 
   useEffect(() => {
     fetchData();
@@ -159,7 +165,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
         setRequest(res.data.data);
         setShowAddVersion(false);
-        setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
+        setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', curingTime: '', maxHumidity: '', deltaE: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
         alert('✅ Đã cập nhật phiên bản test mới!');
       }
     } catch (err) {
@@ -179,6 +185,30 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
     } catch (err: any) {
       console.error('Failed to sign KCS:', err);
       alert(err.response?.data?.message || '❌ Lỗi khi ký duyệt KCS');
+    }
+  };
+
+  const handleCreatePackaging = async () => {
+    try {
+      const specs = packagingSpecs.map(s => ({
+        ...s,
+        totalWeight: s.quantity * s.unitWeight
+      }));
+      const payload = {
+        RDLogID: id,
+        ContractID: request.ContractID?._id || request.ContractID,
+        PackagingSpecs: specs,
+        PackagingMaterial: packagingMaterial,
+        Notes: `Đóng gói tự động từ lô R&D ${request.MaNhatKy}`
+      };
+      const res = await api.post('/packaging', payload);
+      if (res.data.success) {
+        alert('✅ Đã tạo phiếu đóng gói thành công!\nHệ thống đã tự động xuất kho nguyên liệu và nhập kho thành phẩm.');
+        router.push('/packaging');
+      }
+    } catch (err: any) {
+      console.error('Failed to create packaging slip:', err);
+      alert(err.response?.data?.message || '❌ Lỗi khi tạo phiếu đóng gói');
     }
   };
 
@@ -209,7 +239,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
     return (((i - o) / i) * 100).toFixed(2);
   };
 
-  const colorInfo = paintColors.find(c => c.code === request.MaMauYeuCau);
+  const colorInfo = paintColors.find(c => c.code === request.MaMauYeuCau || c.name === request.MaMauYeuCau);
 
   const isKCSManager = user?.role?.toLowerCase() === 'admin' || (user as any)?.name === 'Phi Binh Minh';
 
@@ -254,17 +284,23 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                 {request.TrangThai === 'approved' ? 'COMPLETED' : request.TrangThai}
               </span>
             </div>
-            <h1 className="text-3xl md:text-[34px] font-black text-slate-900 mb-5 tracking-tight">{request.MaMauYeuCau}</h1>
+            <div className="flex items-center gap-4 mb-5">
+              <div 
+                className="w-12 h-12 rounded-full border-4 border-white shadow-md shrink-0" 
+                style={{ background: colorInfo?.hex || contract?.colorHex || (/^#[0-9A-F]{6}$/i.test(request.MaMauYeuCau) ? request.MaMauYeuCau : '#e2e8f0') }}
+              />
+              <h1 className="text-3xl md:text-[34px] font-black text-slate-900 tracking-tight m-0">{request.MaMauYeuCau}</h1>
+            </div>
             <div className="flex flex-wrap items-center gap-5 md:gap-8 text-[12px] font-bold text-slate-500">
               <div className="flex items-center gap-2"><Calendar size={14} className="text-slate-400" /> Ngày tạo: <span className="text-slate-800">{new Date(request.createdAt).toLocaleDateString('vi-VN')}</span></div>
               <div className="flex items-center gap-2"><Clock size={14} className="text-slate-400" /> Hạn R&D: <span className="text-rose-600">{request.deadline ? new Date(request.deadline).toLocaleDateString('vi-VN') : 'N/A'}</span></div>
               <div className="flex items-center gap-2"><Layers size={14} className="text-slate-400" /> Bề mặt: <span className="text-slate-800">{contract.surface || request.surface || 'Thép tấm'}</span></div>
             </div>
           </div>
-          {request.sampleImageUrl && (
+          {(request.imageUrl || request.sampleImageUrl) && (
             <div className="flex flex-col items-center gap-2 relative z-10 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm ml-auto">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pt-1">Ảnh mẫu y/c</span>
-              <img src={request.sampleImageUrl} alt="Mẫu Yêu Cầu" className="w-[88px] h-[88px] object-cover rounded-xl border border-slate-100 cursor-pointer hover:scale-105 transition-transform" onClick={() => window.open(request.sampleImageUrl, '_blank')} />
+              <img src={request.imageUrl || request.sampleImageUrl} alt="Mẫu Yêu Cầu" className="w-[88px] h-[88px] object-cover rounded-xl border border-slate-100 cursor-pointer hover:scale-105 transition-transform" onClick={() => window.open(request.imageUrl || request.sampleImageUrl, '_blank')} />
             </div>
           )}
         </div>
@@ -336,28 +372,77 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                                   </span>
                                 </div>
                                 {v.parameters && (
-                                  <div className="text-xs text-slate-500 font-medium">
+                                  <div className="text-[12px] text-slate-600 font-medium">
                                     <strong>Thông số: </strong>{v.parameters}
                                   </div>
                                 )}
+                                
                                 {v.feedback && (
-                                  <div className="text-xs text-slate-600 font-medium bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
+                                  <div className="text-[12px] text-slate-600 font-medium bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50">
                                     <strong>Phản hồi kỹ thuật: </strong>{v.feedback}
                                   </div>
                                 )}
+
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                  <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
+                                    Input: <span className="font-black">{v.inputWeight || 0} kg</span>
+                                  </div>
+                                  <div className="bg-purple-50 text-purple-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
+                                    Output: <span className="font-black">{v.outputWeight || 0} kg</span>
+                                  </div>
+                                  <div className={`px-3 py-1.5 rounded-xl text-[12px] font-bold ${parseFloat(v.inputWeight && v.outputWeight ? ((v.inputWeight - v.outputWeight) / v.inputWeight * 100).toFixed(1) : '0') > 5 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                    Hao hụt: <span className="font-black">{(v.inputWeight && v.outputWeight) ? ((v.inputWeight - v.outputWeight) / v.inputWeight * 100).toFixed(1) : '0.0'}%</span>
+                                  </div>
+                                  <div className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
+                                    Nhiệt độ: <span className="font-black">{v.nhietDo || 195}°C</span>
+                                  </div>
+                                  <div className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
+                                    TG Sấy: <span className="font-black">{v.curingTime || 15}p</span>
+                                  </div>
+                                  <div className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
+                                    Độ ẩm max: <span className="font-black">{v.maxHumidity || 80}%</span>
+                                  </div>
+                                  <div className={`px-3 py-1.5 rounded-xl text-[12px] font-bold ${parseFloat(v.deltaE) > 0.8 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                    Delta E: <span className="font-black">{v.deltaE || 0}</span>
+                                  </div>
+                                  <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
+                                    Hiệu suất: <span className="font-black">{v.hieuSuat || 98}%</span>
+                                  </div>
+                                </div>
+
+                                {v.components && v.components.length > 0 && (
+                                  <div className="mt-3">
+                                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                                      <Layers size={12} /> Nguyên liệu sử dụng
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {v.components.map((comp: any, cIdx: number) => {
+                                        const mat = materials.find((m: any) => m.id === comp.materialId);
+                                        return (
+                                          <span key={cIdx} className="bg-slate-50 text-slate-700 border border-slate-100 px-2.5 py-1 rounded-xl text-[12px] font-bold">
+                                            {mat ? mat.name : comp.materialId}: <span className="font-black text-blue-600">{comp.quantity}</span> {mat?.unit || 'kg'}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
                                 {v.imageUrl && (
-                                  <div className="mt-2">
+                                  <div className="mt-3">
                                     <img
                                       src={v.imageUrl}
                                       alt={`Ảnh mẻ test ${v.version}`}
-                                      className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:scale-105 transition-transform"
+                                      className="w-20 h-20 object-cover rounded-xl border border-slate-200 cursor-pointer hover:scale-105 transition-transform shadow-sm"
                                       onClick={() => window.open(v.imageUrl, '_blank')}
                                     />
+                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 ml-1">Ảnh mẻ test</div>
                                   </div>
                                 )}
-                                <div className="flex flex-wrap gap-3 text-[10px] font-bold text-slate-400">
-                                  <span>Hao hụt: <strong className="text-slate-700">{(v.inputWeight && v.outputWeight) ? ((v.inputWeight - v.outputWeight) / v.inputWeight * 100).toFixed(1) : '0.0'}%</strong></span>
+
+                                <div className="flex flex-wrap gap-3 text-[11px] font-bold text-slate-400 mt-2 border-t border-slate-50 pt-3">
                                   <span>Người test: <strong className="text-slate-700">{v.tester || 'Admin'}</strong></span>
+                                  {v.date && <span>Thời gian: <strong className="text-slate-700">{new Date(v.date).toLocaleString('vi-VN')}</strong></span>}
                                 </div>
                               </div>
                             ))}
@@ -395,8 +480,8 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
               <div style={{ padding: '4px 10px', background: 'rgba(0,0,0,0.3)', borderRadius: 4, letterSpacing: 1, fontSize: 13, fontWeight: 700, color: '#2563eb' }}>
                 LOG ID: {request.MaNhatKy}
               </div>
-              <span className={`badge ${request.TrangThai}`}>
-                {request.TrangThai === 'approved' ? 'COMPLETED' : request.TrangThai.toUpperCase()}
+              <span className={`badge ${request.TrangThai || 'pending'}`}>
+                {(request.TrangThai || 'pending') === 'approved' ? 'COMPLETED' : (request.TrangThai || 'pending').toUpperCase()}
               </span>
               {isSigned && (
                 <span className="bg-emerald-100 text-emerald-600 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1">
@@ -433,14 +518,14 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            {request.sampleImageUrl && (
+            {(request.imageUrl || request.sampleImageUrl) && (
               <div className="flex flex-col items-center gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-100">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ảnh mẫu y/c</span>
                 <img
-                  src={request.sampleImageUrl}
+                  src={request.imageUrl || request.sampleImageUrl}
                   alt="Ảnh mẫu khách gửi"
                   className="w-16 h-16 object-cover rounded-lg shadow-sm cursor-pointer hover:scale-105 transition-transform"
-                  onClick={() => window.open(request.sampleImageUrl, '_blank')}
+                  onClick={() => window.open(request.imageUrl || request.sampleImageUrl, '_blank')}
                 />
               </div>
             )}
@@ -448,12 +533,12 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(255,255,255,0.03)', padding: '12px 20px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{
                 width: 50, height: 50, borderRadius: '50%',
-                background: colorInfo?.hex || contract.colorHex || '#333', border: '3px solid rgba(255,255,255,0.1)',
-                boxShadow: `0 0 20px ${colorInfo?.hex || contract.colorHex || '#00d4ff'}40`
+                background: request.MaMauYeuCau?.startsWith('#') ? request.MaMauYeuCau : (colorInfo?.hex || contract?.colorHex || '#333'), border: '3px solid rgba(255,255,255,0.1)',
+                boxShadow: `0 0 20px ${request.MaMauYeuCau?.startsWith('#') ? request.MaMauYeuCau : (colorInfo?.hex || contract?.colorHex || '#00d4ff')}40`
               }} />
               <div>
                 <div style={{ fontWeight: 800 }}>{request.MaMauYeuCau}</div>
-                <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>HEX: {colorInfo?.hex || 'MIX'}</div>
+                <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>HEX: {request.MaMauYeuCau?.startsWith('#') ? request.MaMauYeuCau : (colorInfo?.hex || contract?.colorHex || 'MIX')}</div>
               </div>
             </div>
           </div>
@@ -497,6 +582,28 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           <div className="stat-item">
             <div className="text-sm text-slate-500 mb-1">CẬP NHẬT</div>
             <div className="stat-value" style={{ fontSize: 18 }}>{new Date(request.updatedAt).toLocaleDateString('vi-VN')}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Thông số kỹ thuật đặc thù (Technical Specs) */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-8">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+          <Layers size={18} className="text-purple-600" />
+          <h3 className="text-[15px] font-black text-slate-800 uppercase tracking-tight">
+            Thông số Kỹ thuật Pha chế Sơn Tĩnh Điện
+          </h3>
+        </div>
+        <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="space-y-1">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Môi trường sử dụng</div>
+            <div className="text-[14px] font-semibold text-slate-800">{request.environmentType || 'N/A'}</div>
+          </div>
+          <div className="space-y-1 col-span-2 md:col-span-3">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Yêu cầu chi tiết / Khác</div>
+            <div className="text-[14px] font-medium text-slate-600 mt-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
+              {request.requirements || 'Không có ghi chú thêm.'}
+            </div>
           </div>
         </div>
       </div>
@@ -632,6 +739,68 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
 
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-bold text-gray-500 flex items-center gap-2">
+                    ⏱ Thời gian sấy
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all pr-12"
+                      placeholder="VD: 15"
+                      value={newVersion.curingTime}
+                      onChange={e => setNewVersion(p => ({ ...p, curingTime: e.target.value }))}
+                    />
+                    <div className="absolute inset-y-0 right-4 flex items-center text-sm text-gray-400 font-medium pointer-events-none">
+                      phút
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-gray-500 flex items-center gap-2">
+                    💧 Độ ẩm tối đa
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all pr-12"
+                      placeholder="VD: 80"
+                      value={newVersion.maxHumidity}
+                      onChange={e => setNewVersion(p => ({ ...p, maxHumidity: e.target.value }))}
+                    />
+                    <div className="absolute inset-y-0 right-4 flex items-center text-sm text-gray-400 font-medium pointer-events-none">
+                      %
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-gray-500 flex items-center gap-2">
+                    🎨 Độ lệch màu (Delta E)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      className={`w-full bg-white border ${parseFloat(newVersion.deltaE) > 0.8 ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/10' : 'border-gray-200 focus:border-blue-500 focus:ring-blue-500/10'} rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 transition-all pr-12`}
+                      placeholder="VD: 0.5"
+                      value={newVersion.deltaE}
+                      onChange={e => setNewVersion(p => ({ ...p, deltaE: e.target.value }))}
+                    />
+                    <div className="absolute inset-y-0 right-4 flex items-center text-sm text-gray-400 font-medium pointer-events-none">
+                      ΔE
+                    </div>
+                  </div>
+                  {parseFloat(newVersion.deltaE) > 0.8 && (
+                    <div className="text-[10px] font-bold text-rose-600 animate-pulse mt-1">
+                      ⚠️ Delta E {'>'} 0.8: Không đạt chuẩn
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-bold text-gray-500 flex items-center gap-2">
                     📈 Hiệu suất bám dính
                   </label>
                   <div className="relative">
@@ -763,6 +932,11 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                   <AlertTriangle size={12} /> Cảnh báo: Hao hụt vượt quá 5% - Hiệu suất kém
                 </div>
               )}
+              {parseFloat(newVersion.deltaE) > 0.8 && (
+                <div className="text-xs text-rose-600 font-black flex items-center gap-1 bg-rose-50 px-2 py-1 rounded border border-rose-100">
+                  <XCircle size={12} /> Delta E = {newVersion.deltaE} (Vượt chuẩn 0.8) - Yêu cầu Re-Test
+                </div>
+              )}
             </div>
 
             {/* Nút bấm bên phải */}
@@ -773,18 +947,22 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
               >
                 Hủy
               </button>
+              
               <button
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm"
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
                 onClick={() => handleAddVersion('fail')}
               >
-                BÁO LỖI (RE-TEST)
+                <XCircle size={16} /> BÁO LỖI (RE-TEST)
               </button>
-              <button
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
-                onClick={() => handleAddVersion('pass')}
-              >
-                <CheckCircle2 size={16} /> Xác nhận hoàn thành
-              </button>
+
+              {(!newVersion.deltaE || parseFloat(newVersion.deltaE) <= 0.8) && (
+                <button
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
+                  onClick={() => handleAddVersion('pass')}
+                >
+                  <CheckCircle2 size={16} /> Xác nhận hoàn thành
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -863,6 +1041,15 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                       </div>
                       <div className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
                         Nhiệt độ: <span className="font-black">{v.nhietDo || 195}°C</span>
+                      </div>
+                      <div className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
+                        TG Sấy: <span className="font-black">{v.curingTime || 15}p</span>
+                      </div>
+                      <div className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
+                        Độ ẩm max: <span className="font-black">{v.maxHumidity || 80}%</span>
+                      </div>
+                      <div className={`px-3 py-1.5 rounded-xl text-[12px] font-bold ${parseFloat(v.deltaE) > 0.8 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                        Delta E: <span className="font-black">{v.deltaE || 0}</span>
                       </div>
                       <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl text-[12px] font-bold">
                         Hiệu suất: <span className="font-black">{v.hieuSuat || 98}%</span>
@@ -987,6 +1174,158 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       </div>
+
+      {/* Packaging Section (Only visible if signed/approved) */}
+      {isSigned && !isCustomer && (
+        <div className="mt-8 p-6 rounded-2xl bg-blue-50/50 border border-blue-100 shadow-sm transition-all duration-300">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-blue-800 flex items-center gap-2 mb-1.5">
+                <Package size={20} className="text-blue-600" />
+                Lệnh Đóng Gói Thành Phẩm
+              </h3>
+              <p className="text-sm text-blue-600/80">
+                Sơn đã đạt chuẩn KCS. Vui lòng thiết lập quy cách đóng gói để nhập kho thành phẩm.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowPackaging(!showPackaging)}
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-all shadow-sm flex items-center gap-2"
+            >
+              <Plus size={16} /> Tạo Phiếu Đóng Gói
+            </button>
+          </div>
+
+          {showPackaging && (
+            <div className="bg-white p-6 rounded-xl border border-blue-100 mt-4 space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-[13px] font-bold text-slate-700">Quy cách san chiết</label>
+                  <button
+                    type="button"
+                    onClick={() => setPackagingSpecs([...packagingSpecs, { containerType: 'Lon 5L', quantity: 1, unitWeight: 5 }])}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                  >
+                    <Plus size={14} /> Thêm loại bao bì
+                  </button>
+                </div>
+                
+                {packagingSpecs.map((spec, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                      placeholder="Loại bao bì (VD: Thùng 20L)"
+                      value={spec.containerType}
+                      onChange={e => {
+                        const newSpecs = [...packagingSpecs];
+                        newSpecs[idx].containerType = e.target.value;
+                        setPackagingSpecs(newSpecs);
+                      }}
+                    />
+                    <div className="relative w-32">
+                      <input
+                        type="number"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 pr-8"
+                        placeholder="Số lượng"
+                        value={spec.quantity}
+                        onChange={e => {
+                          const newSpecs = [...packagingSpecs];
+                          newSpecs[idx].quantity = parseFloat(e.target.value) || 0;
+                          setPackagingSpecs(newSpecs);
+                        }}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                        {(() => {
+                          const t = (spec.containerType || '').toLowerCase();
+                          if (t.includes('thùng')) return 'thùng';
+                          if (t.includes('lon')) return 'lon';
+                          if (t.includes('can')) return 'can';
+                          if (t.includes('hộp')) return 'hộp';
+                          return 'cái';
+                        })()}
+                      </span>
+                    </div>
+                    <div className="relative w-32">
+                      <input
+                        type="number"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 pr-8"
+                        placeholder="Khối lượng"
+                        value={spec.unitWeight}
+                        onChange={e => {
+                          const newSpecs = [...packagingSpecs];
+                          newSpecs[idx].unitWeight = parseFloat(e.target.value) || 0;
+                          setPackagingSpecs(newSpecs);
+                        }}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                        {(() => {
+                          const t = (spec.containerType || '').toLowerCase();
+                          if (t.includes('lít') || /\d+\s*l\b/.test(t)) return 'Lít';
+                          if (t.includes('ml')) return 'ml';
+                          if (t.includes('gram') || /\d+\s*g\b/.test(t)) return 'g';
+                          return 'kg';
+                        })()}
+                      </span>
+                    </div>
+                    <div className="w-24 text-right text-sm font-bold text-slate-600">
+                      = {spec.quantity * spec.unitWeight} {(() => {
+                        const t = (spec.containerType || '').toLowerCase();
+                        if (t.includes('lít') || /\d+\s*l\b/.test(t)) return 'Lít';
+                        if (t.includes('ml')) return 'ml';
+                        if (t.includes('gram') || /\d+\s*g\b/.test(t)) return 'g';
+                        return 'kg';
+                      })()}
+                    </div>
+                    {packagingSpecs.length > 1 && (
+                      <button
+                        onClick={() => {
+                          const newSpecs = packagingSpecs.filter((_, i) => i !== idx);
+                          setPackagingSpecs(newSpecs);
+                        }}
+                        className="text-slate-400 hover:text-rose-600 p-1"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[13px] font-bold text-slate-700">Chất liệu bao bì</label>
+                <input
+                  type="text"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                  value={packagingMaterial}
+                  onChange={e => setPackagingMaterial(e.target.value)}
+                  placeholder="VD: Thùng nhựa tiêu chuẩn AkzoNobel"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                <div className="text-sm">
+                  Tổng lượng thành phẩm: <span className="font-black text-blue-600 text-lg ml-1">
+                    {packagingSpecs.reduce((sum, s) => sum + (s.quantity * s.unitWeight), 0)} {(() => {
+                      const firstT = packagingSpecs.length > 0 ? (packagingSpecs[0].containerType || '').toLowerCase() : '';
+                      if (firstT.includes('lít') || /\d+\s*l\b/.test(firstT)) return 'Lít';
+                      if (firstT.includes('ml')) return 'ml';
+                      if (firstT.includes('gram') || /\d+\s*g\b/.test(firstT)) return 'g';
+                      return 'kg';
+                    })()}
+                  </span>
+                </div>
+                <button
+                  onClick={handleCreatePackaging}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-all shadow-sm flex items-center gap-2"
+                >
+                  <Package size={16} /> Chốt Đóng Gói & Nhập Kho
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <style jsx>{`
         .timeline-container {

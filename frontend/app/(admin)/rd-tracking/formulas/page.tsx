@@ -209,7 +209,7 @@ export default function FormulasPage() {
                   <div className="flex items-center gap-3">
                     <div 
                       className="w-10 h-10 rounded-lg shadow-inner"
-                      style={{ background: colorInfo?.hex || '#333' }}
+                      style={{ background: colorInfo?.hex || (/^#[0-9A-F]{6}$/i.test(formula.MaMau) ? formula.MaMau : '#333') }}
                     />
                     <div>
                       <div className="text-sm font-black text-slate-900">{formula.MaMau}</div>

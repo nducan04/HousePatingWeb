@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   ArrowLeft, Printer, Package, CheckCircle2, User, 
   Calendar, FileText, Scale, Database, ShieldCheck
@@ -12,6 +12,7 @@ export default function PackagingDetailPage({ params }: { params: { id: string }
   const { id } = params;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchData();
@@ -32,7 +33,47 @@ export default function PackagingDetailPage({ params }: { params: { id: string }
   };
 
   const handlePrint = () => {
-    window.print();
+    const content = printRef.current;
+    if (!content) return;
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>PHIẾU ĐÓNG GÓI - ${data.MaPhieuDongGoi}</title>
+          <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; }
+            body { padding: 40px; font-size: 14px; line-height: 1.5; color: #000; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 20px; }
+            th, td { border: 1px solid #000; padding: 8px 12px; font-size: 14px; }
+            th { text-transform: uppercase; font-weight: bold; background-color: #f5f5f5 !important; }
+            .whitespace-nowrap { white-space: nowrap; }
+            .text-left { text-align: left !important; }
+            .text-center { text-align: center !important; }
+            .text-right { text-align: right !important; }
+            .px-4 { padding-left: 1rem; padding-right: 1rem; }
+            .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+            .badge { display: inline-block; padding: 2px 8px; border: 1px solid #000; border-radius: 4px; font-size: 11px; font-weight: bold; }
+            @media print {
+              body { -webkit-print-color-adjust: exact; }
+            }
+          </style>
+        </head>
+        <body>
+          <div style="max-width: 800px; margin: 0 auto;">
+            ${content.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 400);
   };
 
   if (loading) return <div style={{ textAlign: 'center', padding: 100 }}>Đang tải phiếu đóng gói...</div>;
@@ -50,7 +91,7 @@ export default function PackagingDetailPage({ params }: { params: { id: string }
       </div>
 
       {/* Industrial Document Layout */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden print-area" style={{ padding: 40, background: '#ffffff', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <div ref={printRef} className="bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-300 overflow-hidden print-area" style={{ padding: 40, background: '#ffffff', border: '1px solid rgba(255,255,255,0.05)' }}>
         
         {/* Document Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #2563eb', paddingBottom: 25, marginBottom: 30 }}>
@@ -105,32 +146,34 @@ export default function PackagingDetailPage({ params }: { params: { id: string }
 
         {/* Specs Table */}
         <h3 style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 15 }}>DANH MỤC QUY CÁCH ĐÓNG GÓI</h3>
-        <table className="admin-table" style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 8 }}>
-          <thead>
-            <tr>
-              <th>Loại Bao Bì</th>
-              <th style={{ textAlign: 'center' }}>Số Lượng</th>
-              <th style={{ textAlign: 'center' }}>Khối Lượng Tịnh (Thùng/ĐV)</th>
-              <th style={{ textAlign: 'right' }}>Thành Tiền (Thùng)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.PackagingSpecs?.map((spec: any, idx: number) => (
-              <tr key={idx}>
-                <td style={{ fontWeight: 700 }}>{spec.containerType}</td>
-                <td style={{ textAlign: 'center' }}>{spec.quantity}</td>
-                <td style={{ textAlign: 'center' }}>{spec.unitWeight}</td>
-                <td style={{ textAlign: 'right', fontWeight: 800, color: '#2563eb' }}>{spec.totalWeight}</td>
+        <div className="overflow-x-auto">
+          <table className="admin-table w-full" style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 8 }}>
+            <thead>
+              <tr>
+                <th className="whitespace-nowrap px-4 py-3 text-left">Loại Bao Bì</th>
+                <th className="whitespace-nowrap px-4 py-3 text-center">Số Lượng</th>
+                <th className="whitespace-nowrap px-4 py-3 text-center">Khối Lượng Tịnh (Thùng/ĐV)</th>
+                <th className="whitespace-nowrap px-4 py-3 text-right">Thành Tiền (Thùng)</th>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr style={{ background: 'rgba(0,212,255,0.05)' }}>
-              <td colSpan={3} style={{ fontWeight: 800, textAlign: 'right', color: '#475569' }}>TỔNG KHỐI LƯỢNG TỊNH (NET WEIGHT):</td>
-              <td style={{ textAlign: 'right', fontWeight: 900, fontSize: 18, color: '#059669' }}>{data.NetWeightTotal} thùng</td>
-            </tr>
-          </tfoot>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {data.PackagingSpecs?.map((spec: any, idx: number) => (
+                <tr key={idx}>
+                  <td className="px-4 py-3" style={{ fontWeight: 700 }}>{spec.containerType}</td>
+                  <td className="px-4 py-3 text-center">{spec.quantity}</td>
+                  <td className="px-4 py-3 text-center">{spec.unitWeight}</td>
+                  <td className="px-4 py-3 text-right" style={{ fontWeight: 800, color: '#2563eb' }}>{spec.totalWeight}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ background: 'rgba(0,212,255,0.05)' }}>
+                <td colSpan={3} className="px-4 py-3" style={{ fontWeight: 800, textAlign: 'right', color: '#475569' }}>TỔNG KHỐI LƯỢNG TỊNH (NET WEIGHT):</td>
+                <td className="px-4 py-3" style={{ textAlign: 'right', fontWeight: 900, fontSize: 18, color: '#059669' }}>{data.NetWeightTotal} thùng</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
 
         {/* Notes & Signs */}
         <div style={{ marginTop: 40, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40 }}>
@@ -169,6 +212,7 @@ export default function PackagingDetailPage({ params }: { params: { id: string }
       </div>
 
       <style jsx>{`
+        .admin-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; border-bottom: 1px solid #f1f5f9; }
         @media print {
           .no-print { display: none !important; }
           .print-area { border: none !important; box-shadow: none !important; padding: 0 !important; background: white !important; color: black !important; }

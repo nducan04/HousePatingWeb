@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, ArrowRight, Plus, Trash2, FileText, CheckCircle2,
-  Package, ClipboardList, Eye
+  Package, ClipboardList, Eye, ChevronDown, Loader2
 } from 'lucide-react';
 import { useContractStore, ContractDetail } from '@/lib/store/contractStore';
 import api from '@/lib/utils/axiosAuth';
+import { paintColors } from '@/lib/data/colors-data';
 
 const EMPTY_DETAIL: ContractDetail = {
   productName: '',
@@ -38,6 +39,67 @@ export default function CreateContractPage() {
 
   // Step 2: Chi tiết sản phẩm
   const [details, setDetails] = useState<ContractDetail[]>([{ ...EMPTY_DETAIL }]);
+
+  // Color Selection
+  const [targetColorCode, setTargetColorCode] = useState('');
+  const [targetColorName, setTargetColorName] = useState('');
+  const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
+  const colorDropdownRef = useRef<HTMLDivElement>(null);
+  const [customHex, setCustomHex] = useState<string>('');
+  const [isResolvingColor, setIsResolvingColor] = useState(false);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (colorDropdownRef.current && !colorDropdownRef.current.contains(event.target as Node)) {
+        setIsColorDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // AI Color resolution effect
+  useEffect(() => {
+    const colorInput = targetColorCode;
+    if (!colorInput) {
+      setCustomHex('');
+      return;
+    }
+    
+    // Check if it's already in the standard palette
+    const existing = paintColors.find(c => c.code.toLowerCase() === colorInput.toLowerCase() || c.name.toLowerCase() === colorInput.toLowerCase());
+    if (existing) {
+      setCustomHex(existing.hex);
+      return;
+    }
+
+    // Check if it's already a valid HEX color (e.g. #FF0000)
+    if (/^#[0-9A-F]{6}$/i.test(colorInput)) {
+      setCustomHex(colorInput);
+      return;
+    }
+
+    // Debounce API call for custom color names
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        setIsResolvingColor(true);
+        const res = await api.post('/chatbot/resolve-color', { colorName: colorInput });
+        if (res.data.success && res.data.hexCode) {
+          setCustomHex(res.data.hexCode);
+        } else {
+          setCustomHex('');
+        }
+      } catch (err) {
+        console.error("Failed to resolve color:", err);
+      } finally {
+        setIsResolvingColor(false);
+      }
+    }, 800);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [targetColorCode]);
 
   // Auto-gen contractId
   useEffect(() => {
@@ -72,8 +134,20 @@ export default function CreateContractPage() {
     setDetails(updated);
   };
 
-  const canProceedStep1 = contractId && title && customerId;
+  const canProceedStep1 = contractId && title && customerId && targetColorCode;
   const canProceedStep2 = details.length > 0 && details.every(d => d.productName && d.quantity > 0 && d.unitPrice > 0);
+
+  const goToStep2 = () => {
+    if (targetColorCode && details.length === 1 && details[0].colorCode === '') {
+      const updated = [...details];
+      updated[0].colorCode = targetColorCode;
+      if (!updated[0].productName && targetColorName) {
+        updated[0].productName = targetColorName;
+      }
+      setDetails(updated);
+    }
+    setStep(2);
+  };
 
   const handleSubmit = async () => {
     setSubmitError('');
@@ -147,7 +221,7 @@ export default function CreateContractPage() {
         <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-hidden" style={{ padding: '2.25rem' }}>
           <h3 style={{ fontWeight: 700, marginBottom: '1.75rem', display: 'flex', alignItems: 'center', gap: 8 }}>
             <ClipboardList size={20} style={{ color: '#2563eb' }} />
-            Thông tin Hợp đồng Nguyên tắc
+            Thông tin Hợp đồng Nguyên tắc Mua bán
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.75rem' }}>
@@ -185,6 +259,99 @@ export default function CreateContractPage() {
               <label className="form-label">Thời hạn hợp đồng</label>
               <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={termsDuration} onChange={e => setTermsDuration(e.target.value)} placeholder="12 tháng (01/2024 — 12/2024)" />
             </div>
+            
+            {/* Color Selection */}
+            <div className="form-group col-span-1 md:col-span-2">
+              <label className="form-label">Tạo hợp đồng pha chế sơn theo mẫu *</label>
+              <div className="relative" ref={colorDropdownRef}>
+                <div className="relative flex items-center">
+                  <input
+                    className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-10 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
+                    type="text"
+                    placeholder="Tìm mã màu hoặc nhập màu tùy chỉnh..."
+                    required
+                    value={targetColorCode}
+                    onChange={(e) => {
+                      setTargetColorCode(e.target.value);
+                      setIsColorDropdownOpen(true);
+                    }}
+                    onClick={() => setIsColorDropdownOpen(true)}
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                    {isResolvingColor ? (
+                      <Loader2 size={18} className="text-blue-500 animate-spin" />
+                    ) : (
+                      <div className="relative overflow-hidden w-6 h-6 rounded-full border border-slate-200 shadow-sm shrink-0 cursor-pointer hover:scale-110 transition-transform">
+                        <input
+                           type="color"
+                           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 cursor-pointer opacity-0"
+                           value={paintColors.find(c => c.code === targetColorCode)?.hex || customHex || '#e2e8f0'}
+                           onChange={(e) => {
+                             const hex = e.target.value;
+                             setCustomHex(hex);
+                             setTargetColorCode(hex);
+                             setTargetColorName(hex);
+                             setIsColorDropdownOpen(false);
+                           }}
+                           title="Chọn màu bằng bảng màu"
+                        />
+                        <div
+                          className="w-full h-full pointer-events-none"
+                          style={{ background: paintColors.find(c => c.code === targetColorCode)?.hex || customHex || '#e2e8f0' }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer" 
+                    onClick={() => setIsColorDropdownOpen(!isColorDropdownOpen)}
+                  >
+                    <ChevronDown size={16} />
+                  </div>
+                </div>
+
+                {isColorDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar">
+                    {paintColors
+                      .filter(c => c.code.toLowerCase().includes(targetColorCode.toLowerCase()) || c.name.toLowerCase().includes(targetColorCode.toLowerCase()))
+                      .map(color => (
+                        <div
+                          key={color.code}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-50 last:border-none"
+                          onClick={() => {
+                            setTargetColorCode(color.code);
+                            setTargetColorName(color.name);
+                            setIsColorDropdownOpen(false);
+                          }}
+                        >
+                          <div className="w-6 h-6 rounded-full border border-slate-200 shadow-sm shrink-0" style={{ background: color.hex }} />
+                          <div>
+                            <div className="text-sm font-bold text-slate-800">{color.code}</div>
+                            <div className="text-xs text-slate-500">{color.name}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {targetColorCode.length > 0 && !paintColors.some(c => c.code.toLowerCase() === targetColorCode.toLowerCase()) && (
+                          <div 
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors border-t border-slate-100"
+                            onClick={() => {
+                              setTargetColorName(targetColorCode); // use code as name initially
+                              setIsColorDropdownOpen(false);
+                            }}
+                          >
+                            <div className="w-6 h-6 rounded-full border border-dashed border-slate-300 flex items-center justify-center shrink-0">
+                              <Plus size={12} className="text-slate-400" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-blue-600">Sử dụng màu tùy chỉnh mới</div>
+                              <div className="text-xs text-slate-500">Mã màu: {targetColorCode}</div>
+                            </div>
+                          </div>
+                      )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.75rem', marginTop: '1.75rem' }}>
@@ -199,7 +366,7 @@ export default function CreateContractPage() {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2.25rem' }}>
-            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" disabled={!canProceedStep1} onClick={() => setStep(2)}>
+            <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm" disabled={!canProceedStep1} onClick={goToStep2}>
               Tiếp theo <ArrowRight size={16} />
             </button>
           </div>

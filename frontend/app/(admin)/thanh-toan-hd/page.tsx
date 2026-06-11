@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, DollarSign, Wallet, FileCheck, Landmark, Plus, X, Save, Edit } from 'lucide-react';
+import { Search, Eye, DollarSign, Wallet, FileCheck, Landmark, Plus, X, Save, Edit, FileText, AlertTriangle } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
 
@@ -42,20 +42,7 @@ export default function ThanhToanHopDongPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'ALL' | 'DA_QUYET_TOAN' | 'CHO_THU' | 'KHACH_CHAM_TRA'>('ALL');
 
-  const fetchContracts = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/contracts');
-      if (res.data.success) {
-        setContracts(res.data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching contracts:', error);
-      toast.error('Lỗi khi lấy danh sách hợp đồng');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   useEffect(() => {
     fetchContracts();
@@ -224,12 +211,27 @@ export default function ThanhToanHopDongPage() {
   const filteredData = data.filter(item => {
     const matchSearch = (item.hopDong || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.doiTac || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchFilter = filter === 'all' ||
-      (filter === 'received' && item.trangThai === 'Đã Nhận') ||
-      (filter === 'overdue' && item.trangThai === 'Quá Hạn') ||
-      (filter === 'pending' && (item.trangThai === 'Chưa Thanh Toán' || item.trangThai === 'Đang Chờ Kế Toán'));
+    const matchFilter = activeTab === 'ALL' ||
+      (activeTab === 'DA_QUYET_TOAN' && item.trangThai === 'Đã Nhận') ||
+      (activeTab === 'KHACH_CHAM_TRA' && item.trangThai === 'Quá Hạn') ||
+      (activeTab === 'CHO_THU' && (item.trangThai === 'Chưa Thanh Toán' || item.trangThai === 'Đang Chờ Kế Toán'));
     return matchSearch && matchFilter;
   });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'Đã Nhận':
+        return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">Đã Nhận</span>;
+      case 'Đang Chờ Kế Toán':
+        return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">Đang Chờ Kế Toán</span>;
+      case 'Chưa Thanh Toán':
+        return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">Chưa Thanh Toán</span>;
+      case 'Quá Hạn':
+        return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200">Quá Hạn</span>;
+      default:
+        return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">{status}</span>;
+    }
+  };
 
   if (loading) {
     return (
@@ -240,6 +242,8 @@ export default function ThanhToanHopDongPage() {
     );
   }
 
+  const formatCurrency = (val: number) => (val || 0).toLocaleString('vi-VN') + ' đ';
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 w-full pb-10">
       
@@ -248,22 +252,22 @@ export default function ThanhToanHopDongPage() {
         <div className="flex flex-col gap-2 border-r border-slate-100 last:border-0 pr-4">
           <Landmark className="text-slate-500" size={24} />
           <div className="text-sm font-semibold text-slate-500">Tổng Dòng Tiền Đã Nhập Quỹ</div>
-          <div className="text-2xl font-semibold text-slate-800">{formatTy(totalReceived)}</div>
+          <div className="text-2xl font-semibold text-slate-800">{formatCurrency(STATS.totalReceived)}</div>
         </div>
         <div className="flex flex-col gap-2 border-r border-slate-100 last:border-0 pr-4 pl-0 sm:pl-4">
           <DollarSign className="text-slate-500" size={24} />
           <div className="text-sm font-semibold text-slate-500">Dự Kiến Thu Về Hợp Đồng</div>
-          <div className="text-2xl font-semibold text-slate-800">{formatTy(totalExpected)}</div>
+          <div className="text-2xl font-semibold text-slate-800">{formatCurrency(STATS.totalExpected)}</div>
         </div>
         <div className="flex flex-col gap-2 border-r border-slate-100 last:border-0 pr-4 pl-0 lg:pl-4">
           <FileText className="text-slate-500" size={24} />
           <div className="text-sm font-semibold text-slate-500">Số Đợt Chờ Thu</div>
-          <div className="text-2xl font-semibold text-slate-800">{pendingTermsCount} Lần</div>
+          <div className="text-2xl font-semibold text-slate-800">{STATS.pendingItems} Lần</div>
         </div>
         <div className="flex flex-col gap-2 pl-0 sm:pl-4 lg:pl-4">
           <AlertTriangle className="text-slate-500" size={24} />
           <div className="text-sm font-semibold text-slate-500">Giá Vốn Bị Kẹt Quá Hạn</div>
-          <div className="text-2xl font-semibold text-slate-800">{formatTy(overdueDebt)}</div>
+          <div className="text-2xl font-semibold text-slate-800">{formatCurrency(STATS.totalOverdue)}</div>
         </div>
       </div>
 
@@ -275,7 +279,6 @@ export default function ThanhToanHopDongPage() {
               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
                 placeholder="Truy vấn số Hợp Đồng, Tên Đối Tác..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -284,15 +287,15 @@ export default function ThanhToanHopDongPage() {
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
               {[
-                { id: 'all', label: 'Tất cả' },
-                { id: 'received', label: 'Đã Quyết Toán' },
-                { id: 'pending', label: 'Chờ Thu' },
-                { id: 'overdue', label: 'Khách Chậm Trả' }
+                { id: 'ALL', label: 'Tất cả' },
+                { id: 'DA_QUYET_TOAN', label: 'Đã Quyết Toán' },
+                { id: 'CHO_THU', label: 'Chờ Thu' },
+                { id: 'KHACH_CHAM_TRA', label: 'Khách Chậm Trả' }
               ].map(f => (
                 <button
                   key={f.id}
-                  className={`inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${filter === f.id ? 'btn-primary' : 'bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700'}`}
-                  onClick={() => setFilter(f.id)}
+                  className={`inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 cursor-pointer border-none no-underline px-3 py-1.5 rounded-lg text-xs ${activeTab === f.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700'}`}
+                  onClick={() => setActiveTab(f.id as any)}
                 >
                   {f.label}
                 </button>
@@ -308,58 +311,27 @@ export default function ThanhToanHopDongPage() {
             </button>
           )}
         </div>
+      </div>
 
       {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-md transition-all duration-300 overflow-x-auto rounded-none" style={{ borderRadius: '1rem', marginTop: '1rem' }}>
-        <table className="w-full text-left text-sm whitespace-nowrap">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-100">
-              <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider">ID Giao Dịch</th>
-              <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Mã Hợp Đồng</th>
-              <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Thương Hiệu Đối Tác</th>
-              <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Hạng Mục Cần Thu</th>
-              <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Số Tiền Đợt Này</th>
-              <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Hạn Thanh Toán</th>
-              <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Trạng Thái</th>
-              <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider text-right">Thao Tác</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {filteredData.map(item => (
-              <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4 font-semibold text-blue-600">{item.id}</td>
-                <td className="px-6 py-4 font-semibold text-slate-600">{item.hopDong}</td>
-                <td className="px-6 py-4 font-semibold text-slate-900">{item.doiTac}</td>
-                <td className="px-6 py-4">{item.dotThanhToan}</td>
-                <td className="px-6 py-4 font-bold text-emerald-600">{item.soTien.toLocaleString()} ₫</td>
-                <td className="px-6 py-4 font-semibold" style={{ color: item.trangThai === 'Quá Hạn' ? '#e11d48' : 'inherit' }}>{item.hanChot}</td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center px-2 py-1 rounded text-[11px] font-medium tracking-wide border ${item.trangThai === 'Đã Nhận' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : item.trangThai === 'Quá Hạn' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
-                    {item.trangThai}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end gap-2">
-                    {canEdit && (
-                      <button
-                        title="Cập nhật thanh toán"
-                        onClick={() => openUpdateModal(item)}
-                        className="inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                      >
-                        <Edit size={16} />
-                      </button>
-                    )}
-                    <button title="Xem chi tiết" className="inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors">
-                      <Eye size={16} />
-                    </button>
-                  </div>
-                </td>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-200">
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Mã Giao Dịch</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Hợp Đồng</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Đối Tác</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Hạng Mục</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Số Tiền</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Hạn Chót</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng Thái</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium">
+                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin mb-3"></div>
                       Đang tải dữ liệu...
@@ -374,35 +346,34 @@ export default function ThanhToanHopDongPage() {
                 </tr>
               ) : (
                 filteredData.map((item, idx) => {
-                  // Fake a long ID like in the picture just for UI matching, or use termId
-                  const transactionId = `${item.contractId.replace('VTSC-', '')}-${item.termId.slice(0, 10)}...`;
+                  const transactionId = `${item.hopDong.replace('VTSC-', '')}-${item.id.split('-').pop()}`;
                   
                   return (
                     <tr 
-                      key={`${item.contractId}_${item.termId}`} 
+                      key={item.id} 
                       className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
-                      onClick={() => router.push(`/thanh-toan-hd/${item.contractMongoId}`)}
+                      onClick={() => openUpdateModal(item)}
                     >
                       <td className="px-6 py-4">
                         <div className="font-semibold text-blue-600 text-sm">{transactionId}</div>
                       </td>
                       <td className="px-6 py-4 font-semibold text-slate-700 text-sm">
-                        {item.contractId}
+                        {item.hopDong}
                       </td>
                       <td className="px-6 py-4 font-semibold text-slate-800 text-sm">
-                        {item.customerName}
+                        {item.doiTac}
                       </td>
                       <td className="px-6 py-4 font-semibold text-slate-800 text-sm">
-                        {item.termName}
+                        {item.dotThanhToan}
                       </td>
                       <td className="px-6 py-4 font-bold text-emerald-600 text-sm">
-                        {item.amount.toLocaleString()} ₫
+                        {item.soTien.toLocaleString('vi-VN')} ₫
                       </td>
                       <td className="px-6 py-4 font-semibold text-slate-800 text-sm">
-                        {item.dueDate ? new Date(item.dueDate).toLocaleDateString('vi-VN') : '—'}
+                        {item.hanChot || '—'}
                       </td>
                       <td className="px-6 py-4">
-                        {getStatusBadge(item.status)}
+                        {getStatusBadge(item.trangThai)}
                       </td>
                     </tr>
                   )

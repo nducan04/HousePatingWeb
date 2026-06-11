@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, ArrowRight, Plus, Trash2, FileText, CheckCircle2,
   Package, ClipboardList, Eye, Building, CreditCard, Scale,
-  ChevronLeft, ChevronRight, Loader2, Wallet, Printer, Download
+  ChevronLeft, ChevronRight, Loader2, Wallet, Printer, Download, ChevronDown
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -63,8 +63,30 @@ function CustomerCreateContractPage() {
   const deadline = searchParams ? searchParams.get('deadline') || '' : '';
 
   // Form State
+  const [contractType, setContractType] = useState('mua-ban');
+  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
+  const colorDropdownRef = useRef<HTMLTableSectionElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (colorDropdownRef.current && !colorDropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdownIndex(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (contractType === 'pha-che') {
+      setTitle('Hợp đồng nguyên tắc cung cấp sơn pha chế R&D');
+    } else {
+      setTitle('Hợp đồng nguyên tắc mua bán');
+    }
+  }, [contractType]);
+
   const [contractId, setContractId] = useState('');
-  const [title, setTitle] = useState('Hợp đồng nguyên tắc cung cấp sơn pha chế R&D');
+  const [title, setTitle] = useState('Hợp đồng nguyên tắc mua bán');
   const [partyBTaxCode, setPartyBTaxCode] = useState('');
   const [partyBRepresentative, setPartyBRepresentative] = useState('');
   const [partyBPosition, setPartyBPosition] = useState('Đại diện mua hàng');
@@ -125,17 +147,17 @@ function CustomerCreateContractPage() {
       setIsExportingPDF(true);
       const element = document.getElementById('printable-contract');
       if (!element) return;
-      
+
       const html2pdf = (await import('html2pdf.js')).default;
       const opt = {
-        margin:       [10, 10, 10, 10] as [number, number, number, number],
-        filename:     `HopDong_NguyenTac_${contractId || 'VTSC'}.pdf`,
-        image:        { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        pagebreak:    { mode: ['css', 'legacy'] }
+        margin: [10, 10, 10, 10] as [number, number, number, number],
+        filename: `HopDong_NguyenTac_${contractId || 'VTSC'}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        pagebreak: { mode: ['css', 'legacy'] }
       };
-      
+
       // html2pdf().output('blob') returns a Promise resolving to a Blob
       const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
@@ -198,7 +220,8 @@ function CustomerCreateContractPage() {
         partyBRepresentative,
         partyBPosition,
         clientAddress,
-        articles
+        articles,
+        contractType
       };
 
       const res = await api.post('/contracts', data);
@@ -222,7 +245,7 @@ function CustomerCreateContractPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <Link href="/hop-dong-pha-che" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold text-sm transition-all mb-6 no-underline">
+        <Link href="/my-contracts" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold text-sm transition-all mb-6 no-underline">
           <ArrowLeft size={16} /> Quay lại Quản lý Hợp đồng
         </Link>
 
@@ -253,8 +276,15 @@ function CustomerCreateContractPage() {
                 <p className="text-xs text-slate-400 font-medium">Vui lòng cung cấp chính xác để lập hợp đồng nguyên tắc pháp lý</p>
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-black text-slate-500 uppercase ml-1">Loại hợp đồng *</label>
+                <select className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={contractType} onChange={e => setContractType(e.target.value)}>
+                  <option value="mua-ban">Hợp đồng mua bán</option>
+                  <option value="pha-che">Hợp đồng pha chế sơn</option>
+                </select>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-500 uppercase ml-1">Tiêu đề hợp đồng *</label>
                 <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={title} onChange={e => setTitle(e.target.value)} required />
@@ -309,7 +339,7 @@ function CustomerCreateContractPage() {
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-xs font-black text-slate-500 uppercase ml-1 flex items-center gap-1">
-                    <Wallet size={12} className="text-blue-500"/> Địa chỉ ví MetaMask (Client Address)
+                    <Wallet size={12} className="text-blue-500" /> Địa chỉ ví MetaMask (Client Address)
                   </label>
                   <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={clientAddress} onChange={e => setClientAddress(e.target.value)} placeholder="0x..." />
                   <p className="text-[10px] text-slate-400 font-medium ml-1">Bắt buộc để hệ thống có thể triển khai hợp đồng trên mạng lưới Blockchain (Sepolia)</p>
@@ -341,7 +371,7 @@ function CustomerCreateContractPage() {
               </button>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className={`overflow-x-auto transition-all duration-300 ${openDropdownIndex !== null ? 'pb-[260px]' : ''}`}>
               <table className="w-full text-center text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-400 uppercase font-black tracking-wider">
@@ -360,7 +390,7 @@ function CustomerCreateContractPage() {
                     <th className="pb-3 text-center w-10"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100" ref={colorDropdownRef}>
                   {details.map((d, i) => (
                     <tr key={i} className="align-middle">
                       <td className="py-4 font-bold text-slate-400">{i + 1}</td>
@@ -373,12 +403,119 @@ function CustomerCreateContractPage() {
                         </select>
                       </td>
                       <td className="py-4 px-2">
-                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all cursor-pointer" value={d.colorCode} onChange={e => updateDetail(i, 'colorCode', e.target.value)}>
-                          <option value="">-- Mã màu --</option>
-                          {paintColors.map(c => (
-                            <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
-                          ))}
-                        </select>
+                        {contractType === 'pha-che' ? (
+                          <div className="flex items-center gap-2">
+                            <div className="relative flex-1">
+                              <input
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all"
+                                type="text"
+                                placeholder="Mã màu R&D..."
+                                value={d.colorCode}
+                                onChange={e => updateDetail(i, 'colorCode', e.target.value)}
+                                onFocus={() => setOpenDropdownIndex(i)}
+                              />
+                              {openDropdownIndex === i && (
+                              <div className="absolute z-50 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto text-left" style={{ minWidth: '240px', left: 0 }}>
+                                {paintColors
+                                  .filter(c => c.code.toLowerCase().includes(d.colorCode.toLowerCase()) || c.name.toLowerCase().includes(d.colorCode.toLowerCase()))
+                                  .map(color => (
+                                    <div
+                                      key={color.code}
+                                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-50 last:border-b-0"
+                                      onClick={() => {
+                                        updateDetail(i, 'colorCode', color.code);
+                                        setOpenDropdownIndex(null);
+                                      }}
+                                    >
+                                      <div className="w-6 h-6 rounded-md shadow-sm border border-slate-200 shrink-0" style={{ background: color.hex }} />
+                                      <div className="flex flex-col">
+                                        <span className="text-sm font-bold text-slate-800 leading-tight">{color.code}</span>
+                                        <span className="text-xs text-slate-500 leading-tight mt-0.5">{color.name}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                {d.colorCode && !paintColors.some(c => c.code.toLowerCase() === d.colorCode.toLowerCase()) && (
+                                  <div
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-blue-50 cursor-pointer transition-colors border-t border-slate-100"
+                                    onClick={() => {
+                                      setOpenDropdownIndex(null);
+                                    }}
+                                  >
+                                    <div className="w-4 h-4 rounded shadow-sm border border-dashed border-blue-300 bg-blue-50 flex items-center justify-center">
+                                      <span className="text-blue-500 font-bold text-[10px]">+</span>
+                                    </div>
+                                    <div>
+                                      <div className="text-xs font-bold text-blue-700">Màu R&D: "{d.colorCode}"</div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            </div>
+                            <div className="relative overflow-hidden w-7 h-7 rounded-full border border-slate-200 shadow-sm shrink-0 cursor-pointer hover:scale-110 transition-transform">
+                              <input
+                                 type="color"
+                                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 cursor-pointer opacity-0"
+                                 value={paintColors.find(c => c.code === d.colorCode)?.hex || (/^#[0-9A-F]{6}$/i.test(d.colorCode) ? d.colorCode : '#e2e8f0')}
+                                 onChange={(e) => {
+                                   updateDetail(i, 'colorCode', e.target.value);
+                                   setOpenDropdownIndex(null);
+                                 }}
+                                 title="Chọn màu bằng bảng màu"
+                              />
+                              <div
+                                className="w-full h-full pointer-events-none"
+                                style={{ background: paintColors.find(c => c.code === d.colorCode)?.hex || (/^#[0-9A-F]{6}$/i.test(d.colorCode) ? d.colorCode : '#e2e8f0') }}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <div 
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 cursor-pointer flex items-center justify-between transition-all hover:bg-slate-100 min-h-[34px]"
+                              onClick={() => setOpenDropdownIndex(openDropdownIndex === i ? null : i)}
+                            >
+                              {d.colorCode ? (
+                                <div className="flex items-center gap-2">
+                                  {(() => {
+                                    const c = paintColors.find(color => color.code === d.colorCode);
+                                    if (c) {
+                                      return (
+                                        <>
+                                          <div className="w-4 h-4 rounded shadow-sm border border-slate-200" style={{ background: c.hex }} />
+                                          <span>{c.code} - {c.name}</span>
+                                        </>
+                                      );
+                                    }
+                                    return <span>{d.colorCode}</span>;
+                                  })()}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400">-- Chọn mã màu --</span>
+                              )}
+                            </div>
+                            {openDropdownIndex === i && (
+                              <div className="absolute z-50 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto text-left" style={{ minWidth: '240px', left: 0 }}>
+                                {paintColors.map(color => (
+                                  <div
+                                    key={color.code}
+                                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-50 last:border-b-0"
+                                    onClick={() => {
+                                      updateDetail(i, 'colorCode', color.code);
+                                      setOpenDropdownIndex(null);
+                                    }}
+                                  >
+                                    <div className="w-6 h-6 rounded-md shadow-sm border border-slate-200 shrink-0" style={{ background: color.hex }} />
+                                    <div className="flex flex-col">
+                                      <span className="text-sm font-bold text-slate-800 leading-tight">{color.code}</span>
+                                      <span className="text-xs text-slate-500 leading-tight mt-0.5">{color.name}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="py-4 px-2">
                         <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={d.quantity || ''} onChange={e => updateDetail(i, 'quantity', Number(e.target.value))} min={1} required />
@@ -614,7 +751,8 @@ function CustomerCreateContractPage() {
 
       </div>
 
-      <style>{`
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media print {
           @page { size: A4; margin: 5mm; }
           body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
@@ -652,7 +790,7 @@ function CustomerCreateContractPage() {
           .article-wrapper { page-break-inside: avoid; margin-bottom: 20px; }
           .signature-section { page-break-inside: avoid; margin-top: 50px; }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

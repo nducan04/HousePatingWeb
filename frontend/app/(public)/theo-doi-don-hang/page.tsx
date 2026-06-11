@@ -146,6 +146,7 @@ export default function TrackingPage() {
       LichSuPhienBan: item.LichSuPhienBan || [],
       signedBy: item.signedBy,
       signedAt: item.signedAt,
+      imageUrl: item.imageUrl,
       isRealDB: true
     };
   };
@@ -305,7 +306,8 @@ export default function TrackingPage() {
           date: new Date(item.createdAt).toLocaleDateString('vi-VN'),
           LichSuPhienBan: item.LichSuPhienBan || [],
           signedBy: item.signedBy,
-          signedAt: item.signedAt
+          signedAt: item.signedAt,
+          imageUrl: item.imageUrl
         }));
 
         setSampleRequests(mapped);
@@ -419,7 +421,7 @@ export default function TrackingPage() {
     <div className="w-full max-w-[1300px] mx-auto px-6 md:px-12 xl:px-20 py-8 animate-in fade-in duration-700 relative">
       {/* Back Button */}
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push('/')}
         className="absolute top-8 left-4 lg:left-8 flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all z-10 shadow-sm cursor-pointer"
       >
         <ArrowLeft size={16} /> Quay lại
@@ -816,7 +818,13 @@ export default function TrackingPage() {
                           </span>
                           <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5"><Calendar size={12} /> {req.date}</span>
                         </div>
-                        <h4 className="font-extrabold text-slate-800 text-lg mb-1">{req.colorCode}</h4>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div 
+                            className="w-6 h-6 rounded-md shadow-sm border border-slate-200 shrink-0" 
+                            style={{ background: /^#[0-9A-F]{6}$/i.test(req.colorCode) ? req.colorCode : '#e2e8f0' }}
+                          />
+                          <h4 className="font-extrabold text-slate-800 text-lg m-0">{req.colorCode}</h4>
+                        </div>
                         <div className="flex items-center gap-2 mb-4">
                           <Layers size={14} className="text-slate-400" />
                           <span className="text-xs text-slate-500 font-medium">{req.surface}</span>

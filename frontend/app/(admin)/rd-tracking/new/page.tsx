@@ -161,13 +161,12 @@ function IpfsDropzone({
       ) : (
         // ── State 1 & 2: Chưa có ảnh hoặc đang upload ──────
         <div
-          className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
-            isDragOver
-              ? "border-purple-400 bg-purple-50/60 scale-[1.01]"
-              : isUploading
+          className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${isDragOver
+            ? "border-purple-400 bg-purple-50/60 scale-[1.01]"
+            : isUploading
               ? "border-blue-300 bg-blue-50/50 cursor-wait"
               : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100"
-          }`}
+            }`}
           onDragOver={(e) => {
             e.preventDefault();
             if (!isUploading) setIsDragOver(true);
@@ -202,11 +201,10 @@ function IpfsDropzone({
             // ── State 1: Chờ chọn file ───────────────────────
             <div className="flex flex-col items-center gap-3">
               <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                  isDragOver
-                    ? "bg-purple-100 text-purple-600 scale-110"
-                    : "bg-slate-100 text-slate-400"
-                }`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isDragOver
+                  ? "bg-purple-100 text-purple-600 scale-110"
+                  : "bg-slate-100 text-slate-400"
+                  }`}
               >
                 {isDragOver ? (
                   <CloudUpload size={24} />
@@ -274,6 +272,7 @@ function NewRDRequestPage() {
     colorCode: queryColorCode,
     colorName: queryColorName,
     surface: "",
+    environmentType: "",
     substrate: "",
     requirements: "",
     deadline: "",
@@ -284,6 +283,10 @@ function NewRDRequestPage() {
 
   const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
   const colorDropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Custom hex color resolved by AI
+  const [customHex, setCustomHex] = useState<string>("");
+  const [isResolvingColor, setIsResolvingColor] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -300,6 +303,47 @@ function NewRDRequestPage() {
       setFormData((prev) => ({ ...prev, customer: displayName }));
     }
   }, [isCustomer, displayName]);
+
+  // AI Color resolution effect
+  useEffect(() => {
+    const colorInput = formData.colorCode;
+    if (!colorInput) {
+      setCustomHex("");
+      return;
+    }
+    
+    // Check if it's already in the standard palette
+    const existing = paintColors.find(c => c.code.toLowerCase() === colorInput.toLowerCase() || c.name.toLowerCase() === colorInput.toLowerCase());
+    if (existing) {
+      setCustomHex(existing.hex);
+      return;
+    }
+
+    // Check if it's already a valid HEX color (e.g. #FF0000)
+    if (/^#[0-9A-F]{6}$/i.test(colorInput)) {
+      setCustomHex(colorInput);
+      return;
+    }
+
+    // Debounce API call for custom color names
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        setIsResolvingColor(true);
+        const res = await api.post('/chatbot/resolve-color', { colorName: colorInput });
+        if (res.data.success && res.data.hexCode) {
+          setCustomHex(res.data.hexCode);
+        } else {
+          setCustomHex("");
+        }
+      } catch (err) {
+        console.error("Failed to resolve color:", err);
+      } finally {
+        setIsResolvingColor(false);
+      }
+    }, 800);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [formData.colorCode]);
 
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -335,6 +379,7 @@ function NewRDRequestPage() {
         substrate: formData.substrate,
         deadline: formData.deadline,
         requirements: formData.requirements,
+        environmentType: formData.environmentType,
         imageUrl: imageCid ? `${IPFS_GATEWAY}/${imageCid}` : null,
       });
 
@@ -420,7 +465,7 @@ function NewRDRequestPage() {
                   <input
                     className="w-full bg-slate-50 border-none rounded-xl pl-12 pr-10 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all cursor-pointer"
                     type="text"
-                    placeholder="Tìm hoặc chọn mã màu..."
+                    placeholder="Tìm mã màu, hoặc nhập một màu tùy chỉnh hoàn toàn mới..."
                     required
                     value={formData.colorCode}
                     onChange={(e) => {
@@ -430,13 +475,31 @@ function NewRDRequestPage() {
                     onClick={() => setIsColorDropdownOpen(true)}
                   />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <div 
-                      className="w-5 h-5 rounded-full border border-slate-200 shadow-sm"
-                      style={{ background: paintColors.find(c => c.code === formData.colorCode)?.hex || '#e2e8f0' }}
-                    />
+                    {isResolvingColor ? (
+                      <Loader2 size={18} className="text-blue-500 animate-spin" />
+                    ) : (
+                      <div className="relative overflow-hidden w-6 h-6 rounded-full border border-slate-200 shadow-sm shrink-0 cursor-pointer hover:scale-110 transition-transform">
+                        <input
+                           type="color"
+                           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 cursor-pointer opacity-0"
+                           value={paintColors.find(c => c.code === formData.colorCode)?.hex || (/^#[0-9A-F]{6}$/i.test(formData.colorCode) ? formData.colorCode : '#e2e8f0')}
+                           onChange={(e) => {
+                             const hex = e.target.value;
+                             setCustomHex(hex);
+                             setFormData((p) => ({ ...p, colorCode: hex, colorName: hex }));
+                             setIsColorDropdownOpen(false);
+                           }}
+                           title="Chọn màu bằng bảng màu"
+                        />
+                        <div
+                          className="w-full h-full pointer-events-none"
+                          style={{ background: paintColors.find(c => c.code === formData.colorCode)?.hex || (/^#[0-9A-F]{6}$/i.test(formData.colorCode) ? formData.colorCode : '#e2e8f0') }}
+                        />
+                      </div>
+                    )}
                   </div>
-                  <div 
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer" 
+                  <div
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer"
                     onClick={() => setIsColorDropdownOpen(!isColorDropdownOpen)}
                   >
                     <ChevronDown size={16} />
@@ -463,9 +526,23 @@ function NewRDRequestPage() {
                           </div>
                         </div>
                       ))}
-                      {paintColors.filter(c => c.code.toLowerCase().includes(formData.colorCode.toLowerCase()) || c.name.toLowerCase().includes(formData.colorCode.toLowerCase())).length === 0 && (
-                          <div className="px-4 py-3 text-sm text-slate-500 text-center">Không tìm thấy mã màu</div>
-                      )}
+                    {paintColors.filter(c => c.code.toLowerCase().includes(formData.colorCode.toLowerCase()) || c.name.toLowerCase().includes(formData.colorCode.toLowerCase())).length === 0 && (
+                      <div
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors border-t border-slate-100"
+                        onClick={() => {
+                          setFormData((p) => ({ ...p, colorName: formData.colorCode }));
+                          setIsColorDropdownOpen(false);
+                        }}
+                      >
+                        <div className="w-6 h-6 rounded-full border border-dashed border-slate-300 flex items-center justify-center shrink-0">
+                          <Plus size={12} className="text-slate-400" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-blue-600">Sử dụng màu tùy chỉnh: {formData.colorCode}</div>
+                          <div className="text-xs text-slate-500">Hệ thống sẽ ghi nhận đây là yêu cầu màu mới</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -490,7 +567,7 @@ function NewRDRequestPage() {
             {/* Loại bề mặt */}
             <div className="space-y-2">
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                Loại Bề mặt *
+                Loại vật liệu nền *
               </label>
               <select
                 className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
@@ -507,23 +584,41 @@ function NewRDRequestPage() {
                 <option value="Thép tấm">Thép tấm</option>
                 <option value="Thép ống">Thép ống</option>
                 <option value="Thép cuộn">Thép cuộn</option>
+                <option value="Thép mạ kẽm">Thép mạ kẽm</option>
+                <option value="Thép không gỉ">Thép không gỉ</option>
+                <option value="Thép carbon">Thép carbon</option>
+                <option value="Thép hợp kim">Thép hợp kim</option>
+                <option value="Thép cán nóng">Thép cán nóng</option>
+                <option value="Thép cán nguội">Thép cán nguội</option>
               </select>
             </div>
 
             {/* Substrate */}
             <div className="space-y-2">
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
-                Lớp nền (Substrate)
+                Yêu cầu bề mặt
               </label>
-              <input
-                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
-                type="text"
-                placeholder="VD: Primer + Topcoat"
+              <select
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
+                required
                 value={formData.substrate}
                 onChange={(e) =>
                   setFormData((p) => ({ ...p, substrate: e.target.value }))
                 }
-              />
+              >
+                <option value="">Chọn bề mặt</option>
+                <option value="nhẵn">Nhẵn</option>
+                <option value="sần cát">Sần cát</option>
+                <option value="sần sùi">Sần sùi</option>
+                <option value="gồ ghề">Gồ ghề</option>
+                <option value="trơn trượt">Trơn trượt</option>
+                <option value="bóng">Bóng</option>
+                <option value="mờ">Mờ</option>
+                <option value="hạt nhỏ">Hạt nhỏ</option>
+                <option value="hạt lớn">Hạt lớn</option>
+                <option value="hạt trung bình">Hạt trung bình</option>
+                <option value="hạt mịn">Hạt mịn</option>
+              </select>
             </div>
 
             {/* Deadline */}
@@ -540,6 +635,26 @@ function NewRDRequestPage() {
                   setFormData((p) => ({ ...p, deadline: e.target.value }))
                 }
               />
+            </div>
+            
+            {/* Môi trường sử dụng */}
+            <div className="space-y-2">
+              <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
+                Môi trường sử dụng *
+              </label>
+              <select
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
+                required
+                value={formData.environmentType}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, environmentType: e.target.value }))
+                }
+              >
+                <option value="">Chọn môi trường</option>
+                <option value="Nội thất">Nội thất (Trong nhà)</option>
+                <option value="Ngoại thất">Ngoại thất (Ngoài trời)</option>
+                <option value="Kháng hóa chất">Kháng hóa chất/Ăn mòn</option>
+              </select>
             </div>
           </div>
 

@@ -1,33 +1,44 @@
 const mongoose = require('mongoose');
 
 const messageSchema = new mongoose.Schema({
-  role: {
-    type: String,
-    enum: ['user', 'model'],
+  senderId: { type: String, required: true },
+  senderRole: { type: String, required: true }, // 'KhachHang', 'NhanVien', 'Admin'
+  senderName: { type: String, required: true },
+  content: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now },
+  isRead: { type: Boolean, default: false }
+});
+
+const chatSessionSchema = new mongoose.Schema({
+  KhachHangID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'KhachHang',
     required: true
   },
-  content: {
-    type: String,
-    required: true
+  NhanVienID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'NhanVien'
   },
-  timestamp: {
+  MaDonHang: {
+    type: String,
+    default: ''
+  },
+  Topic: {
+    type: String,
+    default: 'Hỗ trợ chung'
+  },
+  Status: {
+    type: String,
+    enum: ['open', 'closed'],
+    default: 'open'
+  },
+  Messages: [messageSchema],
+  LastMessageAt: {
     type: Date,
     default: Date.now
   }
-}, { _id: false });
+}, {
+  timestamps: true
+});
 
-const chatSessionSchema = new mongoose.Schema({
-  sessionId: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true
-  },
-  messages: [messageSchema],
-  systemPromptVersion: {
-    type: String,
-    default: '1.0'
-  }
-}, { timestamps: true });
-
-module.exports = mongoose.model('ChatSession', chatSessionSchema);
+module.exports = mongoose.model('ChatSession', chatSessionSchema, 'ChatSessions');

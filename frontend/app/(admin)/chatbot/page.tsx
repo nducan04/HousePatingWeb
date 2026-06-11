@@ -46,6 +46,7 @@ import SupportTicketModal from "./SupportTicketModal";
 import TicketProcessingDrawer from "./TicketProcessingDrawer";
 import type { Ticket, TicketStatus } from "./TicketProcessingDrawer";
 import AICopilotPanel from "./AICopilotPanel";
+import AdminChatSession from "./AdminChatSession";
 
 interface Message {
   id: string;
@@ -109,7 +110,8 @@ export default function ChatbotPage() {
   const [allStaff, setAllStaff] = useState<any[]>([]);
 
   // Main Tab (For Admin)
-  const [mainTab, setMainTab] = useState<"dashboard" | "tickets">("dashboard");
+  const [mainTab, setMainTab] = useState<"dashboard" | "tickets" | "chat_session">("dashboard");
+  const [chatCustomerId, setChatCustomerId] = useState<string | null>(null);
 
   // Ticket Management States (For Admin)
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -974,6 +976,22 @@ export default function ChatbotPage() {
           />{" "}
           Xét duyệt yêu cầu hỗ trợ {tickets.length > 0 && `(${tickets.length})`}
         </button>
+        <button
+          onClick={() => setMainTab("chat_session")}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer border-none ${
+            mainTab === "chat_session"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-500 hover:text-slate-800 hover:bg-slate-50/50 bg-transparent"
+          }`}
+        >
+          <MessageSquare
+            size={16}
+            className={
+              mainTab === "chat_session" ? "text-blue-600" : "text-slate-400"
+            }
+          />{" "}
+          Tin nhắn Hậu mãi
+        </button>
       </div>
 
       {/* ── DASHBOARD TAB ── */}
@@ -1304,8 +1322,8 @@ export default function ChatbotPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+          <div className="grid grid-cols-1 gap-6 items-start">
+            <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
                   <thead className="bg-slate-50 border-b border-slate-200">
@@ -1421,18 +1439,6 @@ export default function ChatbotPage() {
                 </table>
               </div>
             </div>
-
-            {/* AI Copilot Panel */}
-            <div className="bg-white border border-slate-200 rounded-[32px] shadow-sm overflow-hidden h-[680px] flex flex-col">
-              <AICopilotPanel
-                ticket={
-                  selectedTicketForAI
-                    ? getAIInsightsForTicket(selectedTicketForAI)
-                    : null
-                }
-                onClose={() => setSelectedTicketForAI(null)}
-              />
-            </div>
           </div>
         </div>
       )}
@@ -1504,13 +1510,21 @@ export default function ChatbotPage() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                       <div className="text-xs text-slate-500 uppercase font-semibold mb-1">
                         Tổng thanh toán
                       </div>
                       <div className="text-lg font-bold text-slate-900">
                         {orderDetails.TongTien?.toLocaleString()} ₫
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                      <div className="text-xs text-slate-500 uppercase font-semibold mb-1">
+                        Thời gian tạo
+                      </div>
+                      <div className="text-sm font-bold text-slate-800 mt-1">
+                        {orderDetails.createdAt ? new Date(orderDetails.createdAt).toLocaleString('vi-VN') : 'N/A'}
                       </div>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
@@ -1599,6 +1613,30 @@ export default function ChatbotPage() {
                   </div>
                 </>
               )}
+            </div>
+            
+            <div className="p-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
+              <button
+                onClick={() => {
+                  const customerId = orderDetails.KhachHangID?._id || orderDetails.KhachHangID;
+                  setChatCustomerId(customerId || null);
+                  setIsSpecOpen(false);
+                  setMainTab("chat_session");
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all shadow-sm shadow-blue-200"
+              >
+                <MessageSquare size={18} />
+                Nhắn tin CSKH
+              </button>
+              <button
+                onClick={() => {
+                  setIsSpecOpen(false);
+                  setOrderDetails(null);
+                }}
+                className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-all"
+              >
+                Đóng
+              </button>
             </div>
           </div>
         </div>
@@ -1705,7 +1743,12 @@ export default function ChatbotPage() {
         </div>
       )}
 
-      {/* Customer Detail Modal */}
+      {/* ── CHAT SESSION TAB ── */}
+      {mainTab === "chat_session" && (
+        <AdminChatSession preselectedCustomerId={chatCustomerId} />
+      )}
+
+      {/* AICopilotPanel (Floating Bot in Admin) */}
       {isDetailOpen && selectedCustomer && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white border border-slate-200 rounded-3xl shadow-xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">

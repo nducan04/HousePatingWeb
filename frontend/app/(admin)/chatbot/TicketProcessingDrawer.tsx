@@ -523,7 +523,7 @@ export default function TicketProcessingDrawer({
           {/* Thông tin cơ bản */}
           <div className="px-6 py-5 border-b border-slate-100 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Thông tin yêu cầu</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <div className="bg-slate-50 rounded-xl p-4">
                 <p className="text-xs text-slate-500 mb-0.5">Khách hàng</p>
                 <p className="font-semibold text-slate-900">{ticket.customer}</p>
@@ -532,8 +532,14 @@ export default function TicketProcessingDrawer({
                 <p className="text-xs text-slate-500 mb-0.5">Mã đơn / Liên hệ</p>
                 <p className="font-semibold text-slate-900">{ticket.phoneOrContract}</p>
               </div>
+              {contractData && contractData.createdAt && (
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <p className="text-xs text-slate-500 mb-0.5">Thời gian mua hàng</p>
+                  <p className="font-semibold text-slate-900">{new Date(contractData.createdAt).toLocaleString('vi-VN')}</p>
+                </div>
+              )}
               {ticket.deadline && (
-                <div className="col-span-2 bg-amber-50 border border-amber-100 rounded-xl p-4 flex items-center gap-3">
+                <div className="col-span-2 md:col-span-3 bg-amber-50 border border-amber-100 rounded-xl p-4 flex items-center gap-3">
                   <Clock size={16} className="text-amber-500 flex-shrink-0" />
                   <div>
                     <p className="text-xs text-amber-600 font-medium">Hạn xử lý (SLA)</p>

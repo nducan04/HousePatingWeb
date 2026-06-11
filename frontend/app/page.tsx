@@ -666,7 +666,7 @@ export default function HomePage() {
               Giải pháp sơn tĩnh điện AkzoNobel Interpon chuyên nghiệp. Đảm bảo
               chất lượng bền bỉ, thẩm mỹ cao cho mọi bề mặt kim loại.
             </p>
-            <div className="pt-6">
+            <div className="pt-6 scroll-mt-[100px]">
               <Link
                 href="#dich-vu"
                 className="px-10 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg no-underline shadow-xl shadow-blue-600/30 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 w-fit"
