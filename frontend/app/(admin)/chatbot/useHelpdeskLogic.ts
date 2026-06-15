@@ -32,44 +32,7 @@ export interface AIInsights {
 /**
  * Mảng dữ liệu giả lập (Mock Data) cực kỳ chi tiết đại diện cho 3 luồng nghiệp vụ lớn.
  */
-export const mockTickets: Ticket[] = [
-  {
-    id: "TK-2026-001",
-    type: "Khiếu nại",
-    customerName: "Đại lý Vật liệu Thái Hưng",
-    customerPhone: "0912345678",
-    productName: "Sơn lót kháng kiềm ngoại thất VTSC-500",
-    content: "Khách hàng khiếu nại rất gắt gao rằng lô sơn lót 50 thùng giao ngày 12/05 bị vón cục ở đáy thùng khi khui ra sử dụng. Thợ sơn không thể khuấy đều và đã làm hỏng hai đầu súng phun. Yêu cầu bồi thường chi phí hư hại dụng cụ và đổi lô mới gấp.",
-    status: "Mới",
-    createdAt: "2026-05-15T08:30:00Z",
-    assignee: "Nguyễn Văn A (KCS)",
-    linkedOrderId: "DH-99281"
-  },
-  {
-    id: "TK-2026-002",
-    type: "Đổi trả",
-    customerName: "Nhà thầu Xây dựng Nam Phương",
-    customerPhone: "0987654321",
-    productName: "Sơn phủ siêu bóng nội thất Premium VTSC-9000",
-    content: "Đơn hàng giao thiếu 10 thùng màu ghi sáng mã MP-202 và có 5 thùng màu xanh lục bị móp méo nghiêm trọng do quá trình vận chuyển của bên thứ ba, nắp thùng bị nứt nhẹ có hiện tượng rò rỉ sơn ra ngoài. Khách từ chối ký nhận 5 thùng móp méo này.",
-    status: "Đang xử lý",
-    createdAt: "2026-05-16T10:15:00Z",
-    assignee: "Trần Thị B (Logistics)",
-    linkedOrderId: "DH-99285"
-  },
-  {
-    id: "TK-2026-003",
-    type: "Bảo hành",
-    customerName: "Xưởng Cơ khí Chế tạo VinaPro",
-    customerPhone: "0909998888",
-    productName: "Sơn tĩnh điện chống rỉ sấy nhiệt VTSC-Epoxy",
-    content: "Báo cáo sự cố bong tróc màng sơn diện rộng trên bề mặt khung thép kết cấu sau 3 ngày sấy. Khách hàng yêu cầu bảo hành khẩn cấp vì công trình sắp đến ngày bàn giao. Nghi ngờ có lỗi kỹ thuật trong công thức hoặc nhiệt độ sấy không đạt.",
-    status: "Mới",
-    createdAt: "2026-05-17T14:00:00Z",
-    assignee: "Phạm Minh C (Kỹ thuật R&D)",
-    linkedOrderId: "DH-99301"
-  }
-];
+export const mockTickets: Ticket[] = [];
 
 export function useHelpdeskLogic() {
   // --- 1. State Management ---

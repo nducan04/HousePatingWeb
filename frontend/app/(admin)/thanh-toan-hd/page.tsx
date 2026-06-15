@@ -41,7 +41,7 @@ export default function ThanhToanHopDongPage() {
   const [data, setData] = useState<ThanhToanHD[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<string>('ALL');
 
 
 
@@ -335,22 +335,6 @@ export default function ThanhToanHopDongPage() {
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin mb-3"></div>
                       Đang tải dữ liệu...
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      {canEdit && (
-                        <button
-                          title="Cập nhật thanh toán"
-                          onClick={() => openUpdateModal(item)}
-                          className="inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                        >
-                          <Edit size={16} />
-                        </button>
-                      )}
-                      <button title="Xem chi tiết" className="inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors">
-                        <Eye size={16} />
-                      </button>
                     </div>
                   </td>
                 </tr>

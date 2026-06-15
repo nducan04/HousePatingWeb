@@ -4,32 +4,7 @@ import React, { useState } from 'react';
 import { MapPin, Truck, CheckCircle, Clock } from 'lucide-react';
 import { toast } from '@/lib/utils/notification';
 
-const mockTrackingHistory = [
-  {
-    id: 1,
-    lat: 10.9574,
-    lng: 106.5100,
-    time: '14:30 - 22/05/2026',
-    content: 'Đang trên đường giao - Kiện hàng đã rời trung tâm phân loại ở Xã Củ Chi',
-    status: 'current',
-  },
-  {
-    id: 2,
-    lat: 16.0544,
-    lng: 108.2022,
-    time: '08:20 - 21/05/2026',
-    content: 'Kiện hàng đã đến trung tâm phân loại Đà Nẵng',
-    status: 'completed',
-  },
-  {
-    id: 3,
-    lat: 21.0285,
-    lng: 105.8542,
-    time: '15:00 - 20/05/2026',
-    content: 'Đã lấy hàng thành công tại kho Hà Nội',
-    status: 'completed',
-  },
-];
+const mockTrackingHistory: any[] = [];
 
 export default function OrderTrackingMap() {
   const [activeTab, setActiveTab] = useState<'customer' | 'admin'>('customer');

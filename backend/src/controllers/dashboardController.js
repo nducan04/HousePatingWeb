@@ -840,10 +840,10 @@ exports.getCustomerServiceStats = async (req, res) => {
       success: true,
       data: {
         kpi: {
-          totalReturns,
-          successRate,
-          avgResponseTime: 2.5, // Mock data since no time tracking yet
-          csatScore: 4.5
+          totalReturns: 0,
+          successRate: 0,
+          avgResponseTime: 0, 
+          csatScore: 0
         },
         loyalty: {
           activeVouchers,
@@ -964,8 +964,8 @@ exports.getHrLegalStats = async (req, res) => {
       data: {
         kpi: {
           totalStaff,
-          expiringContracts: 0, // Mock as no HR Contract model exists
-          onTimeRate: 98.2, // Mock as no Timesheet model exists
+          expiringContracts: 0,
+          onTimeRate: 0,
           activeLegalCases
         },
         hrTrends,
