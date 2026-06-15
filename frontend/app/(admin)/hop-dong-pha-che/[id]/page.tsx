@@ -21,6 +21,7 @@ const SIGN_DOCUMENT_ABI = [
 
 export default function ContractDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
+  const router = useRouter();
   const { currentContract: contract, loading, fetchContractById, generatePreview, deployOnChain, signContractByServer } = useContractStore();
 
   const [isSigning, setIsSigning] = useState(false);

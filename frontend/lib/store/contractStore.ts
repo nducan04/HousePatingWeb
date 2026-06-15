@@ -34,6 +34,7 @@ export interface ContractData {
   clientSignature: string;
   createdAt: string;
   updatedAt: string;
+  contractType?: string;
 }
 
 interface ContractState {
