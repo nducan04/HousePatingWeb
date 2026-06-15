@@ -117,7 +117,7 @@ export default function AdminChatSession({ preselectedCustomerId }: { preselecte
 
     const newMsg = {
       sessionId: activeSession._id,
-      senderId: user?._id,
+      senderId: user?.id,
       senderRole: userRole,
       senderName: user?.username || 'User',
       content: input.trim()

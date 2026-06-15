@@ -351,7 +351,7 @@ export default function AdminLayout({
         : userRole === "NhanVien"
           ? "Nhân viên công ty"
           : user?.profile?.ChucVu ||
-          (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
+            (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
   const initials = displayName
     .split(" ")
     .map((w: string) => w[0])
@@ -370,8 +370,9 @@ export default function AdminLayout({
     if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý khách hàng";
     if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý nhân sự";
     if (pathname?.startsWith("/production")) return "🏭 Hệ thống MES";
-    if (pathname?.startsWith("/rd-tracking")) return "🔬 R&D Tracking";
-    if (pathname?.startsWith("/hop-dong-pha-che")) return "📝 Hợp đồng nguyên tắc mua bán & pha chế";
+    if (pathname?.startsWith("/rd-tracking")) return "🔬 Theo dõi pha chế sơn";
+    if (pathname?.startsWith("/hop-dong-pha-che"))
+      return "📝 Hợp đồng nguyên tắc mua bán & pha chế";
     if (pathname === "/colors") return "🎨 Tra cứu mã màu";
     if (pathname === "/van-chuyen") return "📦 Quản lý vận chuyển";
     if (pathname === "/don-hang") return "📋 Quản lý đơn hàng";
@@ -450,10 +451,11 @@ export default function AdminLayout({
                           <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${isActive
-                              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
-                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                              }`}
+                            className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${
+                              isActive
+                                ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
+                                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                            }`}
                           >
                             {Icon && (
                               <div
