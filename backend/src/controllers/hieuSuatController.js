@@ -174,45 +174,25 @@ exports.getPerformanceStats = async (req, res) => {
         const bestStaff = processedStaff.sort((a, b) => (b.revenue + b.deliveries * 1000000 + b.tests * 500000) - (a.revenue + a.deliveries * 1000000 + a.tests * 500000))[0];
 
         // 7. TÍNH TOÁN DỮ LIỆU BIỂU ĐỒ RADAR (ĐỘNG)
-        let techScore = 90;
-        let salesScore = 85;
-        let disciplineScore = 90;
-        let attitudeScore = 92;
-
+        let techScore = 0, salesScore = 0, disciplineScore = 0, attitudeScore = 0;
         const employeeId = req.query.employeeId;
+
         if (employeeId) {
             const emp = staff.find(nv => nv._id.toString() === employeeId || nv.MaNV === employeeId);
             if (emp) {
-                techScore = emp.HieuSuatKPI?.tyLeTestMau || emp.HieuSuatKPI?.diemKPI || 85;
-                salesScore = emp.HieuSuatKPI?.diemKPI || 80;
-                disciplineScore = emp.HieuSuatKPI?.tyLeMotDon || 90;
-                attitudeScore = emp.HieuSuatKPI?.diemDanhGia || 92;
+                techScore = emp.HieuSuatKPI?.tyLeTestMau || emp.HieuSuatKPI?.diemKPI || 0;
+                salesScore = emp.HieuSuatKPI?.diemKPI || 0;
+                disciplineScore = emp.HieuSuatKPI?.tyLeMotDon || 0;
+                attitudeScore = emp.HieuSuatKPI?.diemDanhGia || 0;
             }
-        } else {
+        } else if (staff.length > 0) {
             const techStaff = staff.filter(nv => ['Kỹ thuật', 'Sản xuất'].includes(nv.BoPhan));
             const salesStaff = staff.filter(nv => ['Kinh doanh', 'Sale / MKT'].includes(nv.BoPhan));
 
-            const avgTechKPI = techStaff.length > 0
-                ? techStaff.reduce((sum, nv) => sum + (nv.HieuSuatKPI?.tyLeTestMau || nv.HieuSuatKPI?.diemKPI || 85), 0) / techStaff.length
-                : 85;
-
-            const rdBase = passRate > 0 ? passRate : avgTechKPI;
-            techScore = rdBase;
-
-            const avgSalesKPI = salesStaff.length > 0
-                ? salesStaff.reduce((sum, nv) => sum + (nv.HieuSuatKPI?.diemKPI || 80), 0) / salesStaff.length
-                : 80;
-            salesScore = avgSalesKPI;
-
-            const avgDiscipline = staff.length > 0
-                ? staff.reduce((sum, nv) => sum + (nv.HieuSuatKPI?.tyLeMotDon || 90), 0) / staff.length
-                : 90;
-            disciplineScore = avgDiscipline;
-
-            const avgAttitude = staff.length > 0
-                ? staff.reduce((sum, nv) => sum + (nv.HieuSuatKPI?.diemDanhGia || 92), 0) / staff.length
-                : 92;
-            attitudeScore = avgAttitude;
+            techScore = techStaff.length ? techStaff.reduce((s, nv) => s + (nv.HieuSuatKPI?.tyLeTestMau || nv.HieuSuatKPI?.diemKPI || 0), 0) / techStaff.length : (passRate || 0);
+            salesScore = salesStaff.length ? salesStaff.reduce((s, nv) => s + (nv.HieuSuatKPI?.diemKPI || 0), 0) / salesStaff.length : 0;
+            disciplineScore = staff.reduce((s, nv) => s + (nv.HieuSuatKPI?.tyLeMotDon || 0), 0) / staff.length;
+            attitudeScore = staff.reduce((s, nv) => s + (nv.HieuSuatKPI?.diemDanhGia || 0), 0) / staff.length;
         }
 
         const radarData = [
