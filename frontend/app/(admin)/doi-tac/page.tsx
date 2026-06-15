@@ -37,6 +37,9 @@ interface DoiTac {
   DiaChi?: string;
   Email: string;
   MaSoThueCaNhan?: string;
+  MaSoThue?: string;
+  TaiKhoanNganHang?: string;
+  NguoiDaiDien?: string;
   SoDonHang?: number;
 }
 
@@ -55,6 +58,9 @@ export default function DoiTacPage() {
     DiaChi: "",
     Email: "",
     MaSoThueCaNhan: "",
+    MaSoThue: "",
+    TaiKhoanNganHang: "",
+    NguoiDaiDien: "",
   });
 
   useEffect(() => {
@@ -109,6 +115,9 @@ export default function DoiTacPage() {
         DiaChi: "",
         Email: "",
         MaSoThueCaNhan: "",
+        MaSoThue: "",
+        TaiKhoanNganHang: "",
+        NguoiDaiDien: "",
       });
     }
     setIsModalOpen(true);
@@ -323,7 +332,7 @@ export default function DoiTacPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse whitespace-nowrap min-w-[1000px]">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
                   <th className="px-6 py-5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">
@@ -355,7 +364,7 @@ export default function DoiTacPage() {
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-4">
                         <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-500 font-black text-sm group-hover:from-indigo-500 group-hover:to-indigo-600 group-hover:text-white transition-all duration-300">
-                          {item.TenKhachHang.charAt(0).toUpperCase()}
+                          {(item.TenKhachHang || "K").charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <div className="font-black text-slate-900 text-[15px]">
@@ -613,6 +622,53 @@ export default function DoiTacPage() {
                       })
                     }
                   />
+                </div>
+              )}
+
+              {formData.PhanLoai === "B2B" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">
+                      Mã số thuế doanh nghiệp
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                      placeholder="VD: 0101234567"
+                      value={formData.MaSoThue || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, MaSoThue: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">
+                      Người đại diện
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                      placeholder="VD: Nguyễn Văn A"
+                      value={formData.NguoiDaiDien || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, NguoiDaiDien: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">
+                      Tài khoản ngân hàng
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                      placeholder="VD: 1903... Techcombank Chi nhánh X"
+                      value={formData.TaiKhoanNganHang || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, TaiKhoanNganHang: e.target.value })
+                      }
+                    />
+                  </div>
                 </div>
               )}
             </div>

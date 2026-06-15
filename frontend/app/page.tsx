@@ -39,6 +39,7 @@ import {
   Palette,
   Trash2,
   AlertCircle,
+  HeartHandshake,
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -99,15 +100,6 @@ export default function HomePage() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [registerUsername, setRegisterUsername] = useState("");
-  const [registerFullName, setRegisterFullName] = useState("");
-  const [registerEmail, setRegisterEmail] = useState("");
-  const [registerPassword, setRegisterPassword] = useState("");
-  const [registerRole, setRegisterRole] = useState("KhachHangB2C");
-  const [registerLoading, setRegisterLoading] = useState(false);
-  const [registerError, setRegisterError] = useState<string | null>(null);
-  const [registerSuccess, setRegisterSuccess] = useState(false);
   const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
   // Forgot Password state
@@ -129,88 +121,7 @@ export default function HomePage() {
   const [selectedNews, setSelectedNews] = useState<any | null>(null);
   const [isNewsOpen, setIsNewsOpen] = useState(false);
 
-  // Policy modal state
-  const [isPolicyOpen, setIsPolicyOpen] = useState(false);
-  const [selectedPolicyType, setSelectedPolicyType] = useState<
-    "return" | "warranty" | "shipping" | null
-  >(null);
 
-  const POLICIES_DATA = {
-    return: {
-      title: "Chính sách đổi trả",
-      icon: <ArrowRight size={24} className="text-blue-600" />,
-      content: `
-        <div class="space-y-6">
-          <section>
-            <h4 class="text-slate-900 font-bold mb-3">1. Điều kiện đổi trả</h4>
-            <p class="text-slate-500 leading-relaxed text-sm">Sản phẩm được đổi trả trong vòng 7 ngày kể từ ngày nhận hàng nếu:</p>
-            <ul class="list-disc pl-5 mt-2 space-y-2 text-slate-500 text-sm">
-              <li>Sản phẩm bị lỗi kỹ thuật do nhà sản xuất (AkzoNobel).</li>
-              <li>Sản phẩm giao không đúng mã màu, chủng loại khách hàng đã đặt.</li>
-              <li>Sản phẩm bị hư hỏng trong quá trình vận chuyển của VTSC.</li>
-              <li>Sản phẩm còn nguyên bao bì, tem nhãn và chưa qua sử dụng.</li>
-            </ul>
-          </section>
-          <section>
-            <h4 class="text-slate-900 font-bold mb-3">2. Quy trình đổi trả</h4>
-            <p class="text-slate-500 leading-relaxed text-sm">Quý khách vui lòng liên hệ hotline: <strong>0225.3842.160 - 0225.3747.226</strong> hoặc gửi email về <strong>vtsc@vtschp.vn</strong> kèm theo hóa đơn và hình ảnh sản phẩm để được hỗ trợ xử lý trong 24h.</p>
-          </section>
-        </div>
-      `,
-    },
-    warranty: {
-      title: "Chính sách bảo hành",
-      icon: <ShieldCheck size={24} className="text-emerald-600" />,
-      content: `
-        <div class="space-y-6">
-          <section>
-            <h4 class="text-slate-900 font-bold mb-3">1. Thời hạn bảo hành</h4>
-            <p class="text-slate-500 leading-relaxed text-sm">Tất cả các dòng sơn tĩnh điện AkzoNobel Interpon do VTSC cung cấp được bảo hành từ 12 - 24 tháng tùy dòng sản phẩm theo tiêu chuẩn của nhà sản xuất.</p>
-          </section>
-          <section>
-            <h4 class="text-slate-900 font-bold mb-3">2. Phạm vi bảo hành</h4>
-            <ul class="list-disc pl-5 mt-2 space-y-2 text-slate-500 text-sm">
-              <li>Bảo hành độ bền màu theo tiêu chuẩn ISO của AkzoNobel.</li>
-              <li>Bảo hành độ bám dính bề mặt khi thi công đúng quy trình kỹ thuật.</li>
-              <li>Hỗ trợ kỹ thuật kiểm tra mẫu tại phòng lab VTSC nếu có khiếu nại.</li>
-            </ul>
-          </section>
-          <section>
-            <h4 class="text-slate-900 font-bold mb-3">3. Trường hợp từ chối bảo hành</h4>
-            <p class="text-slate-500 leading-relaxed text-sm">Hư hỏng do sử dụng sai quy trình kỹ thuật, pha trộn tạp chất, hoặc do các tác động ngoại lực, môi trường khắc nghiệt vượt ngoài khuyến cáo kỹ thuật.</p>
-          </section>
-        </div>
-      `,
-    },
-    shipping: {
-      title: "Chính sách vận chuyển",
-      icon: <Truck size={24} className="text-amber-600" />,
-      content: `
-        <div class="space-y-6">
-          <section>
-            <h4 class="text-slate-900 font-bold mb-3">1. Khu vực vận chuyển</h4>
-            <p class="text-slate-500 leading-relaxed text-sm">VTSC cung cấp dịch vụ giao hàng chuyên nghiệp trên toàn lãnh thổ Việt Nam.</p>
-          </section>
-          <section>
-            <h4 class="text-slate-900 font-bold mb-3">2. Chi phí & Thời gian</h4>
-            <ul class="list-disc pl-5 mt-2 space-y-2 text-slate-500 text-sm">
-              <li><strong>Nội thành Hải Phòng:</strong> Miễn phí giao hàng cho đơn từ 100kg. Thời gian: 24h.</li>
-              <li><strong>Các tỉnh thành khác:</strong> Hỗ trợ phí vận chuyển ra chành xe hoặc sử dụng dịch vụ chuyển phát nhanh theo yêu cầu. Thời gian: 1-3 ngày.</li>
-            </ul>
-          </section>
-          <section>
-            <h4 class="text-slate-900 font-bold mb-3">3. Kiểm tra hàng hóa</h4>
-            <p class="text-slate-500 leading-relaxed text-sm">Khách hàng vui lòng kiểm tra tình trạng bao bì và số lượng ngay khi nhận hàng từ nhân viên giao nhận.</p>
-          </section>
-        </div>
-      `,
-    },
-  };
-
-  const handleOpenPolicy = (type: "return" | "warranty" | "shipping") => {
-    setSelectedPolicyType(type);
-    setIsPolicyOpen(true);
-  };
   // Cart quantity state
   const [productQuantities, setProductQuantities] = useState<
     Record<string, number>
@@ -317,7 +228,7 @@ export default function HomePage() {
 
   const addToCart = async (sp: any, colorCode?: string) => {
     if (!isAuthenticated) {
-      setIsLoginOpen(true);
+      router.push("/sign-in");
       return;
     }
     const qtyToAdd = productQuantities[sp._id] || 1;
@@ -376,8 +287,7 @@ export default function HomePage() {
 
   const handleServiceClick = (path: string) => {
     if (!isAuthenticated) {
-      setRedirectPath(path);
-      setIsLoginOpen(true);
+      router.push("/sign-in");
     } else {
       router.push(path);
     }
@@ -385,7 +295,7 @@ export default function HomePage() {
 
   const handleDirectCheckout = async () => {
     if (!isAuthenticated) {
-      setIsLoginOpen(true);
+      router.push("/sign-in");
       return;
     }
     if (cartItems.length === 0) return;
@@ -462,44 +372,7 @@ export default function HomePage() {
     }
   };
 
-  const handlePageRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (
-      !registerUsername ||
-      !registerFullName ||
-      !registerEmail ||
-      !registerPassword ||
-      !registerRole
-    ) {
-      setRegisterError("Vui lòng điền đầy đủ thông tin");
-      return;
-    }
 
-    try {
-      setRegisterLoading(true);
-      setRegisterError(null);
-      const res = await api.post("/auth/register", {
-        TenDangNhap: registerUsername,
-        HoTen: registerFullName,
-        Email: registerEmail,
-        MatKhau: registerPassword,
-        VaiTro: registerRole,
-      });
-
-      if (res.data.success) {
-        setRegisterSuccess(true);
-        setTimeout(() => {
-          setIsRegisterMode(false);
-          setRegisterSuccess(false);
-          setLoginEmail(registerUsername);
-        }, 2000);
-      }
-    } catch (err: any) {
-      setRegisterError(err.response?.data?.error || "Đăng ký thất bại");
-    } finally {
-      setRegisterLoading(false);
-    }
-  };
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -724,8 +597,7 @@ export default function HomePage() {
               ctaColor="text-blue-600"
               onClick={() => {
                 if (!isAuthenticated) {
-                  setRedirectPath("/rd-tracking/new");
-                  setIsLoginOpen(true);
+                  router.push("/sign-in");
                 } else {
                   router.push("/rd-tracking/new");
                 }
@@ -938,19 +810,17 @@ export default function HomePage() {
         {achievements.map((project, idx) => (
           <div
             key={idx}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              activeAchievement === idx
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeAchievement === idx
                 ? "opacity-100 z-10"
                 : "opacity-0 z-0 pointer-events-none"
-            }`}
+              }`}
           >
             <div className="absolute inset-0 bg-black/40 z-10"></div>
             <img
               src={project.img}
               alt={project.title}
-              className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-linear ${
-                activeAchievement === idx ? "scale-110" : "scale-100"
-              }`}
+              className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-linear ${activeAchievement === idx ? "scale-110" : "scale-100"
+                }`}
             />
             <div className="absolute inset-0 flex flex-col items-center justify-center z-20 text-center px-4">
               <h2
@@ -978,11 +848,10 @@ export default function HomePage() {
             <button
               key={idx}
               onClick={() => setActiveAchievement(idx)}
-              className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${
-                activeAchievement === idx
+              className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${activeAchievement === idx
                   ? "w-8 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"
                   : "w-4 bg-white/40 hover:bg-white/80"
-              }`}
+                }`}
             />
           ))}
         </div>
@@ -1113,28 +982,36 @@ export default function HomePage() {
               </h4>
               <ul className="space-y-4 text-slate-300 font-medium text-sm">
                 <li>
-                  <button
-                    onClick={() => handleOpenPolicy("return")}
-                    className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left"
+                  <Link
+                    href="/policies?type=return"
+                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
                   >
                     - Chính sách đổi trả
-                  </button>
+                  </Link>
                 </li>
                 <li>
-                  <button
-                    onClick={() => handleOpenPolicy("warranty")}
-                    className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left"
+                  <Link
+                    href="/policies?type=warranty"
+                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
                   >
                     - Chính sách bảo hành
-                  </button>
+                  </Link>
                 </li>
                 <li>
-                  <button
-                    onClick={() => handleOpenPolicy("shipping")}
-                    className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left"
+                  <Link
+                    href="/policies?type=shipping"
+                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
                   >
                     - Chính sách vận chuyển
-                  </button>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/policies?type=aftersale"
+                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
+                  >
+                    - Chính sách hậu mãi
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -1470,8 +1347,7 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   if (!isAuthenticated) {
-                    setRedirectPath("/rd-tracking/new");
-                    setIsLoginOpen(true);
+                    router.push("/sign-in");
                   } else {
                     router.push("/rd-tracking/new");
                   }
@@ -1580,7 +1456,7 @@ export default function HomePage() {
                   </button>
                 </div>
               </form>
-            ) : !isRegisterMode ? (
+            ) : (
               <form onSubmit={handlePageLogin} className="space-y-4">
                 {loginError && (
                   <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
@@ -1633,106 +1509,13 @@ export default function HomePage() {
                 <div className="text-center pt-4">
                   <p className="text-sm text-slate-500 font-medium">
                     Chưa có tài khoản?{" "}
-                    <button
-                      type="button"
-                      onClick={() => setIsRegisterMode(true)}
+                    <Link
+                      href="/signup"
                       className="text-blue-600 font-bold hover:underline bg-transparent border-none cursor-pointer"
                     >
                       Đăng kí ngay
-                    </button>
+                    </Link>
                   </p>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handlePageRegister} className="space-y-4">
-                {registerError && (
-                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
-                    <AlertCircle size={16} /> {registerError}
-                  </div>
-                )}
-                {registerSuccess && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3 text-emerald-600 text-xs font-bold">
-                    <ShieldCheck size={16} /> Đăng ký thành công! Đang chuyển
-                    sang đăng nhập...
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <input
-                    type="text"
-                    value={registerUsername}
-                    onChange={(e) => setRegisterUsername(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Tên đăng nhập"
-                    required
-                  />
-
-                  <input
-                    type="text"
-                    value={registerFullName}
-                    onChange={(e) => setRegisterFullName(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Họ và tên đầy đủ / Tên doanh nghiệp"
-                    required
-                  />
-
-                  <input
-                    type="email"
-                    value={registerEmail}
-                    onChange={(e) => setRegisterEmail(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Email"
-                    required
-                  />
-
-                  <input
-                    type="password"
-                    value={registerPassword}
-                    onChange={(e) => setRegisterPassword(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Mật khẩu"
-                    required
-                  />
-
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
-                      Loại khách hàng
-                    </label>
-                    <select
-                      value={registerRole}
-                      onChange={(e) => setRegisterRole(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all cursor-pointer"
-                    >
-                      <option value="KhachHangB2C">Khách hàng cá nhân</option>
-                      <option value="KhachHangB2B">
-                        Khách hàng doanh nghiệp
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <button
-                    type="submit"
-                    disabled={registerLoading}
-                    className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
-                  >
-                    {registerLoading ? (
-                      <Loader2 className="animate-spin" size={18} />
-                    ) : (
-                      "Đăng Ký Tài Khoản"
-                    )}
-                  </button>
-                </div>
-
-                <div className="text-center pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsRegisterMode(false)}
-                    className="text-[11px] font-bold text-slate-400 hover:text-blue-600 bg-transparent border-none cursor-pointer transition-colors"
-                  >
-                    Đã có tài khoản? Đăng nhập
-                  </button>
                 </div>
               </form>
             )}
@@ -1812,44 +1595,6 @@ export default function HomePage() {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════ POLICY MODAL ═══════ */}
-      {isPolicyOpen && selectedPolicyType && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-300">
-            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
-              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
-                  {POLICIES_DATA[selectedPolicyType].icon}
-                </div>
-                {POLICIES_DATA[selectedPolicyType].title}
-              </h2>
-              <button
-                onClick={() => setIsPolicyOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-400"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
-              <div
-                className="prose prose-slate max-w-none"
-                dangerouslySetInnerHTML={{
-                  __html: POLICIES_DATA[selectedPolicyType].content,
-                }}
-              />
-            </div>
-            <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-50 flex justify-end">
-              <button
-                onClick={() => setIsPolicyOpen(false)}
-                className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
-              >
-                Đã hiểu
-              </button>
             </div>
           </div>
         </div>

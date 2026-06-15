@@ -47,6 +47,7 @@ import TicketProcessingDrawer from "./TicketProcessingDrawer";
 import type { Ticket, TicketStatus } from "./TicketProcessingDrawer";
 import AICopilotPanel from "./AICopilotPanel";
 import AdminChatSession from "./AdminChatSession";
+import PolicyManager from "./PolicyManager";
 
 interface Message {
   id: string;
@@ -110,7 +111,7 @@ export default function ChatbotPage() {
   const [allStaff, setAllStaff] = useState<any[]>([]);
 
   // Main Tab (For Admin)
-  const [mainTab, setMainTab] = useState<"dashboard" | "tickets" | "chat_session">("dashboard");
+  const [mainTab, setMainTab] = useState<"dashboard" | "tickets" | "chat_session" | "policies">("dashboard");
   const [chatCustomerId, setChatCustomerId] = useState<string | null>(null);
 
   // Ticket Management States (For Admin)
@@ -992,6 +993,22 @@ export default function ChatbotPage() {
           />{" "}
           Tin nhắn Hậu mãi
         </button>
+        <button
+          onClick={() => setMainTab("policies")}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer border-none ${
+            mainTab === "policies"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-500 hover:text-slate-800 hover:bg-slate-50/50 bg-transparent"
+          }`}
+        >
+          <FileText
+            size={16}
+            className={
+              mainTab === "policies" ? "text-blue-600" : "text-slate-400"
+            }
+          />{" "}
+          Quản lý Chính sách
+        </button>
       </div>
 
       {/* ── DASHBOARD TAB ── */}
@@ -1746,6 +1763,11 @@ export default function ChatbotPage() {
       {/* ── CHAT SESSION TAB ── */}
       {mainTab === "chat_session" && (
         <AdminChatSession preselectedCustomerId={chatCustomerId} />
+      )}
+
+      {/* ── POLICIES TAB ── */}
+      {mainTab === "policies" && (
+        <PolicyManager />
       )}
 
       {/* AICopilotPanel (Floating Bot in Admin) */}

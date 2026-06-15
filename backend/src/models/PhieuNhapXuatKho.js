@@ -59,6 +59,9 @@ const phieuNhapXuatKhoSchema = new mongoose.Schema({
 
     // Nhà cung cấp (chỉ dành cho phiếu NHẬP từ NCC)
     NhaCungCapID: { type: mongoose.Schema.Types.ObjectId, ref: 'NhaCungCap' },
+
+    // Tham chiếu đến Lệnh Đặt Hàng (nếu có)
+    PhieuDatHangID: { type: mongoose.Schema.Types.ObjectId, ref: 'PhieuDatHangNCC' },
 }, { timestamps: true });
 
 

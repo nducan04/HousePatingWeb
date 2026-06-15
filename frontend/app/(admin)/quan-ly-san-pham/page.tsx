@@ -210,7 +210,8 @@ export default function SanPhamPage() {
           setCategoryFormData({ _id: "", TenDanhMuc: "", MoTa: "", TrangThai: true });
         }
       } else {
-        const res = await api.post("/danh-muc-son", categoryFormData);
+        const { _id, ...dataToCreate } = categoryFormData;
+        const res = await api.post("/danh-muc-son", dataToCreate);
         if (res.data.success) {
           setCategories([res.data.data, ...categories]);
           setCategoryFormData({ _id: "", TenDanhMuc: "", MoTa: "", TrangThai: true });

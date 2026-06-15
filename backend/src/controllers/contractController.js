@@ -157,7 +157,7 @@ exports.getContracts = async (req, res) => {
     }
 
     const contracts = await HopDong.find(filter)
-      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai')
+      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai MaSoThue TaiKhoanNganHang NguoiDaiDien')
       .populate('EmployeeID', 'MaNV HoTen ChucVu')
       .sort({ createdAt: -1 });
 
@@ -217,7 +217,7 @@ exports.getContracts = async (req, res) => {
 exports.getContractById = async (req, res) => {
   try {
     const contract = await HopDong.findById(req.params.id)
-      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai SDT Email DiaChi')
+      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai SDT Email DiaChi MaSoThue TaiKhoanNganHang NguoiDaiDien')
       .populate('EmployeeID', 'MaNV HoTen ChucVu');
 
     if (!contract) {
@@ -465,7 +465,7 @@ exports.createContract = async (req, res) => {
 exports.generatePreviewPDF = async (req, res) => {
   try {
     const contract = await HopDong.findById(req.params.id)
-      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai')
+      .populate('CustomerID', 'MaKH TenKhachHang PhanLoai MaSoThue TaiKhoanNganHang NguoiDaiDien')
       .populate('EmployeeID', 'MaNV HoTen ChucVu');
 
     if (!contract) {
@@ -544,11 +544,12 @@ exports.generatePreviewPDF = async (req, res) => {
       doc.font(font).fontSize(11).fillColor('#000000');
       doc.text('Tên khách hàng: ', { continued: true }).font(fontBold).text(repName || '...................................................');
       doc.font(font).text('Địa chỉ: ', { continued: true }).font(fontBold).text(contract.partyBAddress || '......................................................................................');
-      doc.font(font).text('Mã số thuế: ', { continued: true }).font(fontBold).text(contract.CustomerID?.MaKH || '................................');
+      doc.font(font).text('Mã số thuế: ', { continued: true }).font(fontBold).text(contract.partyBTaxCode || contract.CustomerID?.MaSoThue || '................................');
       doc.font(font).text('Điện thoại: ', { continued: true }).font(fontBold).text(contract.partyBPhoneNumber || '................................');
-      doc.font(font).text('Người đại diện: ', { continued: true }).font(fontBold).text(repName || '................................', { continued: true }).font(font).text(' — ', { continued: true }).font(fontBold).text('Chức vụ: ', { continued: true }).font(font).text(contract.partyBPosition || '................................');
-      if (contract.partyBBankAccount || contract.partyBBankName) {
-        doc.font(font).text('Tài khoản: ', { continued: true }).font(fontBold).text(contract.partyBBankAccount || '................', { continued: true }).font(font).text(' tại ', { continued: true }).font(fontBold).text(contract.partyBBankName || '................');
+      doc.font(font).text('Người đại diện: ', { continued: true }).font(fontBold).text(repName || contract.CustomerID?.NguoiDaiDien || '................................', { continued: true }).font(font).text(' — ', { continued: true }).font(fontBold).text('Chức vụ: ', { continued: true }).font(font).text(contract.partyBPosition || '................................');
+      const bankAcc = contract.partyBBankAccount || contract.CustomerID?.TaiKhoanNganHang;
+      if (bankAcc || contract.partyBBankName) {
+        doc.font(font).text('Tài khoản: ', { continued: true }).font(fontBold).text(bankAcc || '................', { continued: true }).font(font).text(' tại ', { continued: true }).font(fontBold).text(contract.partyBBankName || '................');
       }
       doc.moveDown(1.2);
 

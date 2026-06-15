@@ -41,11 +41,6 @@ exports.create = async (req, res) => {
 
         const item = await PhieuDatHangNCC.create(orderData);
 
-        // Cộng tổng tiền của đơn đặt hàng vào công nợ của nhà cung cấp
-        await NhaCungCap.findByIdAndUpdate(supplierId, {
-            $inc: { CongNo: item.TongTien || 0 }
-        });
-
         res.status(201).json({ success: true, data: item });
     } catch (error) {
         res.status(400).json({ success: false, error: error.message });

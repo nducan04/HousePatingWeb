@@ -18,6 +18,7 @@ import {
   ShoppingCart,
   X,
   Download,
+  Printer,
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { toast, confirm } from "@/lib/utils/notification";
@@ -780,6 +781,12 @@ export default function NhaCungCapPage() {
                         <User size={12} /> Cấp tài khoản đăng nhập
                       </button>
                     )}
+                    <button
+                      onClick={openPOForm}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 transition-all cursor-pointer border-none shadow-sm shadow-blue-500/20 ml-2"
+                    >
+                      <Plus size={12} /> Đặt nguyên vật liệu nhà cung cấp
+                    </button>
                   </div>
                 </div>
               </div>
@@ -943,7 +950,157 @@ export default function NhaCungCapPage() {
                               </span>
                             </div>
                           </div>
+                          <div className="flex justify-end mb-2">
+                            <button
+                              onClick={() => {
+                                const printContent = document.getElementById("po-print-area");
+                                if (!printContent) return;
+                                
+                                const printWindow = window.open("", "_blank");
+                                if (!printWindow) return;
+                                
+                                const ngayTao = new Date(selectedPO.NgayDat);
+                                const ngay = ngayTao.getDate().toString().padStart(2, "0");
+                                const thang = (ngayTao.getMonth() + 1).toString().padStart(2, "0");
+                                const nam = ngayTao.getFullYear();
 
+                                printWindow.document.write(`
+                                  <!DOCTYPE html>
+                                  <html>
+                                    <head>
+                                      <meta charset="utf-8" />
+                                      <title>PHIẾU ĐẶT HÀNG - ${selectedPO.MaPhieu}</title>
+                                      <style>
+                                        * { box-sizing: border-box; margin: 0; padding: 0; }
+                                        body { font-family: 'Times New Roman', Times, serif; font-size: 13px; color: #000; background: #fff; }
+                                        .phieu-wrapper { max-width: 800px; margin: 20px auto; padding: 24px; }
+                                        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+                                        .company-info { font-size: 12px; line-height: 1.6; }
+                                        .company-name { font-size: 14px; font-weight: bold; text-transform: uppercase; }
+                                        .tieu-de { text-align: center; }
+                                        .tieu-de h1 { font-size: 22px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+                                        .tieu-de .date-row { font-size: 13px; margin-top: 8px; }
+                                        .tieu-de .so { font-size: 18px; color: #cc0000; font-weight: bold; margin-top: 4px; }
+                                        .info-row { margin: 12px 0; font-size: 13px; line-height: 2; border-bottom: 1px dotted #555; }
+                                        .info-label { font-weight: bold; }
+                                        .double-row { display: flex; gap: 24px; }
+                                        .double-row .info-row { flex: 1; }
+                                        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+                                        th, td { border: 1px solid #000; padding: 6px 8px; text-align: center; font-size: 12px; }
+                                        th { font-weight: bold; background: #f5f5f5; }
+                                        td.text-left { text-align: left; }
+                                        td.text-right { text-align: right; }
+                                        .tong-row td { font-weight: bold; background: #fafafa; }
+                                        .signatures { display: flex; justify-content: space-between; margin-top: 32px; text-align: center; }
+                                        .sig-item { flex: 1; padding: 0 8px; font-size: 12px; }
+                                        .sig-item .title { font-weight: bold; }
+                                        .sig-item .sub { font-style: italic; color: #555; }
+                                        .sig-item .space { height: 56px; }
+                                        @media print {
+                                          body { -webkit-print-color-adjust: exact; }
+                                        }
+                                      </style>
+                                    </head>
+                                    <body>
+                                      <div class="phieu-wrapper">
+                                        <div class="header">
+                                          <div class="company-info">
+                                            <div class="company-name">HỆ THỐNG QUẢN LÝ SẢN XUẤT SƠN</div>
+                                            <div>Bộ phận: Mua hàng / Cung ứng</div>
+                                          </div>
+                                        </div>
+
+                                        <div class="tieu-de">
+                                          <h1>PHIẾU ĐẶT HÀNG (PURCHASE ORDER)</h1>
+                                          <div class="date-row">Ngày ${ngay} tháng ${thang} năm ${nam}</div>
+                                          <div class="so">Số: ${selectedPO.MaPhieu}</div>
+                                        </div>
+
+                                        <div class="info-row">
+                                          <span class="info-label">Nhà cung cấp:</span> ${selectedNCC.TenNCC}
+                                        </div>
+                                        <div class="info-row">
+                                          <span class="info-label">Địa chỉ:</span> ${selectedNCC.DiaChi || "................................................"}
+                                        </div>
+                                        <div class="double-row">
+                                          <div class="info-row">
+                                            <span class="info-label">Người liên hệ:</span> ${selectedNCC.NguoiLienHe || "......................"}
+                                          </div>
+                                          <div class="info-row">
+                                            <span class="info-label">Số điện thoại:</span> ${selectedNCC.SDT || "......................"}
+                                          </div>
+                                        </div>
+                                        <div class="info-row">
+                                          <span class="info-label">Nhân viên phụ trách:</span> ${selectedPO.NguoiLap || "ADMIN_SYS"}
+                                        </div>
+
+                                        <table>
+                                          <thead>
+                                            <tr>
+                                              <th width="5%">STT</th>
+                                              <th width="15%">Mã VT</th>
+                                              <th width="35%">Tên Vật Tư / Hàng Hóa</th>
+                                              <th width="10%">ĐVT</th>
+                                              <th width="10%">Số lượng</th>
+                                              <th width="10%">Đơn giá</th>
+                                              <th width="15%">Thành tiền</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            ${selectedPO.ChiTiet?.map((item: any, i: number) => `
+                                              <tr>
+                                                <td>${i + 1}</td>
+                                                <td>${item.MaItem}</td>
+                                                <td class="text-left">${item.TenItem}</td>
+                                                <td>kg/L</td>
+                                                <td>${item.SoLuong}</td>
+                                                <td class="text-right">${item.DonGia.toLocaleString("vi-VN")}</td>
+                                                <td class="text-right">${item.ThanhTien.toLocaleString("vi-VN")}</td>
+                                              </tr>
+                                            `).join('')}
+                                            <tr class="tong-row">
+                                              <td colspan="6" class="text-right">Tổng cộng thanh toán:</td>
+                                              <td class="text-right text-red-600">${selectedPO.TongTien.toLocaleString("vi-VN")} VNĐ</td>
+                                            </tr>
+                                          </tbody>
+                                        </table>
+
+                                        <div class="signatures">
+                                          <div class="sig-item">
+                                            <div class="title">Người lập phiếu</div>
+                                            <div class="sub">(Ký, ghi rõ họ tên)</div>
+                                            <div class="space"></div>
+                                            <div>${selectedPO.NguoiLap || ""}</div>
+                                          </div>
+                                          <div class="sig-item">
+                                            <div class="title">Kế toán trưởng</div>
+                                            <div class="sub">(Ký, ghi rõ họ tên)</div>
+                                            <div class="space"></div>
+                                          </div>
+                                          <div class="sig-item">
+                                            <div class="title">Giám đốc duyệt</div>
+                                            <div class="sub">(Ký, ghi rõ họ tên)</div>
+                                            <div class="space"></div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </body>
+                                  </html>
+                                `);
+                                printWindow.document.close();
+                                printWindow.focus();
+                                setTimeout(() => {
+                                  printWindow.print();
+                                  printWindow.close();
+                                }, 400);
+                              }}
+                              className="px-4 py-2 bg-slate-800 text-white rounded-md font-semibold text-[11px] hover:bg-slate-900 transition-all uppercase tracking-widest flex items-center gap-2"
+                            >
+                              <Printer size={14} /> In Đơn Hàng
+                            </button>
+                          </div>
+                          
+                          <div id="po-print-area" className="bg-white">
                           <table className="w-full text-left border-collapse">
                             <thead>
                               <tr className="border-b border-slate-100">
@@ -997,6 +1154,7 @@ export default function NhaCungCapPage() {
                               </tr>
                             </tfoot>
                           </table>
+                          </div>
                         </div>
                       )}
                     </div>

@@ -46,6 +46,20 @@ const khachHangSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  
+  // Các trường bổ sung cho Khách hàng doanh nghiệp (B2B)
+  MaSoThue: {
+    type: String,
+    trim: true,
+  },
+  TaiKhoanNganHang: {
+    type: String,
+    trim: true,
+  },
+  NguoiDaiDien: {
+    type: String,
+    trim: true,
+  },
 
   // Mã số thuế cá nhân — Chỉ dùng cho Đại lý
   MaSoThueCaNhan: {

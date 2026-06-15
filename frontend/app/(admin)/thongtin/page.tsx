@@ -12,6 +12,11 @@ import {
   Loader2,
   Camera,
   Wallet,
+  Building,
+  CreditCard,
+  Briefcase,
+  Link,
+  ArrowLeft,
 } from "lucide-react";
 import { useAuthStore, type User } from "@/lib/store/authStore";
 import api from "@/lib/utils/axiosAuth";
@@ -37,6 +42,9 @@ export default function ThongTinCaNhanPage() {
     dob: "",
     jobTitle: "",
     department: "",
+    maSoThue: "",
+    taiKhoanNganHang: "",
+    nguoiDaiDien: "",
   });
 
   useEffect(() => {
@@ -55,6 +63,9 @@ export default function ThongTinCaNhanPage() {
         dob: p.NgaySinh ? new Date(p.NgaySinh).toISOString().split("T")[0] : "",
         jobTitle: p.ChucVu || "",
         department: p.BoPhan || "",
+        maSoThue: p.MaSoThue || "",
+        taiKhoanNganHang: p.TaiKhoanNganHang || "",
+        nguoiDaiDien: p.NguoiDaiDien || "",
       });
     }
   }, [user]);
@@ -92,6 +103,11 @@ export default function ThongTinCaNhanPage() {
         payload.HoTen = formData.displayName;
       } else {
         payload.TenKhachHang = formData.displayName;
+        if (user?.role === "KhachHangB2B") {
+          payload.MaSoThue = formData.maSoThue;
+          payload.TaiKhoanNganHang = formData.taiKhoanNganHang;
+          payload.NguoiDaiDien = formData.nguoiDaiDien;
+        }
       }
 
       const res = await api.put(endpoint, payload);
@@ -171,6 +187,12 @@ export default function ThongTinCaNhanPage() {
         <div className="pt-20 pb-8 px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
             <div>
+              <Link
+                href="/"
+                className="absolute top-6 right-6 md:top-8 md:right-8 flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-500 bg-slate-100/50 hover:bg-slate-100 hover:text-slate-800 rounded-full transition-all duration-300 no-underline shadow-sm hover:shadow"
+              >
+                <ArrowLeft size={16} /> Quay lại trang chủ
+              </Link>
               <h1 className="text-3xl font-medium text-slate-900 mb-1">
                 {formData.displayName}
               </h1>
@@ -219,7 +241,7 @@ export default function ThongTinCaNhanPage() {
 
           <form
             onSubmit={handleSave}
-            className="grid grid-cols-1 md:grid-cols-2 gap-8"
+            className={`grid grid-cols-1 ${user?.role === "KhachHangB2B" ? "md:grid-cols-3" : "md:grid-cols-2"} gap-8`}
           >
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
@@ -242,6 +264,24 @@ export default function ThongTinCaNhanPage() {
                     />
                     <UserIcon
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
+                      size={16}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 mb-1">
+                    Tên đăng nhập
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-500 outline-none cursor-not-allowed pl-10 opacity-80"
+                      value={user?.username || ""}
+                      readOnly
+                    />
+                    <UserIcon
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                       size={16}
                     />
                   </div>
@@ -370,6 +410,76 @@ export default function ThongTinCaNhanPage() {
                 </div>
               </div>
             </div>
+
+            {user?.role === "KhachHangB2B" && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                  <Building size={18} className="text-blue-600" /> Thông tin doanh nghiệp
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-500 mb-1">
+                      Mã số thuế
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="maSoThue"
+                        className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
+                        value={formData.maSoThue}
+                        onChange={handleChange}
+                        placeholder="Mã số thuế"
+                      />
+                      <Building
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
+                        size={16}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-500 mb-1">
+                      Tài khoản ngân hàng
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="taiKhoanNganHang"
+                        className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
+                        value={formData.taiKhoanNganHang}
+                        onChange={handleChange}
+                        placeholder="Số tài khoản - Ngân hàng"
+                      />
+                      <CreditCard
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
+                        size={16}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-500 mb-1">
+                      Người đại diện
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="nguoiDaiDien"
+                        className="w-full bg-white border border-slate-200 rounded-md px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all pl-10"
+                        value={formData.nguoiDaiDien}
+                        onChange={handleChange}
+                        placeholder="Họ tên người đại diện"
+                      />
+                      <Briefcase
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
+                        size={16}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </form>
         </div>
       </div>

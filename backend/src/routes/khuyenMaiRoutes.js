@@ -5,5 +5,7 @@ const khuyenMaiController = require('../controllers/khuyenMaiController');
 router.get('/', khuyenMaiController.getAllKhuyenMai);
 router.post('/', khuyenMaiController.createKhuyenMai);
 router.put('/:khuyenMaiId/ap-dung', khuyenMaiController.apDungKhuyenMai);
+router.put('/:khuyenMaiId', khuyenMaiController.updateKhuyenMai);
+router.delete('/:khuyenMaiId', khuyenMaiController.deleteKhuyenMai);
 
 module.exports = router;
