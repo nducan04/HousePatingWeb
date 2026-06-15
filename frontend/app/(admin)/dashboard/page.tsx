@@ -40,6 +40,7 @@ import RevenuePlanChart from "./RevenuePlanChart";
 import ProductionPlanChart from "./ProductionPlanChart";
 import { exportDashboardToExcel } from "@/lib/utils/excelExport";
 import { useAuthStore } from "@/lib/store/authStore";
+import { paintColors } from "@/lib/data/colors-data";
 
 // Tooltip cho biểu đồ
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -417,11 +418,10 @@ export default function DashboardPage() {
                 <button
                   key={y}
                   onClick={() => setActiveYears([y])}
-                  className={`px-3.5 py-1.5 rounded-sm text-xs font-light transition-all cursor-pointer ${
-                    activeYears.includes(y)
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "text-slate-500 hover:bg-slate-100"
-                  }`}
+                  className={`px-3.5 py-1.5 rounded-sm text-xs font-light transition-all cursor-pointer ${activeYears.includes(y)
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-500 hover:bg-slate-100"
+                    }`}
                 >
                   {y}
                 </button>
@@ -439,11 +439,10 @@ export default function DashboardPage() {
                 <button
                   key={m}
                   onClick={() => toggle(activeMonths, m, setActiveMonths)}
-                  className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all cursor-pointer ${
-                    activeMonths.includes(m)
-                      ? "bg-indigo-500 text-white shadow-sm"
-                      : "text-slate-500 hover:bg-slate-100"
-                  }`}
+                  className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all cursor-pointer ${activeMonths.includes(m)
+                    ? "bg-indigo-500 text-white shadow-sm"
+                    : "text-slate-500 hover:bg-slate-100"
+                    }`}
                 >
                   {m}
                 </button>
@@ -548,31 +547,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Gauge + Revenue Chart row */}
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-5">
-          <div className="bg-white rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 p-6 flex flex-col items-center justify-center gap-3 relative group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-            <p className="text-[12px] font-bold text-slate-500 uppercase tracking-widest text-center relative z-10">
-              Tỷ lệ hoàn thành đạt doanh thu
-            </p>
-            <div className="relative z-10">
-              <GaugeChart value={gaugeValue} />
-            </div>
-            <p className="text-[12px] font-medium text-slate-400 text-center relative z-10 mt-2">
-              So với cùng kỳ năm trước
-            </p>
-            <div
-              className={`flex items-center gap-1.5 font-bold text-base relative z-10 px-3 py-1 rounded-full ${stats.kpi.totalRevenue.change >= 0 ? "text-emerald-500 bg-emerald-50" : "text-rose-500 bg-rose-50"}`}
-            >
-              {stats.kpi.totalRevenue.change >= 0 ? (
-                <TrendingUp size={16} />
-              ) : (
-                <TrendingDown size={16} />
-              )}
-              {stats.kpi.totalRevenue.change >= 0 ? "+" : ""}
-              {stats.kpi.totalRevenue.change}%
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 gap-5">
           {/* Revenue Plan Chart */}
           <div className="min-w-0 bg-white rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 p-4">
             <RevenuePlanChart year={activeYears[0] as any} />
@@ -931,7 +906,7 @@ export default function DashboardPage() {
                       <td className="px-4 py-3 font-medium text-slate-700 flex items-center gap-3">
                         <div
                           className="w-8 h-8 rounded-lg shadow-sm border border-slate-200"
-                          style={{ background: c.name }}
+                          style={{ background: paintColors.find(p => p.code === c.name)?.hex || '#e2e8f0' }}
                         />
                         <span className="group-hover/row:text-purple-700 transition-colors">
                           {c.name}
@@ -1027,15 +1002,14 @@ export default function DashboardPage() {
                   >
                     <td className="px-6 py-3.5">
                       <div
-                        className={`w-7 h-7 rounded-sm flex items-center justify-center font-medium text-xs shadow-sm ${
-                          i === 0
-                            ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
-                            : i === 1
-                              ? "bg-gradient-to-br from-slate-300 to-slate-400 text-white"
-                              : i === 2
-                                ? "bg-gradient-to-br from-orange-300 to-orange-400 text-white"
-                                : "bg-slate-50 text-slate-400 border border-slate-100"
-                        }`}
+                        className={`w-7 h-7 rounded-sm flex items-center justify-center font-medium text-xs shadow-sm ${i === 0
+                          ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
+                          : i === 1
+                            ? "bg-gradient-to-br from-slate-300 to-slate-400 text-white"
+                            : i === 2
+                              ? "bg-gradient-to-br from-orange-300 to-orange-400 text-white"
+                              : "bg-slate-50 text-slate-400 border border-slate-100"
+                          }`}
                       >
                         {i + 1}
                       </div>
@@ -1066,13 +1040,12 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-3">
                         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                           <div
-                            className={`h-full rounded-full transition-all duration-1000 shadow-sm ${
-                              pct >= 90
-                                ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                                : pct >= 70
-                                  ? "bg-gradient-to-r from-amber-400 to-amber-500"
-                                  : "bg-gradient-to-r from-rose-400 to-rose-500"
-                            }`}
+                            className={`h-full rounded-full transition-all duration-1000 shadow-sm ${pct >= 90
+                              ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                              : pct >= 70
+                                ? "bg-gradient-to-r from-amber-400 to-amber-500"
+                                : "bg-gradient-to-r from-rose-400 to-rose-500"
+                              }`}
                             style={{ width: `${Math.min(pct, 100)}%` }}
                           />
                         </div>
@@ -1083,22 +1056,20 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-6 py-3.5 text-center">
                       <div
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-tight shadow-sm border ${
-                          pct >= 90
-                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                            : pct >= 70
-                              ? "bg-amber-50 text-amber-600 border-amber-100"
-                              : "bg-rose-50 text-rose-600 border-rose-100"
-                        }`}
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-tight shadow-sm border ${pct >= 90
+                          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                          : pct >= 70
+                            ? "bg-amber-50 text-amber-600 border-amber-100"
+                            : "bg-rose-50 text-rose-600 border-rose-100"
+                          }`}
                       >
                         <div
-                          className={`w-1 h-1 rounded-full animate-pulse ${
-                            pct >= 90
-                              ? "bg-emerald-500"
-                              : pct >= 70
-                                ? "bg-amber-500"
-                                : "bg-rose-500"
-                          }`}
+                          className={`w-1 h-1 rounded-full animate-pulse ${pct >= 90
+                            ? "bg-emerald-500"
+                            : pct >= 70
+                              ? "bg-amber-500"
+                              : "bg-rose-500"
+                            }`}
                         />
                         {pct >= 90
                           ? "Vượt chỉ tiêu"

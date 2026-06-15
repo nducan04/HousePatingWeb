@@ -47,6 +47,15 @@ const congThucSchema = new mongoose.Schema({
     type: String,
     default: '1.0'
   },
+  SanLuongDuKien: {
+    type: Number,
+    default: 20
+  },
+  DonVi: {
+    type: String,
+    enum: ['Lít', 'Kg'],
+    default: 'Lít'
+  },
   ThanhPhan: [thanhPhanSchema],
   GhiChu: String,
   TrangThai: {

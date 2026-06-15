@@ -24,6 +24,7 @@ import {
   Star,
   DollarSign,
   ChevronDown,
+  ShoppingCart,
 } from "lucide-react";
 import {
   BarChart,
@@ -183,6 +184,7 @@ export default function QLKhoPage() {
     MoTa: "",
     GhiChu: "",
     NhaCungCapID: "",
+    PhieuDatHangID: "",
   });
   const [nxItems, setNxItems] = useState<any[]>([
     {
@@ -197,12 +199,15 @@ export default function QLKhoPage() {
     },
   ]);
 
+  const [poList, setPoList] = useState<any[]>([]);
+
   useEffect(() => {
     fetchTonKho();
     fetchPhieuKiemKho();
     fetchNguyenVatLieu();
     fetchPhieuNhapXuat();
     fetchNhaCungCap();
+    fetchPurchaseOrders();
   }, []);
 
   useEffect(() => {
@@ -303,6 +308,17 @@ export default function QLKhoPage() {
     try {
       const res = await api.get("/suppliers");
       if (res.data.success) setNccList(res.data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchPurchaseOrders = async () => {
+    try {
+      const res = await api.get("/suppliers/vouchers/po/all");
+      if (res.data.success) {
+        setPoList(res.data.data.filter((po: any) => po.TrangThai !== 'Đã về hàng'));
+      }
     } catch (error) {
       console.error(error);
     }
@@ -460,28 +476,60 @@ export default function QLKhoPage() {
   };
 
   // ----- PHIẾU NHẬP XUẤT LOGIC -----
-  const openCreateNXModal = () => {
+  const openCreateNXModal = (po?: any) => {
     setEditingNXId(null);
-    setNxForm({
-      MaPhieu: "",
-      LoaiPhieu: "NHAP",
-      LoaiHang: "SAN_PHAM",
-      MoTa: "",
-      GhiChu: "",
-      NhaCungCapID: "",
-    });
-    setNxItems([
-      {
-        ItemId: "",
-        MaItem: "",
-        TenItem: "",
-        MaMau: "",
-        TenMau: "",
-        SoLuong: 50,
-        DonGia: 0,
-        ThanhTien: 0,
-      },
-    ]);
+    if (po && po._id) {
+      setNxForm({
+        MaPhieu: "",
+        LoaiPhieu: "NHAP",
+        LoaiHang: "NGUYEN_VAT_LIEU",
+        MoTa: `Nhập kho cho Lệnh đặt hàng ${po.MaPhieu}`,
+        GhiChu: "",
+        NhaCungCapID: po.SupplierID?._id || po.SupplierID || "",
+        PhieuDatHangID: po._id,
+      });
+
+      if (po.ChiTiet && po.ChiTiet.length > 0) {
+        const formattedItems = po.ChiTiet.map((item: any) => {
+          const nvl = nvlData.find((n: any) => n.MaNVL === item.MaItem);
+          return {
+            ItemId: nvl?._id || "",
+            MaItem: item.MaItem,
+            TenItem: item.TenItem,
+            MaMau: "",
+            TenMau: "",
+            SoLuong: item.SoLuong,
+            DonGia: item.DonGia,
+            ThanhTien: item.SoLuong * item.DonGia
+          };
+        });
+        setNxItems(formattedItems);
+      } else {
+        setNxItems([]);
+      }
+    } else {
+      setNxForm({
+        MaPhieu: "",
+        LoaiPhieu: "NHAP",
+        LoaiHang: "SAN_PHAM",
+        MoTa: "",
+        GhiChu: "",
+        NhaCungCapID: "",
+        PhieuDatHangID: "",
+      });
+      setNxItems([
+        {
+          ItemId: "",
+          MaItem: "",
+          TenItem: "",
+          MaMau: "",
+          TenMau: "",
+          SoLuong: 50,
+          DonGia: 0,
+          ThanhTien: 0,
+        },
+      ]);
+    }
     setIsNXModal(true);
   };
 
@@ -494,6 +542,7 @@ export default function QLKhoPage() {
       MoTa: item.MoTa || "",
       GhiChu: item.GhiChu || "",
       NhaCungCapID: item.NhaCungCapID || "",
+      PhieuDatHangID: item.PhieuDatHangID || "",
     });
     setNxItems(item.ChiTiet || []);
     setIsNXModal(true);
@@ -1036,41 +1085,37 @@ export default function QLKhoPage() {
 
         <div className="flex flex-wrap gap-3 mb-8 bg-white p-2 rounded-lg border border-slate-100 shadow-sm w-fit">
           <button
-            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${
-              activeTab === "kho"
+            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kho"
                 ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                 : "bg-transparent text-slate-500 hover:bg-slate-50"
-            }`}
+              }`}
             onClick={() => setActiveTab("kho")}
           >
             <Package size={18} /> Sản phẩm sơn
           </button>
           <button
-            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${
-              activeTab === "nvl"
+            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nvl"
                 ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                 : "bg-transparent text-slate-500 hover:bg-slate-50"
-            }`}
+              }`}
             onClick={() => setActiveTab("nvl")}
           >
             <Beaker size={18} /> Nguyên vật liệu pha chế
           </button>
           <button
-            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${
-              activeTab === "nhapxuat"
+            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nhapxuat"
                 ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                 : "bg-transparent text-slate-500 hover:bg-slate-50"
-            }`}
+              }`}
             onClick={() => setActiveTab("nhapxuat")}
           >
             <ArrowRightLeft size={18} /> Lịch sử nhập / xuất
           </button>
           <button
-            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${
-              activeTab === "kiemke"
+            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kiemke"
                 ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                 : "bg-transparent text-slate-500 hover:bg-slate-50"
-            }`}
+              }`}
             onClick={() => setActiveTab("kiemke")}
           >
             <ClipboardList size={18} /> Phiếu kiểm kê
@@ -1103,7 +1148,7 @@ export default function QLKhoPage() {
 
             <div className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden">
               <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full border-collapse min-w-[1000px]">
+                <table className="w-full border-collapse whitespace-nowrap min-w-[1000px]">
                   <thead>
                     <tr className="border-b border-slate-50">
                       <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-32">
@@ -1116,10 +1161,13 @@ export default function QLKhoPage() {
                         Phân loại
                       </th>
                       <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-48">
-                        Tồn Kho (Thùng)
+                        Tồn Kho (Thùng/Thùng)
                       </th>
                       <th className="px-6 py-5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-                        Đơn giá
+                        Đơn giá Cơ sở
+                      </th>
+                      <th className="px-6 py-5 text-center text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
+                        Trạng thái (MOQ: 200)
                       </th>
                     </tr>
                   </thead>
@@ -1168,13 +1216,12 @@ export default function QLKhoPage() {
                                 <div className="flex items-center justify-end gap-3">
                                   <div className="flex-1 h-1.5 bg-slate-100 rounded-md overflow-hidden shadow-inner max-w-[80px]">
                                     <div
-                                      className={`h-full rounded-md transition-all duration-1000 shadow-sm ${
-                                        tk >= 200
+                                      className={`h-full rounded-md transition-all duration-1000 shadow-sm ${tk >= 200
                                           ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
                                           : tk > 0
                                             ? "bg-gradient-to-r from-amber-400 to-amber-500"
                                             : "bg-gradient-to-r from-rose-400 to-rose-500"
-                                      }`}
+                                        }`}
                                       style={{ width: `${pct}%` }}
                                     />
                                   </div>
@@ -1190,6 +1237,21 @@ export default function QLKhoPage() {
                                 <span className="text-[10px] text-slate-400 font-bold ml-0.5">
                                   đ
                                 </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                {tk >= 200 ? (
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wider">
+                                    Sẵn sàng
+                                  </span>
+                                ) : tk > 0 ? (
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-wider">
+                                    Cảnh báo
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-600 border border-rose-100 uppercase tracking-wider">
+                                    Cạn kiệt
+                                  </span>
+                                )}
                               </td>
                             </tr>
                           </React.Fragment>
@@ -1236,7 +1298,7 @@ export default function QLKhoPage() {
 
             <div className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden">
               <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full border-collapse min-w-[1000px]">
+                <table className="w-full border-collapse whitespace-nowrap min-w-[1000px]">
                   <thead>
                     <tr className="border-b border-slate-50">
                       <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-32">
@@ -1367,7 +1429,7 @@ export default function QLKhoPage() {
                   <Download size={18} /> Xuất Báo Cáo
                 </button>
                 <button
-                  onClick={openCreateNXModal}
+                  onClick={() => openCreateNXModal()}
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border-none bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20 w-full sm:w-auto"
                 >
                   <ArrowRightLeft size={18} /> Lập Lệnh Nhập / Xuất
@@ -1375,9 +1437,67 @@ export default function QLKhoPage() {
               </div>
             </div>
 
+            {/* Pending Purchase Orders (Chờ nhập kho) */}
+            {poList.length > 0 && (
+              <div className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden mb-6 animate-in fade-in duration-500">
+                <div className="px-6 py-4 border-b border-slate-50 bg-amber-50/30 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+                    <ShoppingCart size={16} />
+                  </div>
+                  <h3 className="font-semibold text-slate-800 text-sm">
+                    Đơn đặt hàng chờ nhập kho
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold ml-2">
+                    {poList.length} đơn
+                  </span>
+                </div>
+                <div className="overflow-x-auto custom-scrollbar">
+                  <table className="w-full border-collapse whitespace-nowrap min-w-[800px]">
+                    <thead>
+                      <tr className="border-b border-slate-50 bg-slate-50/50">
+                        <th className="px-6 py-4 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-32">Mã Đơn Hàng</th>
+                        <th className="px-6 py-4 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Nhà Cung Cấp</th>
+                        <th className="px-6 py-4 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Ngày Đặt</th>
+                        <th className="px-6 py-4 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest text-right">Tổng Tiền</th>
+                        <th className="px-6 py-4 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-32">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {poList.map((po) => (
+                        <tr key={po._id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <span className="font-semibold text-slate-800">{po.MaPhieu}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-slate-600">{po.SupplierID?.TenNCC || "Không xác định"}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-[13px] text-slate-500 font-medium">
+                              {new Date(po.NgayDat).toLocaleDateString("vi-VN")}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <span className="font-semibold text-slate-900">{po.TongTien?.toLocaleString("vi-VN")} ₫</span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button
+                              onClick={() => openCreateNXModal(po)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-md text-[12px] font-bold transition-colors shadow-sm"
+                            >
+                              <ArrowRightLeft size={14} /> Nhập kho ngay
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             <div className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden">
               <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full border-collapse min-w-[1000px]">
+                <table className="w-full border-collapse whitespace-nowrap min-w-[1000px]">
                   <thead>
                     <tr className="border-b border-slate-50">
                       <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-32">
@@ -1433,11 +1553,10 @@ export default function QLKhoPage() {
                         </td>
                         <td className="px-6 py-4">
                           <span
-                            className={`inline-flex items-center px-2.5 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight shadow-sm border ${
-                              item.LoaiPhieu === "NHAP"
-                                ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                : "bg-rose-50 text-rose-600 border-rose-100"
-                            }`}
+                            className={`inline-flex items-center px-2.5 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight shadow-sm border ${item.LoaiPhieu === "NHAP"
+                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                              : "bg-rose-50 text-rose-600 border-rose-100"
+                              }`}
                           >
                             {item.LoaiPhieu === "NHAP"
                               ? "NHẬP KHO"
@@ -1447,13 +1566,12 @@ export default function QLKhoPage() {
                         {/* ★ TRẠNG THÁI */}
                         <td className="px-6 py-4 text-center">
                           <span
-                            className={`inline-flex items-center px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight ${
-                              item.TrangThai === "DA_DUYET"
+                            className={`inline-flex items-center px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight ${item.TrangThai === "DA_DUYET"
                                 ? "bg-green-50 text-green-600"
                                 : item.TrangThai === "TU_CHOI"
                                   ? "bg-red-50 text-red-600"
                                   : "bg-amber-50 text-amber-600"
-                            }`}
+                              }`}
                           >
                             {item.TrangThai === "DA_DUYET"
                               ? "✅ Đã duyệt"
@@ -1513,11 +1631,10 @@ export default function QLKhoPage() {
                                 <button
                                   onClick={() => handleDuyetPhieu(item._id)}
                                   disabled={processingIds.has(item._id)}
-                                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
-                                    processingIds.has(item._id)
+                                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${processingIds.has(item._id)
                                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                       : "bg-green-50 text-green-600 hover:bg-green-600 hover:text-white"
-                                  }`}
+                                    }`}
                                   title="Duyệt phiếu"
                                 >
                                   {processingIds.has(item._id)
@@ -1585,7 +1702,7 @@ export default function QLKhoPage() {
 
             <div className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden">
               <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full border-collapse min-w-[1000px]">
+                <table className="w-full border-collapse whitespace-nowrap min-w-[1000px]">
                   <thead>
                     <tr className="border-b border-slate-50">
                       <th className="px-6 py-5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-40">
@@ -1641,11 +1758,10 @@ export default function QLKhoPage() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span
-                            className={`inline-flex items-center px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight shadow-sm border ${
-                              item.TrangThai === "HOAN_THANH"
-                                ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                : "bg-amber-50 text-amber-600 border-amber-100"
-                            }`}
+                            className={`inline-flex items-center px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight shadow-sm border ${item.TrangThai === "HOAN_THANH"
+                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                              : "bg-amber-50 text-amber-600 border-amber-100"
+                              }`}
                           >
                             {item.TrangThai === "HOAN_THANH"
                               ? "Đã Chốt Số"
@@ -1981,6 +2097,58 @@ export default function QLKhoPage() {
                       />
                     </div>
                   </div>
+                  {nxForm.LoaiPhieu === "NHAP" && nxForm.LoaiHang === "NGUYEN_VAT_LIEU" && (
+                    <div className="space-y-2">
+                      <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">
+                        Lệnh Đặt Hàng (Tham chiếu)
+                      </label>
+                      <div className="relative">
+                        <select
+                          className="w-full bg-slate-50 border-none rounded-lg pl-5 pr-10 py-3.5 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all font-bold appearance-none"
+                          value={nxForm.PhieuDatHangID}
+                          onChange={(e) => {
+                            const poId = e.target.value;
+                            setNxForm({ ...nxForm, PhieuDatHangID: poId });
+                            
+                            // Auto-fill form from PO if selected
+                            if (poId) {
+                              const po = poList.find(p => p._id === poId);
+                              if (po) {
+                                setNxForm(prev => ({...prev, NhaCungCapID: po.SupplierID?._id || po.SupplierID || ""}));
+                                if (po.ChiTiet && po.ChiTiet.length > 0) {
+                                  const formattedItems = po.ChiTiet.map((item: any) => {
+                                    const nvl = nvlData.find((n: any) => n.MaNVL === item.MaItem);
+                                    return {
+                                      ItemId: nvl?._id || "",
+                                      MaItem: item.MaItem,
+                                      TenItem: item.TenItem,
+                                      MaMau: "",
+                                      TenMau: "",
+                                      SoLuong: item.SoLuong,
+                                      DonGia: item.DonGia,
+                                      ThanhTien: item.SoLuong * item.DonGia
+                                    };
+                                  });
+                                  setNxItems(formattedItems);
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          <option value="">-- Tạo phiếu thủ công --</option>
+                          {poList.map((po) => (
+                            <option key={po._id} value={po._id}>
+                              {po.MaPhieu} - {po.NgayDat ? new Date(po.NgayDat).toLocaleDateString("vi-VN") : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          size={16}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -2038,17 +2206,17 @@ export default function QLKhoPage() {
                             <option value="">-- Chọn mặt hàng --</option>
                             {nxForm.LoaiHang === "SAN_PHAM"
                               ? data.map((d) => (
-                                  <option key={d._id} value={d._id}>
-                                    {d.MaSanPham} - {d.TenDongSon} (
-                                    {d.TongTonKho || 0} {d.DonViTinh})
-                                  </option>
-                                ))
+                                <option key={d._id} value={d._id}>
+                                  {d.MaSanPham} - {d.TenDongSon} (
+                                  {d.TongTonKho || 0} {d.DonViTinh})
+                                </option>
+                              ))
                               : nvlData.map((d) => (
-                                  <option key={d._id} value={d._id}>
-                                    {d.MaNVL} - {d.TenNguyenVatLieu} (
-                                    {d.TonKho || 0} {d.DonViTinh})
-                                  </option>
-                                ))}
+                                <option key={d._id} value={d._id}>
+                                  {d.MaNVL} - {d.TenNguyenVatLieu} (
+                                  {d.TonKho || 0} {d.DonViTinh})
+                                </option>
+                              ))}
                           </select>
                         </div>
                         {nxForm.LoaiHang === "SAN_PHAM" && (
@@ -2177,11 +2345,10 @@ export default function QLKhoPage() {
                                                 handleNXItemChange(idx, "MaMau", c.code);
                                                 setOpenColorDropdownIdx(null);
                                               }}
-                                              className={`flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-all border-b border-slate-50/50 last:border-b-0 ${
-                                                isSelected 
-                                                  ? "bg-blue-50/70 border-blue-100/50 hover:bg-blue-50" 
+                                              className={`flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-all border-b border-slate-50/50 last:border-b-0 ${isSelected
+                                                  ? "bg-blue-50/70 border-blue-100/50 hover:bg-blue-50"
                                                   : "hover:bg-slate-50"
-                                              }`}
+                                                }`}
                                             >
                                               {currentSpColor?.HinhAnh ? (
                                                 <img
@@ -2551,7 +2718,7 @@ export default function QLKhoPage() {
                   </h3>
 
                   {selectedPaintProduct.DanhSachMaMau &&
-                  selectedPaintProduct.DanhSachMaMau.length > 0 ? (
+                    selectedPaintProduct.DanhSachMaMau.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {selectedPaintProduct.DanhSachMaMau.map((mau, mIdx) => (
                         <div

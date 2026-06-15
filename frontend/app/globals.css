@@ -61,3 +61,23 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #po-print-area, #po-print-area * {
+    visibility: visible;
+  }
+  #po-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+  }
+  .print-only {
+    display: block !important;
+  }
+}

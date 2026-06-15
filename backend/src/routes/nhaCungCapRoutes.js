@@ -12,7 +12,7 @@ const {
   createMyMaterial, 
   updateMyMaterial 
 } = require('../controllers/nhaCungCapController');
-const { getBySupplier: getPOBySupplier, create: createPO } = require('../controllers/phieuDatHangController');
+const { getBySupplier: getPOBySupplier, create: createPO, getAll: getAllPO } = require('../controllers/phieuDatHangController');
 const { getReceiptsBySupplier } = require('../controllers/khoController');
 
 const router = express.Router();
@@ -44,5 +44,8 @@ router.route('/:id')
 router.get('/:supplierId/vouchers/po', getPOBySupplier);
 router.get('/:supplierId/vouchers/receipts', getReceiptsBySupplier);
 router.post('/:supplierId/vouchers/po', createPO);
+
+// Lấy tất cả PO
+router.get('/vouchers/po/all', getAllPO);
 
 module.exports = router;

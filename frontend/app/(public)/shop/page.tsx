@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -18,6 +21,11 @@ import {
   MapPin,
   Phone,
   Mail,
+  ShieldCheck,
+  Truck,
+  HeartHandshake,
+  AlertCircle,
+  X
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -85,9 +93,7 @@ export default function ShopPage() {
     });
   };
 
-  const handleOpenPolicy = (type: string) => {
-    alert("Vui lòng xem chính sách chi tiết tại trang chủ VTSC.");
-  };
+
 
   const handleQuantityChange = (
     id: string,
@@ -186,38 +192,40 @@ export default function ShopPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-slate-50 font-sans relative pb-20 text-slate-900">
+      <div
+        className="min-h-screen bg-transparent font-sans relative pb-20 text-white"
+        style={{
+          backgroundImage: 'url("/login-illustration.png")',
+          backgroundSize: 'cover',
+          backgroundAttachment: 'fixed',
+          backgroundPosition: 'center',
+        }}
+      >
         {/* Header Space for floating effect */}
         <div className="pt-24 px-4 sm:px-8 max-w-[1500px] mx-auto">
+
           {/* Navigation Back & Cart */}
           <div className="mb-6 flex justify-between items-center">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-white rounded-lg font-bold text-slate-600 shadow-sm border border-slate-200 hover:bg-slate-50 hover:text-blue-600 transition-all no-underline"
-            >
+            <Link href="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-lg font-bold text-blue-400 shadow-sm border border-white/20 hover:bg-white/20 hover:text-blue-300 transition-all no-underline">
               ← Quay lại trang chủ
             </Link>
-            <Link
-              href="/cart"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 rounded-lg font-bold text-white shadow-lg hover:bg-blue-700 transition-all no-underline"
-            >
+            <Link href="/cart" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 rounded-lg font-bold text-white shadow-lg hover:bg-blue-500 transition-all no-underline">
               <ShoppingCart size={20} />
-              <span>
-                Giỏ hàng {cartItems?.length > 0 && `(${cartItems.length})`}
-              </span>
+              <span> {cartItems?.length > 0 && `(${cartItems.length})`}</span>
             </Link>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8 min-h-[80vh] flex flex-col md:flex-row gap-10">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-6 sm:p-8 min-h-[80vh] flex flex-col md:flex-row gap-10">
+
             {/* Sidebar */}
-            <aside className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-slate-100 pb-8 md:pb-0 md:pr-8">
-              <h2 className="text-xl font-bold text-slate-900 mb-6 uppercase tracking-wider flex items-center gap-2">
-                <Filter size={20} className="text-blue-600" /> Danh mục
+            <aside className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-white/10 pb-8 md:pb-0 md:pr-8">
+              <h2 className="text-xl font-bold text-white mb-6 uppercase tracking-wider flex items-center gap-2">
+                <Filter size={20} className="text-blue-400" /> Danh mục
               </h2>
               <div className="space-y-2 flex flex-row md:flex-col overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-none">
                 <button
                   onClick={() => setSelectedCategory(null)}
-                  className={`flex-shrink-0 w-auto md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm transition-all border border-transparent ${!selectedCategory ? "bg-blue-50 text-blue-600" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
+                  className={`flex-shrink-0 w-auto md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm transition-all border border-transparent ${!selectedCategory ? 'bg-blue-600 text-white shadow-lg border-blue-500/50' : 'text-slate-300 hover:bg-white/5 hover:border-white/10'}`}
                 >
                   Tất cả sản phẩm
                 </button>
@@ -225,7 +233,7 @@ export default function ShopPage() {
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`flex-shrink-0 w-auto md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm transition-all border border-transparent ${selectedCategory === cat ? "bg-blue-50 text-blue-600" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
+                    className={`flex-shrink-0 w-auto md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm transition-all border border-transparent ${selectedCategory === cat ? 'bg-blue-600 text-white shadow-lg border-blue-500/50' : 'text-slate-300 hover:bg-white/5 hover:border-white/10'}`}
                   >
                     {cat}
                   </button>
@@ -235,11 +243,9 @@ export default function ShopPage() {
 
             {/* Main Content */}
             <div className="flex-1">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-slate-100 gap-4">
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 uppercase tracking-tight">
-                  SẢN PHẨM NỔI BẬT
-                </h1>
-                <div className="text-sm font-bold text-slate-500 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-white/10 gap-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-blue-400 uppercase tracking-tight">SẢN PHẨM NỔI BẬT</h1>
+                <div className="text-sm font-bold text-slate-300 bg-white/10 px-4 py-2 rounded-xl">
                   Hiển thị {filteredProducts.length} sản phẩm
                 </div>
               </div>
@@ -250,40 +256,28 @@ export default function ShopPage() {
                 </div>
               ) : filteredProducts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                  <Package
-                    size={64}
-                    className="mb-4 text-slate-300 opacity-100"
-                  />
-                  <p className="text-lg font-bold text-slate-500">
-                    Không tìm thấy sản phẩm nào
-                  </p>
+                  <Package size={64} className="mb-4 opacity-50" />
+                  <p className="text-lg font-bold">Không tìm thấy sản phẩm nào</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {filteredProducts.map((sp) => (
-                    <div
-                      key={sp._id}
-                      className="bg-white rounded-3xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 group flex flex-col h-full hover:-translate-y-2"
-                    >
+                    <div key={sp._id} className="bg-slate-800/60 rounded-xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 border border-white/10 group flex flex-col h-full">
                       <div
-                        className="relative aspect-square w-full rounded-2xl overflow-hidden mb-5 bg-slate-50 cursor-pointer"
+                        className="relative aspect-square w-full rounded-lg overflow-hidden mb-4 bg-slate-900/50 cursor-pointer"
                         onClick={() => setSelectedProduct(sp)}
                       >
                         <ProductImageCarousel product={sp} />
                         <div className="absolute top-3 left-3">
-                          <span
-                            className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm ${sp.TongTonKho > 0 ? "bg-emerald-500 text-white" : "bg-red-500 text-white"}`}
-                          >
-                            {sp.TongTonKho > 0 ? "Còn hàng" : "Hết hàng"}
+                          <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm ${sp.TongTonKho > 0 ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
+                            {sp.TongTonKho > 0 ? 'Còn hàng' : 'Hết hàng'}
                           </span>
                         </div>
                       </div>
                       <div className="flex flex-col flex-1 px-1">
-                        <div className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">
-                          {sp.PhanLoai}
-                        </div>
+                        <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">{sp.PhanLoai}</div>
                         <h3
-                          className="font-bold text-slate-900 text-lg mb-1 line-clamp-1 hover:text-blue-600 transition-colors cursor-pointer"
+                          className="font-bold text-white text-base mb-1 line-clamp-1 hover:text-blue-400 transition-colors cursor-pointer"
                           onClick={() => setSelectedProduct(sp)}
                         >
                           {sp.TenDongSon}
@@ -291,50 +285,24 @@ export default function ShopPage() {
                         {/* Bắt đầu phần Rating */}
                         {(() => {
                           const ratings = sp.DanhGia || [];
-                          const avgRating =
-                            ratings.length > 0
-                              ? Number(
-                                  (
-                                    ratings.reduce(
-                                      (acc: number, r: any) =>
-                                        acc + (r.SoSao || 0),
-                                      0,
-                                    ) / ratings.length
-                                  ).toFixed(1),
-                                )
-                              : 0;
+                          const avgRating = ratings.length > 0 ? Number((ratings.reduce((acc: number, r: any) => acc + (r.SoSao || 0), 0) / ratings.length).toFixed(1)) : 0;
                           return (
                             <div className="flex items-center gap-1 mb-2">
-                              <Star
-                                size={14}
-                                className={
-                                  avgRating > 0
-                                    ? "text-amber-400 fill-amber-400"
-                                    : "text-slate-300"
-                                }
-                              />
-                              <span className="text-[11px] text-slate-500 font-bold">
-                                {avgRating > 0
-                                  ? `${avgRating} (${ratings.length} đánh giá)`
-                                  : "Chưa có đánh giá"}
-                              </span>
+                              <Star size={14} className={avgRating > 0 ? "text-amber-400 fill-amber-400" : "text-slate-600"} />
+                              <span className="text-[11px] text-slate-300 font-bold">{avgRating > 0 ? `${avgRating} (${ratings.length} đánh giá)` : "Chưa có đánh giá"}</span>
                             </div>
                           );
                         })()}
                         <p className="text-[11px] text-slate-400 font-bold mb-1 uppercase tracking-widest mt-1">
                           {sp.ThuongHieu}
                         </p>
-                        <p className="text-[12px] text-slate-500 font-medium mb-4">
-                          Tồn kho:{" "}
-                          <span className="font-bold text-slate-700">
-                            {sp.TongTonKho}
-                          </span>{" "}
-                          {sp.DonViTinh || "Thùng"}
+                        <p className="text-[12px] text-slate-300 font-medium mb-4">
+                          Tồn kho: <span className="font-bold text-white">{sp.TongTonKho}</span> {sp.DonViTinh || "Thùng"}
                         </p>
                         <div className="mt-auto">
                           <div className="flex justify-between items-end mb-3">
                             <div className="flex flex-col">
-                              <span className="text-emerald-600 font-bold text-xl">
+                              <span className="text-emerald-400 font-bold text-xl">
                                 {sp.DonGiaCoSo?.toLocaleString() || 0} ₫
                               </span>
                               <span className="text-xs text-slate-400 font-medium">
@@ -342,27 +310,41 @@ export default function ShopPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="flex justify-center mt-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center bg-slate-900/50 rounded-lg p-1 h-10 border border-white/5">
+                              <button
+                                onClick={() => updateQuantity(sp._id, -1, sp.TongTonKho)}
+                                className="w-8 h-full flex items-center justify-center text-slate-300 hover:bg-white/10 hover:shadow-sm rounded-md transition-all font-bold cursor-pointer"
+                              >
+                                -
+                              </button>
+                              <input
+                                type="number"
+                                min="1"
+                                value={productQuantities[sp._id] || 1}
+                                onChange={(e) => handleQuantityChange(sp._id, e.target.value, sp.TongTonKho)}
+                                onBlur={() => handleQuantityBlur(sp._id)}
+                                className="w-8 text-center bg-transparent border-none text-sm font-bold text-white outline-none appearance-none"
+                              />
+                              <button
+                                onClick={() => updateQuantity(sp._id, 1, sp.TongTonKho)}
+                                className="w-8 h-full flex items-center justify-center text-slate-300 hover:bg-white/10 hover:shadow-sm rounded-md transition-all font-bold cursor-pointer"
+                              >
+                                +
+                              </button>
+                            </div>
                             <button
-                              onClick={() =>
-                                sp.DanhSachMaMau?.length > 0
-                                  ? setSelectedProduct(sp)
-                                  : addToCart(sp)
-                              }
+                              onClick={() => (sp.DanhSachMaMau?.length > 0 ? setSelectedProduct(sp) : addToCart(sp))}
                               disabled={cartLoading === sp._id}
-                              className={`w-full h-11 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500 text-white" : "bg-red-500 text-white text-[10px]") : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
+                              className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500 text-white" : "bg-red-500 text-white text-[10px]") : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
                             >
                               {cartLoading === sp._id ? (
                                 <Loader2 size={16} className="animate-spin" />
                               ) : cartMessage.id === sp._id ? (
-                                cartMessage.text === "Đã thêm vào giỏ!" ? (
-                                  <ShoppingCart size={16} />
-                                ) : (
-                                  <span>{cartMessage.text}</span>
-                                )
+                                cartMessage.text === "Đã thêm vào giỏ!" ? <ShoppingCart size={16} /> : <span>{cartMessage.text}</span>
                               ) : (
                                 <>
-                                  <ShoppingCart size={16} /> Thêm vào giỏ hàng
+                                  <Plus size={16} /> Thêm
                                 </>
                               )}
                             </button>
@@ -381,13 +363,9 @@ export default function ShopPage() {
           product={selectedProduct}
           isOpen={!!selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onAddToCart={async (sp, qty, colorCode) => {
-            setProductQuantities((prev) => ({ ...prev, [sp._id]: qty }));
-            const success = await addToCart(sp, colorCode);
-            if (success) {
-              setSelectedProduct(null);
-              router.push("/cart");
-            }
+          onAddToCart={(sp, qty, colorCode) => {
+            handleQuantityChange(sp._id, qty.toString(), sp.TongTonKho);
+            addToCart(sp, colorCode);
           }}
           cartLoading={cartLoading}
         />
@@ -410,11 +388,7 @@ export default function ShopPage() {
             <div className="lg:col-span-5">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-[200px] h-[68px] flex-shrink-0 rounded-[16px] bg-white flex items-center justify-center shadow-lg shadow-black/20 overflow-hidden px-4">
-                  <img
-                    src="/vtsc.png"
-                    alt="VTSC Logo"
-                    className="w-full h-full object-contain"
-                  />
+                  <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
                 </div>
                 <span className="font-bold text-xl tracking-tight uppercase text-white">
                   CÔNG TY CP TMDV VOSCO (VTSC)
@@ -427,11 +401,11 @@ export default function ShopPage() {
                 />
                 <ContactItem
                   icon={<Phone size={20} className="text-blue-400" />}
-                  text="0225.3842.160 - 0225.3747.226"
+                  text="+84 (028) 3888 9999"
                 />
                 <ContactItem
                   icon={<Mail size={20} className="text-blue-400" />}
-                  text="vtsc@vtschp.vn"
+                  text="contact@vtscpaint.com"
                 />
               </div>
               <div className="flex gap-4 mt-10">
@@ -448,28 +422,36 @@ export default function ShopPage() {
               </h4>
               <ul className="space-y-4 text-slate-300 font-medium text-sm">
                 <li>
-                  <button
-                    onClick={() => handleOpenPolicy("return")}
-                    className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left"
+                  <Link
+                    href="/policies?type=return"
+                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
                   >
                     - Chính sách đổi trả
-                  </button>
+                  </Link>
                 </li>
                 <li>
-                  <button
-                    onClick={() => handleOpenPolicy("warranty")}
-                    className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left"
+                  <Link
+                    href="/policies?type=warranty"
+                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
                   >
                     - Chính sách bảo hành
-                  </button>
+                  </Link>
                 </li>
                 <li>
-                  <button
-                    onClick={() => handleOpenPolicy("shipping")}
-                    className="hover:text-blue-400 transition-colors text-slate-300 bg-transparent border-none p-0 cursor-pointer text-left"
+                  <Link
+                    href="/policies?type=shipping"
+                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
                   >
                     - Chính sách vận chuyển
-                  </button>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/policies?type=aftersale"
+                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
+                  >
+                    - Chính sách hậu mãi
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -490,7 +472,7 @@ export default function ShopPage() {
                 </li>
                 <li>
                   <Link
-                    href="/hop-dong-pha-che"
+                    href="/admin/contracts"
                     className="hover:text-blue-400 transition-colors no-underline text-slate-300"
                   >
                     - Tra cứu hợp đồng
@@ -498,7 +480,7 @@ export default function ShopPage() {
                 </li>
                 <li>
                   <Link
-                    href="/rd-tracking"
+                    href="/admin/rd-tracking"
                     className="hover:text-blue-400 transition-colors no-underline text-slate-300"
                   >
                     - Gửi yêu cầu R&D
@@ -527,6 +509,8 @@ export default function ShopPage() {
           </div>
         </div>
       </footer>
+
+
     </>
   );
 }

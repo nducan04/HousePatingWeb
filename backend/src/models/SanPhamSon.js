@@ -39,7 +39,7 @@ const sanPhamSonSchema = new mongoose.Schema({
   DonViTinh: { 
     type: String, 
     enum: {
-      values: ['Thùng', 'Thùng'],
+      values: ['Thùng', 'Kg', 'Lít', 'Hộp'],
       message: 'Đơn vị tính không hợp lệ'
     }, 
     default: 'Thùng' 

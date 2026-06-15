@@ -50,7 +50,8 @@ export default function CustomerLiveChat() {
     }
 
     if (!socket && activeSession) {
-      const newSocket = io('http://localhost:5000');
+      const socketUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5000';
+      const newSocket = io(socketUrl);
       setSocket(newSocket);
       newSocket.emit('join_chat', activeSession._id);
 

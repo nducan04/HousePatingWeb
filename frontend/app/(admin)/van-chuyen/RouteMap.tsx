@@ -17,6 +17,10 @@ async function geocode(address: string): Promise<[number, number] | null> {
     // Exact GPS coordinates for VOSCO Headquarters (215 Lạch Tray, Gia Viên, Ngô Quyền, Hải Phòng)
     return [20.8369, 106.6960];
   }
+  if (address.toLowerCase().includes("484 lạch tray")) {
+    // Tòa nhà VTSC / Khách hàng (484 Lạch Tray, Lê Chân, Hải Phòng)
+    return [20.8295, 106.6948];
+  }
   try {
     const res = await fetch(`/api/geocode?q=${encodeURIComponent(address)}&limit=1`);
     const data = await res.json();

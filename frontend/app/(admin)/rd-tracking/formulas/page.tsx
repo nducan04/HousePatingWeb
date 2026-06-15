@@ -24,6 +24,8 @@ export default function FormulasPage() {
     SanPham: '',
     nhietDo: '195', 
     baseType: '',   
+    SanLuongDuKien: 20,
+    DonVi: 'Lít',
     components: [{ materialId: '', percentage: 0, requiredAmount: 0 }]
   });
 
@@ -115,6 +117,8 @@ export default function FormulasPage() {
           TiLe: parseFloat(c.percentage as any),
           KhoiLuongDinhMuc: parseFloat(c.requiredAmount as any)
         })),
+        SanLuongDuKien: parseFloat(newFormula.SanLuongDuKien as any),
+        DonVi: newFormula.DonVi,
         GhiChu: `Base Type: ${newFormula.baseType}, Nhiệt độ: ${newFormula.nhietDo}`
       };
 
@@ -129,6 +133,8 @@ export default function FormulasPage() {
           SanPham: '',
           nhietDo: '195',
           baseType: '',
+          SanLuongDuKien: 20,
+          DonVi: 'Lít',
           components: [{ materialId: '', percentage: 0, requiredAmount: 0 }]
         });
         fetchData();
@@ -339,6 +345,32 @@ export default function FormulasPage() {
                     value={newFormula.TenCongThuc}
                     onChange={e => setNewFormula(p => ({ ...p, TenCongThuc: e.target.value }))}
                   />
+                </div>
+
+                <div className="space-y-1.5 lg:col-span-2">
+                  <label className="text-[13px] font-bold text-slate-500">Sản lượng dự kiến</label>
+                  <input
+                    type="number"
+                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
+                    required
+                    min="0.1"
+                    step="0.1"
+                    value={newFormula.SanLuongDuKien}
+                    onChange={e => setNewFormula(p => ({ ...p, SanLuongDuKien: e.target.value as any }))}
+                  />
+                </div>
+
+                <div className="space-y-1.5 lg:col-span-2">
+                  <label className="text-[13px] font-bold text-slate-500">Đơn vị</label>
+                  <select
+                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
+                    required
+                    value={newFormula.DonVi}
+                    onChange={e => setNewFormula(p => ({ ...p, DonVi: e.target.value }))}
+                  >
+                    <option value="Lít">Lít</option>
+                    <option value="Kg">Kg</option>
+                  </select>
                 </div>
               </div>
 

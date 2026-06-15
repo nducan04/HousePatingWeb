@@ -22,7 +22,8 @@ export default function AdminChatSession({ preselectedCustomerId }: { preselecte
   // Setup Socket
   useEffect(() => {
     if (!user) return;
-    const newSocket = io('http://localhost:5000');
+    const socketUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5000';
+    const newSocket = io(socketUrl);
     setSocket(newSocket);
 
     newSocket.on('receive_message', (msg: any) => {
