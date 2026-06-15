@@ -67,7 +67,7 @@ export default function CreateContractPage() {
       setCustomHex('');
       return;
     }
-    
+
     // Check if it's already in the standard palette
     const existing = paintColors.find(c => c.code.toLowerCase() === colorInput.toLowerCase() || c.name.toLowerCase() === colorInput.toLowerCase());
     if (existing) {
@@ -112,7 +112,7 @@ export default function CreateContractPage() {
   useEffect(() => {
     api.get('/customers').then(res => {
       if (res.data.success) setCustomers(res.data.data);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   // Auto-fill clientAddress when customer selected
@@ -162,7 +162,8 @@ export default function CreateContractPage() {
         penalty: termsPenalty,
         duration: termsDuration
       },
-      chiTietHopDong: details
+      chiTietHopDong: details,
+      contractType: 'pha-che'
     };
 
     const result = await createContract(data);
@@ -259,7 +260,7 @@ export default function CreateContractPage() {
               <label className="form-label">Thời hạn hợp đồng</label>
               <input className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" value={termsDuration} onChange={e => setTermsDuration(e.target.value)} placeholder="12 tháng (01/2024 — 12/2024)" />
             </div>
-            
+
             {/* Color Selection */}
             <div className="form-group col-span-1 md:col-span-2">
               <label className="form-label">Tạo hợp đồng pha chế sơn theo mẫu *</label>
@@ -283,17 +284,17 @@ export default function CreateContractPage() {
                     ) : (
                       <div className="relative overflow-hidden w-6 h-6 rounded-full border border-slate-200 shadow-sm shrink-0 cursor-pointer hover:scale-110 transition-transform">
                         <input
-                           type="color"
-                           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 cursor-pointer opacity-0"
-                           value={paintColors.find(c => c.code === targetColorCode)?.hex || customHex || '#e2e8f0'}
-                           onChange={(e) => {
-                             const hex = e.target.value;
-                             setCustomHex(hex);
-                             setTargetColorCode(hex);
-                             setTargetColorName(hex);
-                             setIsColorDropdownOpen(false);
-                           }}
-                           title="Chọn màu bằng bảng màu"
+                          type="color"
+                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 cursor-pointer opacity-0"
+                          value={paintColors.find(c => c.code === targetColorCode)?.hex || customHex || '#e2e8f0'}
+                          onChange={(e) => {
+                            const hex = e.target.value;
+                            setCustomHex(hex);
+                            setTargetColorCode(hex);
+                            setTargetColorName(hex);
+                            setIsColorDropdownOpen(false);
+                          }}
+                          title="Chọn màu bằng bảng màu"
                         />
                         <div
                           className="w-full h-full pointer-events-none"
@@ -302,8 +303,8 @@ export default function CreateContractPage() {
                       </div>
                     )}
                   </div>
-                  <div 
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer" 
+                  <div
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer"
                     onClick={() => setIsColorDropdownOpen(!isColorDropdownOpen)}
                   >
                     <ChevronDown size={16} />
@@ -331,23 +332,23 @@ export default function CreateContractPage() {
                           </div>
                         </div>
                       ))}
-                      {targetColorCode.length > 0 && !paintColors.some(c => c.code.toLowerCase() === targetColorCode.toLowerCase()) && (
-                          <div 
-                            className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors border-t border-slate-100"
-                            onClick={() => {
-                              setTargetColorName(targetColorCode); // use code as name initially
-                              setIsColorDropdownOpen(false);
-                            }}
-                          >
-                            <div className="w-6 h-6 rounded-full border border-dashed border-slate-300 flex items-center justify-center shrink-0">
-                              <Plus size={12} className="text-slate-400" />
-                            </div>
-                            <div>
-                              <div className="text-sm font-bold text-blue-600">Sử dụng màu tùy chỉnh mới</div>
-                              <div className="text-xs text-slate-500">Mã màu: {targetColorCode}</div>
-                            </div>
-                          </div>
-                      )}
+                    {targetColorCode.length > 0 && !paintColors.some(c => c.code.toLowerCase() === targetColorCode.toLowerCase()) && (
+                      <div
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors border-t border-slate-100"
+                        onClick={() => {
+                          setTargetColorName(targetColorCode); // use code as name initially
+                          setIsColorDropdownOpen(false);
+                        }}
+                      >
+                        <div className="w-6 h-6 rounded-full border border-dashed border-slate-300 flex items-center justify-center shrink-0">
+                          <Plus size={12} className="text-slate-400" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-blue-600">Sử dụng màu tùy chỉnh mới</div>
+                          <div className="text-xs text-slate-500">Mã màu: {targetColorCode}</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
