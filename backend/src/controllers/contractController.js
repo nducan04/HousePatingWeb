@@ -13,6 +13,7 @@ async function autoCreateDownstreamData(contract) {
     const NhanVien = require('../models/NhanVien');
     const SanPhamSon = require('../models/SanPhamSon');
     const NhatKyTestMau = require('../models/NhatKyTestMau');
+    const RDTracking = require('../models/RdTracking');
     
     const isPhaChe = contract.contractType === 'pha-che';
     
@@ -116,14 +117,25 @@ async function autoCreateDownstreamData(contract) {
       }
 
       if (isPhaChe) {
-        const existingRD = await NhatKyTestMau.findOne({ ContractID: contract._id });
-        if (!existingRD) {
+        const existingRDTracking = await RDTracking.findOne({ ContractID: contract._id });
+        if (!existingRDTracking) {
           for (let i = 0; i < contract.ChiTietHopDong.length; i++) {
             const item = contract.ChiTietHopDong[i];
-            const count = await NhatKyTestMau.countDocuments();
-            const MaNhatKy = `RD-${new Date().getFullYear() % 100}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(count + i + 1).padStart(2, '0')}`;
-            await NhatKyTestMau.create({
+            const prefix = 'RD';
+            const count = await RDTracking.countDocuments({ MaNhatKy: { $regex: `^${prefix}` } });
+            const MaNhatKy = `${prefix}-${new Date().getFullYear() % 100}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(count + i + 1).padStart(3, '0')}`;
+            
+            const rdTracking = await RDTracking.create({
               MaNhatKy,
+              ContractID: contract._id,
+              MaMauYeuCau: item.colorCode || 'CustomColor',
+              TrangThai: 'testing',
+              customerName: contract.title,
+            });
+
+            await NhatKyTestMau.create({
+              MaNhatKy: `TEST-${Date.now()}-${i}`,
+              RDTrackingID: rdTracking._id,
               ContractID: contract._id,
               MaMauYeuCau: item.colorCode || 'CustomColor',
               TrangThai: 'testing',

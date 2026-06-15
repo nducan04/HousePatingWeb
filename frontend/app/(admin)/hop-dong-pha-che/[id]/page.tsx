@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Wallet, PenTool, ExternalLink, Shield, Clock,
   CheckCircle2, FileText, Upload, Loader2, Package, AlertTriangle
@@ -84,6 +85,11 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
       } else {
         if (!contract.clientAddress && missingClientAddress) {
           await fetchContractById(id);
+      if (contract?.contractType === 'pha-che') {
+        setTimeout(() => {
+          router.push('/rd-tracking');
+        }, 1500);
+      }
         }
       }
     } catch (err: any) {
