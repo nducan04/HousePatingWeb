@@ -221,6 +221,7 @@ interface Order {
     MaNV: string;
     HoTen: string;
   };
+  SDTNguoiNhan?: string;
 }
 
 interface KhuyenMai {
@@ -3041,7 +3042,13 @@ export default function OrderManagementPage() {
                   <div className="flex justify-between">
                     <span className="text-slate-400">Số điện thoại:</span>
                     <span className="text-slate-800">
-                      {selectedOrder.KhachHang?.SDT || "-"}
+                      {selectedOrder.SDTNguoiNhan || selectedOrder.KhachHang?.SDT || "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-start gap-4">
+                    <span className="text-slate-400 whitespace-nowrap">Địa chỉ:</span>
+                    <span className="text-slate-800 text-right leading-snug">
+                      {selectedOrder.DiaChiGiaoHang || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -3053,12 +3060,6 @@ export default function OrderManagementPage() {
                         0,
                       )}{" "}
                       thùng)
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Diện tích sơn:</span>
-                    <span className="font-bold text-amber-600">
-                      {selectedOrder.TongDienTichSon || 0} m2
                     </span>
                   </div>
                   <div className="flex flex-col gap-1 mt-3 pt-3 border-t border-slate-100">
@@ -3297,78 +3298,20 @@ export default function OrderManagementPage() {
 
             {/* Timeline / Action Section */}
             <div className="space-y-3.5">
-              <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-lg">
-                <Calendar size={18} className="text-blue-500" />
-                <div className="flex-1 text-sm font-medium text-slate-700">
-                  <span className="text-slate-400">
-                    [
-                    {new Date(selectedOrder.createdAt).toLocaleDateString()}
-                    ]
-                  </span>{" "}
-                  Đã đặt cọc đơn hàng{" "}
-                  <span className="font-bold text-emerald-600">
-                    [{(selectedOrder.DaCoc || 0).toLocaleString()}đ]
-                  </span>
-                </div>
-                <button
-                  onClick={handleDownloadPhieuCoc}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    color: "#2563eb",
-                  }}
-                >
-                  <FileCheck size={14} /> In Phiếu Cọc (Word)
-                </button>
-              </div>
+              <button
+                onClick={handleDownloadPhieuCoc}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 cursor-pointer border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700"
+              >
+                <FileCheck size={14} /> In Phiếu Cọc (Word)
+              </button>
 
-              <div className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-lg">
-                <FileText size={18} className="text-purple-500" />
-                <div className="flex-1 text-sm font-medium text-slate-700">
-                  <span className="text-slate-400">
-                    [{new Date().toLocaleDateString()}]
-                  </span>{" "}
-                  Tiến độ sản xuất & Vận chuyển hàng hóa
-                </div>
-                {selectedOrder.TrangThai === "CHO_XAC_NHAN" && (
-                  <button
-                    onClick={() => {
-                      if ((selectedOrder.DaCoc || 0) <= 0) {
-                        alert(
-                          "Vui lòng cập nhật tiền cọc TRƯỚC khi bắt đầu sản xuất để đảm bảo quy trình tài chính.",
-                        );
-                        return;
-                      }
-                      handleUpdateStatus(selectedOrder._id, "DANG_XU_LY");
-                    }}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                    style={{
-                      background:
-                        (selectedOrder.DaCoc || 0) <= 0
-                          ? "#94a3b8"
-                          : "var(--accent-primary)",
-                      opacity: (selectedOrder.DaCoc || 0) <= 0 ? 0.7 : 1,
-                    }}
-                  >
-                    Bắt đầu sản xuất
-                  </button>
-                )}
-                <button
-                  onClick={handleDownloadHoaDonGTGT}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all duration-200 cursor-pointer border-none no-underline bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 px-3 py-1.5 rounded-lg text-xs"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    color: "#059669",
-                  }}
-                  disabled={isPrinting}
-                >
-                  <Printer size={14} /> In Hóa Đơn GTGT
-                </button>
-              </div>
+              <button
+                onClick={handleDownloadHoaDonGTGT}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 cursor-pointer border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
+                disabled={isPrinting}
+              >
+                <Printer size={14} /> In Hóa Đơn GTGT
+              </button>
             </div>
 
             {/* Status Control Buttons */}
@@ -4211,11 +4154,7 @@ export default function OrderManagementPage() {
               </div>
             </div>
 
-            <p className="text-[10px] text-slate-400 leading-relaxed italic">
-              * Cập nhật số tiền đặt cọc là điều kiện bắt buộc để hệ thống
-              xác nhận hóa đơn và hiển thị nút lệnh{" "}
-              <strong>Bắt đầu sản xuất</strong>.
-            </p>
+
 
             <div className="flex gap-3 pt-4 border-t border-slate-50">
               <button
