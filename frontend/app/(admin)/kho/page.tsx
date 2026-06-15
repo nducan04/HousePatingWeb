@@ -254,6 +254,7 @@ export default function QLKhoPage() {
             MoTa: "Nhập nguyên vật liệu bổ sung cho mẻ test R&D",
             GhiChu: "",
             NhaCungCapID: "",
+            PhieuDatHangID: "",
           });
           setNxItems(itemsToPrefill);
           setIsNXModal(true);

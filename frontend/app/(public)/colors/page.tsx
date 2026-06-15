@@ -413,7 +413,6 @@ export default function ColorsPage() {
             <button
               onClick={() => {
                 setIsLoginOpen(false);
-                setIsRegisterMode(false);
               }}
               className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-all cursor-pointer border-none"
             >
@@ -423,9 +422,7 @@ export default function ColorsPage() {
             <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">
               {isForgotMode
                 ? "Đặt Lại Mật Khẩu"
-                : isRegisterMode
-                  ? "Đăng Ký Tài Khoản"
-                  : "Chào Mừng Trở Lại"}
+                : "Chào Mừng Trở Lại"}
             </h2>
 
             {isForgotMode ? (
