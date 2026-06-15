@@ -604,6 +604,29 @@ export default function SanPhamPage() {
     return resolveImageUrl(path);
   };
 
+  console.log('--- DEBUG COMPONENTS ---');
+  console.log('Plus:', !!Plus);
+  console.log('Search:', !!Search);
+  console.log('Edit:', !!Edit);
+  console.log('Trash2:', !!Trash2);
+  console.log('Package:', !!Package);
+  console.log('QrCodeIcon:', !!QrCodeIcon);
+  console.log('Layers:', !!Layers);
+  console.log('Droplet:', !!Droplet);
+  console.log('Box:', !!Box);
+  console.log('ChevronLeft:', !!ChevronLeft);
+  console.log('ChevronRight:', !!ChevronRight);
+  console.log('QrCode:', !!QrCode);
+  console.log('FileText:', !!FileText);
+  console.log('Download:', !!Download);
+  console.log('Eye:', !!Eye);
+  console.log('ImageIcon:', !!ImageIcon);
+  console.log('X:', !!X);
+  console.log('Upload:', !!Upload);
+  console.log('QRCodeCanvas:', !!QRCodeCanvas);
+  console.log('IPFSImage:', !!IPFSImage);
+  console.log('-------------------------');
+
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-sans text-slate-900 space-y-6">
       {/* 1. KPI Cards */}
