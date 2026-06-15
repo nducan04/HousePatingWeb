@@ -16,6 +16,7 @@ exports.getAllFinancialRecords = async (req, res) => {
             .map(o => {
                 const total = o.TongTien || 0;
                 const paid = o.TrangThaiThanhToan === 'DA_THANH_TOAN' ? total : 0;
+                const isCancelled = o.TrangThai === 'DA_HUY' || o.TrangThaiThanhToan === 'DA_HUY';
                 return {
                     _id: o._id,
                     type: 'ORDER',
@@ -27,7 +28,7 @@ exports.getAllFinancialRecords = async (req, res) => {
                     } : { name: 'Khách lẻ', code: 'KL' },
                     totalAmount: total,
                     paidAmount: paid,
-                    debtAmount: total - paid,
+                    debtAmount: isCancelled ? 0 : (total - paid),
                     status: o.TrangThaiThanhToan,
                     orderStatus: o.TrangThai,
                     date: o.createdAt
@@ -38,6 +39,7 @@ exports.getAllFinancialRecords = async (req, res) => {
         const normalizedContracts = contracts.map(c => {
             const total = c.TongGiaTri || 0;
             const paid = c.DaThanhToan || 0;
+            const isCancelled = c.TrangThai === 'cancelled';
             return {
                 _id: c._id,
                 type: 'CONTRACT',
@@ -49,7 +51,7 @@ exports.getAllFinancialRecords = async (req, res) => {
                 } : null,
                 totalAmount: total,
                 paidAmount: paid,
-                debtAmount: total - paid,
+                debtAmount: isCancelled ? 0 : (total - paid),
                 status: c.TrangThai === 'completed' ? 'DA_THANH_TOAN' : (paid > 0 ? 'CALLED_PARTIAL' : 'CHUA_THANH_TOAN'),
                 contractStatus: c.TrangThai,
                 date: c.createdAt
@@ -95,14 +97,16 @@ exports.getMyFinancialRecords = async (req, res) => {
             .map(o => {
                 const total = o.TongTien || 0;
                 const paid = o.TrangThaiThanhToan === 'DA_THANH_TOAN' ? total : (o.DaCoc || 0);
+                const isCancelled = o.TrangThai === 'DA_HUY' || o.TrangThaiThanhToan === 'DA_HUY';
                 return {
                     _id: o._id,
                     type: 'ORDER',
                     code: o.MaDonHang,
                     totalAmount: total,
                     paidAmount: paid,
-                    debtAmount: total - paid,
+                    debtAmount: isCancelled ? 0 : (total - paid),
                     status: o.TrangThaiThanhToan,
+                    orderStatus: o.TrangThai,
                     date: o.createdAt
                 };
             });
@@ -111,14 +115,16 @@ exports.getMyFinancialRecords = async (req, res) => {
         const normalizedContracts = contracts.map(c => {
             const total = c.TongGiaTri || 0;
             const paid = c.DaThanhToan || 0;
+            const isCancelled = c.TrangThai === 'cancelled';
             return {
                 _id: c._id,
                 type: 'CONTRACT',
                 code: c.MaHopDong,
                 totalAmount: total,
                 paidAmount: paid,
-                debtAmount: total - paid,
+                debtAmount: isCancelled ? 0 : (total - paid),
                 status: c.TrangThai === 'completed' ? 'DA_THANH_TOAN' : (paid > 0 ? 'CALLED_PARTIAL' : 'CHUA_THANH_TOAN'),
+                contractStatus: c.TrangThai,
                 date: c.createdAt
             };
         });
