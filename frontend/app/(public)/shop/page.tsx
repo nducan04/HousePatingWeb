@@ -311,28 +311,6 @@ export default function ShopPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="flex items-center bg-slate-900/50 rounded-lg p-1 h-10 border border-white/5">
-                              <button
-                                onClick={() => updateQuantity(sp._id, -1, sp.TongTonKho)}
-                                className="w-8 h-full flex items-center justify-center text-slate-300 hover:bg-white/10 hover:shadow-sm rounded-md transition-all font-bold cursor-pointer"
-                              >
-                                -
-                              </button>
-                              <input
-                                type="number"
-                                min="1"
-                                value={productQuantities[sp._id] || 1}
-                                onChange={(e) => handleQuantityChange(sp._id, e.target.value, sp.TongTonKho)}
-                                onBlur={() => handleQuantityBlur(sp._id)}
-                                className="w-8 text-center bg-transparent border-none text-sm font-bold text-white outline-none appearance-none"
-                              />
-                              <button
-                                onClick={() => updateQuantity(sp._id, 1, sp.TongTonKho)}
-                                className="w-8 h-full flex items-center justify-center text-slate-300 hover:bg-white/10 hover:shadow-sm rounded-md transition-all font-bold cursor-pointer"
-                              >
-                                +
-                              </button>
-                            </div>
                             <button
                               onClick={() => (sp.DanhSachMaMau?.length > 0 ? setSelectedProduct(sp) : addToCart(sp))}
                               disabled={cartLoading === sp._id}
