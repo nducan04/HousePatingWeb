@@ -209,7 +209,7 @@ export default function CustomerProductModal({
                         className={`cursor-pointer transition-colors hover:bg-slate-50/80 ${selectedColorCode === c.MaMau ? 'bg-blue-50/80' : ''}`}
                       >
                         <td className="py-3 px-4">
-                          <div className="w-7 h-7 rounded-full shadow-inner border border-slate-300 flex items-center justify-center relative" style={{ backgroundColor: c.HexCode || '#ccc' }}>
+                          <div className="w-7 h-7 rounded-full shadow-inner border border-slate-300 flex items-center justify-center relative" style={{ backgroundColor: paintColors.find((pc) => pc.code === c.MaMau)?.hex || c.HexCode || '#ccc' }}>
                             {selectedColorCode === c.MaMau && (
                               <CheckCircle2 size={16} className="text-white fill-blue-600 drop-shadow-sm absolute" />
                             )}
@@ -259,25 +259,6 @@ export default function CustomerProductModal({
           <div className="mt-auto pt-6 border-t border-slate-100 flex flex-col gap-4">
             {product.TongTonKho > 0 ? (
               <div className="flex gap-4">
-                <div className="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200 w-32 h-12">
-                  <button 
-                    onClick={() => updateQuantity(-1)}
-                    className="w-10 h-full flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded-lg font-bold transition-colors"
-                  >-</button>
-                  <input 
-                    type="number" 
-                    min="1" 
-                    max={product.TongTonKho}
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value) || 1)}
-                    className="w-full text-center bg-transparent border-none text-slate-800 font-bold outline-none"
-                  />
-                  <button 
-                    onClick={() => updateQuantity(1)}
-                    className="w-10 h-full flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded-lg font-bold transition-colors"
-                  >+</button>
-                </div>
-                
                 <button 
                   onClick={handleAddToCart}
                   disabled={cartLoading === product._id}
