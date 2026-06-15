@@ -12,7 +12,7 @@ exports.checkoutFromCart = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, phuongThucThanhToan, ghiChu, selectedItemKeys } = req.body;
+        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, phuongThucThanhToan, ghiChu, selectedItemKeys, tenNguoiNhan, sdtNguoiNhan } = req.body;
 
         // 1. Lấy giỏ hàng
         const cart = await GioHang.findOne({ SessionId: sessionId }).populate('Items.SanPham');
@@ -119,8 +119,8 @@ exports.checkoutFromCart = async (req, res) => {
         const donHang = new DonHang({
             MaDonHang: maDonHang,
             KhachHang: realKhachHangId,
-            TenNguoiNhan: typeof kh !== 'undefined' && kh ? kh.TenKhachHang : '',
-            SDTNguoiNhan: typeof kh !== 'undefined' && kh ? kh.SDT : '',
+            TenNguoiNhan: tenNguoiNhan || (typeof kh !== 'undefined' && kh ? kh.TenKhachHang : ''),
+            SDTNguoiNhan: sdtNguoiNhan || (typeof kh !== 'undefined' && kh ? kh.SDT : ''),
             Items: orderItems,
             TienThue: taxAmount,
             TongTien: totalAmount,

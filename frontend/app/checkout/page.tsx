@@ -266,7 +266,9 @@ export default function CheckoutPage() {
       const res = await api.post("/orders/checkout", {
         sessionId: sessionId,
         khachHangId: user?.profile?._id || null, // Will be guest if not logged in
-        diaChiGiaoHang: `${fullName} - ${phone} - ${address}`,
+        diaChiGiaoHang: address,
+        tenNguoiNhan: fullName,
+        sdtNguoiNhan: phone,
         discountCode: discountInfo?.MaVoucher,
         ghiChu:
           note || `Đơn hàng từ hệ thống web - Phương thức: ${paymentMethod}`,
