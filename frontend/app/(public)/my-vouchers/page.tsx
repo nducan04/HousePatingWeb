@@ -38,7 +38,23 @@ export default function CustomerVouchersPage() {
       let allVouchers: Voucher[] = [];
 
       if (res.data?.success) {
-        allVouchers = res.data.data || [];
+        allVouchers = (res.data.data || []).map((k: any) => {
+          let status = "DANG_DIEN_RA";
+          if (k.TrangThai === 'Đã kết thúc' || new Date(k.NgayKetThuc) < new Date()) {
+            status = "DA_KET_THUC";
+          }
+          
+          return {
+            _id: k._id,
+            MaVoucher: k.MaKhuyenMai,
+            GhiChu: k.TenChuongTrinh,
+            LoaiGiamGia: "PHAN_TRAM",
+            MucGiam: k.PhanTramGiam,
+            SoLuongToiDa: 9999, // Không có giới hạn cứng trong model
+            SoLuongDaDung: k.DanhSachApDung ? k.DanhSachApDung.length : 0,
+            TrangThai: status,
+          };
+        });
       }
 
       // Add gifted vouchers from user profile
