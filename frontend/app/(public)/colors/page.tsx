@@ -62,15 +62,6 @@ export default function ColorsPage() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [registerUsername, setRegisterUsername] = useState("");
-  const [registerFullName, setRegisterFullName] = useState("");
-  const [registerEmail, setRegisterEmail] = useState("");
-  const [registerPassword, setRegisterPassword] = useState("");
-  const [registerRole, setRegisterRole] = useState("KhachHangB2C");
-  const [registerLoading, setRegisterLoading] = useState(false);
-  const [registerError, setRegisterError] = useState<string | null>(null);
-  const [registerSuccess, setRegisterSuccess] = useState(false);
   const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
   // Forgot Password state
@@ -121,38 +112,7 @@ export default function ColorsPage() {
     }
   };
 
-  const handlePageRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!registerUsername || !registerFullName || !registerEmail || !registerPassword || !registerRole) {
-      setRegisterError("Vui lòng điền đầy đủ thông tin");
-      return;
-    }
 
-    try {
-      setRegisterLoading(true);
-      setRegisterError(null);
-      const res = await api.post("/auth/register", {
-        TenDangNhap: registerUsername,
-        HoTen: registerFullName,
-        Email: registerEmail,
-        MatKhau: registerPassword,
-        VaiTro: registerRole
-      });
-
-      if (res.data.success) {
-        setRegisterSuccess(true);
-        setTimeout(() => {
-          setIsRegisterMode(false);
-          setRegisterSuccess(false);
-          setLoginEmail(registerUsername);
-        }, 2000);
-      }
-    } catch (err: any) {
-      setRegisterError(err.response?.data?.error || "Đăng ký thất bại");
-    } finally {
-      setRegisterLoading(false);
-    }
-  };
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -425,8 +385,7 @@ export default function ColorsPage() {
                     const targetPath = `/rd-tracking/new?colorCode=${selectedColor.code}&colorName=${selectedColor.name}`;
                     setSelectedColor(null); // Close modal
                     if (!isAuthenticated) {
-                      setRedirectPath(targetPath);
-                      setIsLoginOpen(true); // Open premium pop-up modal overlay!
+                      router.push("/sign-in");
                     } else {
                       router.push(targetPath);
                     }
@@ -454,7 +413,6 @@ export default function ColorsPage() {
             <button
               onClick={() => {
                 setIsLoginOpen(false);
-                setIsRegisterMode(false);
               }}
               className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-all cursor-pointer border-none"
             >
@@ -464,9 +422,7 @@ export default function ColorsPage() {
             <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">
               {isForgotMode
                 ? "Đặt Lại Mật Khẩu"
-                : isRegisterMode
-                  ? "Đăng Ký Tài Khoản"
-                  : "Chào Mừng Trở Lại"}
+                : "Chào Mừng Trở Lại"}
             </h2>
 
             {isForgotMode ? (
@@ -541,7 +497,7 @@ export default function ColorsPage() {
                   </button>
                 </div>
               </form>
-            ) : !isRegisterMode ? (
+            ) : (
               <form onSubmit={handlePageLogin} className="space-y-4">
                 {loginError && (
                   <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
@@ -594,106 +550,13 @@ export default function ColorsPage() {
                 <div className="text-center pt-4">
                   <p className="text-sm text-slate-500 font-medium">
                     Chưa có tài khoản?{" "}
-                    <button
-                      type="button"
-                      onClick={() => setIsRegisterMode(true)}
+                    <Link
+                      href="/signup"
                       className="text-blue-600 font-bold hover:underline bg-transparent border-none cursor-pointer"
                     >
                       Đăng kí ngay
-                    </button>
+                    </Link>
                   </p>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handlePageRegister} className="space-y-4">
-                {registerError && (
-                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
-                    <AlertCircle size={16} /> {registerError}
-                  </div>
-                )}
-                {registerSuccess && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3 text-emerald-600 text-xs font-bold">
-                    <ShieldCheck size={16} /> Đăng ký thành công! Đang chuyển
-                    sang đăng nhập...
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <input
-                    type="text"
-                    value={registerUsername}
-                    onChange={(e) => setRegisterUsername(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Tên đăng nhập"
-                    required
-                  />
-
-                  <input
-                    type="text"
-                    value={registerFullName}
-                    onChange={(e) => setRegisterFullName(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Họ và tên đầy đủ / Tên doanh nghiệp"
-                    required
-                  />
-
-                  <input
-                    type="email"
-                    value={registerEmail}
-                    onChange={(e) => setRegisterEmail(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Email"
-                    required
-                  />
-
-                  <input
-                    type="password"
-                    value={registerPassword}
-                    onChange={(e) => setRegisterPassword(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Mật khẩu"
-                    required
-                  />
-
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
-                      Loại khách hàng
-                    </label>
-                    <select
-                      value={registerRole}
-                      onChange={(e) => setRegisterRole(e.target.value)}
-                      className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all cursor-pointer"
-                    >
-                      <option value="KhachHangB2C">Khách hàng cá nhân</option>
-                      <option value="KhachHangB2B">
-                        Khách hàng doanh nghiệp
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <button
-                    type="submit"
-                    disabled={registerLoading}
-                    className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
-                  >
-                    {registerLoading ? (
-                      <Loader2 className="animate-spin" size={18} />
-                    ) : (
-                      "Đăng Ký Tài Khoản"
-                    )}
-                  </button>
-                </div>
-
-                <div className="text-center pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsRegisterMode(false)}
-                    className="text-[11px] font-bold text-slate-400 hover:text-blue-600 bg-transparent border-none cursor-pointer transition-colors"
-                  >
-                    Đã có tài khoản? Đăng nhập
-                  </button>
                 </div>
               </form>
             )}

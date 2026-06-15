@@ -178,16 +178,16 @@ exports.logout = (req, res) => {
     message: 'Đăng xuất thành công',
   });
 };
-// @desc    Đăng ký tài khoản mới
+  // @desc    Đăng ký tài khoản mới
 // @route   POST /api/auth/register
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { TenDangNhap, Email, MatKhau, VaiTro, HoTen } = req.body;
+    const { TenDangNhap, Email, MatKhau, VaiTro, HoTen, DiaChi, SDT, MaSoThue, TaiKhoanNganHang, NguoiDaiDien } = req.body;
 
     // Kiểm tra thông tin bắt buộc
     if (!TenDangNhap || !Email || !MatKhau || !VaiTro || !HoTen) {
-      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp đầy đủ thông tin (bao gồm Họ tên)' });
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp đầy đủ thông tin bắt buộc' });
     }
 
     // Kiểm tra vai trò hợp lệ (chỉ cho phép đăng ký Khách hàng)
@@ -212,7 +212,12 @@ exports.register = async (req, res) => {
       MaKH: maKH,
       PhanLoai: VaiTro === 'KhachHangB2B' ? 'B2B' : 'B2C',
       TenKhachHang: HoTen,
-      Email: Email
+      Email: Email,
+      DiaChi: DiaChi || '',
+      SDT: SDT || '',
+      MaSoThue: VaiTro === 'KhachHangB2B' ? (MaSoThue || '') : '',
+      TaiKhoanNganHang: VaiTro === 'KhachHangB2B' ? (TaiKhoanNganHang || '') : '',
+      NguoiDaiDien: VaiTro === 'KhachHangB2B' ? (NguoiDaiDien || '') : ''
     });
 
     res.status(201).json({

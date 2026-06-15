@@ -73,3 +73,45 @@ exports.apDungKhuyenMai = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Cập nhật khuyến mãi
+exports.updateKhuyenMai = async (req, res) => {
+  try {
+    const { khuyenMaiId } = req.params;
+    const updateData = req.body;
+    
+    const updated = await KhuyenMai.findByIdAndUpdate(khuyenMaiId, updateData, { new: true, runValidators: true });
+    
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy khuyến mãi' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: 'Cập nhật khuyến mãi thành công'
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+// Xóa khuyến mãi
+exports.deleteKhuyenMai = async (req, res) => {
+  try {
+    const { khuyenMaiId } = req.params;
+    const deleted = await KhuyenMai.findByIdAndDelete(khuyenMaiId);
+    
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy khuyến mãi' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {},
+      message: 'Xóa khuyến mãi thành công'
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};

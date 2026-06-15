@@ -78,6 +78,7 @@ app.use('/api/nha-cung-cap', nhaCungCapRouter);
 app.use('/api/suppliers', nhaCungCapRouter);
 
 app.use('/api/chatbot', require('./routes/chatbotRoutes'));
+app.use('/api/chinh-sach', require('./routes/chinhSachRoutes'));
 
 const taiKhoanRouter = require('./routes/taiKhoanRoutes');
 app.use('/api/tai-khoan', taiKhoanRouter);

@@ -312,7 +312,7 @@ exports.getTonKho = async (req, res) => {
 
     const danhSachSP = await SanPhamSon.find(filter)
       .select(
-        "MaSanPham TenDongSon TongTonKho DonGiaCoSo PhanLoai DonViTinh DanhSachMaMau",
+        "MaSanPham TenDongSon TongTonKho DonGiaCoSo PhanLoai DonViTinh DanhSachMaMau HinhAnh",
       )
       .sort({ updatedAt: -1 });
 
@@ -484,18 +484,13 @@ exports.createPhieuNhapXuat = async (req, res) => {
       TrangThai: "CHO_DUYET",
       NguoiLapPhieu: nguoiLapId,
       TenNguoiLap: tenNguoiLap,
+      PhieuDatHangID: req.body.PhieuDatHangID || null,
     });
 
     // pre('save') sẽ tự tính ThanhTien + TongTien
     await newPhieu.save();
 
-    // Cộng công nợ của nhà cung cấp nếu là phiếu NHẬP hàng từ NCC
-    if (LoaiPhieu === "NHAP" && NhaCungCapID) {
-      const NhaCungCap = require("../models/NhaCungCap");
-      await NhaCungCap.findByIdAndUpdate(NhaCungCapID, {
-        $inc: { CongNo: newPhieu.TongTien || 0 },
-      });
-    }
+    // Công nợ của NCC không được cộng ở bước này (vì phiếu chỉ đang CHỜ DUYỆT)
 
     res.status(201).json({
       success: true,
@@ -650,6 +645,21 @@ exports.duyetPhieuNhapXuat = async (req, res) => {
       }
     }
 
+    // ═══ BƯỚC 4: GHI NHẬN CÔNG NỢ & CẬP NHẬT TRẠNG THÁI PO ═══
+    if (phieu.LoaiPhieu === "NHAP" && phieu.NhaCungCapID) {
+      const NhaCungCap = require("../models/NhaCungCap");
+      await NhaCungCap.findByIdAndUpdate(phieu.NhaCungCapID, {
+        $inc: { CongNo: phieu.TongTien || 0 },
+      });
+    }
+
+    if (phieu.PhieuDatHangID) {
+      const PhieuDatHangNCC = require("../models/PhieuDatHangNCC");
+      await PhieuDatHangNCC.findByIdAndUpdate(phieu.PhieuDatHangID, {
+        TrangThai: "Đã về hàng"
+      });
+    }
+
     const phieuFinal = await PhieuNhapXuatKho.findById(phieu._id);
     res.status(200).json({
       success: true,
@@ -697,14 +707,6 @@ exports.tuChoiPhieu = async (req, res) => {
 
     await phieu.save();
 
-    // Hoàn trả (trừ) công nợ của nhà cung cấp nếu là phiếu NHẬP
-    if (phieu.LoaiPhieu === "NHAP" && phieu.NhaCungCapID) {
-      const NhaCungCap = require("../models/NhaCungCap");
-      await NhaCungCap.findByIdAndUpdate(phieu.NhaCungCapID, {
-        $inc: { CongNo: -(phieu.TongTien || 0) },
-      });
-    }
-
     res.status(200).json({
       success: true,
       message: `Phiếu ${phieu.MaPhieu} đã bị từ chối.`,
@@ -750,21 +752,6 @@ exports.updatePhieuNhapXuat = async (req, res) => {
     // pre('save') sẽ tự tính lại TongTien
     await phieu.save();
 
-    // Cập nhật lại công nợ
-    const NhaCungCap = require("../models/NhaCungCap");
-    // 1. Hoàn trả công nợ cũ (trừ công nợ)
-    if (oldLoaiPhieu === "NHAP" && oldSupplierID) {
-      await NhaCungCap.findByIdAndUpdate(oldSupplierID, {
-        $inc: { CongNo: -oldTongTien },
-      });
-    }
-    // 2. Cộng công nợ mới
-    if (phieu.LoaiPhieu === "NHAP" && phieu.NhaCungCapID) {
-      await NhaCungCap.findByIdAndUpdate(phieu.NhaCungCapID, {
-        $inc: { CongNo: phieu.TongTien || 0 },
-      });
-    }
-
     res
       .status(200)
       .json({
@@ -796,14 +783,6 @@ exports.deletePhieuNhapXuat = async (req, res) => {
     }
 
     await PhieuNhapXuatKho.findByIdAndDelete(req.params.id);
-
-    // Hoàn trả (trừ) công nợ của nhà cung cấp nếu là phiếu NHẬP
-    if (phieu.LoaiPhieu === "NHAP" && phieu.NhaCungCapID) {
-      const NhaCungCap = require("../models/NhaCungCap");
-      await NhaCungCap.findByIdAndUpdate(phieu.NhaCungCapID, {
-        $inc: { CongNo: -(phieu.TongTien || 0) },
-      });
-    }
 
     res
       .status(200)

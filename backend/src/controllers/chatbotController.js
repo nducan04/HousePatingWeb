@@ -1,4 +1,4 @@
-const ChatSession = require('../models/ChatSession');
+const AiChatSession = require('../models/AiChatSession');
 const PhanHoiHoTro = require('../models/PhanHoiHoTro');
 const SanPhamSon = require('../models/SanPhamSon');
 const DonHang = require('../models/DonHang');
@@ -11,6 +11,7 @@ const VanChuyen = require('../models/VanChuyen');
 const DoiTra = require('../models/DoiTra');
 const BaoHanh = require('../models/BaoHanh');
 const NhatKyTestMau = require('../models/NhatKyTestMau');
+const RDTracking = require('../models/RdTracking');
 const jwt = require('jsonwebtoken');
 
 // Gemini AI — support both GEMINI_API_KEY and GOOGLE_API_KEY
@@ -560,7 +561,7 @@ const getToolSchemas = (userRole) => {
 // === HIGH FIDELITY OFFLINE/MOCK FALLBACK USING LIVE DATABASE ===
 // When GEMINI_API_KEY is not configured or in offline mode, this fallback matches intent
 // and queries the actual MongoDB using the tool functions, formatting a beautiful markdown response!
-const getMockResponse = async (message, userRole, history = []) => {
+const getMockResponse = async (message, userRole, history = [], userDetails = null) => {
   const lower = message.toLowerCase();
   
   // Trích xuất Bối cảnh Hội thoại (Context Memory) từ lịch sử
@@ -674,17 +675,33 @@ const getMockResponse = async (message, userRole, history = []) => {
   }
 
   const rdMatch = message.match(/(?:REQ|RD)-[A-Z0-9\-]+/i);
-  if (rdMatch) {
-    const code = rdMatch[0].toUpperCase();
-    const nhatKy = await NhatKyTestMau.findOne({ MaNhatKy: code });
-    if (!nhatKy) {
+  const isAskingMyLastRd = /(yêu cầu trước|yeu cau truoc|của tôi đang ở đâu|cua toi dang o dau|tiến độ.*của tôi|tien do.*cua toi)/i.test(searchStr);
+
+  if (rdMatch || (isAskingMyLastRd && userDetails)) {
+    let code = '';
+    let rdTrack = null;
+
+    if (rdMatch) {
+      code = rdMatch[0].toUpperCase();
+      rdTrack = await RDTracking.findOne({ MaNhatKy: code });
+    } else {
+      rdTrack = await RDTracking.findOne({ CustomerID: userDetails._id }).sort('-createdAt');
+      if (rdTrack) code = rdTrack.MaNhatKy;
+    }
+
+    if (!rdTrack) {
+      if (isAskingMyLastRd && !rdMatch) {
+        return `📋 **VTSC PaintPro AI**: Hệ thống chưa ghi nhận yêu cầu test mẫu (R&D) nào từ tài khoản của bạn. Vui lòng [tạo yêu cầu mới tại đây](/rd-tracking/new).`;
+      }
       return `📋 **VTSC PaintPro AI**: Không tìm thấy phiếu test mẫu R&D nào mang mã \`${code}\` trong Cơ sở dữ liệu.`;
     }
+    const nhatKy = await NhatKyTestMau.findOne({ RDTrackingID: rdTrack._id });
+    
     let resp = `### 🧪 Tra cứu Tiến độ Test mẫu (R&D) \`${code}\`\n`;
-    resp += `- **Màu yêu cầu:** \`${nhatKy.MaMauYeuCau}\`\n`;
-    resp += `- **Trạng thái KCS:** \`${nhatKy.TrangThai.toUpperCase()}\`\n`;
-    resp += `- **Số mẻ đã test:** ${nhatKy.LichSuPhienBan?.length || 0} lần\n\n`;
-    if (nhatKy.LichSuPhienBan && nhatKy.LichSuPhienBan.length > 0) {
+    resp += `- **Màu yêu cầu:** \`${rdTrack.MaMauYeuCau}\`\n`;
+    resp += `- **Trạng thái KCS:** \`${(rdTrack.TrangThai || 'pending').toUpperCase()}\`\n`;
+    resp += `- **Số mẻ đã test:** ${nhatKy?.LichSuPhienBan?.length || 0} lần\n\n`;
+    if (nhatKy && nhatKy.LichSuPhienBan && nhatKy.LichSuPhienBan.length > 0) {
       const lastTest = nhatKy.LichSuPhienBan[nhatKy.LichSuPhienBan.length - 1];
       resp += `#### Kết quả mẻ test mới nhất (${lastTest.version}):\n`;
       resp += `- **Đánh giá:** ${lastTest.result === 'pass' ? '✅ ĐẠT (Pass)' : lastTest.result === 'fail' ? '❌ KHÔNG ĐẠT (Fail)' : '⏳ ĐANG CHỜ'}\n`;
@@ -783,7 +800,49 @@ ${stats.recentContracts.map(c => `| \`${c.MaHopDong}\` | ${c.TieuDe} | ${c.Khach
 ${stats.recentOrders.map(o => `| \`${o.MaDonHang}\` | ${o.KhachHang} | **${o.TongTien}** | \`${o.TrangThai}\` | ${o.NgayDat} |`).join('\n')}`;
   }
 
-  // 6. Paint Mixing Process & Formula (Public)
+  // 6. Top Products & R&D Stats & Top Employee (Admin Only)
+  if (/(bán chạy|ban chay|top sản phẩm|top san pham|bán nhiều nhất|ban nhieu nhat)/i.test(searchStr)) {
+    if (!isAdminOrStaff) return '📋 **VTSC PaintPro AI**: Xin lỗi, dữ liệu sản phẩm bán chạy là bảo mật nội bộ.';
+    
+    // Aggregate from DonHang
+    const topProducts = await DonHang.aggregate([
+      { $unwind: "$Items" },
+      { $group: { _id: "$Items.SanPham", totalQuantity: { $sum: "$Items.SoLuong" }, tenSanPham: { $first: "$Items.TenSanPham" } } },
+      { $sort: { totalQuantity: -1 } },
+      { $limit: 5 }
+    ]);
+    
+    let resp = `### 🏆 Top 5 Sản phẩm Bán chạy nhất\n`;
+    topProducts.forEach((p, index) => {
+      resp += `${index + 1}. **${p.tenSanPham || 'Sản phẩm ' + p._id}** - Đã bán: **${p.totalQuantity}** đơn vị\n`;
+    });
+    return resp;
+  }
+
+  if (/(hiệu suất r&d|tỷ lệ pass|hiệu suất kcs|tỉ lệ pass|hieu suat r&d)/i.test(searchStr)) {
+    if (!isAdminOrStaff) return '📋 **VTSC PaintPro AI**: Xin lỗi, dữ liệu KCS và Lab là bảo mật nội bộ.';
+    const totalTests = await NhatKyTestMau.countDocuments();
+    let passCount = 0;
+    const allLogs = await NhatKyTestMau.find({});
+    allLogs.forEach(log => {
+      if (log.LichSuPhienBan && log.LichSuPhienBan.length > 0) {
+        const last = log.LichSuPhienBan[log.LichSuPhienBan.length - 1];
+        if (last.result === 'pass') passCount++;
+      }
+    });
+    const passRate = totalTests > 0 ? ((passCount / totalTests) * 100).toFixed(1) : 0;
+    
+    return `### 🧪 Thống kê Hiệu suất R&D (Phòng Lab KCS)\n- **Tổng số mẫu đã test:** ${totalTests} mẫu\n- **Số mẫu đạt (Pass):** ${passCount} mẫu\n- **Tỷ lệ Pass:** **${passRate}%**\n\n*Nhận xét: Tỷ lệ pass ${passRate >= 80 ? 'rất tốt, đạt KPI chất lượng.' : 'cần cải thiện khâu lên công thức.'}*`;
+  }
+
+  if (/(doanh số cao nhất|nhân viên xuất sắc|sale tốt nhất|doanh so cao nhat|top nhân viên|top nhan vien)/i.test(searchStr)) {
+    if (!isAdminOrStaff) return '📋 **VTSC PaintPro AI**: Xin lỗi, dữ liệu KPI nhân viên là bảo mật nội bộ.';
+    const topEmp = await NhanVien.findOne({ TrangThai: 'Đang làm' }).sort('-HieuSuatKPI.soDonDaBan');
+    if (!topEmp) return 'Chưa có dữ liệu nhân viên.';
+    return `### 🥇 Nhân viên xuất sắc nhất tháng\n- **Họ tên:** ${topEmp.HoTen} (${topEmp.MaNV})\n- **Phòng ban:** ${topEmp.BoPhan}\n- **Số đơn đã bán:** **${topEmp.HieuSuatKPI?.soDonDaBan || 0} đơn**\n- **Điểm KPI:** ${topEmp.HieuSuatKPI?.diemKPI || 0}/100\n\n*Dữ liệu được cập nhật tự động từ hệ thống đánh giá.*`;
+  }
+
+  // 7. Paint Mixing Process & Formula (Public)
   if (/(rd tracking|yêu cầu rd|quy trình pha chế|công thức pha chế|pha chế sơn|công thức pha|pha sơn|yeu cau rd|quy trinh pha che|cong thuc pha che|pha che son|cong thuc pha|pha son)/i.test(searchStr)) {
     let code = '';
     const matchCode = message.match(/[A-Z]{2,4}\d{3,4}/i);
@@ -934,7 +993,7 @@ ${progress.map(o => `
       resp += `\n\n🔗 **[Đăng ký Yêu cầu mẫu thử sơn miễn phí tại đây](/rd-tracking/new)**`;
       return resp;
     } else {
-      let queryFallback = lower.replace(/(mã màu của|có những màu sắc nào|những màu sắc nào|các màu sắc|màu sắc nào|màu sắc|có những mã màu nào|những mã màu nào|có những màu gì|mã màu|có màu|màu gì|tìm màu|những màu nào|cho hỏi|tư vấn|sản phẩm|có những|\?)/gi, '').trim();
+      let queryFallback = lower.replace(/(mã màu của|có những màu nào|những màu nào|màu nào|có những màu sắc nào|những màu sắc nào|các màu sắc|màu sắc nào|màu sắc|có những mã màu nào|những mã màu nào|có những màu gì|mã màu|có màu|màu gì|tìm màu|cho hỏi|tư vấn|sản phẩm|có những|\?)/gi, '').trim();
       const fallbackProducts = await searchPaintProducts({ query: queryFallback });
       if (fallbackProducts && fallbackProducts.length > 0) {
         let resp = `📋 **VTSC PaintPro AI**: Xin lỗi, tôi không tìm thấy cụm từ chính xác để tra cứu màu. Nhưng dựa trên các từ khóa của bạn (như "${queryFallback}"), tôi tìm thấy các sản phẩm liên quan dưới đây:\n\n---\n\n`;
@@ -1527,6 +1586,98 @@ Tất cả các dòng sơn bột tĩnh điện cao cấp (đặc biệt là Akzo
 *Bạn cần xin cấp chứng chỉ Qualicoat cho lô hàng sắp tới phải không? Vui lòng liên hệ Hotline để VTSC xuất hồ sơ CO/CQ nhé!*`;
   }
 
+  // 7.18. Yêu cầu pha chế màu / R&D mới
+  if (/(tạo yêu cầu|tao yeu cau|pha chế màu|pha che mau|màu mới|mau moi|test mẫu|test mau|làm mẫu|lam mau|yêu cầu r&d|yeu cau r&d|pha màu|pha mau)/i.test(searchStr)) {
+    return `### 🧪 Hướng dẫn tạo Yêu cầu Pha chế màu (R&D)
+Để yêu cầu VTSC nghiên cứu và test mẫu sơn tĩnh điện theo màu sắc tùy chỉnh của riêng bạn, vui lòng thực hiện theo các bước sau:
+
+**Bước 1:** Chuẩn bị mẫu màu chuẩn (miếng panel màu thật, hoặc mã thẻ màu RAL/Pantone).
+**Bước 2:** Xác định loại bề mặt kim loại bạn sẽ sơn (Nhôm định hình, Thép đen, Thép mạ kẽm, Inox...).
+**Bước 3:** Truy cập vào biểu mẫu hệ thống để tạo phiếu yêu cầu ngay lập tức:
+👉 **[Click vào đây để Tạo Yêu cầu R&D mới](/rd-tracking/new)**
+
+*Bộ phận KCS của VTSC sẽ tiếp nhận, tiến hành pha chế bột và sấy test mẫu. Sau đó, chúng tôi sẽ gửi miếng panel test (kèm báo cáo đánh giá) về tận xưởng cho bạn duyệt trước khi tiến hành sản xuất hàng loạt!*`;
+  }
+
+  // 7.19. Thời gian pha màu / test mẫu (R&D Lead Time)
+  if (/(bao lâu|bao lau|thời gian|thoi gian|mất mấy ngày|mat may ngay|mấy ngày|may ngay)/i.test(searchStr) && /(pha màu|pha mau|test mẫu|test mau|theo mẫu|theo mau|chế màu|che mau|làm mẫu|lam mau|có kết quả|co ket qua)/i.test(searchStr)) {
+    return `### ⏱️ Thời gian Test và Pha màu theo mẫu
+Quy trình nghiên cứu và pha chế (R&D) màu sơn tĩnh điện tùy chỉnh tại VTSC thường tuân theo SLA chuẩn như sau:
+
+- **Phân tích quang phổ & Lên công thức:** 1 - 2 ngày làm việc.
+- **Sấy test & Kiểm định chất lượng (KCS):** 1 ngày làm việc.
+- **Gửi miếng panel mẫu về cho khách duyệt:** 1 - 2 ngày (tùy vị trí địa lý).
+
+👉 **Tổng thời gian dự kiến:** Khoảng **3 đến 5 ngày làm việc** kể từ khi VTSC nhận được mẫu màu vật lý từ bạn.
+*Lưu ý: Đối với các màu hiệu ứng đặc biệt (Nhũ kim loại Metallic, Nhăn, Cát, Vân gỗ), thời gian test có thể kéo dài thêm 1-2 ngày để tinh chỉnh độ xòe hạt và hiệu ứng bề mặt.*`;
+  }
+
+  // 7.20. Khiếu nại & Tạo Ticket Hỗ trợ
+  if (/(khiếu nại|khieu nai|sai màu|sai mau|bong tróc|bong troc|thái độ|thai do|không đúng|khong dung|không hài lòng|khong hai long|gặp nhân viên|gap nhan vien|lỗi|loi)/i.test(searchStr) && !/(bao lâu|quy trình)/i.test(searchStr)) {
+    return `### ⚠️ Yêu cầu Hỗ trợ & Xử lý Khiếu nại
+VTSC vô cùng xin lỗi vì sự bất tiện mà bạn đang gặp phải. Chất lượng sản phẩm và trải nghiệm của khách hàng luôn là ưu tiên hàng đầu của chúng tôi.
+
+Để bộ phận CSKH và Kỹ thuật có thể can thiệp và xử lý vấn đề của bạn một cách nhanh chóng nhất (SLA cam kết phản hồi trong 4 giờ làm việc), vui lòng tạo một Ticket Phản hồi tại hệ thống:
+👉 **[Click vào đây để Tạo Ticket Hỗ Trợ/Khiếu Nại](/support)**
+
+*Ngay khi nhận được Ticket, Quản lý CSKH sẽ trực tiếp gọi điện lại cho bạn để phương án giải quyết (đổi trả, bảo hành hoặc cử kỹ thuật viên xuống xưởng kiểm tra).*`;
+  }
+
+  // 7.21. Hỗ trợ Khẩn cấp / Báo giá nhanh
+  if (/(khẩn cấp|khan cap|báo giá|bao gia|hỗ trợ gấp|ho tro gap|gấp|mua ngay)/i.test(searchStr)) {
+    return `### 📞 Hỗ trợ Khẩn cấp & Báo giá nhanh
+Để nhận báo giá sỉ/lẻ chi tiết hoặc cần hỗ trợ kỹ thuật gấp ngay lập tức, bạn vui lòng liên hệ trực tiếp qua:
+
+- ☎️ **Hotline 24/7:** \`090.123.4567\` (Mr. Phước - GĐ Kinh doanh)
+- 💬 **Zalo OA VTSC:** [Chat với chuyên viên](https://zalo.me)
+- 🌐 **Cổng yêu cầu báo giá:** **[Tạo yêu cầu Báo giá](/don-hang/new)**
+
+*Đội ngũ VTSC luôn túc trực để giải quyết yêu cầu của bạn nhanh nhất!*`;
+  }
+
+  // 7.22. Product Expertise: D2525 vs D3000
+  if (/(d2525.*d3000|d3000.*d2525|khác nhau|khac nhau)/i.test(searchStr) && /(d2525|d3000)/i.test(searchStr)) {
+    return `### ⚖️ So sánh AkzoNobel Interpon D2525 và D3000
+Cả 2 đều là dòng sơn kiến trúc cao cấp của AkzoNobel, nhưng có sự khác biệt rõ rệt về độ bền và phân khúc:
+
+**1. Interpon D2525 (Super Durable):**
+- **Công nghệ:** Ultra-Durable Polyester.
+- **Tiêu chuẩn:** Qualicoat Class 2, AAMA 2604.
+- **Bảo hành:** Lên tới **25 năm** (Dự án toàn cầu). Phù hợp cho các công trình thương mại cao cấp, chung cư cao tầng, chống chọi tốt với thời tiết khắc nghiệt.
+
+**2. Interpon D3000 (Fluoropolymer - Hyper Durable):**
+- **Công nghệ:** Fluoropolymer (tương đương sơn nước PVDF nhưng thân thiện môi trường hơn).
+- **Tiêu chuẩn:** Qualicoat Class 3, AAMA 2605.
+- **Bảo hành:** Lên tới **30 năm**. Đây là dòng sơn "Đỉnh của Chóp", chuyên dùng cho các siêu công trình mang tính biểu tượng (Landmark), sân bay, hoặc các công trình sát bãi biển cần chống ăn mòn cực đại.
+
+👉 **Kết luận:** Nếu ngân sách cho phép và công trình yêu cầu tuổi thọ vĩnh cửu sát biển -> Chọn **D3000**. Đối với các dự án cao cấp thông thường -> **D2525** là quá đủ và tối ưu chi phí.`;
+  }
+
+  // 7.23. Product Expertise: Lan can ngoài trời
+  if (/(lan can|ngoài trời|ngoai troi|ven biển|ven bien)/i.test(searchStr) && /(sơn|son|dùng dòng|dung dong)/i.test(searchStr)) {
+    return `### 🌤️ Tư vấn Sơn cho Lan can Nhôm / Thép ngoài trời
+Sản phẩm ngoài trời, đặc biệt là khu vực ven biển thường xuyên phải chịu tác động của tia UV, sương muối và độ ẩm cao.
+
+VTSC khuyến nghị bạn sử dụng các hệ sơn sau:
+1. **Interpon D1000 (Tiêu chuẩn):** Độ bền tốt, bảo hành 10 năm. Phù hợp khu vực nội địa.
+2. **Interpon D2525 (Siêu bền):** Đạt tiêu chuẩn Qualicoat Class 2, chống phấn hóa và muối mặn cực tốt. Bảo hành 25 năm. **👉 Rất khuyên dùng cho lan can ven biển.**
+3. **Quy trình bắt buộc (Với Thép):** Bắt buộc phải sơn 1 lớp lót Epoxy (Primer giàu kẽm) trước khi sơn phủ Polyester để chống rỉ sét từ bên trong.
+
+*Bạn có muốn tham khảo bảng màu của dòng Interpon D2525 không?*`;
+  }
+
+  // 7.24. Product Expertise: Hiệu ứng đá (Stone Effect)
+  if (/(hiệu ứng đá|hieu ung da|stone effect|đá tự nhiên|da tu nhien)/i.test(searchStr)) {
+    return `### 🪨 Sơn Tĩnh Điện Hiệu Ứng Đá (Stone Effect)
+Có! VTSC cung cấp dòng sơn bột tĩnh điện tạo **Hiệu ứng giả đá tự nhiên (Stone Effect)** vô cùng chân thực.
+
+- **Đặc điểm:** Bề mặt sần nhẹ, có các hạt chấm bi (trắng/đen/xám) lấm tấm giống hệt đá Granite, đá hoa cương.
+- **Ưu điểm vượt trội:** Giúp cấu kiện nhôm/thép trông bề thế như đá thật nhưng trọng lượng siêu nhẹ (giảm tải trọng công trình), thi công nhanh, không bám rêu mốc.
+- **Dòng sản phẩm:** Thường được cấu hình trên nền nhựa Super Durable (Interpon D2525) để ốp mặt dựng ngoài trời.
+
+*Bạn có muốn VTSC gửi cho bạn một vài miếng panel mẫu nhôm sơn hiệu ứng đá để trực tiếp đánh giá không? (Vui lòng tạo Yêu cầu R&D nhé).*`;
+  }
+
   // 8. Search paint products (Public)
   if (/(tìm sơn|sơn tĩnh điện|tĩnh điện|công nghiệp|tàu biển|sản phẩm sơn|các loại sơn|loại sơn|mua sơn|interpon|akzonobel|d1000|d2000|d3000|tư vấn|những màu|loại màu|mã màu nào|tim son|son tinh dien|tinh dien|cong nghiep|tau bien|san pham son|cac loai son|loai son|mua son|tu van|nhung mau|loai mau|ma mau nao|sơn|son|chống rỉ|chong ri|vân gỗ|van go)/i.test(searchStr)) {
     // Try to extract a specific code, else use a broader keyword
@@ -1646,9 +1797,9 @@ const getChatbotResponse = async (req, res) => {
     }
 
     // 2. Load/create Chat session in MongoDB
-    let session = await ChatSession.findOne({ sessionId });
+    let session = await AiChatSession.findOne({ sessionId });
     if (!session) {
-      session = new ChatSession({ sessionId, messages: [] });
+      session = new AiChatSession({ sessionId, messages: [] });
     }
 
     let responseText;
@@ -1659,7 +1810,7 @@ const getChatbotResponse = async (req, res) => {
         const schemas = getToolSchemas(userRole);
 
         // Map messages into Gemini's expected format
-        const chatHistory = session.messages.map(msg => ({
+        const chatHistory = (session.messages || []).map(msg => ({
           role: msg.role === 'model' ? 'model' : 'user',
           parts: [{ text: msg.content }],
         }));
@@ -1707,14 +1858,17 @@ const getChatbotResponse = async (req, res) => {
         responseText = response.text();
       } catch (geminiError) {
         console.error('[Gemini AI Core Error] Fallback to high-fidelity mock mode. Error details:', geminiError.message);
-        responseText = await getMockResponse(message, userRole, session.messages);
+        responseText = await getMockResponse(message, userRole, session.messages || []);
       }
     } else {
       // === HIGH FIDELITY MOCK FALLBACK (QUERIES DATABASE LIVE) ===
-      responseText = await getMockResponse(message, userRole, session.messages);
+      responseText = await getMockResponse(message, userRole, session.messages || [], userDetails);
     }
 
     // Save Chat messages to Mongo session
+    if (!session.messages) {
+      session.messages = [];
+    }
     session.messages.push({ role: 'user', content: message });
     session.messages.push({ role: 'model', content: responseText });
     await session.save();

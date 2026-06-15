@@ -25,6 +25,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [showAddVersion, setShowAddVersion] = useState(false);
   const [materials, setMaterials] = useState<any[]>([]);
+  const [formulas, setFormulas] = useState<any[]>([]);
+  const [selectedFormulaId, setSelectedFormulaId] = useState('');
+  const [testVolume, setTestVolume] = useState('');
   const [newVersion, setNewVersion] = useState({
     parameters: '',
     feedback: '',
@@ -50,17 +53,29 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
     fetchData();
     if (!isCustomer) {
       fetchMaterials();
+      fetchFormulas();
     }
   }, [id, isCustomer]);
+
+  const fetchFormulas = async () => {
+    try {
+      const res = await api.get('/formulas');
+      if (res.data.success) {
+        setFormulas(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch formulas:', err);
+    }
+  };
 
   const fetchMaterials = async () => {
     try {
       const res = await api.get('/inventory/nguyen-vat-lieu');
       if (res.data.success && res.data.data.length > 0) {
         const mapped = res.data.data.map((item: any) => ({
-          id: item.MaNVL,
-          name: item.TenNguyenVatLieu,
-          category: item.PhanLoai || 'Resin',
+          id: String(item._id),
+          name: item.TenNguyenVatLieu || item.TenNVL,
+          code: item.MaNVL,
           stock: item.TonKho || 0,
           unit: item.DonViTinh || 'kg',
           cost: item.DonGia || 0,
@@ -103,6 +118,47 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSyncMaterials = (explicitFormulaId?: string) => {
+    const fid = explicitFormulaId || selectedFormulaId;
+    if (!fid) {
+      alert('Vui lòng chọn Công thức tiêu chuẩn.');
+      return;
+    }
+    const vol = parseFloat(testVolume);
+    if (!vol || vol <= 0) {
+      alert('Vui lòng nhập Thể tích/Khối lượng mẻ test hợp lệ.');
+      return;
+    }
+
+    const formula = formulas.find(f => f._id === fid || f.MaCongThuc === fid);
+    if (!formula) {
+      alert('Không tìm thấy công thức.');
+      return;
+    }
+
+    const sanLuongDuKien = formula.SanLuongDuKien || 20;
+    
+    let updatedParameters = newVersion.parameters;
+    if (!updatedParameters && formula.GhiChu) {
+      updatedParameters = formula.GhiChu;
+    }
+
+    const newComponents = formula.ThanhPhan.map((tp: any) => {
+      const qty = (vol / sanLuongDuKien) * (tp.KhoiLuongDinhMuc || 0);
+      return {
+        materialId: String(tp.NguyenVatLieu?._id || tp.NguyenVatLieu || ''),
+        quantity: parseFloat(qty.toFixed(3))
+      };
+    });
+
+    setNewVersion(p => ({
+      ...p,
+      parameters: updatedParameters,
+      components: newComponents.length > 0 ? newComponents : [{ materialId: '', quantity: 0 }]
+    }));
+    alert('✅ Đã đồng bộ nguyên vật liệu từ công thức thành công!');
   };
 
   const handleAddVersion = async (result: 'pass' | 'fail' | 'pending') => {
@@ -667,6 +723,70 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Cột trái */}
             <div className="space-y-4">
+              <div className="space-y-4 p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Beaker size={16} className="text-blue-600" />
+                  <span className="font-bold text-sm text-slate-800">Đồng bộ từ Công thức tiêu chuẩn</span>
+                </div>
+                
+                {(() => {
+                  const matchingFormula = formulas.find(f => 
+                    f.MaMau === request?.MaMauYeuCau || 
+                    f.MaMau === request?.MaMauYeuCau?.split('-')[0] || 
+                    f.TenCongThuc?.includes(request?.MaMauYeuCau)
+                  );
+                  
+                  if (!matchingFormula) {
+                    return (
+                      <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100 flex items-start gap-2">
+                        <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                        <span>Chưa có công thức tiêu chuẩn cho mã màu <strong>{request?.MaMauYeuCau}</strong>. Vui lòng tạo công thức trước.</span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[13px] font-bold text-gray-500">Công thức nhận diện tự động</label>
+                        <div className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 flex items-center justify-between shadow-sm">
+                          <span className="font-medium truncate mr-2 text-blue-800">{matchingFormula.TenCongThuc}</span>
+                          <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded shrink-0">{matchingFormula.MaCongThuc}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[13px] font-bold text-gray-500">Thể tích/Khối lượng pha test</label>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <input
+                              type="number"
+                              step="0.01"
+                              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all pr-12"
+                              placeholder={`VD: ${matchingFormula.SanLuongDuKien || 20}`}
+                              value={testVolume}
+                              onChange={e => setTestVolume(e.target.value)}
+                            />
+                            <div className="absolute inset-y-0 right-3 flex items-center text-sm text-gray-400 font-medium pointer-events-none">
+                              {matchingFormula.DonVi || 'Lít'}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedFormulaId(matchingFormula._id);
+                              handleSyncMaterials(matchingFormula._id);
+                            }}
+                            className="whitespace-nowrap px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all shadow-sm flex items-center gap-2"
+                          >
+                            Đồng bộ
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
               <div className="space-y-1.5">
                 <label className="text-[13px] font-bold text-gray-500 flex items-center gap-2">
                   <Layers size={14} /> Thông số Kỹ thuật (Công thức, ĐK Nhiệt...)
