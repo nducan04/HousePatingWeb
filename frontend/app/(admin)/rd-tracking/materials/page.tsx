@@ -8,6 +8,7 @@ import { toast, confirm } from '@/lib/utils/notification';
 
 export default function MaterialsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
   const [materials, setMaterials] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -162,11 +163,13 @@ export default function MaterialsPage() {
     toast.success('✅ Đã xóa nguyên liệu!');
   };
 
-  const filteredMaterials = materials.filter(m =>
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMaterials = materials.filter(m => {
+    const matchSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        m.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        m.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchCategory = filterCategory === 'all' || m.category === filterCategory;
+    return matchSearch && matchCategory;
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in duration-700">
@@ -204,6 +207,29 @@ export default function MaterialsPage() {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50/50 rounded-xl mr-auto ml-2 border border-slate-100 flex-1">
+          {[
+            { id: "all", label: "Tất cả" },
+            { id: "Resin", label: "Resin" },
+            { id: "Pigment", label: "Pigment" },
+            { id: "Filler", label: "Filler" },
+            { id: "Additive", label: "Additive" },
+            { id: "Bột màu", label: "Bột màu" },
+          ].map((f) => (
+            <button
+              key={f.id}
+              className={`px-3 py-1.5 rounded-lg text-[13px] font-bold transition-all duration-200 ${
+                filterCategory === f.id
+                  ? "bg-white text-blue-600 shadow-sm border border-slate-200"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+              }`}
+              onClick={() => setFilterCategory(f.id)}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
 
         <div className="flex items-center gap-4">

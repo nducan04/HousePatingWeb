@@ -122,6 +122,7 @@ function AdminCreateContractPage() {
       setPartyBPhoneNumber(cust.SDT || cust.phone || '');
       setPartyBTaxCode(cust.MaSoThue || cust.taxCode || '');
       setPartyBAddress(cust.DiaChi || cust.address || '');
+      setPartyBBankAccount(cust.TaiKhoanNganHang || cust.bankAccount || '');
     } else {
       setClientAddress('');
       setPartyBCompanyName('');
@@ -129,6 +130,7 @@ function AdminCreateContractPage() {
       setPartyBPhoneNumber('');
       setPartyBTaxCode('');
       setPartyBAddress('');
+      setPartyBBankAccount('');
     }
   }, [customerId, customers]);
 
@@ -333,7 +335,7 @@ function AdminCreateContractPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-500 uppercase ml-1">Thời hạn hợp đồng</label>
-                <input type="date" className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={slaDeadline} onChange={e => setSlaDeadline(e.target.value)} />
+                <input type="date" className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={slaDeadline} onChange={e => setSlaDeadline(e.target.value)} min={new Date().toISOString().split('T')[0]} />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <label className="text-xs font-black text-slate-500 uppercase ml-1">Địa chỉ trụ sở *</label>

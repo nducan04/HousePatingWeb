@@ -22,6 +22,9 @@ const lichSuPhienBanSchema = new mongoose.Schema({
   ],
   images: [{ type: String }], // Mảng URL ảnh (để sau này gắn ImageKit)
   imageUrl: { type: String }, // URL ảnh đại diện cho mẻ test (IPFS)
+  customerFeedback: { type: String },
+  customerRating: { type: Number, min: 1, max: 5 },
+  customerFeedbackDate: { type: Date },
   tester: { type: String, required: true },
   testerCode: { type: String, default: '' }
 }, { _id: false });

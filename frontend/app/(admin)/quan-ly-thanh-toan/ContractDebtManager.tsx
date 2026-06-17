@@ -5,9 +5,6 @@ import { toast } from 'react-hot-toast'; // assuming the project uses this, othe
 
 export default function ContractDebtManager({ contractId }: { contractId: string }) {
   const [debtInfo, setDebtInfo] = useState({ tong_gia_tri: 0, da_thanh_toan: 0, cong_no_con_lai: 0, lich_su: [] });
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ so_tien: '', phuong_thuc_thanh_toan: 'Chuyển khoản' });
-  const [loading, setLoading] = useState(false);
 
   const fetchDebtData = async () => {
     try {
@@ -23,26 +20,6 @@ export default function ContractDebtManager({ contractId }: { contractId: string
   useEffect(() => {
     if (contractId) fetchDebtData();
   }, [contractId]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await axios.post('http://localhost:5000/api/thanh-toan', {
-        Hopdong_id: contractId,
-        so_tien: parseFloat(formData.so_tien),
-        phuong_thuc_thanh_toan: formData.phuong_thuc_thanh_toan
-      });
-      setIsModalOpen(false);
-      setFormData({ so_tien: '', phuong_thuc_thanh_toan: 'Chuyển khoản' });
-      fetchDebtData(); // Cập nhật lại board số liệu
-      toast.success('Ghi nhận thanh toán thành công');
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi tạo thanh toán');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatVND = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
 
@@ -65,12 +42,6 @@ export default function ContractDebtManager({ contractId }: { contractId: string
 
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-slate-800">Lịch sử thanh toán</h2>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-md hover:shadow-lg"
-        >
-          + Ghi nhận thanh toán
-        </button>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -105,45 +76,6 @@ export default function ContractDebtManager({ contractId }: { contractId: string
           </tbody>
         </table>
       </div>
-
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl">
-            <h3 className="text-2xl font-black text-slate-800 mb-6">Thanh toán công nợ</h3>
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Số tiền thanh toán (VNĐ)</label>
-                <input 
-                  type="number" 
-                  required 
-                  max={debtInfo.cong_no_con_lai}
-                  className="w-full border-2 border-slate-200 rounded-xl p-3.5 font-bold text-slate-800 outline-none focus:border-blue-500 transition-colors"
-                  value={formData.so_tien}
-                  onChange={e => setFormData({...formData, so_tien: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Phương thức giao dịch</label>
-                <select 
-                  className="w-full border-2 border-slate-200 rounded-xl p-3.5 font-bold text-slate-800 outline-none focus:border-blue-500 transition-colors"
-                  value={formData.phuong_thuc_thanh_toan}
-                  onChange={e => setFormData({...formData, phuong_thuc_thanh_toan: e.target.value})}
-                >
-                  <option value="Chuyển khoản">Chuyển khoản ngân hàng</option>
-                  <option value="Tiền mặt">Tiền mặt</option>
-                  <option value="Crypto Token">Thanh toán qua Crypto Token</option>
-                </select>
-              </div>
-              <div className="flex gap-3 mt-8">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">Hủy thao tác</button>
-                <button type="submit" disabled={loading} className="flex-1 py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50">
-                  {loading ? 'Đang xử lý...' : 'Xác nhận'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
