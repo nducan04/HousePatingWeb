@@ -1404,14 +1404,14 @@ export default function SanPhamPage() {
                         )}
                       </div>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="col-span-1 md:col-span-2 space-y-1.5">
                       <label className="text-xs font-semibold text-slate-500 uppercase">
                         Quy trình sản xuất
                       </label>
-                      <input
-                        type="text"
+                      <textarea
+                        rows={4}
                         placeholder="Mô tả quy trình..."
-                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-y"
                         value={formData.TruyXuatNguonGoc.QuyTrinhSanXuat}
                         onChange={(e) =>
                           setFormData({
