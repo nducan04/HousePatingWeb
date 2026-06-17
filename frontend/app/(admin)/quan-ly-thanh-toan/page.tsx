@@ -639,30 +639,19 @@ export default function ThanhToanPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2 bg-white border border-slate-200 shadow-sm rounded-lg p-4">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-slate-500 font-medium">
-                        Tổng Giá Trị
-                      </span>
-                      <span className="font-black text-slate-800">
-                        {selectedTransaction.totalAmount.toLocaleString()} ₫
-                      </span>
+                  {/* Footer */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
+                    <div style={{ textAlign: 'center', width: '50%' }}>
+                      <div style={{ fontWeight: 'bold' }}>NGƯỜI MUA HÀNG</div>
+                      <div style={{ fontStyle: 'italic', fontSize: '13px' }}>(Ký, ghi rõ họ tên)</div>
                     </div>
-                    <div className="flex justify-between items-center text-sm border-t border-slate-50 pt-3">
-                      <span className="text-slate-500 font-medium">
-                        Đã Thanh Toán
-                      </span>
-                      <span className="font-black text-emerald-600">
-                        {selectedTransaction.paidAmount.toLocaleString()} ₫
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm border-t border-slate-50 pt-3">
-                      <span className="text-slate-500 font-medium">
-                        Công Nợ Còn Lại
-                      </span>
-                      <span className={`font-black ${isRecordCancelled(selectedTransaction) ? "text-slate-400" : "text-rose-600"}`}>
-                        {isRecordCancelled(selectedTransaction) ? "—" : `${selectedTransaction.debtAmount.toLocaleString()} ₫`}
-                      </span>
+                    <div style={{ textAlign: 'center', width: '50%' }}>
+                      <div style={{ fontWeight: 'bold' }}>NGƯỜI BÁN HÀNG</div>
+                      <div style={{ fontStyle: 'italic', fontSize: '13px', marginBottom: '10px' }}>(Ký điện tử bởi: CÔNG TY CP TMDV VOSCO - VTSC)</div>
+                      <div style={{ border: '2px solid #059669', padding: '10px', display: 'inline-block', borderRadius: '5px' }}>
+                        <div style={{ fontWeight: 'bold', color: '#059669' }}>✓ Ký bởi: CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO</div>
+                        <div style={{ color: '#059669' }}>Ngày ký: {new Date(selectedTransaction.date).toLocaleDateString('vi-VN')}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -671,28 +660,30 @@ export default function ThanhToanPage() {
               )}
             </div>
 
-            <div className="flex justify-between items-center px-1 pt-2">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Trạng Thái:
-              </div>
-              <div
-                className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${isRecordCancelled(selectedTransaction)
-                  ? "bg-rose-50 text-rose-700 border-rose-200"
-                  : selectedTransaction.debtAmount === 0
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : selectedTransaction.paidAmount > 0
-                      ? "bg-blue-50 text-blue-700 border-blue-200"
-                      : "bg-amber-50 text-amber-700 border-amber-200"
-                  }`}
+            {/* Footer */}
+            <div className="p-4 bg-white border-t border-slate-200 flex gap-3">
+              <button
+                onClick={handleExportPDF}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-emerald-600 bg-emerald-50 border border-emerald-100 font-bold hover:bg-emerald-100 transition-colors flex-1"
               >
-                {isRecordCancelled(selectedTransaction)
-                  ? "Đã hủy"
-                  : selectedTransaction.debtAmount === 0
-                    ? "Đã quyết toán"
-                    : selectedTransaction.paidAmount > 0
-                      ? "Đang thanh toán"
-                      : "Chưa thanh toán"}
-              </div>
+                <Printer size={18} /> Tải PDF
+              </button>
+              <button
+                onClick={() => setSelectedTransaction(null)}
+                className="flex-1 px-4 py-3 rounded-xl text-slate-600 bg-slate-50 border border-slate-200 font-bold hover:bg-slate-100 transition-colors"
+              >
+                Đóng
+              </button>
+              {selectedTransaction.debtAmount > 0 && !isRecordCancelled(selectedTransaction) && (
+                <button
+                  onClick={() => {
+                    handleTogglePayment(selectedTransaction);
+                  }}
+                  className="flex-1 px-4 py-3 rounded-xl text-white bg-blue-600 hover:bg-blue-700 font-bold transition-colors flex justify-center items-center gap-2 shadow-sm shadow-blue-200"
+                >
+                  <CreditCard size={18} /> Cập nhật
+                </button>
+              )}
             </div>
           </div>
         </div>
