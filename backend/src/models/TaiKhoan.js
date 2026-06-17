@@ -38,6 +38,12 @@ const taiKhoanSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  ResetPasswordOTP: {
+    type: String,
+  },
+  ResetPasswordExpires: {
+    type: Date,
+  }
 });
 
 // Hash mật khẩu trước khi lưu vào DB

@@ -31,6 +31,8 @@ export default function SignInPage() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotNewPassword, setForgotNewPassword] = useState("");
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [forgotError, setForgotError] = useState<string | null>(null);
   const [forgotSuccess, setForgotSuccess] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -65,9 +67,35 @@ export default function SignInPage() {
     }
   };
 
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotUsername || !forgotEmail) {
+      setForgotError("Vui lòng nhập Tên đăng nhập và Email");
+      return;
+    }
+    try {
+      setIsResetting(true);
+      setForgotError(null);
+      const res = await api.post("/auth/forgot-password", {
+        TenDangNhap: forgotUsername,
+        Email: forgotEmail,
+      });
+      if (res.data.success) {
+        setOtpSent(true);
+        if (res.data.demoOtp) {
+          alert(`Mã OTP Demo: ${res.data.demoOtp}`);
+        }
+      }
+    } catch (err: any) {
+      setForgotError(err.response?.data?.error || "Lỗi khi gửi OTP");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!forgotUsername || !forgotEmail || !forgotNewPassword || !forgotConfirmPassword) {
+    if (!forgotUsername || !forgotEmail || !forgotOtp || !forgotNewPassword || !forgotConfirmPassword) {
       setForgotError("Vui lòng điền đầy đủ thông tin");
       return;
     }
@@ -82,6 +110,7 @@ export default function SignInPage() {
       const res = await api.post("/auth/reset-password", {
         TenDangNhap: forgotUsername,
         Email: forgotEmail,
+        OTP: forgotOtp,
         MatKhauMoi: forgotNewPassword,
       });
 
@@ -90,8 +119,10 @@ export default function SignInPage() {
         setTimeout(() => {
           setIsForgotMode(false);
           setForgotSuccess(false);
+          setOtpSent(false);
           setForgotUsername("");
           setForgotEmail("");
+          setForgotOtp("");
           setForgotNewPassword("");
           setForgotConfirmPassword("");
           setLoginEmail(forgotUsername);
@@ -168,64 +199,97 @@ export default function SignInPage() {
                 )}
 
                 <div className="space-y-4">
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                      type="text"
-                      value={forgotUsername}
-                      onChange={(e) => setForgotUsername(e.target.value)}
-                      className="w-full h-12 bg-white border border-slate-200 rounded-xl pl-11 pr-4 text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
-                      placeholder="Tên đăng nhập *"
-                      required
-                    />
-                  </div>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                      type="email"
-                      value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
-                      className="w-full h-12 bg-white border border-slate-200 rounded-xl pl-11 pr-4 text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
-                      placeholder="Email đã đăng ký *"
-                      required
-                    />
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                      type="password"
-                      value={forgotNewPassword}
-                      onChange={(e) => setForgotNewPassword(e.target.value)}
-                      className="w-full h-12 bg-white border border-slate-200 rounded-xl pl-11 pr-4 text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
-                      placeholder="Mật khẩu mới *"
-                      required
-                    />
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                      type="password"
-                      value={forgotConfirmPassword}
-                      onChange={(e) => setForgotConfirmPassword(e.target.value)}
-                      className="w-full h-12 bg-white border border-slate-200 rounded-xl pl-11 pr-4 text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
-                      placeholder="Nhập lại mật khẩu mới *"
-                      required
-                    />
-                  </div>
+                  {!otpSent ? (
+                    <>
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                          type="text"
+                          value={forgotUsername}
+                          onChange={(e) => setForgotUsername(e.target.value)}
+                          className="w-full h-12 bg-white border border-slate-200 rounded-xl pl-11 pr-4 text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                          placeholder="Tên đăng nhập *"
+                          required
+                        />
+                      </div>
+                      <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                          type="email"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          className="w-full h-12 bg-white border border-slate-200 rounded-xl pl-11 pr-4 text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                          placeholder="Email đã đăng ký *"
+                          required
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400" size={18} />
+                        <input
+                          type="text"
+                          value={forgotOtp}
+                          onChange={(e) => setForgotOtp(e.target.value)}
+                          className="w-full h-12 bg-emerald-50 border border-emerald-200 rounded-xl pl-11 pr-4 text-sm font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                          placeholder="Mã OTP (6 số) *"
+                          required
+                        />
+                      </div>
+                      <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                          type="password"
+                          value={forgotNewPassword}
+                          onChange={(e) => setForgotNewPassword(e.target.value)}
+                          className="w-full h-12 bg-white border border-slate-200 rounded-xl pl-11 pr-4 text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                          placeholder="Mật khẩu mới *"
+                          required
+                        />
+                      </div>
+                      <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                          type="password"
+                          value={forgotConfirmPassword}
+                          onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                          className="w-full h-12 bg-white border border-slate-200 rounded-xl pl-11 pr-4 text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                          placeholder="Nhập lại mật khẩu mới *"
+                          required
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={isResetting}
-                    className="w-full h-14 bg-[#4f46e5] text-white rounded-xl font-bold text-[15px] flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4338ca] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
-                  >
-                    {isResetting ? (
-                      <Loader2 className="animate-spin" size={20} />
-                    ) : (
-                      "Cập Nhật Mật Khẩu"
-                    )}
-                  </button>
+                  {!otpSent ? (
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={isResetting}
+                      className="w-full h-14 bg-[#4f46e5] text-white rounded-xl font-bold text-[15px] flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4338ca] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                    >
+                      {isResetting ? (
+                        <Loader2 className="animate-spin" size={20} />
+                      ) : (
+                        "Nhận mã OTP"
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={isResetting}
+                      className="w-full h-14 bg-emerald-500 text-white rounded-xl font-bold text-[15px] flex items-center justify-center shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                    >
+                      {isResetting ? (
+                        <Loader2 className="animate-spin" size={20} />
+                      ) : (
+                        "Cập Nhật Mật Khẩu"
+                      )}
+                    </button>
+                  )}
                 </div>
 
                 <div className="text-center pt-2">

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, CheckCircle2, XCircle, Clock, Plus, PenTool, User,
   Calendar, Layers, MessageSquare, Image as ImageIcon, Scale, AlertTriangle,
-  Beaker, Trash2, Package
+  Beaker, Trash2, Package, Star
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -48,6 +48,30 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
   const [showPackaging, setShowPackaging] = useState(false);
   const [packagingSpecs, setPackagingSpecs] = useState([{ containerType: 'Thùng 20L', quantity: 1, unitWeight: 20 }]);
   const [packagingMaterial, setPackagingMaterial] = useState('Thùng nhựa tiêu chuẩn AkzoNobel');
+
+  const [feedbackInput, setFeedbackInput] = useState<{ [version: string]: string }>({});
+  const [ratingInput, setRatingInput] = useState<{ [version: string]: number }>({});
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+
+  const handleSubmitFeedback = async (version: string) => {
+    if (!feedbackInput[version]) return;
+    try {
+      setSubmittingFeedback(true);
+      const res = await api.patch(`/rd-tracking/${id}/versions/${version}/feedback`, {
+        feedback: feedbackInput[version],
+        rating: ratingInput[version] || 5
+      });
+      if (res.data.success) {
+        alert('Cảm ơn bạn đã gửi phản hồi!');
+        fetchData();
+      }
+    } catch (err: any) {
+      console.error('Failed to submit feedback:', err);
+      alert(err.response?.data?.message || 'Lỗi khi gửi phản hồi');
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -500,6 +524,53 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                                   <span>Người test: <strong className="text-slate-700">{v.tester || 'Admin'}</strong></span>
                                   {v.date && <span>Thời gian: <strong className="text-slate-700">{new Date(v.date).toLocaleString('vi-VN')}</strong></span>}
                                 </div>
+                                
+                                {/* Phản hồi khách hàng */}
+                                {v.customerFeedback ? (
+                                  <div className="mt-4 bg-purple-50/50 p-4 rounded-xl border border-purple-100">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className="text-[11px] font-black uppercase tracking-widest text-purple-600">Phản hồi của bạn</span>
+                                      <div className="flex">
+                                        {[...Array(5)].map((_, i) => (
+                                          <Star key={i} size={14} className={i < (v.customerRating || 5) ? "fill-amber-400 text-amber-400" : "text-slate-300"} />
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div className="text-[13px] text-slate-700 font-medium italic">"{v.customerFeedback}"</div>
+                                  </div>
+                                ) : (
+                                  <div className="mt-4 pt-4 border-t border-slate-100">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">Đánh giá mẻ test này</span>
+                                      <div className="flex cursor-pointer">
+                                        {[...Array(5)].map((_, i) => (
+                                          <Star 
+                                            key={i} 
+                                            size={18} 
+                                            className={`transition-colors ${(ratingInput[v.version] || 5) > i ? "fill-amber-400 text-amber-400" : "text-slate-300 hover:text-amber-300"}`} 
+                                            onClick={() => setRatingInput(p => ({ ...p, [v.version]: i + 1 }))}
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <input 
+                                        type="text" 
+                                        placeholder="Nhập phản hồi của bạn về màu sắc, độ bóng..." 
+                                        className="flex-1 text-[13px] bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-purple-400 focus:bg-white transition-all"
+                                        value={feedbackInput[v.version] || ''}
+                                        onChange={(e) => setFeedbackInput(p => ({ ...p, [v.version]: e.target.value }))}
+                                      />
+                                      <button 
+                                        disabled={submittingFeedback || !feedbackInput[v.version]} 
+                                        onClick={() => handleSubmitFeedback(v.version)}
+                                        className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 text-white px-4 py-2 rounded-xl text-[12px] font-bold transition-all shadow-sm flex items-center justify-center min-w-[60px]"
+                                      >
+                                        Gửi
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1220,6 +1291,29 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
                       )}
                     </div>
                   </div>
+                  
+                  {/* Phản hồi từ Khách hàng */}
+                  {v.customerFeedback && (
+                    <div className="col-span-1 md:col-span-2 mt-4 bg-blue-50/50 p-4 rounded-2xl border border-blue-100 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100 to-transparent rounded-bl-full z-0 pointer-events-none opacity-50"></div>
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[11px] font-black uppercase tracking-widest text-blue-600 flex items-center gap-1.5"><MessageSquare size={12}/> Khách hàng phản hồi</span>
+                          <div className="flex">
+                            {[...Array(5)].map((_, idx) => (
+                              <Star key={idx} size={14} className={idx < (v.customerRating || 5) ? "fill-amber-400 text-amber-400" : "text-slate-300"} />
+                            ))}
+                          </div>
+                        </div>
+                        <div className="text-[14px] text-slate-700 font-medium bg-white p-3 rounded-xl border border-blue-100/50 shadow-sm relative ml-4 inline-block">
+                          <div className="absolute -left-2 top-3 w-4 h-4 bg-white border-l border-t border-blue-100/50 transform -rotate-45"></div>
+                          <span className="relative z-10 italic text-slate-600">"{v.customerFeedback}"</span>
+                        </div>
+                        {v.customerFeedbackDate && <div className="text-[10px] font-bold text-slate-400 mt-2 text-right">{new Date(v.customerFeedbackDate).toLocaleString('vi-VN')}</div>}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
             </div>

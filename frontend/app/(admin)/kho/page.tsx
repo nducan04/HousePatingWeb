@@ -149,6 +149,10 @@ export default function QLKhoPage() {
   const [nccList, setNccList] = useState<NhaCungCapItem[]>([]);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategoryNVL, setFilterCategoryNVL] = useState("all");
+  const [filterTypeNX, setFilterTypeNX] = useState("all");
+  const [filterStatusNX, setFilterStatusNX] = useState("all");
+  const [filterStatusKiemKho, setFilterStatusKiemKho] = useState("all");
 
   // Detail popup modal state for paint product color variants
   const [selectedPaintProduct, setSelectedPaintProduct] =
@@ -1201,6 +1205,30 @@ export default function QLKhoPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-xl flex-1 max-w-[500px]">
+                {[
+                  { id: "all", label: "Tất cả" },
+                  { id: "Resin", label: "Resin" },
+                  { id: "Pigment", label: "Pigment" },
+                  { id: "Filler", label: "Filler" },
+                  { id: "Additive", label: "Additive" },
+                  { id: "Bột màu", label: "Bột màu" },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    className={`px-3 py-1.5 rounded-lg text-[13px] font-bold transition-all duration-200 ${
+                      filterCategoryNVL === f.id
+                        ? "bg-white text-blue-600 shadow-sm"
+                        : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                    }`}
+                    onClick={() => setFilterCategoryNVL(f.id)}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button
                   onClick={exportToExcel}
@@ -1248,13 +1276,12 @@ export default function QLKhoPage() {
                   <tbody className="divide-y divide-slate-50">
                     {nvlData
                       .filter(
-                        (item) =>
-                          item.TenNguyenVatLieu.toLowerCase().includes(
-                            searchTerm.toLowerCase(),
-                          ) ||
-                          item.MaNVL.toLowerCase().includes(
-                            searchTerm.toLowerCase(),
-                          ),
+                        (item) => {
+                          const matchSearch = item.TenNguyenVatLieu.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                              item.MaNVL.toLowerCase().includes(searchTerm.toLowerCase());
+                          const matchCategory = filterCategoryNVL === "all" || item.PhanLoai === filterCategoryNVL;
+                          return matchSearch && matchCategory;
+                        }
                       )
                       .map((item) => (
                         <tr
@@ -1345,7 +1372,29 @@ export default function QLKhoPage() {
 
         {activeTab === "nhapxuat" && (
           <>
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-4 mb-6 flex flex-col sm:flex-row justify-end items-center gap-4">
+            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-4 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-xl">
+                  <span className="text-xs font-bold text-slate-500 px-2 uppercase tracking-wide">Loại lệnh:</span>
+                  {[
+                    { id: "all", label: "Tất cả" },
+                    { id: "NHAP", label: "Nhập kho" },
+                    { id: "XUAT", label: "Xuất kho" },
+                  ].map(f => (
+                    <button key={f.id} onClick={() => setFilterTypeNX(f.id)} className={`px-3 py-1.5 rounded-lg text-[13px] font-bold transition-all ${filterTypeNX === f.id ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>{f.label}</button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-xl">
+                  <span className="text-xs font-bold text-slate-500 px-2 uppercase tracking-wide">Trạng thái:</span>
+                  {[
+                    { id: "all", label: "Tất cả" },
+                    { id: "CHO_DUYET", label: "Chờ duyệt" },
+                    { id: "DA_DUYET", label: "Đã duyệt" },
+                  ].map(f => (
+                    <button key={f.id} onClick={() => setFilterStatusNX(f.id)} className={`px-3 py-1.5 rounded-lg text-[13px] font-bold transition-all ${filterStatusNX === f.id ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>{f.label}</button>
+                  ))}
+                </div>
+              </div>
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button
                   onClick={exportToExcel}
@@ -1455,7 +1504,13 @@ export default function QLKhoPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {phieuNXData.map((item) => (
+                    {phieuNXData
+                      .filter(item => {
+                        const matchType = filterTypeNX === "all" || item.LoaiPhieu === filterTypeNX;
+                        const matchStatus = filterStatusNX === "all" || item.TrangThai === filterStatusNX;
+                        return matchType && matchStatus;
+                      })
+                      .map((item) => (
                       <tr
                         key={item._id}
                         className="hover:bg-slate-50/50 transition-colors group"
@@ -1620,7 +1675,17 @@ export default function QLKhoPage() {
 
         {activeTab === "kiemke" && (
           <>
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-4 mb-6 flex justify-end items-center gap-4">
+            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-4 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-xl">
+                <span className="text-xs font-bold text-slate-500 px-2 uppercase tracking-wide">Trạng thái:</span>
+                {[
+                  { id: "all", label: "Tất cả" },
+                  { id: "DANG_KIEM_KE", label: "Đang kiểm kê" },
+                  { id: "HOAN_THANH", label: "Đã chốt số" },
+                ].map(f => (
+                  <button key={f.id} onClick={() => setFilterStatusKiemKho(f.id)} className={`px-3 py-1.5 rounded-lg text-[13px] font-bold transition-all ${filterStatusKiemKho === f.id ? 'bg-white text-amber-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>{f.label}</button>
+                ))}
+              </div>
               <button
                 onClick={() => setIsKiemKhoModal(true)}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border border-amber-500 bg-amber-50 text-amber-600 hover:bg-amber-100 hover:border-amber-600 w-full sm:w-auto"
@@ -1655,7 +1720,13 @@ export default function QLKhoPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {phieuData.map((item) => (
+                    {phieuData
+                      .filter(item => {
+                        if (filterStatusKiemKho === "all") return true;
+                        if (filterStatusKiemKho === "HOAN_THANH") return item.TrangThai === "HOAN_THANH";
+                        return item.TrangThai !== "HOAN_THANH";
+                      })
+                      .map((item) => (
                       <tr
                         key={item._id}
                         className="hover:bg-slate-50/50 transition-colors group"

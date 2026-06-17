@@ -325,3 +325,43 @@ exports.signKCS = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Add customer feedback to a test version
+// @route   PATCH /api/rd-tracking/:id/versions/:version/feedback
+exports.addCustomerFeedback = async (req, res) => {
+  try {
+    const { feedback, rating } = req.body;
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(req.params.id);
+    
+    const rdTracking = isObjectId 
+      ? await RDTracking.findById(req.params.id) 
+      : await RDTracking.findOne({ MaNhatKy: req.params.id });
+      
+    if (!rdTracking) {
+      return res.status(404).json({ success: false, message: 'RD Tracking Request not found' });
+    }
+
+    const testMau = await NhatKyTestMau.findOne({ RDTrackingID: rdTracking._id });
+    if (!testMau) {
+      return res.status(404).json({ success: false, message: 'Test log not found' });
+    }
+
+    const versionIndex = testMau.LichSuPhienBan.findIndex(v => v.version === req.params.version);
+    if (versionIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Version not found' });
+    }
+
+    testMau.LichSuPhienBan[versionIndex].customerFeedback = feedback;
+    testMau.LichSuPhienBan[versionIndex].customerRating = rating;
+    testMau.LichSuPhienBan[versionIndex].customerFeedbackDate = new Date();
+    
+    await testMau.save();
+
+    const rdData = rdTracking.toObject();
+    rdData.LichSuPhienBan = testMau.LichSuPhienBan;
+
+    res.status(200).json({ success: true, data: rdData, message: 'Cảm ơn bạn đã gửi phản hồi!' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

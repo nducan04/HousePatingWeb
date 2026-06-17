@@ -128,7 +128,11 @@ export default function MyPaymentsPage() {
 
   const handlePayNow = (record: FinancialRecord) => {
     if (record.debtAmount <= 0) return;
-    router.push(`/thanh-toan/card-payment?id=${record._id}&type=${record.type}&amount=${record.debtAmount}&code=${record.code}`);
+    if (record.type === 'CONTRACT') {
+      router.push(`/my-contracts/${record._id}/payment`);
+    } else {
+      router.push(`/checkout?orderId=${record._id}`);
+    }
   };
 
   const handleExportPDF = async () => {
@@ -315,7 +319,7 @@ export default function MyPaymentsPage() {
                 </tr>
               ) : filteredData.map(item => (
                 <tr key={item._id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 ${item.type === 'ORDER' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
                         }`}>
@@ -325,23 +329,23 @@ export default function MyPaymentsPage() {
                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                           {item.type === 'ORDER' ? 'ĐƠN HÀNG' : 'HỢP ĐỒNG'}
                         </div>
-                        <div className="font-bold text-slate-900 text-[14px]">
+                        <div className="font-bold text-slate-900 text-[14px] whitespace-nowrap">
                           {item.code}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 font-bold text-slate-900 text-[14px]">
+                  <td className="px-6 py-4 font-bold text-slate-900 text-[14px] whitespace-nowrap">
                     {item.totalAmount.toLocaleString()} ₫
                   </td>
-                  <td className="px-6 py-4 font-bold text-emerald-600 text-[14px]">
+                  <td className="px-6 py-4 font-bold text-emerald-600 text-[14px] whitespace-nowrap">
                     {item.paidAmount.toLocaleString()} ₫
                   </td>
-                  <td className={`px-6 py-4 font-black text-[14px] ${item.debtAmount > 0 ? 'text-rose-600' : 'text-slate-400'
+                  <td className={`px-6 py-4 font-black text-[14px] whitespace-nowrap ${item.debtAmount > 0 ? 'text-rose-600' : 'text-slate-400'
                     }`}>
                     {item.debtAmount === 0 ? '—' : `${item.debtAmount.toLocaleString()} ₫`}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${item.debtAmount === 0
                           ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
@@ -353,10 +357,10 @@ export default function MyPaymentsPage() {
                       {item.debtAmount === 0 ? 'Đã Thanh Toán' : item.paidAmount > 0 ? 'Đang Thanh Toán' : 'Chưa Thanh Toán'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-[13px] text-slate-500 font-medium">
+                  <td className="px-6 py-4 text-[13px] text-slate-500 font-medium whitespace-nowrap">
                     {new Date(item.date).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => setSelectedInvoice(item)}
