@@ -14,6 +14,7 @@ export default function KhuyenMaiPage() {
     MaKhuyenMai: '',
     TenChuongTrinh: '',
     PhanTramGiam: 0,
+    SoLuongToiDa: 100,
     NgayBatDau: '',
     NgayKetThuc: ''
   });
@@ -59,7 +60,7 @@ export default function KhuyenMaiPage() {
       setIsEditing(false);
       setCurrentId('');
       setFormData({
-        MaKhuyenMai: '', TenChuongTrinh: '', PhanTramGiam: 0, NgayBatDau: '', NgayKetThuc: ''
+        MaKhuyenMai: '', TenChuongTrinh: '', PhanTramGiam: 0, SoLuongToiDa: 100, NgayBatDau: '', NgayKetThuc: ''
       });
     } catch (error: any) {
       alert('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
@@ -73,6 +74,7 @@ export default function KhuyenMaiPage() {
       MaKhuyenMai: item.MaKhuyenMai,
       TenChuongTrinh: item.TenChuongTrinh,
       PhanTramGiam: item.PhanTramGiam,
+      SoLuongToiDa: item.SoLuongToiDa || 100,
       NgayBatDau: item.NgayBatDau ? new Date(item.NgayBatDau).toISOString().split('T')[0] : '',
       NgayKetThuc: item.NgayKetThuc ? new Date(item.NgayKetThuc).toISOString().split('T')[0] : ''
     });
@@ -154,6 +156,16 @@ export default function KhuyenMaiPage() {
               </div>
             </div>
 
+            <div>
+              <label className="block text-[13px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Số lượng voucher (Tối đa)</label>
+              <input 
+                type="number" name="SoLuongToiDa" min="1" 
+                value={formData.SoLuongToiDa} onChange={handleInputChange} 
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-blue-500 transition-all font-bold text-slate-800"
+                required 
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[13px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Bắt Đầu</label>
@@ -185,7 +197,7 @@ export default function KhuyenMaiPage() {
                   onClick={() => {
                     setIsEditing(false);
                     setCurrentId('');
-                    setFormData({ MaKhuyenMai: '', TenChuongTrinh: '', PhanTramGiam: 0, NgayBatDau: '', NgayKetThuc: '' });
+                    setFormData({ MaKhuyenMai: '', TenChuongTrinh: '', PhanTramGiam: 0, SoLuongToiDa: 100, NgayBatDau: '', NgayKetThuc: '' });
                   }}
                   className="w-full py-3 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold rounded-xl transition-all shadow-sm active:scale-[0.98]"
                 >
@@ -253,7 +265,7 @@ export default function KhuyenMaiPage() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-bold text-[13px]">
-                          <Users size={14} /> {item.DanhSachApDung?.length || 0}
+                          <Users size={14} /> {item.DanhSachApDung?.length || 0} / {item.SoLuongToiDa || '∞'}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">

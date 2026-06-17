@@ -744,16 +744,17 @@ exports.getCustomerServiceStats = async (req, res) => {
     
     try {
       const KhuyenMai = require('../models/KhuyenMai');
-      activeVouchers = await KhuyenMai.countDocuments({ TrangThai: 'DANG_DIEN_RA', createdAt: { $lte: endDate } });
+      activeVouchers = await KhuyenMai.countDocuments({ TrangThai: 'Đang diễn ra', createdAt: { $lte: endDate } });
       totalVouchers = await KhuyenMai.countDocuments({});
 
-      // Group vouchers by type
+      // Group vouchers by type (All are PHAN_TRAM based on schema)
       const allVouchers = await KhuyenMai.find({});
       allVouchers.forEach(v => {
-        if (voucherTypes[v.LoaiGiamGia] !== undefined) {
-          voucherTypes[v.LoaiGiamGia]++;
+        const type = 'PHAN_TRAM';
+        if (voucherTypes[type] !== undefined) {
+          voucherTypes[type]++;
         } else {
-          voucherTypes[v.LoaiGiamGia] = 1;
+          voucherTypes[type] = 1;
         }
       });
       
@@ -780,14 +781,14 @@ exports.getCustomerServiceStats = async (req, res) => {
       // Who used which voucher, when
       const usages = await DonHang.find({ KhuyenMai: { $ne: null } })
         .populate('KhachHang', 'TenKhachHang')
-        .populate('KhuyenMai', 'MaVoucher LoaiGiamGia MucGiam')
+        .populate('KhuyenMai', 'MaKhuyenMai PhanTramGiam')
         .sort({ createdAt: -1 })
         .limit(20);
 
       voucherUsagesList = usages.map(u => ({
         orderId: u.MaDonHang || u._id.toString(),
         customerName: u.KhachHang?.TenKhachHang || 'Khách hàng lẻ',
-        voucherCode: u.KhuyenMai?.MaVoucher || 'N/A',
+        voucherCode: u.KhuyenMai?.MaKhuyenMai || 'N/A',
         discountAmount: u.GiamGia || 0,
         totalAmount: u.TongTien,
         date: new Date(u.createdAt).toLocaleDateString('vi-VN'),
@@ -796,7 +797,7 @@ exports.getCustomerServiceStats = async (req, res) => {
 
       // Top 5 used vouchers and revenue stats
       const allOrdersWithVouchers = await DonHang.find({ KhuyenMai: { $ne: null }, TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } })
-        .populate('KhuyenMai', 'MaVoucher');
+        .populate('KhuyenMai', 'MaKhuyenMai');
         
       totalVouchersUsed = allOrdersWithVouchers.length;
       
@@ -805,7 +806,7 @@ exports.getCustomerServiceStats = async (req, res) => {
         totalDiscountValue += (o.GiamGia || 0);
         totalVoucherRevenue += (o.TongTien || 0);
         
-        const code = o.KhuyenMai?.MaVoucher;
+        const code = o.KhuyenMai?.MaKhuyenMai;
         if (code) {
           voucherUsageCounts[code] = (voucherUsageCounts[code] || 0) + 1;
         }
@@ -817,18 +818,18 @@ exports.getCustomerServiceStats = async (req, res) => {
 
       const allCampaigns = await KhuyenMai.find({
         NgayBatDau: { $lte: endDate },
-        NgayHetHan: { $gte: startDate }
+        NgayKetThuc: { $gte: startDate }
       }).sort({ createdAt: -1 }).limit(10);
       campaignsList = allCampaigns.map(c => {
         return {
-          id: c.MaVoucher,
-          name: c.GhiChu || (c.LoaiGiamGia === 'PHAN_TRAM' ? `Giảm ${c.MucGiam}%` : `Giảm ${c.MucGiam}đ`),
+          id: c.MaKhuyenMai,
+          name: c.TenChuongTrinh || `Giảm ${c.PhanTramGiam}%`,
           target: 'B2C',
-          used: c.SoLuongDaDung || 0,
+          used: c.DanhSachApDung ? c.DanhSachApDung.length : 0,
           total: c.SoLuongToiDa || 0,
-          status: c.TrangThai === 'DANG_DIEN_RA' ? 'Đang chạy' : (c.TrangThai === 'LEN_LICH' ? 'Tạm dừng' : 'Hết ngân sách'),
+          status: c.TrangThai,
           startDate: c.NgayBatDau,
-          endDate: c.NgayHetHan
+          endDate: c.NgayKetThuc
         };
       });
 
