@@ -107,7 +107,12 @@ export default function CustomerOrderPage() {
     try {
       const res = await api.patch(`/orders/${orderId}/info`, editForm);
       if (res.data.success) {
-        setOrders(prev => prev.map(o => o._id === orderId ? { ...o, ...editForm } : o));
+        setOrders(prev => prev.map(o => o._id === orderId ? { 
+          ...o, 
+          TenNguoiNhan: editForm.tenNguoiNhan,
+          SDTNguoiNhan: editForm.sdtNguoiNhan,
+          DiaChiGiaoHang: editForm.DiaChiGiaoHang 
+        } : o));
         setEditingInfoId(null);
         toast.success('Cập nhật thông tin thành công!');
       }

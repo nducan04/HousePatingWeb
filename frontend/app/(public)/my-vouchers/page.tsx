@@ -38,34 +38,23 @@ export default function CustomerVouchersPage() {
       let allVouchers: Voucher[] = [];
 
       if (res.data?.success) {
-        const rawKhuyenMais = res.data.data || [];
-        const mappedKhuyenMais = rawKhuyenMais.map((km: any) => {
-           let status = "DANG_DIEN_RA";
-           
-           const isUsed = km.DanhSachApDung?.some((da: any) => da.MaKhachHang === (user as any)?._id || da.MaKhachHang === (user as any)?.id);
-
-           if (isUsed) {
-             status = "DA_DUNG";
-           } else if (km.TrangThai === 'Đã kết thúc' || new Date(km.NgayKetThuc) < new Date()) {
-             status = "DA_KET_THUC";
-           } else if (km.TrangThai === 'Đang diễn ra' && new Date(km.NgayBatDau) <= new Date() && new Date(km.NgayKetThuc) >= new Date()) {
-             status = "DANG_DIEN_RA";
-           } else if (km.TrangThai === 'Tạm dừng') {
-             status = "DA_KET_THUC"; 
-           }
-
-           return {
-             _id: km._id,
-             MaVoucher: km.MaKhuyenMai,
-             GhiChu: km.TenChuongTrinh,
-             LoaiGiamGia: "PHAN_TRAM",
-             MucGiam: km.PhanTramGiam,
-             SoLuongToiDa: 9999, 
-             SoLuongDaDung: km.DanhSachApDung?.length || 0,
-             TrangThai: status,
-           };
+        allVouchers = (res.data.data || []).map((k: any) => {
+          let status = "DANG_DIEN_RA";
+          if (k.TrangThai === 'Đã kết thúc' || new Date(k.NgayKetThuc) < new Date()) {
+            status = "DA_KET_THUC";
+          }
+          
+          return {
+            _id: k._id,
+            MaVoucher: k.MaKhuyenMai,
+            GhiChu: k.TenChuongTrinh,
+            LoaiGiamGia: "PHAN_TRAM",
+            MucGiam: k.PhanTramGiam,
+            SoLuongToiDa: 9999, // Không có giới hạn cứng trong model
+            SoLuongDaDung: k.DanhSachApDung ? k.DanhSachApDung.length : 0,
+            TrangThai: status,
+          };
         });
-        allVouchers = mappedKhuyenMais;
       }
 
       // Add gifted vouchers from user profile

@@ -112,6 +112,10 @@ export default function ThanhToanPage() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
+  const isRecordCancelled = (r: FinancialRecord) => {
+    return r.orderStatus === "DA_HUY" || r.status === "DA_HUY" || r.contractStatus === "cancelled";
+  };
+
   useEffect(() => {
     fetchRecords();
   }, []);
@@ -173,10 +177,10 @@ export default function ThanhToanPage() {
   };
 
   const STATS = {
-    totalExpected: records.reduce((sum, r) => sum + r.totalAmount, 0),
-    totalPaid: records.reduce((sum, r) => sum + r.paidAmount, 0),
-    totalDebt: records.reduce((sum, r) => sum + r.debtAmount, 0),
-    pendingCount: records.filter((r) => r.debtAmount > 0).length,
+    totalExpected: records.reduce((sum, r) => sum + (isRecordCancelled(r) ? 0 : r.totalAmount), 0),
+    totalPaid: records.reduce((sum, r) => sum + (isRecordCancelled(r) ? 0 : r.paidAmount), 0),
+    totalDebt: records.reduce((sum, r) => sum + (isRecordCancelled(r) ? 0 : r.debtAmount), 0),
+    pendingCount: records.filter((r) => r.debtAmount > 0 && !isRecordCancelled(r)).length,
   };
 
   const filteredData = records.filter((item) => {
@@ -189,7 +193,7 @@ export default function ThanhToanPage() {
       filter === "all" ||
       (filter === "order" && item.type === "ORDER") ||
       (filter === "contract" && item.type === "CONTRACT") ||
-      (filter === "debt" && item.debtAmount > 0);
+      (filter === "debt" && item.debtAmount > 0 && !isRecordCancelled(item));
     return matchSearch && matchFilter;
   });
 
@@ -426,30 +430,40 @@ export default function ThanhToanPage() {
                       {item.paidAmount.toLocaleString()} ₫
                     </td>
                     <td
-                      className={`px-6 py-4 font-black text-[14px] ${item.debtAmount > 0
-                          ? "text-rose-600"
-                          : "text-emerald-600"
-                        }`}
+                      className={`px-6 py-4 font-black text-[14px] ${
+                        isRecordCancelled(item)
+                          ? "text-slate-400"
+                          : item.debtAmount > 0
+                            ? "text-rose-600"
+                            : "text-emerald-600"
+                      }`}
                     >
-                      {item.debtAmount === 0
+                      {isRecordCancelled(item)
                         ? "—"
-                        : `${item.debtAmount.toLocaleString()} ₫`}
+                        : item.debtAmount === 0
+                          ? "—"
+                          : `${item.debtAmount.toLocaleString()} ₫`}
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        onClick={() => handleTogglePayment(item)}
-                        className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider cursor-pointer transition-all ${item.debtAmount === 0
-                            ? "bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100"
-                            : item.paidAmount > 0
-                              ? "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
-                              : "bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100"
-                          }`}
+                        onClick={() => !isRecordCancelled(item) && handleTogglePayment(item)}
+                        className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                          isRecordCancelled(item)
+                            ? "bg-rose-50 text-rose-600 border border-rose-100 cursor-not-allowed"
+                            : item.debtAmount === 0
+                              ? "bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100 cursor-pointer"
+                              : item.paidAmount > 0
+                                ? "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 cursor-pointer"
+                                : "bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100 cursor-pointer"
+                        }`}
                       >
-                        {item.debtAmount === 0
-                          ? "Đã quyết toán"
-                          : item.paidAmount > 0
-                            ? "Đang thanh toán"
-                            : "Chưa thanh toán"}
+                        {isRecordCancelled(item)
+                          ? "Đã hủy"
+                          : item.debtAmount === 0
+                            ? "Đã quyết toán"
+                            : item.paidAmount > 0
+                              ? "Đang thanh toán"
+                              : "Chưa thanh toán"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-[13px] text-slate-400 font-medium">
@@ -464,21 +478,23 @@ export default function ThanhToanPage() {
                         >
                           <Eye size={16} />
                         </button>
-                        <button
-                          onClick={() => handleTogglePayment(item)}
-                          className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 border border-slate-100 hover:border-blue-100 transition-all cursor-pointer"
-                          title={
-                            item.type === "ORDER"
-                              ? "Thay đổi trạng thái"
-                              : "Cập nhật số tiền"
-                          }
-                        >
-                          {item.type === "ORDER" ? (
-                            <ArrowRight size={16} />
-                          ) : (
-                            <CreditCard size={16} />
-                          )}
-                        </button>
+                        {!isRecordCancelled(item) && (
+                          <button
+                            onClick={() => handleTogglePayment(item)}
+                            className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 border border-slate-100 hover:border-blue-100 transition-all cursor-pointer"
+                            title={
+                              item.type === "ORDER"
+                                ? "Thay đổi trạng thái"
+                                : "Cập nhật số tiền"
+                            }
+                          >
+                            {item.type === "ORDER" ? (
+                              <ArrowRight size={16} />
+                            ) : (
+                              <CreditCard size={16} />
+                            )}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -625,51 +641,60 @@ export default function ThanhToanPage() {
                     </div>
                   </div>
 
-                  {/* Footer */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
-                    <div style={{ textAlign: 'center', width: '50%' }}>
-                      <div style={{ fontWeight: 'bold' }}>NGƯỜI MUA HÀNG</div>
-                      <div style={{ fontStyle: 'italic', fontSize: '13px' }}>(Ký, ghi rõ họ tên)</div>
-                    </div>
-                    <div style={{ textAlign: 'center', width: '50%' }}>
-                      <div style={{ fontWeight: 'bold' }}>NGƯỜI BÁN HÀNG</div>
-                      <div style={{ fontStyle: 'italic', fontSize: '13px', marginBottom: '10px' }}>(Ký điện tử bởi: CÔNG TY CP TMDV VOSCO - VTSC)</div>
-                      <div style={{ border: '2px solid #059669', padding: '10px', display: 'inline-block', borderRadius: '5px' }}>
-                        <div style={{ fontWeight: 'bold', color: '#059669' }}>✓ Ký bởi: CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO</div>
-                        <div style={{ color: '#059669' }}>Ngày ký: {new Date(selectedTransaction.date).toLocaleDateString('vi-VN')}</div>
-                      </div>
-                    </div>
-                  </div>
+              <div className="space-y-2 bg-white border border-slate-200 shadow-sm rounded-lg p-4">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500 font-medium">
+                    Tổng Giá Trị
+                  </span>
+                  <span className="font-black text-slate-800">
+                    {selectedTransaction.totalAmount.toLocaleString()} ₫
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm border-t border-slate-50 pt-3">
+                  <span className="text-slate-500 font-medium">
+                    Đã Thanh Toán
+                  </span>
+                  <span className="font-black text-emerald-600">
+                    {selectedTransaction.paidAmount.toLocaleString()} ₫
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm border-t border-slate-50 pt-3">
+                  <span className="text-slate-500 font-medium">
+                    Công Nợ Còn Lại
+                  </span>
+                  <span className={`font-black ${isRecordCancelled(selectedTransaction) ? "text-slate-400" : "text-rose-600"}`}>
+                    {isRecordCancelled(selectedTransaction) ? "—" : `${selectedTransaction.debtAmount.toLocaleString()} ₫`}
+                  </span>
                 </div>
               ) : (
                 <div className="py-20 text-center text-rose-500 font-medium">Không thể tải chi tiết.</div>
               )}
             </div>
 
-            {/* Footer */}
-            <div className="p-4 bg-white border-t border-slate-200 flex gap-3">
-              <button
-                onClick={handleExportPDF}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-emerald-600 bg-emerald-50 border border-emerald-100 font-bold hover:bg-emerald-100 transition-colors flex-1"
-              >
-                <Printer size={18} /> Tải PDF
-              </button>
-              <button
-                onClick={() => setSelectedTransaction(null)}
-                className="flex-1 px-4 py-3 rounded-xl text-slate-600 bg-slate-50 border border-slate-200 font-bold hover:bg-slate-100 transition-colors"
-              >
-                Đóng
-              </button>
-              {selectedTransaction.debtAmount > 0 && (
-                <button
-                  onClick={() => {
-                    handleTogglePayment(selectedTransaction);
-                  }}
-                  className="flex-1 px-4 py-3 rounded-xl text-white bg-blue-600 hover:bg-blue-700 font-bold transition-colors flex justify-center items-center gap-2 shadow-sm shadow-blue-200"
+              <div className="flex justify-between items-center px-1 pt-2">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Trạng Thái:
+                </div>
+                <div
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${
+                    isRecordCancelled(selectedTransaction)
+                      ? "bg-rose-50 text-rose-700 border-rose-200"
+                      : selectedTransaction.debtAmount === 0
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : selectedTransaction.paidAmount > 0
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                  }`}
                 >
-                  <CreditCard size={18} /> Cập nhật
-                </button>
-              )}
+                  {isRecordCancelled(selectedTransaction)
+                    ? "Đã hủy"
+                    : selectedTransaction.debtAmount === 0
+                      ? "Đã quyết toán"
+                      : selectedTransaction.paidAmount > 0
+                        ? "Đang thanh toán"
+                        : "Chưa thanh toán"}
+                </div>
+              </div>
             </div>
           </div>
         </div>

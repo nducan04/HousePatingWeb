@@ -439,6 +439,7 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
                     step="0.1"
                     value={targetAmount}
                     onChange={(e) => setTargetAmount(e.target.value)}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     placeholder="Ví dụ: 2.5"
                     className="w-full pl-4 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-semibold outline-none transition-all"
                   />

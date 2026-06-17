@@ -1407,7 +1407,6 @@ export default function HomePage() {
             <button
               onClick={() => {
                 setIsLoginOpen(false);
-                setIsRegisterMode(false);
               }}
               className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-all cursor-pointer"
             >

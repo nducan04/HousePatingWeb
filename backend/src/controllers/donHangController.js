@@ -4,6 +4,7 @@ const GioHang = require('../models/GioHang');
 const KhuyenMai = require('../models/KhuyenMai');
 const VanChuyen = require('../models/VanChuyen');
 const NhanVien = require('../models/NhanVien');
+const GiaoDichThanhToan = require('../models/GiaoDichThanhToan');
 const mongoose = require('mongoose');
 
 // @desc    Checkout from cart
@@ -12,7 +13,7 @@ exports.checkoutFromCart = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, phuongThucThanhToan, ghiChu, selectedItemKeys } = req.body;
+        const { sessionId, khachHangId, diaChiGiaoHang, discountCode, phuongThucThanhToan, ghiChu, selectedItemKeys, tenNguoiNhan, sdtNguoiNhan } = req.body;
 
         // 1. Lấy giỏ hàng
         const cart = await GioHang.findOne({ SessionId: sessionId }).populate('Items.SanPham');
@@ -115,8 +116,8 @@ exports.checkoutFromCart = async (req, res) => {
         const donHang = new DonHang({
             MaDonHang: maDonHang,
             KhachHang: realKhachHangId,
-            TenNguoiNhan: typeof kh !== 'undefined' && kh ? kh.TenKhachHang : '',
-            SDTNguoiNhan: typeof kh !== 'undefined' && kh ? kh.SDT : '',
+            TenNguoiNhan: tenNguoiNhan || (typeof kh !== 'undefined' && kh ? kh.TenKhachHang : ''),
+            SDTNguoiNhan: sdtNguoiNhan || (typeof kh !== 'undefined' && kh ? kh.SDT : ''),
             Items: orderItems,
             TienThue: taxAmount,
             TongTien: totalAmount,
@@ -323,7 +324,19 @@ exports.updateStatus = async (req, res) => {
         }
 
         order.TrangThai = status;
+        if (status === 'DA_HUY') {
+            order.TrangThaiThanhToan = 'DA_HUY';
+        }
         await order.save({ session });
+
+        // Update payment transaction if cancelled
+        if (status === 'DA_HUY') {
+            await GiaoDichThanhToan.findOneAndUpdate(
+                { DonHang: order._id },
+                { TrangThai: 'CANCELLED' },
+                { session }
+            );
+        }
 
         // AUTOMATIC TRACKING CREATION
         if (status === 'DANG_GIAO') {
@@ -561,7 +574,13 @@ exports.cancelOrder = async (req, res) => {
         }
 
         order.TrangThai = 'DA_HUY';
+        order.TrangThaiThanhToan = 'DA_HUY';
         await order.save();
+
+        await GiaoDichThanhToan.findOneAndUpdate(
+            { DonHang: order._id },
+            { TrangThai: 'CANCELLED' }
+        );
 
         res.status(200).json({ success: true, message: 'Hủy đơn hàng thành công', data: order });
     } catch (error) {
