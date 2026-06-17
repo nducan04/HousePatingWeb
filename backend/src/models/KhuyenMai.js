@@ -25,6 +25,12 @@ const khuyenMaiSchema = new mongoose.Schema({
     type: Date, 
     required: true 
   },
+  SoLuongToiDa: {
+    type: Number,
+    required: true,
+    min: 1,
+    default: 100
+  },
   TrangThai: { 
     type: String, 
     enum: ['Đang diễn ra', 'Tạm dừng', 'Đã kết thúc'],

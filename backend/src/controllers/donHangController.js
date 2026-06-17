@@ -82,6 +82,10 @@ exports.checkoutFromCart = async (req, res) => {
         if (discountCode) {
             const voucher = await KhuyenMai.findOne({ MaKhuyenMai: discountCode.toUpperCase() }).session(session);
             if (voucher && voucher.TrangThai === 'Đang diễn ra') {
+                const maxUsages = voucher.SoLuongToiDa || Number.MAX_SAFE_INTEGER;
+                if (voucher.DanhSachApDung && voucher.DanhSachApDung.length >= maxUsages) {
+                    throw new Error('Mã khuyến mãi đã hết lượt sử dụng');
+                }
                 discountAmount = (subtotal * voucher.PhanTramGiam) / 100;
                 
                 // Ghi nhận lịch sử dùng
@@ -110,7 +114,7 @@ exports.checkoutFromCart = async (req, res) => {
         // 4. Tạo đơn hàng
         const maDonHang = `DH${Date.now().toString().slice(-8)}`;
         const finalSubtotal = subtotal - discountAmount;
-        const taxAmount = finalSubtotal >= 5000000 ? finalSubtotal * 0.08 : 0;
+        const taxAmount = finalSubtotal * 0.1;
         const totalAmount = finalSubtotal + taxAmount;
 
         const donHang = new DonHang({
@@ -499,13 +503,16 @@ exports.updateOrderInfo = async (req, res) => {
         if (sdtNguoiNhan !== undefined) order.SDTNguoiNhan = sdtNguoiNhan;
         if (PhuongThucThanhToan !== undefined) order.PhuongThucThanhToan = PhuongThucThanhToan;
 
-        // Apply voucher to existing order if not already applied
         if (discountCode && discountAmount) {
             const KhuyenMai = require('../models/KhuyenMai');
             const voucher = await KhuyenMai.findOne({ MaKhuyenMai: discountCode.toUpperCase() });
             
             // Check if voucher is valid and order hasn't already used a voucher
             if (voucher && voucher.TrangThai === 'Đang diễn ra' && !order.KhuyenMai) {
+                const maxUsages = voucher.SoLuongToiDa || Number.MAX_SAFE_INTEGER;
+                if (voucher.DanhSachApDung && voucher.DanhSachApDung.length >= maxUsages) {
+                    return res.status(400).json({ success: false, message: 'Mã khuyến mãi đã hết lượt sử dụng' });
+                }
                 // Determine remaining amount to pay
                 const currentTotal = order.TongTien || 0;
                 if (currentTotal > discountAmount) {

@@ -18,7 +18,7 @@ exports.getAllKhuyenMai = async (req, res) => {
 // Tạo mới một chương trình khuyến mãi
 exports.createKhuyenMai = async (req, res) => {
   try {
-    const { MaKhuyenMai, TenChuongTrinh, PhanTramGiam, NgayBatDau, NgayKetThuc } = req.body;
+    const { MaKhuyenMai, TenChuongTrinh, PhanTramGiam, NgayBatDau, NgayKetThuc, SoLuongToiDa } = req.body;
     
     const newKhuyenMai = await KhuyenMai.create({
       MaKhuyenMai,
@@ -26,6 +26,7 @@ exports.createKhuyenMai = async (req, res) => {
       PhanTramGiam,
       NgayBatDau,
       NgayKetThuc,
+      SoLuongToiDa,
       DanhSachApDung: [] 
     });
 
@@ -130,6 +131,11 @@ exports.validateKhuyenMai = async (req, res) => {
     const now = new Date();
     if (now < new Date(voucher.NgayBatDau)) return res.status(400).json({ success: false, message: 'Mã khuyến mãi chưa bắt đầu' });
     if (now > new Date(voucher.NgayKetThuc)) return res.status(400).json({ success: false, message: 'Mã khuyến mãi đã hết hạn' });
+    
+    const maxUsages = voucher.SoLuongToiDa || Number.MAX_SAFE_INTEGER;
+    if (voucher.DanhSachApDung && voucher.DanhSachApDung.length >= maxUsages) {
+        return res.status(400).json({ success: false, message: 'Mã khuyến mãi đã hết lượt sử dụng' });
+    }
     
     const discountAmount = Math.floor((cartTotal * voucher.PhanTramGiam) / 100);
 
