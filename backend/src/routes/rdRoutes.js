@@ -19,6 +19,9 @@ router.post('/', rdController.createRDLog);
 // @route   POST /api/rd-tracking/:id/versions
 router.post('/:id/versions', authorize('Admin', 'NhanVien'), rdController.addVersion);
 
+// @route   PATCH /api/rd-tracking/:id/versions/:version/feedback
+router.patch('/:id/versions/:version/feedback', protect, rdController.addCustomerFeedback);
+
 // @route   PATCH /api/rd-tracking/:id/sign-kcs
 router.patch('/:id/sign-kcs', authorize('Admin', 'NhanVien'), rdController.signKCS);
 

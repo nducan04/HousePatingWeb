@@ -248,26 +248,70 @@ exports.register = async (req, res) => {
   }
 };
 
-// @desc    Đặt lại mật khẩu (Dùng cho quên mật khẩu)
-// @route   POST /api/auth/reset-password
+// @desc    Gửi mã OTP quên mật khẩu
+// @route   POST /api/auth/forgot-password
 // @access  Public
-exports.resetPassword = async (req, res) => {
+exports.forgotPassword = async (req, res) => {
   try {
-    const { TenDangNhap, Email, MatKhauMoi } = req.body;
+    const { TenDangNhap, Email } = req.body;
 
-    if (!TenDangNhap || !Email || !MatKhauMoi) {
-      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp đầy đủ thông tin' });
+    if (!TenDangNhap || !Email) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp Tên đăng nhập và Email' });
     }
 
-    // Tìm tài khoản khớp cả Tên đăng nhập và Email
     const taiKhoan = await TaiKhoan.findOne({ TenDangNhap, Email });
 
     if (!taiKhoan) {
       return res.status(404).json({ success: false, error: 'Thông tin tài khoản hoặc email không chính xác' });
     }
 
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    taiKhoan.ResetPasswordOTP = otp;
+    taiKhoan.ResetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+    await taiKhoan.save();
+
+    // Giả lập việc gửi email trong môi trường dev
+    res.status(200).json({
+      success: true,
+      message: 'Mã OTP đã được gửi đến email của bạn',
+      // CHỈ DÙNG CHO DEMO (Nên xóa trong MT production)
+      demoOtp: otp
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, error: 'Lỗi hệ thống khi yêu cầu OTP' });
+  }
+};
+
+// @desc    Đặt lại mật khẩu bằng OTP
+// @route   POST /api/auth/reset-password
+// @access  Public
+exports.resetPassword = async (req, res) => {
+  try {
+    const { TenDangNhap, Email, OTP, MatKhauMoi } = req.body;
+
+    if (!TenDangNhap || !Email || !OTP || !MatKhauMoi) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp đầy đủ thông tin' });
+    }
+
+    // Tìm tài khoản khớp cả Tên đăng nhập và Email và OTP chưa hết hạn
+    const taiKhoan = await TaiKhoan.findOne({ 
+      TenDangNhap, 
+      Email,
+      ResetPasswordOTP: OTP,
+      ResetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!taiKhoan) {
+      return res.status(400).json({ success: false, error: 'Mã OTP không hợp lệ hoặc đã hết hạn' });
+    }
+
     // Cập nhật mật khẩu mới (Model sẽ tự động hash lại mật khẩu trong pre-save hook)
     taiKhoan.MatKhau = MatKhauMoi;
+    taiKhoan.ResetPasswordOTP = undefined;
+    taiKhoan.ResetPasswordExpires = undefined;
     await taiKhoan.save();
 
     res.status(200).json({

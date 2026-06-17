@@ -19,6 +19,7 @@ interface HopDongData {
   partyBRepresentative?: string;
   employee?: { _id: string; name?: string } | null;
   status: string;
+  paymentTerms?: any[];
 }
 
 interface ThanhToanHD {
@@ -56,10 +57,6 @@ export default function ThanhToanHopDongPage() {
   today.setHours(0, 0, 0, 0);
 
   // Modals state
-  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<ThanhToanHD | null>(null);
-  const [updateAmount, setUpdateAmount] = useState<number | string>('');
-
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
   const [reminderContent, setReminderContent] = useState('');
 
@@ -82,71 +79,95 @@ export default function ThanhToanHopDongPage() {
           const employeeName = c.employee?.name || 'Chưa phân công';
           const contractCode = c.contractId || 'Chưa có mã';
 
-          // Đợt 1 (30%)
-          const dot1Tien = total * 0.3;
-          const dot1Han = new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
-          let dot1Status: any = 'Chưa Thanh Toán';
-          if (paid >= dot1Tien) dot1Status = 'Đã Nhận';
-          else if (dot1Han < new Date()) dot1Status = 'Quá Hạn';
+          // Use configured paymentTerms if available, otherwise mock
+          if (c.paymentTerms && c.paymentTerms.length > 0) {
+            c.paymentTerms.forEach((term: any) => {
+              let termStatus: any = 'Chưa Thanh Toán';
+              if (term.paidAmount >= term.amount) termStatus = 'Đã Nhận';
+              else if (new Date(term.dueDate) < new Date()) termStatus = 'Quá Hạn';
 
-          installments.push({
-            id: `${contractCode}-${c._id}-D1`,
-            contractId: c._id,
-            hopDong: contractCode,
-            doiTac: partnerName,
-            dotThanhToan: 'Đợt 1 (30% Cọc)',
-            soTien: dot1Tien,
-            hanChot: dot1Han.toLocaleDateString('vi-VN'),
-            nhanVien: employeeName,
-            trangThai: dot1Status,
-            rawDate: dot1Han,
-            rawTotal: total,
-            rawPaid: paid
-          });
+              installments.push({
+                id: `${contractCode}-${c._id}-${term._id || Math.random()}`,
+                contractId: c._id,
+                hopDong: contractCode,
+                doiTac: partnerName,
+                dotThanhToan: term.name,
+                soTien: term.amount,
+                hanChot: new Date(term.dueDate).toLocaleDateString('vi-VN'),
+                nhanVien: employeeName,
+                trangThai: termStatus,
+                rawDate: new Date(term.dueDate),
+                rawTotal: total,
+                rawPaid: paid
+              });
+            });
+          } else {
+            // Đợt 1 (30%)
+            const dot1Tien = total * 0.3;
+            const dot1Han = new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
+            let dot1Status: any = 'Chưa Thanh Toán';
+            if (paid >= dot1Tien) dot1Status = 'Đã Nhận';
+            else if (dot1Han < new Date()) dot1Status = 'Quá Hạn';
 
-          // Đợt 2 (40%)
-          const dot2Tien = total * 0.4;
-          const dot2Han = new Date(date.getTime() + 30 * 24 * 60 * 60 * 1000);
-          let dot2Status: any = 'Chưa Thanh Toán';
-          if (paid >= (dot1Tien + dot2Tien)) dot2Status = 'Đã Nhận';
-          else if (dot2Han < new Date() && paid >= dot1Tien) dot2Status = 'Quá Hạn';
+            installments.push({
+              id: `${contractCode}-${c._id}-D1`,
+              contractId: c._id,
+              hopDong: contractCode,
+              doiTac: partnerName,
+              dotThanhToan: 'Đợt 1 (30% Cọc)',
+              soTien: dot1Tien,
+              hanChot: dot1Han.toLocaleDateString('vi-VN'),
+              nhanVien: employeeName,
+              trangThai: dot1Status,
+              rawDate: dot1Han,
+              rawTotal: total,
+              rawPaid: paid
+            });
 
-          installments.push({
-            id: `${contractCode}-${c._id}-D2`,
-            contractId: c._id,
-            hopDong: contractCode,
-            doiTac: partnerName,
-            dotThanhToan: 'Đợt 2 (Theo Tiến độ)',
-            soTien: dot2Tien,
-            hanChot: dot2Han.toLocaleDateString('vi-VN'),
-            nhanVien: employeeName,
-            trangThai: dot2Status,
-            rawDate: dot2Han,
-            rawTotal: total,
-            rawPaid: paid
-          });
+            // Đợt 2 (40%)
+            const dot2Tien = total * 0.4;
+            const dot2Han = new Date(date.getTime() + 30 * 24 * 60 * 60 * 1000);
+            let dot2Status: any = 'Chưa Thanh Toán';
+            if (paid >= (dot1Tien + dot2Tien)) dot2Status = 'Đã Nhận';
+            else if (dot2Han < new Date() && paid >= dot1Tien) dot2Status = 'Quá Hạn';
 
-          // Đợt 3 (30%)
-          const dot3Tien = total * 0.3;
-          const dot3Han = new Date(date.getTime() + 60 * 24 * 60 * 60 * 1000);
-          let dot3Status: any = 'Chưa Thanh Toán';
-          if (paid >= total) dot3Status = 'Đã Nhận';
-          else if (dot3Han < new Date() && paid >= (dot1Tien + dot2Tien)) dot3Status = 'Quá Hạn';
+            installments.push({
+              id: `${contractCode}-${c._id}-D2`,
+              contractId: c._id,
+              hopDong: contractCode,
+              doiTac: partnerName,
+              dotThanhToan: 'Đợt 2 (Theo Tiến độ)',
+              soTien: dot2Tien,
+              hanChot: dot2Han.toLocaleDateString('vi-VN'),
+              nhanVien: employeeName,
+              trangThai: dot2Status,
+              rawDate: dot2Han,
+              rawTotal: total,
+              rawPaid: paid
+            });
 
-          installments.push({
-            id: `${contractCode}-${c._id}-D3`,
-            contractId: c._id,
-            hopDong: contractCode,
-            doiTac: partnerName,
-            dotThanhToan: 'Đợt 3 (Quyết Toán)',
-            soTien: dot3Tien,
-            hanChot: dot3Han.toLocaleDateString('vi-VN'),
-            nhanVien: employeeName,
-            trangThai: dot3Status,
-            rawDate: dot3Han,
-            rawTotal: total,
-            rawPaid: paid
-          });
+            // Đợt 3 (30%)
+            const dot3Tien = total * 0.3;
+            const dot3Han = new Date(date.getTime() + 60 * 24 * 60 * 60 * 1000);
+            let dot3Status: any = 'Chưa Thanh Toán';
+            if (paid >= total) dot3Status = 'Đã Nhận';
+            else if (dot3Han < new Date() && paid >= (dot1Tien + dot2Tien)) dot3Status = 'Quá Hạn';
+
+            installments.push({
+              id: `${contractCode}-${c._id}-D3`,
+              contractId: c._id,
+              hopDong: contractCode,
+              doiTac: partnerName,
+              dotThanhToan: 'Đợt 3 (Tất toán)',
+              soTien: dot3Tien,
+              hanChot: dot3Han.toLocaleDateString('vi-VN'),
+              nhanVien: employeeName,
+              trangThai: dot3Status,
+              rawDate: dot3Han,
+              rawTotal: total,
+              rawPaid: paid
+            });
+          }
         });
 
         installments.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
@@ -162,29 +183,6 @@ export default function ThanhToanHopDongPage() {
   useEffect(() => {
     fetchContracts();
   }, []);
-
-  const handleUpdatePayment = async () => {
-    if (!selectedItem || updateAmount === '') return;
-    try {
-      // Gọi API PATCH /payments/contract/:id như BRD
-      const res = await api.patch(`/payments/contract/${selectedItem.contractId}`, {
-        paidAmount: Number(updateAmount)
-      });
-      if (res.data.success) {
-        setIsUpdateModalOpen(false);
-        fetchContracts();
-      }
-    } catch (error) {
-      console.error('Update payment failed:', error);
-      alert('Cập nhật thanh toán thất bại!');
-    }
-  };
-
-  const openUpdateModal = (item: ThanhToanHD) => {
-    setSelectedItem(item);
-    setUpdateAmount(item.rawPaid); // Hiển thị số tiền đã trả hiện tại của toàn hợp đồng
-    setIsUpdateModalOpen(true);
-  };
 
   const openReminder = () => {
     const overdueList = data.filter(d => d.trangThai === 'Quá Hạn');
@@ -249,7 +247,7 @@ export default function ThanhToanHopDongPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 w-full pb-10">
-      
+
       {/* 1. Stats Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 bg-white p-6 rounded-lg shadow-sm border border-slate-200">
         <div className="flex flex-col gap-2 border-r border-slate-100 last:border-0 pr-4">
@@ -324,7 +322,6 @@ export default function ThanhToanHopDongPage() {
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Mã Giao Dịch</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Hợp Đồng</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Đối Tác</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Hạng Mục</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Số Tiền</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Hạn Chót</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng Thái</th>
@@ -344,12 +341,11 @@ export default function ThanhToanHopDongPage() {
               ) : (
                 filteredData.map((item, idx) => {
                   const transactionId = `${item.hopDong.replace('VTSC-', '')}-${item.id.split('-').pop()}`;
-                  
+
                   return (
-                    <tr 
-                      key={item.id} 
-                      className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
-                      onClick={() => openUpdateModal(item)}
+                    <tr
+                      key={item.id}
+                      className="hover:bg-slate-50/50 transition-colors group"
                     >
                       <td className="px-6 py-4">
                         <div className="font-semibold text-blue-600 text-sm">{transactionId}</div>
@@ -359,9 +355,6 @@ export default function ThanhToanHopDongPage() {
                       </td>
                       <td className="px-6 py-4 font-semibold text-slate-800 text-sm">
                         {item.doiTac}
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-slate-800 text-sm">
-                        {item.dotThanhToan}
                       </td>
                       <td className="px-6 py-4 font-bold text-emerald-600 text-sm">
                         {item.soTien.toLocaleString('vi-VN')} ₫
@@ -404,54 +397,6 @@ export default function ThanhToanHopDongPage() {
           </table>
         </div>
       </div>
-
-      {/* Cập Nhật Thanh Toán Modal */}
-      {isUpdateModalOpen && selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <h3 className="font-semibold text-slate-800">Cập nhật thanh toán Hợp đồng</h3>
-              <button onClick={() => setIsUpdateModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="mb-4 text-sm text-slate-600">
-                <p>Hợp đồng: <strong>{selectedItem.hopDong}</strong></p>
-                <p>Đối tác: <strong>{selectedItem.doiTac}</strong></p>
-                <p>Tổng giá trị HĐ: <strong>{selectedItem.rawTotal.toLocaleString()} ₫</strong></p>
-                <p className="mt-2 text-rose-500 text-xs italic">* Vui lòng nhập SỐ TỔNG TIỀN ĐÃ TRẢ cộng dồn của Hợp đồng này cho đến thời điểm hiện tại.</p>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">Số tiền đã trả hiện tại (VNĐ)</label>
-                  <input
-                    type="number"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-medium"
-                    value={updateAmount}
-                    onChange={(e) => setUpdateAmount(e.target.value)}
-                    placeholder="Nhập số tiền..."
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button
-                onClick={() => setIsUpdateModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-200 transition-colors"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleUpdatePayment}
-                className="px-4 py-2 rounded-xl text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center gap-2"
-              >
-                <Save size={16} /> Lưu Cập Nhật
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Lập Phiếu Nhắc Nợ Modal */}
       {isReminderModalOpen && (

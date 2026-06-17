@@ -419,8 +419,8 @@ export default function CustomerOrderPage() {
               {/* Footer */}
               <div className="px-5 py-4 border-t border-slate-50 flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] text-slate-400 font-medium">Tổng tiền</p>
-                  <p className="font-black text-lg text-slate-900">{order.TongTien?.toLocaleString('vi-VN')}đ</p>
+                  <p className="text-[11px] text-slate-400 font-medium">Còn lại</p>
+                  <p className="font-black text-lg text-slate-900">{Math.max(0, (order.TongTien || 0) - (order.DaCoc || 0)).toLocaleString('vi-VN')}đ</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {order.TrangThai === 'CHO_XAC_NHAN' && (

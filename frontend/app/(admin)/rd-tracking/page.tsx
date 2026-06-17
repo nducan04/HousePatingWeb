@@ -310,12 +310,20 @@ export default function RDTrackingPage() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span
-                        className={`status-badge inline-flex items-center gap-1.5 ${req.status === "processing" ? "status-active" : "status-warning"}`}
+                        className={`status-badge inline-flex items-center gap-1.5 ${
+                          req.status?.toLowerCase() === "approved" ? "status-active" : 
+                          req.status?.toLowerCase() === "pending" || req.status?.toLowerCase() === "rejected" ? "status-error" : 
+                          "status-warning"
+                        }`}
                       >
                         <span
-                          className={`w-1.5 h-1.5 rounded-full ${req.status === "processing" ? "bg-emerald-500" : "bg-amber-500"}`}
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            req.status?.toLowerCase() === "approved" ? "bg-emerald-500" : 
+                            req.status?.toLowerCase() === "pending" || req.status?.toLowerCase() === "rejected" ? "bg-rose-500" : 
+                            "bg-amber-500"
+                          }`}
                         ></span>
-                        {req.status.toUpperCase()}
+                        {req.status?.toUpperCase() || "TESTING"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center font-medium text-slate-500 text-[13px]">
@@ -478,10 +486,18 @@ export default function RDTrackingPage() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span
-                            className={`status-badge inline-flex items-center gap-1.5 ${item.TrangThai === "approved" ? "status-active" : item.TrangThai === "rejected" ? "status-error" : "status-warning"}`}
+                            className={`status-badge inline-flex items-center gap-1.5 ${
+                              item.TrangThai === "approved" ? "status-active" : 
+                              item.TrangThai === "pending" || item.TrangThai === "rejected" ? "status-error" : 
+                              "status-warning"
+                            }`}
                           >
                             <span
-                              className={`w-1.5 h-1.5 rounded-full ${item.TrangThai === "approved" ? "bg-emerald-500" : item.TrangThai === "rejected" ? "bg-rose-500" : "bg-amber-500"}`}
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                item.TrangThai === "approved" ? "bg-emerald-500" : 
+                                item.TrangThai === "pending" || item.TrangThai === "rejected" ? "bg-rose-500" : 
+                                "bg-amber-500"
+                              }`}
                             ></span>
                             {(item.TrangThai || "testing").toUpperCase()}
                           </span>

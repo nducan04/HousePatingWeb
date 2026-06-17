@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Plus, Trash2, CheckCircle2, Download, Receipt } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { toast } from '@/lib/utils/notification';
-import ContractDebtManager from '../../quan-ly-thanh-toan/ContractDebtManager';
 
 interface PaymentTerm {
   _id?: string;
@@ -376,7 +375,6 @@ export default function ContractPaymentDetail() {
         </div>
       </div>
 
-      <ContractDebtManager contractId={id as string} />
 
     </div>
   );

@@ -109,6 +109,8 @@ export default function HomePage() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotNewPassword, setForgotNewPassword] = useState("");
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [forgotError, setForgotError] = useState<string | null>(null);
   const [forgotSuccess, setForgotSuccess] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -401,14 +403,36 @@ export default function HomePage() {
 
 
 
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotUsername || !forgotEmail) {
+      setForgotError("Vui lòng nhập Tên đăng nhập và Email");
+      return;
+    }
+    try {
+      setIsResetting(true);
+      setForgotError(null);
+      const res = await api.post("/auth/forgot-password", {
+        TenDangNhap: forgotUsername,
+        Email: forgotEmail,
+      });
+      if (res.data.success) {
+        setOtpSent(true);
+        // Có thể alert mã OTP demo để test
+        if (res.data.demoOtp) {
+          alert(`Mã OTP Demo: ${res.data.demoOtp}`);
+        }
+      }
+    } catch (err: any) {
+      setForgotError(err.response?.data?.error || "Lỗi khi gửi OTP");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !forgotUsername ||
-      !forgotEmail ||
-      !forgotNewPassword ||
-      !forgotConfirmPassword
-    ) {
+    if (!forgotUsername || !forgotEmail || !forgotOtp || !forgotNewPassword || !forgotConfirmPassword) {
       setForgotError("Vui lòng điền đầy đủ thông tin");
       return;
     }
@@ -423,6 +447,7 @@ export default function HomePage() {
       const res = await api.post("/auth/reset-password", {
         TenDangNhap: forgotUsername,
         Email: forgotEmail,
+        OTP: forgotOtp,
         MatKhauMoi: forgotNewPassword,
       });
 
@@ -431,8 +456,10 @@ export default function HomePage() {
         setTimeout(() => {
           setIsForgotMode(false);
           setForgotSuccess(false);
+          setOtpSent(false);
           setForgotUsername("");
           setForgotEmail("");
+          setForgotOtp("");
           setForgotNewPassword("");
           setForgotConfirmPassword("");
           setLoginEmail(forgotUsername);
@@ -1431,52 +1458,82 @@ export default function HomePage() {
                 )}
 
                 <div className="space-y-4">
-                  <input
-                    type="text"
-                    value={forgotUsername}
-                    onChange={(e) => setForgotUsername(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Tên đăng nhập"
-                    required
-                  />
-                  <input
-                    type="email"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Email đã đăng ký"
-                    required
-                  />
-                  <input
-                    type="password"
-                    value={forgotNewPassword}
-                    onChange={(e) => setForgotNewPassword(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Mật khẩu mới"
-                    required
-                  />
-                  <input
-                    type="password"
-                    value={forgotConfirmPassword}
-                    onChange={(e) => setForgotConfirmPassword(e.target.value)}
-                    className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
-                    placeholder="Nhập lại mật khẩu mới"
-                    required
-                  />
+                  {!otpSent ? (
+                    <>
+                      <input
+                        type="text"
+                        value={forgotUsername}
+                        onChange={(e) => setForgotUsername(e.target.value)}
+                        className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                        placeholder="Tên đăng nhập"
+                        required
+                      />
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                        placeholder="Email đã đăng ký"
+                        required
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        value={forgotOtp}
+                        onChange={(e) => setForgotOtp(e.target.value)}
+                        className="w-full h-12 bg-emerald-50 border border-emerald-100/50 rounded-xl px-5 text-sm font-bold text-slate-900 outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-400/5 transition-all"
+                        placeholder="Mã OTP (6 số)"
+                        required
+                      />
+                      <input
+                        type="password"
+                        value={forgotNewPassword}
+                        onChange={(e) => setForgotNewPassword(e.target.value)}
+                        className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                        placeholder="Mật khẩu mới"
+                        required
+                      />
+                      <input
+                        type="password"
+                        value={forgotConfirmPassword}
+                        onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                        className="w-full h-12 bg-blue-50/50 border border-blue-100/50 rounded-xl px-5 text-sm font-medium text-slate-900 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-400/5 transition-all"
+                        placeholder="Nhập lại mật khẩu mới"
+                        required
+                      />
+                    </>
+                  )}
                 </div>
 
                 <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={isResetting}
-                    className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
-                  >
-                    {isResetting ? (
-                      <Loader2 className="animate-spin" size={18} />
-                    ) : (
-                      "Cập Nhật Mật Khẩu"
-                    )}
-                  </button>
+                  {!otpSent ? (
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={isResetting}
+                      className="w-full h-12 bg-[#6366f1] text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:bg-[#4f46e5] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                    >
+                      {isResetting ? (
+                        <Loader2 className="animate-spin" size={18} />
+                      ) : (
+                        "Nhận mã OTP"
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={isResetting}
+                      className="w-full h-12 bg-emerald-500 text-white rounded-xl font-bold text-sm flex items-center justify-center shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
+                    >
+                      {isResetting ? (
+                        <Loader2 className="animate-spin" size={18} />
+                      ) : (
+                        "Cập Nhật Mật Khẩu"
+                      )}
+                    </button>
+                  )}
                 </div>
 
                 <div className="text-center pt-2">
