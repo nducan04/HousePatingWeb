@@ -5,6 +5,7 @@ import { Search, Eye, DollarSign, Wallet, FileCheck, Landmark, Plus, X, Save, Ed
 import api from '@/lib/utils/axiosAuth';
 import { useAuthStore } from '@/lib/store/authStore';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 // Types
 interface HopDongData {
@@ -36,6 +37,7 @@ interface ThanhToanHD {
 }
 
 export default function ThanhToanHopDongPage() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const role = user?.role;
   const [data, setData] = useState<ThanhToanHD[]>([]);
@@ -326,6 +328,7 @@ export default function ThanhToanHopDongPage() {
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Số Tiền</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Hạn Chót</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng Thái</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Hành Động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -368,6 +371,30 @@ export default function ThanhToanHopDongPage() {
                       </td>
                       <td className="px-6 py-4">
                         {getStatusBadge(item.trangThai)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/hop-dong-pha-che/${item.contractId}`);
+                            }}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Xem chi tiết hợp đồng"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/thanh-toan-hd/${item.contractId}`);
+                            }}
+                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Thanh toán / Quản lý công nợ"
+                          >
+                            <Wallet size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )

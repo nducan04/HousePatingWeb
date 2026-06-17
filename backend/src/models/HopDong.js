@@ -23,7 +23,8 @@ const paymentTermSchema = new mongoose.Schema({
   amount: { type: Number, required: true }, // Giá trị đợt
   dueDate: { type: Date, required: true }, // Hạn thanh toán
   paidAmount: { type: Number, default: 0 }, // Đã thanh toán của đợt này
-  paidDate: { type: Date } // Ngày thanh toán gần nhất cho đợt này
+  paidDate: { type: Date }, // Ngày thanh toán gần nhất cho đợt này
+  lateFeeApplied: { type: Boolean, default: false } // Đã phạt trễ hạn chưa
 }, { _id: true }); // Keep _id to identify terms when updating
 
 const chiTietHopDongSchema = new mongoose.Schema({

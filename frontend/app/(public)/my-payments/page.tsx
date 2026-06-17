@@ -1,12 +1,72 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Search, Eye, CreditCard, DollarSign, Wallet, FileCheck,
-  CheckCircle2, XCircle, Clock, ArrowRight, Package
+  CheckCircle2, XCircle, Clock, ArrowRight, Package, ArrowLeft, Printer
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import api from '@/lib/utils/axiosAuth';
 import { toast } from '@/lib/utils/notification';
+
+const numberToVietnameseWords = (num: number): string => {
+  if (num === 0) return "Không đồng chẵn";
+
+  const units = ["", "nghìn", "triệu", "tỷ"];
+  const digits = [
+    "không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín",
+  ];
+
+  const readThreeDigits = (n: number, isFirst: boolean): string => {
+    let temp = n;
+    const hundred = Math.floor(temp / 100);
+    temp %= 100;
+    const ten = Math.floor(temp / 10);
+    const unit = temp % 10;
+
+    let res = "";
+    if (hundred > 0 || !isFirst) {
+      res += digits[hundred] + " trăm ";
+    }
+    if (ten > 0) {
+      if (ten === 1) res += "mười ";
+      else res += digits[ten] + " mươi ";
+    } else if (hundred > 0 && unit > 0) {
+      res += "lẻ ";
+    }
+    if (unit > 0) {
+      if (unit === 1 && ten > 1) res += "mốt";
+      else if (unit === 5 && ten > 0) res += "lăm";
+      else if (unit === 5 && ten === 0) res += "năm";
+      else res += digits[unit];
+    }
+    return res.trim();
+  };
+
+  let result = "";
+  let tempNum = num;
+  const groups: number[] = [];
+
+  while (tempNum > 0) {
+    groups.push(tempNum % 1000);
+    tempNum = Math.floor(tempNum / 1000);
+  }
+
+  for (let i = groups.length - 1; i >= 0; i--) {
+    if (groups[i] > 0 || (i === 0 && groups.length === 1)) {
+      const groupText = readThreeDigits(groups[i], i === groups.length - 1);
+      if (groupText) {
+        result += groupText + " " + units[i] + " ";
+      }
+    }
+  }
+
+  result = result.trim() + " đồng chẵn";
+  return result.charAt(0).toUpperCase() + result.slice(1);
+};
 
 const API_THANH_TOAN = '/payments/my-payments';
 
@@ -22,14 +82,35 @@ interface FinancialRecord {
 }
 
 export default function MyPaymentsPage() {
+  const router = useRouter();
   const [records, setRecords] = useState<FinancialRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
+  const [selectedInvoice, setSelectedInvoice] = useState<FinancialRecord | null>(null);
+  const [invoiceDetails, setInvoiceDetails] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchRecords();
   }, []);
+
+  useEffect(() => {
+    if (selectedInvoice) {
+      setLoadingDetails(true);
+      const url = selectedInvoice.type === 'CONTRACT' ? `/contracts/${selectedInvoice._id}` : `/don-hang/${selectedInvoice._id}`;
+      api.get(url).then(res => {
+        setInvoiceDetails(res.data.data || res.data);
+      }).catch(err => {
+        console.error('Error fetching details:', err);
+      }).finally(() => {
+        setLoadingDetails(false);
+      });
+    } else {
+      setInvoiceDetails(null);
+    }
+  }, [selectedInvoice]);
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -45,25 +126,26 @@ export default function MyPaymentsPage() {
     }
   };
 
-  const handlePayNow = async (record: FinancialRecord) => {
+  const handlePayNow = (record: FinancialRecord) => {
     if (record.debtAmount <= 0) return;
-    
-    // Call MoMo API
-    try {
-      const momoRes = await api.post('/payments/momo/create', {
-        type: record.type,
-        id: record._id,
-        amount: record.debtAmount
-      });
+    router.push(`/thanh-toan/card-payment?id=${record._id}&type=${record.type}&amount=${record.debtAmount}&code=${record.code}`);
+  };
 
-      if (momoRes.data.success && momoRes.data.payUrl) {
-        window.location.href = momoRes.data.payUrl;
-      } else {
-        toast.error(momoRes.data.message || 'Lỗi khởi tạo thanh toán MoMo.');
-      }
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error.response?.data?.message || error.message || 'Lỗi kết nối cổng thanh toán.');
+  const handleExportPDF = async () => {
+    if (!invoiceRef.current || !selectedInvoice) return;
+    try {
+      const canvas = await html2canvas(invoiceRef.current, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`HoaDon_${selectedInvoice.code}.pdf`);
+      toast.success("Xuất hóa đơn PDF thành công!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi xuất hóa đơn!");
     }
   };
 
@@ -89,8 +171,13 @@ export default function MyPaymentsPage() {
       {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-[#1c3c77] tracking-tight">Lịch sử Giao dịch & Thanh toán</h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">
+          <div className="flex items-center gap-3 mb-2">
+            <Link href="/my-contracts" className="text-slate-400 hover:text-blue-600 transition-colors p-1.5 bg-slate-50 hover:bg-blue-50 rounded-lg">
+              <ArrowLeft size={18} />
+            </Link>
+            <h1 className="text-2xl font-black text-[#1c3c77] tracking-tight">Lịch sử Giao dịch & Thanh toán</h1>
+          </div>
+          <p className="text-sm text-slate-500 font-medium">
             Theo dõi chi tiết thanh toán các đơn hàng và hợp đồng của bạn.
           </p>
         </div>
@@ -167,7 +254,7 @@ export default function MyPaymentsPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-xl overflow-x-auto max-w-full">
               {[
                 { id: 'all', label: 'Tất cả' },
@@ -178,19 +265,18 @@ export default function MyPaymentsPage() {
                 <button
                   key={f.id}
                   onClick={() => setFilter(f.id)}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
-                    filter === f.id
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${filter === f.id
                       ? "bg-[#1c3c77] text-white shadow-sm"
                       : "text-slate-500 hover:text-slate-700 hover:bg-white"
-                  }`}
+                    }`}
                 >
                   {f.label}
                 </button>
               ))}
             </div>
           </div>
-          
-          <button 
+
+          <button
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-[13px] bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border border-slate-200 cursor-pointer"
             onClick={fetchRecords}
           >
@@ -231,9 +317,8 @@ export default function MyPaymentsPage() {
                 <tr key={item._id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 ${
-                        item.type === 'ORDER' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
-                      }`}>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 ${item.type === 'ORDER' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
+                        }`}>
                         {item.type === 'ORDER' ? <Package size={18} /> : <FileCheck size={18} />}
                       </div>
                       <div>
@@ -252,20 +337,18 @@ export default function MyPaymentsPage() {
                   <td className="px-6 py-4 font-bold text-emerald-600 text-[14px]">
                     {item.paidAmount.toLocaleString()} ₫
                   </td>
-                  <td className={`px-6 py-4 font-black text-[14px] ${
-                    item.debtAmount > 0 ? 'text-rose-600' : 'text-slate-400'
-                  }`}>
+                  <td className={`px-6 py-4 font-black text-[14px] ${item.debtAmount > 0 ? 'text-rose-600' : 'text-slate-400'
+                    }`}>
                     {item.debtAmount === 0 ? '—' : `${item.debtAmount.toLocaleString()} ₫`}
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                        item.debtAmount === 0 
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                          : item.paidAmount > 0 
-                            ? 'bg-blue-50 text-blue-600 border border-blue-100' 
+                      className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${item.debtAmount === 0
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                          : item.paidAmount > 0
+                            ? 'bg-blue-50 text-blue-600 border border-blue-100'
                             : 'bg-amber-50 text-amber-600 border border-amber-100'
-                      }`}
+                        }`}
                     >
                       {item.debtAmount === 0 ? 'Đã Thanh Toán' : item.paidAmount > 0 ? 'Đang Thanh Toán' : 'Chưa Thanh Toán'}
                     </span>
@@ -274,16 +357,25 @@ export default function MyPaymentsPage() {
                     {new Date(item.date).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {item.debtAmount > 0 ? (
+                    <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => handlePayNow(item)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-50 text-pink-600 hover:bg-pink-100 font-bold text-xs transition-colors cursor-pointer border border-pink-100"
+                        onClick={() => setSelectedInvoice(item)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-xs transition-colors cursor-pointer border border-blue-100"
+                        title="Xem hóa đơn"
                       >
-                        <CreditCard size={14} /> Thanh toán
+                        <Eye size={14} /> Chi tiết
                       </button>
-                    ) : (
-                      <span className="text-emerald-500 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-100"><CheckCircle2 size={14}/> Hoàn tất</span>
-                    )}
+                      {item.debtAmount > 0 ? (
+                        <button
+                          onClick={() => handlePayNow(item)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-50 text-pink-600 hover:bg-pink-100 font-bold text-xs transition-colors cursor-pointer border border-pink-100"
+                        >
+                          <CreditCard size={14} /> Thanh toán
+                        </button>
+                      ) : (
+                        <span className="text-emerald-500 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-100"><CheckCircle2 size={14} /> Hoàn tất</span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -291,6 +383,192 @@ export default function MyPaymentsPage() {
           </table>
         </div>
       </div>
+
+      {/* Invoice Modal */}
+      {selectedInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="bg-[#1c3c77] p-6 text-white relative">
+              <button
+                onClick={() => setSelectedInvoice(null)}
+                className="absolute top-4 right-4 text-blue-200 hover:text-white transition-colors"
+              >
+                <XCircle size={24} />
+              </button>
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
+                  {selectedInvoice.type === 'ORDER' ? <Package size={28} className="text-white" /> : <FileCheck size={28} className="text-white" />}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold uppercase tracking-widest text-amber-400">CHI TIẾT HÓA ĐƠN</h2>
+                  <p className="text-blue-100 text-sm mt-1">Mã: <span className="font-bold">{selectedInvoice.code}</span> • Lập ngày: {new Date(selectedInvoice.date).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-8 flex-1 overflow-y-auto bg-slate-50">
+              {loadingDetails ? (
+                <div className="py-20 text-center text-slate-500 font-medium">Đang tải thông tin chi tiết...</div>
+              ) : invoiceDetails ? (
+                <div 
+                  ref={invoiceRef}
+                  style={{
+                    backgroundColor: '#ffffff',
+                    margin: '0 auto',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                    padding: '40px',
+                    color: '#000000',
+                    fontFamily: '"Times New Roman", Times, serif',
+                    fontSize: '15px',
+                    lineHeight: '1.5',
+                    maxWidth: '800px'
+                  }}
+                >
+                  {/* Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
+                    <div style={{ width: '55%' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '16px' }}>CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO (VTSC)</div>
+                      <div style={{ fontWeight: 'bold' }}>Mã số thuế: 0100100456</div>
+                      <div>Địa chỉ: Số 215 Lạch Tray, Phường Gia Viên, Thành phố Hải Phòng</div>
+                      <div>Điện thoại: 02226.676767 - Số tài khoản: 110000123456 tại VietinBank</div>
+                    </div>
+                    <div style={{ width: '45%', textAlign: 'center' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '20px', color: '#ff0000' }}>HÓA ĐƠN GIÁ TRỊ GIA TĂNG</div>
+                      <div>Mẫu số (Form): 1C26TAA</div>
+                      <div>Ký hiệu (Serial): K26TBB</div>
+                      <div style={{ fontWeight: 'bold', color: '#ff0000' }}>Số (No.): {selectedInvoice.code}</div>
+                      <div style={{ fontStyle: 'italic' }}>Ngày (Date): {new Date(selectedInvoice.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, ' tháng ').replace(/^/, 'Ngày ').replace(/ tháng (\d{4})$/, ' năm $1')}</div>
+                    </div>
+                  </div>
+
+                  {/* Customer Info */}
+                  <div style={{ marginBottom: '20px' }}>
+                    <div style={{ display: 'flex' }}>
+                      <div style={{ whiteSpace: 'nowrap' }}>Họ tên người mua hàng: </div>
+                      <div style={{ fontWeight: 'bold', marginLeft: '5px' }}>{selectedInvoice.type === 'ORDER' ? (invoiceDetails?.TenKhachHang || 'Khách hàng') : (invoiceDetails?.partyBRepresentative || invoiceDetails?.title || 'Khách hàng')}</div>
+                    </div>
+                    <div style={{ display: 'flex' }}>
+                      <div style={{ whiteSpace: 'nowrap' }}>Tên đơn vị (nếu có): </div>
+                      <div style={{ marginLeft: '5px', borderBottom: '1px dotted #000', flex: 1 }}>{selectedInvoice.type === 'CONTRACT' ? (invoiceDetails?.title || '') : ''}</div>
+                    </div>
+                    <div style={{ display: 'flex' }}>
+                      <div style={{ whiteSpace: 'nowrap' }}>Mã số thuế (nếu có): </div>
+                      <div style={{ marginLeft: '5px', borderBottom: '1px dotted #000', flex: 1 }}>{selectedInvoice.type === 'CONTRACT' ? (invoiceDetails?.partyBTaxCode || '') : ''}</div>
+                    </div>
+                    <div style={{ display: 'flex' }}>
+                      <div style={{ whiteSpace: 'nowrap' }}>Địa chỉ: </div>
+                      <div style={{ marginLeft: '5px', borderBottom: '1px dotted #000', flex: 1 }}>{selectedInvoice.type === 'ORDER' ? (invoiceDetails?.DiaChiGiaoHang || 'Chưa cập nhật') : (invoiceDetails?.partyBAddress || 'Chưa cập nhật')}</div>
+                    </div>
+                    <div style={{ display: 'flex' }}>
+                      <div style={{ whiteSpace: 'nowrap' }}>Hình thức thanh toán: </div>
+                      <div style={{ marginLeft: '5px', borderBottom: '1px dotted #000', flex: 1 }}>Chuyển khoản / Tiền mặt</div>
+                    </div>
+                  </div>
+
+                  {/* Items Table */}
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+                    <thead>
+                      <tr>
+                        {['STT', 'Tên hàng hóa / dịch vụ', 'Đơn vị tính', 'Số lượng', 'Đơn giá', 'Thành tiền'].map((h, i) => (
+                          <th key={i} style={{ border: '1px solid #000', padding: '8px', textAlign: 'center', fontWeight: 'bold' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedInvoice.type === 'ORDER' && invoiceDetails?.Items?.map((item: any, idx: number) => (
+                        <tr key={idx}>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>{idx + 1}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px' }}>{item.TenSanPham}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>{item.SanPham?.DonViTinh || 'Thùng'}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>{item.SoLuong}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>{item.DonGia?.toLocaleString('vi-VN')} đ</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>{(item.DonGia * item.SoLuong).toLocaleString('vi-VN')} đ</td>
+                        </tr>
+                      ))}
+                      {selectedInvoice.type === 'CONTRACT' && (
+                        <tr>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>1</td>
+                          <td style={{ border: '1px solid #000', padding: '8px' }}>Thanh toán theo hợp đồng số {selectedInvoice.code}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>Lần</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>1</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>{selectedInvoice.totalAmount?.toLocaleString('vi-VN')} đ</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>{selectedInvoice.totalAmount?.toLocaleString('vi-VN')} đ</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+
+                  {/* Summary */}
+                  <div style={{ marginBottom: '30px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                      <div style={{ fontWeight: 'bold', textAlign: 'right', flex: 1, marginRight: '20px' }}>Cộng tiền hàng (Total Net Amount):</div>
+                      <div style={{ width: '150px', textAlign: 'right' }}>{((selectedInvoice.totalAmount || 0) - (selectedInvoice.type === 'ORDER' ? (invoiceDetails?.TienThue || 0) : 0)).toLocaleString('vi-VN')} đ</div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                      <div style={{ fontWeight: 'bold', textAlign: 'right', flex: 1, marginRight: '20px' }}>Thuế suất GTGT (VAT Rate): {selectedInvoice.type === 'ORDER' && invoiceDetails?.TienThue > 0 ? '8%' : '0%'}    Tiền thuế GTGT (VAT Amount):</div>
+                      <div style={{ width: '150px', textAlign: 'right' }}>{(selectedInvoice.type === 'ORDER' ? (invoiceDetails?.TienThue || 0) : 0).toLocaleString('vi-VN')} đ</div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                      <div style={{ fontWeight: 'bold', textAlign: 'right', flex: 1, marginRight: '20px' }}>Tổng cộng tiền thanh toán (Total Gross Amount):</div>
+                      <div style={{ width: '150px', textAlign: 'right', fontWeight: 'bold' }}>{selectedInvoice.totalAmount?.toLocaleString('vi-VN')} đ</div>
+                    </div>
+                    <div style={{ fontStyle: 'italic', textAlign: 'right', marginTop: '10px' }}>
+                      Số tiền viết bằng chữ: {numberToVietnameseWords(selectedInvoice.totalAmount || 0)}
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
+                    <div style={{ textAlign: 'center', width: '50%' }}>
+                      <div style={{ fontWeight: 'bold' }}>NGƯỜI MUA HÀNG</div>
+                      <div style={{ fontStyle: 'italic', fontSize: '13px' }}>(Ký, ghi rõ họ tên)</div>
+                    </div>
+                    <div style={{ textAlign: 'center', width: '50%' }}>
+                      <div style={{ fontWeight: 'bold' }}>NGƯỜI BÁN HÀNG</div>
+                      <div style={{ fontStyle: 'italic', fontSize: '13px', marginBottom: '10px' }}>(Ký điện tử bởi: CÔNG TY CP TMDV VOSCO - VTSC)</div>
+                      <div style={{ border: '2px solid #059669', padding: '10px', display: 'inline-block', borderRadius: '5px' }}>
+                        <div style={{ fontWeight: 'bold', color: '#059669' }}>✓ Ký bởi: CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ VOSCO</div>
+                        <div style={{ color: '#059669' }}>Ngày ký: {new Date(selectedInvoice.date).toLocaleDateString('vi-VN')}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-20 text-center text-rose-500 font-medium">Không thể tải chi tiết.</div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-white border-t border-slate-200 flex gap-3">
+              <button
+                onClick={handleExportPDF}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-emerald-600 bg-emerald-50 border border-emerald-100 font-bold hover:bg-emerald-100 transition-colors flex-1"
+              >
+                <Printer size={18} /> Tải PDF
+              </button>
+              <button
+                onClick={() => setSelectedInvoice(null)}
+                className="flex-1 px-4 py-3 rounded-xl text-slate-600 bg-slate-50 border border-slate-200 font-bold hover:bg-slate-100 transition-colors"
+              >
+                Đóng
+              </button>
+              {selectedInvoice.debtAmount > 0 && (
+                <button
+                  onClick={() => {
+                    handlePayNow(selectedInvoice);
+                  }}
+                  className="flex-1 px-4 py-3 rounded-xl text-white bg-blue-600 hover:bg-blue-700 font-bold transition-colors flex justify-center items-center gap-2 shadow-sm shadow-blue-200"
+                >
+                  <CreditCard size={18} /> Thanh toán
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

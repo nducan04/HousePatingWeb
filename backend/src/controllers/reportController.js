@@ -79,15 +79,14 @@ exports.getRevenueChartData = async (req, res) => {
     const contractRevenueAgg = await HopDong.aggregate([
       {
         $match: {
-          NgayLap: { $gte: startDate, $lte: endDate },
-          TrangThai: { $in: ['signed', 'delivering', 'completed'] } // Chỉ lấy hợp đồng đang hoạt động hoặc hoàn tất
+          createdAt: { $gte: startDate, $lte: endDate }
         }
       },
       {
         $project: {
-          TongGiaTri: 1,
-          month: { $month: "$NgayLap" },
-          year: { $year: "$NgayLap" }
+          DaThanhToan: 1,
+          month: { $month: "$createdAt" },
+          year: { $year: "$createdAt" }
         }
       },
       {
@@ -98,7 +97,7 @@ exports.getRevenueChartData = async (req, res) => {
       {
         $group: {
           _id: filter === 'month' ? "$month" : (filter === 'quarter' ? "$quarter" : "$year"),
-          totalRevenue: { $sum: "$TongGiaTri" }
+          totalRevenue: { $sum: { $ifNull: ["$DaThanhToan", 0] } }
         }
       }
     ]);
@@ -115,8 +114,22 @@ exports.getRevenueChartData = async (req, res) => {
         }
       },
       {
+        $lookup: {
+          from: 'KhachHangs',
+          localField: 'KhachHang',
+          foreignField: '_id',
+          as: 'customer'
+        }
+      },
+      { $unwind: '$customer' },
+      {
+        $match: { 'customer.PhanLoai': { $ne: 'B2B' } }
+      },
+      {
         $project: {
+          DaCoc: 1,
           TongTien: 1,
+          TrangThaiThanhToan: 1,
           month: { $month: "$createdAt" },
           year: { $year: "$createdAt" }
         }
@@ -129,7 +142,15 @@ exports.getRevenueChartData = async (req, res) => {
       {
         $group: {
           _id: filter === 'month' ? "$month" : (filter === 'quarter' ? "$quarter" : "$year"),
-          totalRevenue: { $sum: "$TongTien" }
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                { $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] },
+                '$TongTien',
+                { $ifNull: ['$DaCoc', 0] }
+              ]
+            }
+          }
         }
       }
     ]);
@@ -255,6 +276,18 @@ exports.getProductionChartData = async (req, res) => {
         }
       },
       {
+        $lookup: {
+          from: 'KhachHangs',
+          localField: 'KhachHang',
+          foreignField: '_id',
+          as: 'customer'
+        }
+      },
+      { $unwind: '$customer' },
+      {
+        $match: { 'customer.PhanLoai': { $ne: 'B2B' } }
+      },
+      {
         $project: {
           volume: { $sum: '$Items.SoLuong' },
           month: { $month: "$createdAt" },
@@ -274,13 +307,47 @@ exports.getProductionChartData = async (req, res) => {
       }
     ]);
 
+    const contractAgg = await HopDong.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $project: {
+          volume: { $sum: '$ChiTietHopDong.quantity' },
+          month: { $month: "$createdAt" },
+          year: { $year: "$createdAt" }
+        }
+      },
+      {
+        $addFields: {
+          quarter: { $ceil: { $divide: ["$month", 3] } }
+        }
+      },
+      {
+        $group: {
+          _id: filter === 'month' ? "$month" : (filter === 'quarter' ? "$quarter" : "$year"),
+          totalProduction: { $sum: "$volume" }
+        }
+      }
+    ]);
+
+    // Trộn sản lượng
+    const mergedActuals = {};
+    orderAgg.forEach(item => {
+      mergedActuals[item._id] = (mergedActuals[item._id] || 0) + item.totalProduction;
+    });
+    contractAgg.forEach(item => {
+      mergedActuals[item._id] = (mergedActuals[item._id] || 0) + item.totalProduction;
+    });
+
     const targets = await ProductionTarget.find({ type: filter, year: queryYear });
     const chartData = [];
 
     if (filter === 'month') {
       for (let i = 1; i <= 12; i++) {
-        const actualItem = orderAgg.find(item => item._id === i);
-        const actualVal = actualItem ? actualItem.totalProduction : 0;
+        const actualVal = mergedActuals[i] || 0;
         const plan = targets.find(item => item.month === i);
 
         chartData.push({
@@ -291,8 +358,7 @@ exports.getProductionChartData = async (req, res) => {
       }
     } else if (filter === 'quarter') {
       for (let i = 1; i <= 4; i++) {
-        const actualItem = orderAgg.find(item => item._id === i);
-        const actualVal = actualItem ? actualItem.totalProduction : 0;
+        const actualVal = mergedActuals[i] || 0;
         const plan = targets.find(item => item.quarter === i);
 
         chartData.push({
@@ -302,8 +368,7 @@ exports.getProductionChartData = async (req, res) => {
         });
       }
     } else if (filter === 'year') {
-      const actualItem = orderAgg.find(item => item._id === queryYear);
-      const actualVal = actualItem ? actualItem.totalProduction : 0;
+      const actualVal = mergedActuals[queryYear] || 0;
       const plan = targets.find(item => item.year === queryYear);
 
       chartData.push({

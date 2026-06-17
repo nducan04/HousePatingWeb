@@ -326,12 +326,24 @@ export default function GioHangPage() {
     if (!discountCode) return;
     setApplyingDiscount(true);
     try {
+      // Tính toán giá trị giỏ hàng đã chọn để kiểm tra điều kiện (nếu có)
+      const currentSelectedTotal = cartItems
+        .filter((item: any) => selectedItems.has(`${item.SanPham?._id}_${item.MaMau || ""}`))
+        .reduce((acc: number, item: any) => acc + (item.SanPham?.DonGiaCoSo || 0) * item.SoLuong, 0);
+
       const res = await api.post("/promotions/validate", {
         code: discountCode,
-        cartTotal,
+        cartTotal: currentSelectedTotal,
       });
       if (res.data.success) {
-        setDiscountInfo(res.data.data);
+        const voucher = res.data.data;
+        // Backend KhuyenMai model uses PhanTramGiam. Calculate actual discount amount.
+        const discountAmt = currentSelectedTotal * (voucher.PhanTramGiam / 100);
+        
+        setDiscountInfo({
+          ...voucher,
+          DiscountAmount: discountAmt
+        });
         alert("Áp dụng mã giảm giá thành công!");
       }
     } catch (error: any) {
@@ -354,9 +366,15 @@ export default function GioHangPage() {
       0,
     );
 
+  const dynamicDiscountAmount = discountInfo 
+    ? (discountInfo.PhanTramGiam 
+        ? selectedTotal * (discountInfo.PhanTramGiam / 100)
+        : discountInfo.DiscountAmount || 0)
+    : 0;
+
   const subTotalAfterDiscount = Math.max(
     0,
-    selectedTotal - (discountInfo?.DiscountAmount || 0),
+    selectedTotal - dynamicDiscountAmount,
   );
   const vatAmount = subTotalAfterDiscount * 0.1;
   const finalTotal = subTotalAfterDiscount + vatAmount;
@@ -501,11 +519,11 @@ export default function GioHangPage() {
                       {selectedTotal.toLocaleString()} ₫
                     </span>
                   </div>
-                  {discountInfo && (
+                  {discountInfo && dynamicDiscountAmount > 0 && (
                     <div className="flex justify-between items-center text-emerald-600">
                       <span className="text-sm">Giảm giá:</span>
                       <span className="text-sm font-bold">
-                        -{discountInfo.DiscountAmount.toLocaleString()} ₫
+                        -{dynamicDiscountAmount.toLocaleString()} ₫
                       </span>
                     </div>
                   )}

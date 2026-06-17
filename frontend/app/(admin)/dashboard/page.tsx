@@ -32,7 +32,6 @@ import {
   Target,
   ChevronRight,
   Award,
-  TrendingDown,
 } from "lucide-react";
 
 import api from "@/lib/utils/axiosAuth";
@@ -344,16 +343,7 @@ export default function DashboardPage() {
   // Customer ranking bar max
   const maxCustVol = Math.max(...topCustomers.map((c: any) => c.volume), 1);
 
-  // KPI change helper
-  const kpiChange = (change: number) => (
-    <span
-      className={`flex items-center gap-0.5 font-medium text-xs ${change >= 0 ? "text-emerald-500" : "text-rose-500"}`}
-    >
-      {change >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-      {change >= 0 ? "+" : ""}
-      {change}%
-    </span>
-  );
+
 
   if (loading) {
     return (
@@ -378,15 +368,14 @@ export default function DashboardPage() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[24px] font-medium text-slate-900 tracking-tight flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-sm flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-              <Activity size={18} />
+          <h1 className="text-[26px] font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+              <Activity size={20} />
             </div>
             Báo cáo bán hàng
           </h1>
-          <p className="text-slate-400 font-medium text-sm mt-0.5">
-            Hệ thống phân tích dữ liệu kinh doanh &amp; sản xuất theo thời gian
-            thực
+          <p className="text-slate-400 font-medium text-sm mt-1 ml-[52px]">
+            Phân tích dữ liệu kinh doanh &amp; sản xuất theo thời gian thực
           </p>
         </div>
         <button
@@ -398,28 +387,28 @@ export default function DashboardPage() {
               buildPeriod(),
             )
           }
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-sm font-light text-sm transition-all shadow-sm shadow-emerald-500/20 cursor-pointer"
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
         >
           <FileSpreadsheet size={16} /> Xuất báo cáo
         </button>
       </div>
 
       {/* ── Sleek Horizontal Filter Toolbar ── */}
-      <div className="bg-white rounded-[24px] border border-slate-100 shadow-lg shadow-slate-200/40 p-5 md:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden group">
+      <div className="bg-white rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 p-5 md:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden group">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
         <div className="flex flex-wrap items-center gap-8 relative z-10">
           {/* Year selector */}
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
               Năm
             </span>
-            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-sm border border-slate-100">
+            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
               {YEARS.map((y) => (
                 <button
                   key={y}
                   onClick={() => setActiveYears([y])}
-                  className={`px-3.5 py-1.5 rounded-sm text-xs font-light transition-all cursor-pointer ${activeYears.includes(y)
-                    ? "bg-blue-600 text-white shadow-sm"
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeYears.includes(y)
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                     : "text-slate-500 hover:bg-slate-100"
                     }`}
                 >
@@ -431,15 +420,15 @@ export default function DashboardPage() {
 
           {/* Month selector */}
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
               Tháng
             </span>
-            <div className="flex flex-wrap items-center gap-1 bg-slate-50 p-1 rounded-sm border border-slate-100 max-w-[550px]">
+            <div className="flex flex-wrap items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100 max-w-[550px]">
               {MONTHS.map((m) => (
                 <button
                   key={m}
                   onClick={() => toggle(activeMonths, m, setActiveMonths)}
-                  className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all cursor-pointer ${activeMonths.includes(m)
+                  className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${activeMonths.includes(m)
                     ? "bg-indigo-500 text-white shadow-sm"
                     : "text-slate-500 hover:bg-slate-100"
                     }`}
@@ -457,101 +446,87 @@ export default function DashboardPage() {
             setActiveMonths([]);
             setActiveRegions([]);
           }}
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-light text-xs rounded-sm transition-all flex items-center justify-center gap-1.5 self-end lg:self-auto shadow-sm cursor-pointer"
+          className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 self-end lg:self-auto shadow-sm cursor-pointer"
         >
-          <Filter size={12} /> Đặt lại bộ lọc
+          <Filter size={12} /> Xóa bộ lọc
         </button>
       </div>
 
-      {/* ── Main content: full width ── */}
-      <div className="w-full space-y-5">
-        {/* KPI Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            {
-              icon: <BarChart3 size={20} />,
-              color: "blue",
-              label: "Tổng doanh thu",
-              value: `${totalRevenue.toLocaleString("vi-VN")}`,
-              unit: "Tr.Đ",
-              change: stats.kpi.totalRevenue.change,
-              sub: "vs cùng kỳ",
-            },
-            {
-              icon: <FileSpreadsheet size={20} />,
-              color: "violet",
-              label: "Đơn đặt hàng",
-              value: stats.kpi.orderCount?.value ?? 0,
-              unit: "đơn",
-              change: stats.kpi.orderCount?.change ?? 0,
-              sub: "vs tháng trước",
-            },
-            {
-              icon: <Users size={20} />,
-              color: "emerald",
-              label: "Số khách hàng",
-              value: stats.kpi.customerCount.value,
-              unit: "khách",
-              change: stats.kpi.customerCount.change,
-              sub: "vs cùng kỳ",
-            },
-            {
-              icon: <Package size={20} />,
-              color: "amber",
-              label: "Sản lượng bán",
-              value: stats.kpi.totalProduction.value.toLocaleString("vi-VN"),
-              unit: "Thùng",
-              change: stats.kpi.totalProduction.change,
-              sub: "vs kế hoạch",
-            },
-          ].map((k, i) => {
-            const palette: Record<string, string> = {
-              blue: "bg-blue-50 text-blue-600",
-              violet: "bg-violet-50 text-violet-600",
-              emerald: "bg-emerald-50 text-emerald-600",
-              amber: "bg-amber-50 text-amber-600",
-            };
-            return (
-              <div
-                key={i}
-                className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-5 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group"
-              >
-                <div
-                  className={`absolute -right-4 -top-4 w-24 h-24 rounded-full ${palette[k.color]} opacity-10 group-hover:scale-150 transition-transform duration-700`}
-                />
-                <div className="flex items-center justify-between mb-4 relative z-10">
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                    {k.label}
-                  </p>
-                  <div
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center ${palette[k.color]} shadow-md`}
-                  >
-                    {k.icon}
-                  </div>
-                </div>
-                <p className="text-3xl font-black text-slate-900 leading-none mb-3 relative z-10 tracking-tight">
-                  {k.value}
-                  <span className="text-sm font-bold text-slate-400 ml-1.5 uppercase">
-                    {k.unit}
-                  </span>
-                </p>
-                <div className="flex items-center gap-1.5 relative z-10">
-                  {kpiChange(k.change)}
-                  <span className="text-[12px] font-medium text-slate-500">
-                    {k.sub}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
 
-        {/* Gauge + Revenue Chart row */}
-        <div className="grid grid-cols-1 gap-5">
-          {/* Revenue Plan Chart */}
-          <div className="min-w-0 bg-white rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 p-4">
-            <RevenuePlanChart year={activeYears[0] as any} />
+      {/* ── Main content: full width ── */}
+      <div className="w-full space-y-6">
+
+        {/* ── KPI Cards ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* Card 1: Tổng Doanh Thu */}
+          <div className="relative overflow-hidden rounded-[24px] p-6 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow-2xl shadow-blue-600/25 border border-white/10 hover:-translate-y-2 transition-all duration-500 group cursor-default">
+            <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-2xl group-hover:scale-[2] transition-transform duration-700" />
+            <div className="absolute -left-4 -bottom-4 w-20 h-20 rounded-full bg-white/5 blur-xl" />
+            <div className="flex items-center justify-between mb-5 relative z-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Tổng Doanh Thu</p>
+              <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner">
+                <DollarSign size={20} />
+              </div>
+            </div>
+            <p className="text-[40px] font-black leading-none tracking-tight relative z-10 mb-1">
+              {totalRevenue.toLocaleString("vi-VN")}
+              <span className="text-base font-bold text-white/50 ml-2">Tr.Đ</span>
+            </p>
+            <p className="text-[11px] font-medium text-white/50 relative z-10 mt-2">Từ đơn hàng & hợp đồng</p>
           </div>
+
+          {/* Card 2: Đơn Đặt Hàng */}
+          <div className="relative overflow-hidden rounded-[24px] p-6 bg-white border border-slate-100 shadow-xl shadow-slate-200/40 hover:-translate-y-2 hover:shadow-2xl hover:border-violet-200 transition-all duration-500 group cursor-default">
+            <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-violet-100 opacity-0 group-hover:opacity-60 blur-2xl group-hover:scale-[2] transition-all duration-700" />
+            <div className="flex items-center justify-between mb-5 relative z-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Đơn Đặt Hàng</p>
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 flex items-center justify-center shadow-sm text-violet-600">
+                <FileSpreadsheet size={20} />
+              </div>
+            </div>
+            <p className="text-[40px] font-black leading-none tracking-tight text-slate-900 relative z-10 mb-1">
+              {stats?.kpi?.orderCount?.value ?? 0}
+              <span className="text-base font-bold text-slate-300 ml-2">đơn</span>
+            </p>
+            <p className="text-[11px] font-medium text-slate-400 relative z-10 mt-2">Đơn hàng & hợp đồng KH</p>
+          </div>
+
+          {/* Card 3: Số Khách Hàng */}
+          <div className="relative overflow-hidden rounded-[24px] p-6 bg-white border border-slate-100 shadow-xl shadow-slate-200/40 hover:-translate-y-2 hover:shadow-2xl hover:border-emerald-200 transition-all duration-500 group cursor-default">
+            <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-emerald-100 opacity-0 group-hover:opacity-60 blur-2xl group-hover:scale-[2] transition-all duration-700" />
+            <div className="flex items-center justify-between mb-5 relative z-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Số Khách Hàng</p>
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 flex items-center justify-center shadow-sm text-emerald-600">
+                <Users size={20} />
+              </div>
+            </div>
+            <p className="text-[40px] font-black leading-none tracking-tight text-slate-900 relative z-10 mb-1">
+              {stats?.kpi?.customerCount?.value ?? 0}
+              <span className="text-base font-bold text-slate-300 ml-2">khách</span>
+            </p>
+            <p className="text-[11px] font-medium text-slate-400 relative z-10 mt-2">Khách hàng đã giao dịch</p>
+          </div>
+
+          {/* Card 4: Sản Lượng Bán */}
+          <div className="relative overflow-hidden rounded-[24px] p-6 bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white shadow-2xl shadow-orange-500/25 border border-white/10 hover:-translate-y-2 transition-all duration-500 group cursor-default">
+            <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-2xl group-hover:scale-[2] transition-transform duration-700" />
+            <div className="absolute -left-4 -bottom-4 w-20 h-20 rounded-full bg-white/5 blur-xl" />
+            <div className="flex items-center justify-between mb-5 relative z-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Sản Lượng Bán</p>
+              <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner">
+                <Package size={20} />
+              </div>
+            </div>
+            <p className="text-[40px] font-black leading-none tracking-tight relative z-10 mb-1">
+              {(stats?.kpi?.totalProduction?.value ?? 0).toLocaleString("vi-VN")}
+              <span className="text-base font-bold text-white/50 ml-2">Thùng</span>
+            </p>
+            <p className="text-[11px] font-medium text-white/50 relative z-10 mt-2">Thống kê sản lượng bán hàng</p>
+          </div>
+        </div>
+        {/* Revenue Chart */}
+        <div className="min-w-0 bg-white rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/40 p-4">
+          <RevenuePlanChart year={activeYears[0] as any} />
         </div>
 
         {/* Production Plan Chart */}

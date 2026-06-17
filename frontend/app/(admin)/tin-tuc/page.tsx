@@ -13,6 +13,8 @@ import {
   FileCheck,
   X,
   Upload,
+  Eye,
+  Heart
 } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -36,6 +38,8 @@ interface TinTuc {
   TrangThai: "Draft" | "Published";
   NgayDang?: string;
   createdAt?: string;
+  views?: number;
+  likes?: number;
 }
 
 const getImageUrl = (path: any) => {
@@ -186,7 +190,7 @@ export default function TinTucPage() {
     total: data.length,
     published: data.filter((d) => d.TrangThai === "Published").length,
     drafts: data.filter((d) => d.TrangThai !== "Published").length,
-    views: 0,
+    views: data.reduce((sum, item) => sum + (item.views || 0), 0),
   };
 
   const filteredData = data.filter((item) => {
@@ -352,6 +356,12 @@ export default function TinTucPage() {
                           </span>
                           <span className="line-clamp-1 max-w-xs">
                             {item.Abstract || "Chưa có mô tả..."}
+                          </span>
+                          <span className="flex items-center gap-1 ml-2 font-bold">
+                            <Eye size={12} className="text-blue-500" /> {item.views || 0}
+                          </span>
+                          <span className="flex items-center gap-1 font-bold">
+                            <Heart size={12} className="text-red-500" /> {item.likes || 0}
                           </span>
                         </div>
                       </div>

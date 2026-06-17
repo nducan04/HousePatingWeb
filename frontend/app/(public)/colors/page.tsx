@@ -66,6 +66,7 @@ export default function ColorsPage() {
 
   // Forgot Password state
   const [isForgotMode, setIsForgotMode] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [forgotUsername, setForgotUsername] = useState("");
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotNewPassword, setForgotNewPassword] = useState("");

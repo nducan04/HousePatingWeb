@@ -79,22 +79,18 @@ exports.checkoutFromCart = async (req, res) => {
         }
 
         if (discountCode) {
-            const voucher = await KhuyenMai.findOne({ MaVoucher: discountCode.toUpperCase() }).session(session);
-            if (voucher && voucher.TrangThai === 'DANG_DIEN_RA') {
-                if (subtotal >= voucher.DonHangToiThieu) {
-                    if (voucher.LoaiGiamGia === 'PHAN_TRAM') {
-                        discountAmount = (subtotal * voucher.MucGiam) / 100;
-                        if (voucher.GiamToiDa > 0 && discountAmount > voucher.GiamToiDa) discountAmount = voucher.GiamToiDa;
-                    } else if (voucher.LoaiGiamGia === 'GIAM_THANG') {
-                        discountAmount = voucher.MucGiam;
-                    }
-
-                    // Cập nhật lượt dùng voucher
-                    voucher.SoLuongDaDung += 1;
-                    if (voucher.SoLuongDaDung >= voucher.SoLuongToiDa) voucher.TrangThai = 'DA_KET_THUC';
-                    await voucher.save({ session });
-                    appliedVoucherId = voucher._id;
-                }
+            const voucher = await KhuyenMai.findOne({ MaKhuyenMai: discountCode.toUpperCase() }).session(session);
+            if (voucher && voucher.TrangThai === 'Đang diễn ra') {
+                discountAmount = (subtotal * voucher.PhanTramGiam) / 100;
+                
+                // Ghi nhận lịch sử dùng
+                voucher.DanhSachApDung.push({
+                    MaKhachHang: realKhachHangId?.toString() || 'Unknown',
+                    NgayApDung: new Date(),
+                    SoTienGiam: discountAmount
+                });
+                await voucher.save({ session });
+                appliedVoucherId = voucher._id;
             } else if (kh && kh.Vouchers) {
                 // Thử kiểm tra voucher được tặng riêng
                 const giftedVoucher = kh.Vouchers.find(v => v.VoucherCode.toUpperCase() === discountCode.toUpperCase());
@@ -377,6 +373,16 @@ exports.updateStatus = async (req, res) => {
                     TrangThaiTongQuat: 'Đang giao hàng',
                     DuKienBanGiao: new Date(Date.now() + 2 * 60 * 60 * 1000)
                 }], { session });
+            } else {
+                // Update existing tracking to 'Đang giao hàng'
+                existingTracking.TrangThaiTongQuat = 'Đang giao hàng';
+                existingTracking.LoTrinh.push({
+                    ThoiGian: new Date(),
+                    NoiDung: 'Bắt đầu giao hàng',
+                    Status: 'PROCESSING',
+                    Icon: 'Truck'
+                });
+                await existingTracking.save({ session });
             }
         }
 
@@ -455,37 +461,58 @@ exports.deleteOrder = async (req, res) => {
 exports.updateOrderInfo = async (req, res) => {
     try {
         const { id } = req.params;
-        const { tenNguoiNhan, sdtNguoiNhan, DiaChiGiaoHang, PhuongThucThanhToan } = req.body;
+        const { tenNguoiNhan, sdtNguoiNhan, DiaChiGiaoHang, PhuongThucThanhToan, discountCode, discountAmount } = req.body;
 
         const order = await DonHang.findById(id);
         if (!order) return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
 
         // Ensure only the owner or an admin/staff can update
+        let realKhachHangId = order.KhachHang;
         if (req.user.VaiTro === 'KhachHangB2B' || req.user.VaiTro === 'KhachHangB2C') {
-            // Find user's KhachHang profile
             const KhachHang = require('../models/KhachHang');
             const khProfile = await KhachHang.findOne({ AccountID: req.user._id });
             if (!khProfile || order.KhachHang.toString() !== khProfile._id.toString()) {
                 return res.status(403).json({ success: false, message: 'Bạn không có quyền sửa đơn hàng này' });
             }
-            if (order.TrangThai !== 'CHO_XAC_NHAN') {
-                return res.status(400).json({ success: false, message: 'Chỉ có thể sửa thông tin khi đơn hàng đang chờ xác nhận' });
+            realKhachHangId = khProfile._id;
+            
+            if (order.TrangThai !== 'CHO_XAC_NHAN' && order.TrangThai !== 'CHO_THANH_TOAN') {
+                return res.status(400).json({ success: false, message: 'Chỉ có thể sửa thông tin khi đơn hàng chưa được xử lý' });
             }
         }
 
-        // We update the fields. In DonHang model, there might not be explicit tenNguoiNhan/sdtNguoiNhan fields,
-        // we might store them in DiaChiGiaoHang or add them. Let's see DonHang model!
-        // Wait, the prompt says "thông tin người nhận bao gồm tên, số điện thoại, địa chỉ nhận hàng".
-        // Let's assume these are stored.
         if (DiaChiGiaoHang) order.DiaChiGiaoHang = DiaChiGiaoHang;
-
-        // If the model supports these:
         if (tenNguoiNhan !== undefined) order.TenNguoiNhan = tenNguoiNhan;
         if (sdtNguoiNhan !== undefined) order.SDTNguoiNhan = sdtNguoiNhan;
         if (PhuongThucThanhToan !== undefined) order.PhuongThucThanhToan = PhuongThucThanhToan;
 
+        // Apply voucher to existing order if not already applied
+        if (discountCode && discountAmount) {
+            const KhuyenMai = require('../models/KhuyenMai');
+            const voucher = await KhuyenMai.findOne({ MaKhuyenMai: discountCode.toUpperCase() });
+            
+            // Check if voucher is valid and order hasn't already used a voucher
+            if (voucher && voucher.TrangThai === 'Đang diễn ra' && !order.KhuyenMai) {
+                // Determine remaining amount to pay
+                const currentTotal = order.TongTien || 0;
+                if (currentTotal > discountAmount) {
+                    order.TongTien = currentTotal - discountAmount;
+                    order.GiamGia = (order.GiamGia || 0) + discountAmount;
+                    order.KhuyenMai = voucher._id;
+
+                    // Record usage
+                    voucher.DanhSachApDung.push({
+                        MaKhachHang: realKhachHangId?.toString() || 'Unknown',
+                        NgayApDung: new Date(),
+                        SoTienGiam: discountAmount
+                    });
+                    await voucher.save();
+                }
+            }
+        }
+
         await order.save();
-        res.status(200).json({ success: true, message: 'Đã cập nhật thông tin nhận hàng thành công', data: order });
+        res.status(200).json({ success: true, message: 'Đã cập nhật thông tin đơn hàng thành công', data: order });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

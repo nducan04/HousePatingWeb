@@ -38,7 +38,7 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
 
-  const [paymentMethod, setPaymentMethod] = useState("COD"); // 'COD' or 'MOMO'
+  const [paymentMethod, setPaymentMethod] = useState("COD"); // 'COD', 'MOMO', 'CARD'
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingOrderId, setExistingOrderId] = useState<string | null>(null);
@@ -230,6 +230,8 @@ export default function CheckoutPage() {
           await api
             .patch(`/orders/${existingOrderId}/info`, {
               PhuongThucThanhToan: "MOMO",
+              discountCode: discountInfo?.MaVoucher,
+              discountAmount: discountInfo?.DiscountAmount
             })
             .catch(console.error);
 
@@ -238,6 +240,8 @@ export default function CheckoutPage() {
               type: "ORDER",
               id: existingOrderId,
               amount: finalTotal,
+              discountCode: discountInfo?.MaVoucher,
+              discountAmount: discountInfo?.DiscountAmount
             });
             if (momoRes.data.success && momoRes.data.payUrl) {
               window.location.href = momoRes.data.payUrl;
@@ -250,10 +254,20 @@ export default function CheckoutPage() {
               `Thanh toán MoMo thất bại: ${momoErr.response?.data?.message || momoErr.message || "Lỗi kết nối cổng thanh toán"}.`,
             );
           }
+        } else if (paymentMethod === "CARD") {
+          // CARD
+          await api.patch(`/orders/${existingOrderId}/info`, {
+            PhuongThucThanhToan: "CARD",
+            discountCode: discountInfo?.MaVoucher,
+            discountAmount: discountInfo?.DiscountAmount
+          }).catch(console.error);
+          router.push(`/thanh-toan/card-payment?id=${existingOrderId}&type=ORDER&amount=${finalTotal}&code=${existingOrderId}&discountCode=${discountInfo?.MaVoucher || ''}&discountAmount=${discountInfo?.DiscountAmount || ''}`);
         } else {
           // COD
           await api.patch(`/orders/${existingOrderId}/info`, {
             PhuongThucThanhToan: "TIEN_MAT",
+            discountCode: discountInfo?.MaVoucher,
+            discountAmount: discountInfo?.DiscountAmount
           });
           alert("Thanh toán khi nhận hàng (COD) đã được ghi nhận. Cảm ơn bạn!");
           router.push("/my-orders");
@@ -324,6 +338,8 @@ export default function CheckoutPage() {
             sessionStorage.removeItem("checkoutDiscount");
             router.push("/my-orders");
           }
+        } else if (paymentMethod === "CARD") {
+          router.push(`/thanh-toan/card-payment?id=${orderData._id}&type=ORDER&amount=${finalTotal}&code=${orderData.MaDonHang}`);
         }
       }
     } catch (error: any) {
@@ -335,7 +351,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (selectedItems.length === 0) return null; // Will redirect in useEffect
+  if (selectedItems.length === 0 && !existingOrderId) return null; // Will redirect in useEffect
 
   return (
     <div className="min-h-screen bg-[#f0f4f8] font-sans pb-20">
@@ -550,11 +566,44 @@ export default function CheckoutPage() {
                     </div>
                   )}
                 </div>
+
+                {/* THẺ TÍN DỤNG (GIẢ LẬP) */}
+                <div
+                  onClick={() => setPaymentMethod("CARD")}
+                  className={`border-2 rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all ${
+                    paymentMethod === "CARD"
+                      ? "border-blue-600 bg-blue-50 shadow-sm"
+                      : "border-slate-100 hover:border-blue-200 bg-white"
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-colors ${
+                      paymentMethod === "CARD"
+                        ? "border-4 border-blue-600 bg-white"
+                        : "border-slate-300"
+                    }`}
+                  ></div>
+                  <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                    <CreditCard size={24} />
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-800">Thẻ Visa/Mastercard</div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      Thanh toán an toàn qua cổng thẻ điện tử (Giả lập)
+                    </div>
+                  </div>
+                  {paymentMethod === "CARD" && (
+                    <div className="ml-auto">
+                      <span className="text-[10px] font-bold bg-blue-600/10 text-blue-600 px-2 py-1 rounded-md">
+                        Trực tuyến
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* MÃ VOUCHER */}
-            {!existingOrderId && (
               <div className="bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100">
                 <h2 className="text-sm font-black text-[#1c3c77] uppercase tracking-wider mb-6 flex items-center gap-2">
                   <Tag size={18} /> MÃ VOUCHER
@@ -591,7 +640,6 @@ export default function CheckoutPage() {
                   </div>
                 )}
               </div>
-            )}
 
             {/* BIG SUBMIT BUTTON */}
             <button

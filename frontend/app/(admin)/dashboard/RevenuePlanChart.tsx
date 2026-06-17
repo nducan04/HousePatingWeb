@@ -35,11 +35,11 @@ const SingleYearTooltip = ({ active, payload, label }: any) => {
         <div className="space-y-2">
           <div className="flex justify-between gap-6">
             <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" />Thực tế</span>
-            <span className="text-xs font-black text-blue-600">{thucTe.toFixed(2)} Tỷ</span>
+            <span className="text-xs font-black text-blue-600">{thucTe.toFixed(1)} Triệu</span>
           </div>
           <div className="flex justify-between gap-6">
             <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold"><span className="w-2.5 h-2.5 rounded-full bg-slate-300" />Kế hoạch</span>
-            <span className="text-xs font-black text-slate-600">{keHoach.toFixed(2)} Tỷ</span>
+            <span className="text-xs font-black text-slate-600">{keHoach.toFixed(1)} Triệu</span>
           </div>
           <div className="flex justify-between gap-6 pt-1 border-t border-slate-100">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Hoàn thành</span>
@@ -47,7 +47,7 @@ const SingleYearTooltip = ({ active, payload, label }: any) => {
           </div>
           <div className="flex justify-between gap-6">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Chênh lệch</span>
-            <span className={`text-xs font-black ${chenh >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{chenh >= 0 ? "+" : ""}{chenh.toFixed(2)} Tỷ</span>
+            <span className={`text-xs font-black ${chenh >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{chenh >= 0 ? "+" : ""}{chenh.toFixed(1)} Triệu</span>
           </div>
         </div>
       </div>
@@ -70,7 +70,7 @@ const MultiYearTooltip = ({ active, payload, label }: any) => {
               <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />{p.name}
               </span>
-              <span className="text-xs font-black" style={{ color: p.color }}>{Number(p.value).toFixed(2)} Tỷ</span>
+              <span className="text-xs font-black" style={{ color: p.color }}>{Number(p.value).toFixed(1)} Triệu</span>
             </div>
           ))}
         </div>
@@ -127,8 +127,8 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
         // Dạng dữ liệu grouped bar: mỗi item là 1 năm có thucTe và keHoach
         const grouped = YEARS_LIST.map((y, i) => ({
           name: y,
-          thucTe: (results[i].data.data?.[0]?.thucTe ?? 0) / 1e9,
-          keHoach: (results[i].data.data?.[0]?.keHoach ?? 0) / 1e9,
+          thucTe: (results[i].data.data?.[0]?.thucTe ?? 0) / 1e6,
+          keHoach: (results[i].data.data?.[0]?.keHoach ?? 0) / 1e6,
         }));
         setMultiYearData(grouped);
       } else {
@@ -136,8 +136,8 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
         if (res.data.success) {
           setChartData(res.data.data.map((item: any) => ({
             name: item.name,
-            thucTe: item.thucTe / 1e9,
-            keHoach: item.keHoach / 1e9,
+            thucTe: item.thucTe / 1e6,
+            keHoach: item.keHoach / 1e6,
           })));
         }
       }
@@ -162,8 +162,8 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
 
     try {
       setIsSaving(true);
-      // Quy đổi từ Tỷ VNĐ sang VNĐ
-      const amountInVND = Number(targetAmount) * 1000000000;
+      // Quy đổi từ Triệu VNĐ sang VNĐ
+      const amountInVND = Number(targetAmount) * 1000000;
 
       await api.post("/reports/targets", {
         type: targetType,
@@ -195,7 +195,7 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
 
   return (
     <>
-      <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md relative">
+      <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm transition-all duration-300 hover:shadow-md relative">
         {/* Header section */}
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
           <div>
@@ -208,7 +208,7 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
                   {selectedFilter === "year" ? "So sánh Doanh thu các Năm" : `Tổng quan Doanh thu ${selectedYear}`}
                 </h3>
                 <p className="text-xs font-semibold text-slate-400 mt-0.5">
-                  {selectedFilter === "year" ? "2024 vs 2025 vs 2026 — Đơn vị: Tỷ VNĐ" : "Đơn vị: Tỷ VNĐ"}
+                  {selectedFilter === "year" ? "2024 vs 2025 vs 2026 — Đơn vị: Triệu VNĐ" : "Đơn vị: Triệu VNĐ"}
                 </p>
               </div>
             </div>
@@ -220,7 +220,7 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-black bg-blue-50 text-blue-600 border border-blue-100/50 shadow-sm">
                 <DollarSign size={12} />
-                Thực tế: {totalThucTe.toFixed(1)} Tỷ
+                Thực tế: {totalThucTe.toFixed(1)} Triệu
               </span>
               <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100/50 shadow-sm">
                 <Award size={12} />
@@ -286,8 +286,8 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
                 <YAxis
                   axisLine={false} tickLine={false}
                   tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
-                  tickFormatter={(v) => `${v.toFixed(0)} Tỷ`}
-                  label={{ value: "Doanh thu (Tỷ VNĐ)", angle: -90, position: "insideLeft", offset: 10, fill: "#94a3b8", fontSize: 18, fontWeight: 600 }}
+                  tickFormatter={(v) => `${v.toFixed(0)} Tr`}
+                  label={{ value: "Doanh thu (Triệu VNĐ)", angle: -90, position: "insideLeft", offset: 10, fill: "#94a3b8", fontSize: 14, fontWeight: 600 }}
                 />
                 <Tooltip content={<MultiYearTooltip />} cursor={{ fill: "rgba(139,92,246,0.05)" }} />
                 <Legend verticalAlign="top" align="right" iconType="circle" iconSize={10}
@@ -317,8 +317,8 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
                 <YAxis
                   axisLine={false} tickLine={false}
                   tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 700 }}
-                  tickFormatter={(v) => `${v.toFixed(0)} Tỷ`}
-                  label={{ value: "Doanh thu (Tỷ VNĐ)", angle: -90, position: "insideLeft", offset: 15, fill: "#94a3b8", fontSize: 14, fontWeight: 600 }}
+                  tickFormatter={(v) => `${v.toFixed(0)} Tr`}
+                  label={{ value: "Doanh thu (Triệu VNĐ)", angle: -90, position: "insideLeft", offset: 15, fill: "#94a3b8", fontSize: 14, fontWeight: 600 }}
                 />
                 <Tooltip content={<SingleYearTooltip />} cursor={{ fill: "rgba(59,130,246,0.05)" }} />
                 <Legend verticalAlign="top" align="right" iconType="circle" iconSize={10}
@@ -431,7 +431,7 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
               {/* Số tiền */}
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1.5">
-                  Chỉ tiêu đặt ra (Tỷ VNĐ)
+                  Chỉ tiêu đặt ra (Triệu VNĐ)
                 </label>
                 <div className="relative">
                   <input
@@ -443,11 +443,11 @@ export default function RevenuePlanChart({ year }: RevenuePlanChartProps) {
                     className="w-full pl-4 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-semibold outline-none transition-all"
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                    Tỷ
+                    Triệu
                   </div>
                 </div>
                 <p className="text-[11px] font-medium text-slate-400 mt-2 flex items-center gap-1">
-                  💡 Nhập số thực. Ví dụ: nhập <strong className="text-slate-600">2.5</strong> tương đương 2 tỷ 500 triệu.
+                  💡 Nhập số thực. Ví dụ: nhập <strong className="text-slate-600">50</strong> tương đương 50 triệu VNĐ.
                 </p>
               </div>
             </div>

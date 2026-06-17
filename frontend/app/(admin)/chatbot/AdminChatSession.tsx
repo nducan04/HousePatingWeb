@@ -132,7 +132,7 @@ export default function AdminChatSession({ preselectedCustomerId }: { preselecte
   const filteredSessions = unifiedSessions.filter(s => {
     const term = searchTerm.toLowerCase();
     const name = s.KhachHangID?.TenKhachHang?.toLowerCase() || '';
-    const phone = s.KhachHangID?.SoDienThoai?.toLowerCase() || '';
+    const phone = s.KhachHangID?.SDT?.toLowerCase() || '';
     return name.includes(term) || phone.includes(term);
   });
 
@@ -166,6 +166,9 @@ export default function AdminChatSession({ preselectedCustomerId }: { preselecte
                     {session.KhachHangID?.TenKhachHang || 'Khách hàng ẩn danh'}
                   </h3>
                 </div>
+                <div className="flex items-center gap-1 text-[11px] text-slate-400 mb-1">
+                  <Phone size={10} /> {session.KhachHangID?.SDT || 'Chưa cập nhật SĐT'}
+                </div>
                 <p className="text-xs truncate text-slate-500">
                   {lastMsg ? `${lastMsg.senderRole.includes('KhachHang') ? 'KH:' : 'Bạn:'} ${lastMsg.content}` : 'Chưa có tin nhắn'}
                 </p>
@@ -184,7 +187,7 @@ export default function AdminChatSession({ preselectedCustomerId }: { preselecte
               <div>
                 <h2 className="font-bold text-slate-800">{activeSession.KhachHangID?.TenKhachHang || 'Khách hàng'}</h2>
                 <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                  <span className="flex items-center gap-1"><Phone size={12} /> {activeSession.KhachHangID?.SoDienThoai || 'N/A'}</span>
+                  <span className="flex items-center gap-1"><Phone size={12} /> {activeSession.KhachHangID?.SDT || 'N/A'}</span>
                 </div>
               </div>
             </div>

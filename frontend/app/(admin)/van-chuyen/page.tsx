@@ -250,8 +250,6 @@ export default function VanChuyenPage() {
     if (newStatus === "Giao hàng thành công") {
       icon = "CheckCircle";
       statusLog = "COMPLETE";
-    } else if (newStatus === "Xuất xưởng") {
-      icon = "Building";
     }
 
     const updatePayload = {
@@ -388,17 +386,16 @@ export default function VanChuyenPage() {
     return match ? match[1].trim() : "N/A";
   };
 
+  const validData = data.filter(d => d.TrangThaiTongQuat === "Đang giao hàng" || d.TrangThaiTongQuat === "Giao hàng thành công");
+
   const STATS = {
-    total: data.length,
-    delivering: data.filter((d) => d.TrangThaiTongQuat === "Đang giao hàng")
-      .length,
-    delivered: data.filter(
-      (d) => d.TrangThaiTongQuat === "Giao hàng thành công",
-    ).length,
+    total: validData.length,
+    delivering: validData.filter((d) => d.TrangThaiTongQuat === "Đang giao hàng").length,
+    delivered: validData.filter((d) => d.TrangThaiTongQuat === "Giao hàng thành công").length,
     issues: 0,
   };
 
-  const filteredData = data.filter((item) => {
+  const filteredData = validData.filter((item) => {
     const tenKH = item?.DonHang?.KhachHang?.TenKhachHang || "";
     const maVC = item?.MaVanChuyen || "";
     const maDH = item?.DonHang?.MaDonHang || "";
@@ -410,10 +407,8 @@ export default function VanChuyenPage() {
 
     const matchFilter =
       filter === "all" ||
-      (filter === "delivering" &&
-        item.TrangThaiTongQuat === "Đang giao hàng") ||
-      (filter === "delivered" &&
-        item.TrangThaiTongQuat === "Giao hàng thành công");
+      (filter === "delivering" && item.TrangThaiTongQuat === "Đang giao hàng") ||
+      (filter === "delivered" && item.TrangThaiTongQuat === "Giao hàng thành công");
 
     return matchSearch && matchFilter;
   });

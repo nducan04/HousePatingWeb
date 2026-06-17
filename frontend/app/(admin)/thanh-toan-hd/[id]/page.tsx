@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Plus, Trash2, CheckCircle2, Download, Receipt } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { toast } from '@/lib/utils/notification';
+import ContractDebtManager from '../../quan-ly-thanh-toan/ContractDebtManager';
 
 interface PaymentTerm {
   _id?: string;
@@ -226,87 +227,98 @@ export default function ContractPaymentDetail() {
 
       {/* Điều khoản thanh toán Table */}
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50">
-          <Receipt size={18} className="text-blue-600" />
-          <h3 className="font-semibold text-slate-800 text-sm">Điều khoản thanh toán</h3>
+        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white rounded-t-2xl">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+              <Receipt size={20} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-800 text-base">Điều khoản thanh toán</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Quản lý và theo dõi các đợt thu tiền</p>
+            </div>
+          </div>
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-4 py-3 text-[11px] font-semibold text-slate-600 uppercase w-10 text-center">#</th>
-                <th className="px-4 py-3 text-[11px] font-semibold text-slate-600 uppercase w-48">Đợt thanh toán</th>
-                <th className="px-4 py-3 text-[11px] font-semibold text-slate-600 uppercase text-right w-24">Tỷ lệ (%)</th>
-                <th className="px-4 py-3 text-[11px] font-semibold text-slate-600 uppercase text-right w-40">Giá trị thanh toán</th>
-                <th className="px-4 py-3 text-[11px] font-semibold text-slate-600 uppercase text-center w-36">Hạn thanh toán</th>
-                <th className="px-4 py-3 text-[11px] font-semibold text-slate-600 uppercase text-center w-36">Ngày thanh toán</th>
-                <th className="px-4 py-3 text-[11px] font-semibold text-emerald-600 uppercase text-right w-40">Số đã thu</th>
-                <th className="px-4 py-3 text-[11px] font-semibold text-amber-600 uppercase text-right w-40">Còn phải thu</th>
-                <th className="px-4 py-3 text-[11px] font-semibold text-slate-600 uppercase text-center w-12"></th>
+              <tr className="bg-slate-50 border-y border-slate-200">
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-12">#</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-56">Đợt thanh toán</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right w-28">Tỷ lệ (%)</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right w-44">Giá trị thanh toán</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-40">Hạn thanh toán</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-40">Ngày thanh toán</th>
+                <th className="px-5 py-4 text-xs font-bold text-emerald-600 uppercase tracking-wider text-right w-44">Số đã thu</th>
+                <th className="px-5 py-4 text-xs font-bold text-rose-500 uppercase tracking-wider text-right w-44">Còn phải thu</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-16">Xóa</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {terms.map((term, idx) => {
                 const conPhaiThu = Math.max(0, Number(term.amount) - Number(term.paidAmount));
+                const isPaid = conPhaiThu <= 0 && Number(term.amount) > 0;
                 return (
-                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-4 py-3 text-center text-sm font-semibold text-slate-400">{idx + 1}</td>
-                    <td className="px-4 py-3">
+                  <tr key={idx} className={`group transition-colors ${isPaid ? 'bg-emerald-50/30' : 'hover:bg-slate-50/80'}`}>
+                    <td className="px-5 py-4 text-center text-sm font-bold text-slate-400">{idx + 1}</td>
+                    <td className="px-5 py-4">
                       <input 
                         type="text" 
                         value={term.name} 
                         onChange={(e) => handleTermChange(idx, 'name', e.target.value)}
-                        className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none transition-colors text-sm font-medium text-slate-700"
+                        placeholder="VD: Đợt 1 (Cọc)"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-300"
                       />
                     </td>
-                    <td className="px-4 py-3">
-                      <input 
-                        type="number" 
-                        value={term.percentage} 
-                        onChange={(e) => handleTermChange(idx, 'percentage', e.target.value)}
-                        className="w-full text-right bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none transition-colors text-sm font-semibold text-slate-700"
-                      />
+                    <td className="px-5 py-4">
+                      <div className="relative">
+                        <input 
+                          type="number" 
+                          value={term.percentage} 
+                          onChange={(e) => handleTermChange(idx, 'percentage', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-right text-sm font-bold text-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all pr-7"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <input 
                         type="number" 
                         value={term.amount} 
                         onChange={(e) => handleTermChange(idx, 'amount', e.target.value)}
-                        className="w-full text-right bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none transition-colors text-sm font-semibold text-slate-800"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-right text-sm font-bold text-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <input 
                         type="date" 
                         value={term.dueDate} 
                         onChange={(e) => handleTermChange(idx, 'dueDate', e.target.value)}
-                        className="w-full text-center bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none transition-colors text-sm font-medium text-slate-600"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-center text-sm font-medium text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <input 
                         type="date" 
                         value={term.paidDate} 
                         onChange={(e) => handleTermChange(idx, 'paidDate', e.target.value)}
-                        className="w-full text-center bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none transition-colors text-sm font-medium text-slate-600"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-center text-sm font-medium text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
                       />
                     </td>
-                    <td className="px-4 py-3">
-                      <input 
-                        type="number" 
-                        value={term.paidAmount} 
-                        onChange={(e) => handleTermChange(idx, 'paidAmount', e.target.value)}
-                        className="w-full text-right bg-emerald-50 rounded-md px-2 py-1 border border-emerald-100 focus:border-emerald-500 focus:outline-none transition-colors text-sm font-semibold text-emerald-700"
-                      />
+                    <td className="px-5 py-4">
+                      <div className={`w-full rounded-lg px-3 py-2 text-right text-sm font-bold border transition-all ${conPhaiThu <= 0 && Number(term.amount) > 0 ? 'bg-emerald-100/50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                        {term.paidAmount ? Number(term.paidAmount).toLocaleString() : '0'}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-amber-600 text-sm">
-                      {conPhaiThu.toLocaleString()}
+                    <td className="px-5 py-4 text-right">
+                      <span className={`text-sm font-black ${conPhaiThu > 0 ? 'text-rose-500' : 'text-slate-400'}`}>
+                        {conPhaiThu > 0 ? conPhaiThu.toLocaleString() : 'Hoàn tất'}
+                      </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-5 py-4 text-center">
                       <button 
                         onClick={() => handleRemoveRow(idx)}
-                        className="text-slate-300 hover:text-rose-500 transition-colors p-1"
+                        className="w-8 h-8 mx-auto flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-rose-500 transition-colors"
                         title="Xóa dòng"
                       >
                         <Trash2 size={16} />
@@ -317,44 +329,54 @@ export default function ContractPaymentDetail() {
               })}
               
               {/* TỔNG ROW */}
-              <tr className="bg-slate-50 font-semibold text-slate-800 border-t border-slate-200">
-                <td className="px-4 py-4 text-center"></td>
-                <td className="px-4 py-4 uppercase text-sm">Tổng</td>
-                <td className={`px-4 py-4 text-right text-sm ${Math.abs(totalPct - 100) > 0.1 ? 'text-rose-500' : ''}`}>{totalPct.toFixed(2)}</td>
-                <td className="px-4 py-4 text-right text-sm">{totalAmount.toLocaleString()}</td>
+              <tr className="bg-slate-800 text-white font-bold border-t-2 border-slate-700">
+                <td className="px-5 py-5 text-center"></td>
+                <td className="px-5 py-5 uppercase text-sm tracking-wider">Tổng Cộng</td>
+                <td className="px-5 py-5 text-right">
+                  <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-xs ${Math.abs(totalPct - 100) > 0.1 ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                    {totalPct.toFixed(2)}%
+                  </span>
+                </td>
+                <td className="px-5 py-5 text-right text-base">{totalAmount.toLocaleString()}</td>
                 <td colSpan={2}></td>
-                <td className="px-4 py-4 text-right text-sm text-emerald-600">{totalPaid.toLocaleString()}</td>
-                <td className="px-4 py-4 text-right text-sm text-amber-600">{Math.max(0, totalAmount - totalPaid).toLocaleString()}</td>
+                <td className="px-5 py-5 text-right text-base text-emerald-400">{totalPaid.toLocaleString()}</td>
+                <td className="px-5 py-5 text-right text-base text-rose-400">{Math.max(0, totalAmount - totalPaid).toLocaleString()}</td>
                 <td></td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div className="p-4 bg-white border-t border-slate-100 flex gap-3">
+        <div className="p-5 bg-slate-50 border-t border-slate-200 flex gap-3 rounded-b-2xl">
           <button 
             onClick={handleAddRow}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-md hover:bg-blue-100 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
           >
-            <Plus size={16} /> Thêm dòng
+            <Plus size={16} /> Thêm Đợt Thanh Toán
           </button>
           <button 
             onClick={handleClearAll}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-rose-600 bg-white border border-slate-200 rounded-md hover:bg-rose-50 hover:border-rose-200 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors shadow-sm"
           >
-            Xóa hết dòng
+            Làm Mới Toàn Bộ
           </button>
         </div>
       </div>
       
       {/* Help Note */}
-      <div className="bg-blue-50 p-4 rounded-md border border-blue-100 text-sm text-blue-800 flex items-start gap-3">
-        <CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" />
-        <p>
-          Bạn có thể thay đổi tỷ lệ % hoặc nhập trực tiếp Giá trị thanh toán, hệ thống sẽ tự tính toán giá trị còn lại. 
-          Nhớ nhập <strong>Số đã thu</strong> cho từng đợt để cập nhật tổng Đã Thanh Toán của Hợp đồng. Bấm <strong>Lưu Cập Nhật</strong> khi hoàn tất.
-        </p>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-2xl border border-blue-100 shadow-sm flex items-start gap-4 mb-8">
+        <div className="p-2 bg-blue-100 rounded-full shrink-0">
+          <CheckCircle2 size={20} className="text-blue-600" />
+        </div>
+        <div>
+          <h4 className="font-bold text-blue-900 text-sm mb-1">Hướng dẫn sử dụng</h4>
+          <p className="text-sm text-blue-800/80 font-medium leading-relaxed">
+            Bạn có thể thay đổi tỷ lệ % hoặc nhập trực tiếp Giá trị thanh toán, hệ thống sẽ tự động tính toán đối ứng. Nhập <strong>Số đã thu</strong> để ghi nhận khoản tiền khách đã trả thực tế. Đừng quên bấm nút <strong className="text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">Lưu Cập Nhật</strong> ở góc trên khi hoàn tất.
+          </p>
+        </div>
       </div>
+
+      <ContractDebtManager contractId={id as string} />
 
     </div>
   );

@@ -23,6 +23,7 @@ import {
 import api from "@/lib/utils/axiosAuth";
 import { toast, confirm } from "@/lib/utils/notification";
 import * as XLSX from "xlsx";
+import { exportToExcelVTSC } from "@/lib/utils/excelExportVTSC";
 
 const API_URL = "/suppliers";
 
@@ -329,26 +330,50 @@ export default function NhaCungCapPage() {
     return matchSearch && matchFilter;
   });
 
-  const exportToExcel = () => {
-    const dataToExport = filteredData.map((item) => ({
-      "Mã NCC": item.MaNCC,
-      "Tên Nhà Cung Cấp": item.TenNCC,
-      "Mã Số Thuế": item.MaSoThue || "",
-      "Người Liên Hệ": item.NguoiLienHe || "",
-      SĐT: item.SDT || "",
-      Email: item.Email || "",
-      "Phân Loại": item.PhanLoai || "Nhà Cung Cấp Chính",
-      "Công Nợ": item.CongNo || 0,
-      "Địa Chỉ": item.DiaChi || "",
-    }));
+  const exportToExcel = async () => {
+    const headers = [
+      "STT",
+      "Mã NCC",
+      "Tên Nhà Cung Cấp",
+      "Mã Số Thuế",
+      "Người Liên Hệ",
+      "SĐT",
+      "Email",
+      "Phân Loại",
+      "Địa Chỉ",
+      "Công Nợ (VNĐ)",
+    ];
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Nha-Cung-Cap");
-    XLSX.writeFile(
-      workbook,
-      `VTSC_Danh_Sach_Nha_Cung_Cap_${new Date().toLocaleDateString().replace(/\//g, "_")}.xlsx`,
-    );
+    const rows = filteredData.map((item, i) => [
+      i + 1,
+      item.MaNCC,
+      item.TenNCC,
+      item.MaSoThue || "",
+      item.NguoiLienHe || "",
+      item.SDT || "",
+      item.Email || "",
+      item.PhanLoai || "Nhà Cung Cấp Chính",
+      item.DiaChi || "",
+      item.CongNo || 0,
+    ]);
+
+    const tongCongNo = filteredData.reduce((s, d) => s + (d.CongNo || 0), 0);
+    const nccChinh = filteredData.filter(d => d.PhanLoai === "Nhà Cung Cấp Chính").length;
+
+    const summaryData = [
+      { label: "Tổng Số Nhà Cung Cấp", value: filteredData.length },
+      { label: "Số Nhà Cung Cấp Chính", value: nccChinh },
+      { label: "Tổng Công Nợ (VNĐ)", value: tongCongNo },
+    ];
+
+    await exportToExcelVTSC({
+      filename: `VTSC_Danh_Sach_Nha_Cung_Cap_${new Date().getTime()}`,
+      title: "BÁO CÁO DANH SÁCH NHÀ CUNG CẤP VÀ CÔNG NỢ",
+      headers,
+      data: rows,
+      summaryData,
+      totals: ["TỔNG CỘNG", "", "", "", "", "", "", "", "", tongCongNo],
+    });
   };
 
   return (

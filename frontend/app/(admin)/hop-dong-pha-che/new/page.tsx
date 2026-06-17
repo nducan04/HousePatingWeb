@@ -6,19 +6,11 @@ import Link from 'next/link';
 import {
   ArrowLeft, ArrowRight, Plus, Trash2, FileText, CheckCircle2,
   Package, ClipboardList, Eye, Building, CreditCard, Scale,
-  ChevronLeft, ChevronRight, Loader2, Wallet, Printer, Download, ChevronDown
+  ChevronLeft, ChevronRight, Loader2, Wallet, Download, Beaker
 } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
-import { useAuthStore } from '@/lib/store/authStore';
+import { useContractStore, ContractDetail } from '@/lib/store/contractStore';
 import { paintColors } from '@/lib/data/colors-data';
-
-interface ContractDetail {
-  productName: string;
-  colorCode: string;
-  quantity: number;
-  unitPrice: number;
-  technicalReqs: string;
-}
 
 const DEFAULT_ARTICLES = {
   article1: "Bên B đồng ý mua và Bên A đồng ý bán các sản phẩm sơn Interpon theo danh mục đính kèm. Hàng hóa phải đảm bảo các tiêu chuẩn kỹ thuật của nhà sản xuất AkzoNobel.",
@@ -42,25 +34,19 @@ const EMPTY_DETAIL: ContractDetail = {
   technicalReqs: ''
 };
 
-function CustomerCreateContractPage() {
+function AdminCreateContractPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated } = useAuthStore();
+  const { createContract } = useContractStore();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  
+  const [customers, setCustomers] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
-
-  // Pre-populated params from R&D
-  const colorCode = searchParams ? searchParams.get('colorCode') || '' : '';
-  const colorName = searchParams ? searchParams.get('colorName') || '' : '';
-  const surface = searchParams ? searchParams.get('surface') || '' : '';
-  const substrate = searchParams ? searchParams.get('substrate') || '' : '';
-  const requirements = searchParams ? searchParams.get('requirements') || '' : '';
-  const deadline = searchParams ? searchParams.get('deadline') || '' : '';
 
   // Form State
   const [contractType, setContractType] = useState('mua-ban');
@@ -81,12 +67,13 @@ function CustomerCreateContractPage() {
     if (contractType === 'pha-che') {
       setTitle('Hợp đồng nguyên tắc cung cấp sơn pha chế R&D');
     } else {
-      setTitle('Hợp đồng nguyên tắc mua bán');
+      setTitle('Hợp đồng nguyên tắc mua bán và pha chế sơn');
     }
   }, [contractType]);
 
   const [contractId, setContractId] = useState('');
-  const [title, setTitle] = useState('Hợp đồng nguyên tắc mua bán');
+  const [title, setTitle] = useState('Hợp đồng nguyên tắc mua bán và pha chế sơn');
+  const [customerId, setCustomerId] = useState('');
   const [partyBTaxCode, setPartyBTaxCode] = useState('');
   const [partyBRepresentative, setPartyBRepresentative] = useState('');
   const [partyBPosition, setPartyBPosition] = useState('Đại diện mua hàng');
@@ -97,22 +84,10 @@ function CustomerCreateContractPage() {
   const [partyBBankName, setPartyBBankName] = useState('');
   const [partyBBankAddress, setPartyBBankAddress] = useState('');
   const [clientAddress, setClientAddress] = useState('');
-  const [slaDeadline, setSlaDeadline] = useState(deadline);
+  const [slaDeadline, setSlaDeadline] = useState('');
 
   // Chi tiết sản phẩm
-  const [details, setDetails] = useState<ContractDetail[]>([
-    {
-      productName: `Sơn bột pha chế R&D - ${colorName || colorCode || 'Sơn đặc chủng'}`,
-      colorCode: colorCode,
-      quantity: 100,
-      unitPrice: 150000,
-      technicalReqs: [
-        surface ? `Bề mặt: ${surface}` : '',
-        substrate ? `Nền: ${substrate}` : '',
-        requirements ? `Yêu cầu: ${requirements}` : ''
-      ].filter(Boolean).join('. ')
-    }
-  ]);
+  const [details, setDetails] = useState<ContractDetail[]>([ { ...EMPTY_DETAIL } ]);
 
   // 11 Điều khoản
   const [articles, setArticles] = useState({ ...DEFAULT_ARTICLES });
@@ -120,27 +95,42 @@ function CustomerCreateContractPage() {
   // Auto-generate Contract ID on load
   useEffect(() => {
     const year = new Date().getFullYear();
-    const rand = String(Math.floor(Math.random() * 9000) + 1000);
-    setContractId(`VTSC-RND-${year}-${rand}`);
+    const rand = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+    setContractId(`CTR-${year}-${rand}`);
   }, []);
 
-  // Pre-populate customer details from auth user
-  useEffect(() => {
-    if (user) {
-      setPartyBCompanyName(user.profile?.TenKhachHang || user.profile?.HoTen || '');
-      setPartyBRepresentative(user.profile?.HoTen || user.profile?.TenKhachHang || '');
-      setPartyBAddress(user.profile?.DiaChi || '');
-      setPartyBPhoneNumber(user.profile?.SoDienThoai || '');
-      setPartyBTaxCode(user.profile?.MaSoThue || '');
-    }
-  }, [user]);
-
-  // Fetch products
+  // Fetch data
   useEffect(() => {
     api.get('/san-pham-son')
       .then(res => setAllProducts(res.data.data || []))
       .catch(err => console.error(err));
+      
+    api.get('/khach-hang')
+      .then(res => {
+        if (res.data.success) setCustomers(res.data.data);
+      })
+      .catch(err => console.error(err));
   }, []);
+
+  // Auto-fill clientAddress and B2B fields when customer selected
+  useEffect(() => {
+    const cust = customers.find((c: any) => c._id === customerId);
+    if (cust) {
+      setClientAddress(cust.walletAddress || '');
+      setPartyBCompanyName(cust.TenKhachHang || cust.name || '');
+      setPartyBRepresentative(cust.NguoiDaiDien || cust.representative || cust.TenKhachHang || cust.name || '');
+      setPartyBPhoneNumber(cust.SDT || cust.phone || '');
+      setPartyBTaxCode(cust.MaSoThue || cust.taxCode || '');
+      setPartyBAddress(cust.DiaChi || cust.address || '');
+    } else {
+      setClientAddress('');
+      setPartyBCompanyName('');
+      setPartyBRepresentative('');
+      setPartyBPhoneNumber('');
+      setPartyBTaxCode('');
+      setPartyBAddress('');
+    }
+  }, [customerId, customers]);
 
   const handlePrint = async () => {
     try {
@@ -158,7 +148,6 @@ function CustomerCreateContractPage() {
         pagebreak: { mode: ['css', 'legacy'] }
       };
 
-      // html2pdf().output('blob') returns a Promise resolving to a Blob
       const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       window.open(pdfUrl, '_blank');
@@ -181,7 +170,6 @@ function CustomerCreateContractPage() {
     const updated = [...details];
     (updated[index] as any)[field] = value;
 
-    // Tự động lấy đơn giá chuẩn nếu khách hàng chọn Sản phẩm
     if (field === 'productName') {
       const selectedProduct = allProducts.find(p => p.TenDongSon === value);
       if (selectedProduct) {
@@ -199,38 +187,31 @@ function CustomerCreateContractPage() {
       const data = {
         contractId,
         title,
-        customer: user?.id || '', // Automatically resolved on backend if customer creates
+        customer: customerId,
+        clientAddress,
         slaDeadline: slaDeadline || undefined,
         terms: {
           sla: `Giao hàng trong hạn SLA ${slaDeadline ? new Date(slaDeadline).toLocaleDateString('vi-VN') : 'thỏa thuận'}.`,
           penalty: "Phạt vi phạm trễ hạn 2% giá trị/ngày.",
           duration: "Hiệu lực kể từ ngày hai bên ký số on-chain."
         },
-        chiTietHopDong: details.map(d => ({
-          productName: d.productName,
-          colorCode: d.colorCode,
-          quantity: d.quantity,
-          unitPrice: d.unitPrice,
-          technicalReqs: d.technicalReqs
-        })),
+        chiTietHopDong: details,
         partyBAddress,
         partyBPhoneNumber,
         partyBBankAccount,
         partyBBankName,
         partyBRepresentative,
         partyBPosition,
-        clientAddress,
         articles,
         contractType
       };
 
-      const res = await api.post('/contracts', data);
-      if (res.data.success) {
+      const result = await createContract(data);
+      if (result) {
         setSubmitSuccess(true);
-        alert('🎉 Hợp đồng nguyên tắc của bạn đã được gửi thành công đến Admin VTSC để đối soát và điền thông tin Bên bán A!');
-        setTimeout(() => {
-          router.push('/my-contracts');
-        }, 1500);
+        setTimeout(() => router.push(`/hop-dong-pha-che/${result._id}`), 1500);
+      } else {
+        setSubmitError(useContractStore.getState().error || 'Lỗi không xác định');
       }
     } catch (err: any) {
       setSubmitError(err.response?.data?.error || err.message || 'Lỗi gửi hợp đồng');
@@ -239,23 +220,23 @@ function CustomerCreateContractPage() {
     }
   };
 
-  const isStep1Valid = title && partyBRepresentative && partyBAddress;
+  const isStep1Valid = title && customerId && partyBRepresentative && partyBAddress;
   const isStep2Valid = details.every(d => d.productName && d.quantity > 0 && d.unitPrice > 0);
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 w-full">
       <div className="max-w-7xl mx-auto">
-        <Link href="/my-contracts" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold text-sm transition-all mb-6 no-underline">
-          <ArrowLeft size={16} /> Quay lại Quản lý Hợp đồng
+        <Link href="/contracts" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold text-sm transition-all mb-6 no-underline bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+          <ArrowLeft size={16} /> Quay lại danh sách Hợp đồng
         </Link>
 
         {/* Stepper */}
         <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm mb-6 flex justify-around items-center">
           {[
-            { step: 1, label: 'Thông tin Bên B', icon: Building },
+            { step: 1, label: 'Thông tin chung', icon: Building },
             { step: 2, label: 'Sản phẩm & Giá', icon: Package },
             { step: 3, label: 'Điều khoản Hợp đồng', icon: ClipboardList },
-            { step: 4, label: 'Xem trước & Gửi', icon: Eye }
+            { step: 4, label: 'Xem trước & Tạo', icon: Eye }
           ].map(s => (
             <div key={s.step} className={`flex items-center gap-3 transition-opacity ${currentStep >= s.step ? 'opacity-100' : 'opacity-40'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border transition-all ${currentStep === s.step ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200' : currentStep > s.step ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
@@ -272,30 +253,71 @@ function CustomerCreateContractPage() {
             <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
               <Building className="text-blue-600" size={24} />
               <div>
-                <h2 className="text-lg font-black text-slate-800">Thông tin Bên Mua (Bên B)</h2>
-                <p className="text-xs text-slate-400 font-medium">Vui lòng cung cấp chính xác để lập hợp đồng nguyên tắc pháp lý</p>
+                <h2 className="text-lg font-black text-slate-800">Thông tin Hợp đồng & Bên Mua</h2>
+                <p className="text-xs text-slate-400 font-medium">Chọn Khách hàng B2B để tự động điền thông tin</p>
               </div>
             </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2 md:col-span-2">
                 <label className="text-xs font-black text-slate-500 uppercase ml-1">Loại hợp đồng *</label>
-                <select className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={contractType} onChange={e => setContractType(e.target.value)}>
-                  <option value="mua-ban">Hợp đồng mua bán</option>
-                  <option value="pha-che">Hợp đồng pha chế sơn</option>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div 
+                    onClick={() => {
+                      setContractType('mua-ban');
+                    }}
+                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${contractType === 'mua-ban' ? 'border-blue-500 bg-blue-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200'}`}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${contractType === 'mua-ban' ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        <FileText size={20} />
+                      </div>
+                      <h4 className={`font-bold ${contractType === 'mua-ban' ? 'text-blue-700' : 'text-slate-700'}`}>Mua bán & Pha chế sơn</h4>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium ml-13">Hợp đồng nguyên tắc mua bán dành cho khách hàng B2B.</p>
+                  </div>
+
+                  <div 
+                    onClick={() => {
+                      setContractType('pha-che');
+                    }}
+                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${contractType === 'pha-che' ? 'border-purple-500 bg-purple-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-purple-200'}`}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${contractType === 'pha-che' ? 'bg-purple-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        <Beaker size={20} />
+                      </div>
+                      <h4 className={`font-bold ${contractType === 'pha-che' ? 'text-purple-700' : 'text-slate-700'}`}>Hợp đồng pha chế sơn</h4>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium ml-13">Hợp đồng chuyên biệt cho dịch vụ yêu cầu pha chế mẫu sơn R&D.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-black text-slate-500 uppercase ml-1">Tiêu đề hợp đồng *</label>
+                <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={title} onChange={e => setTitle(e.target.value)} required />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-black text-slate-500 uppercase ml-1">Khách hàng B2B (Chọn từ hệ thống) *</label>
+                <select className="w-full bg-white border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" value={customerId} onChange={e => setCustomerId(e.target.value)}>
+                  <option value="">— Chọn khách hàng —</option>
+                  {customers.filter((c: any) => c.PhanLoai === 'B2B' || c.segment?.includes('B2B') || c.role === 'Khách hàng B2B').map((c: any) => (
+                    <option key={c._id} value={c._id}>
+                      {c.TenKhachHang || c.name || c.HoTen}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-500 uppercase ml-1">Tiêu đề hợp đồng *</label>
-                <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={title} onChange={e => setTitle(e.target.value)} required />
+                <label className="text-xs font-black text-slate-500 uppercase ml-1">Tên công ty / Tổ chức</label>
+                <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBCompanyName} onChange={e => setPartyBCompanyName(e.target.value)} placeholder="Tên công ty" />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-500 uppercase ml-1">Mã số thuế bên mua</label>
                 <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBTaxCode} onChange={e => setPartyBTaxCode(e.target.value)} placeholder="0201137068" />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-black text-slate-500 uppercase ml-1">Tên công ty</label>
-                <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBCompanyName} onChange={e => setPartyBCompanyName(e.target.value)} placeholder="Tên công ty" />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-500 uppercase ml-1">Đại diện pháp lý bên mua *</label>
@@ -310,12 +332,12 @@ function CustomerCreateContractPage() {
                 <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBPhoneNumber} onChange={e => setPartyBPhoneNumber(e.target.value)} placeholder="0987654321" required />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-500 uppercase ml-1">Địa chỉ trụ sở *</label>
-                <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBAddress} onChange={e => setPartyBAddress(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
                 <label className="text-xs font-black text-slate-500 uppercase ml-1">Thời hạn hợp đồng</label>
                 <input type="date" className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={slaDeadline} onChange={e => setSlaDeadline(e.target.value)} />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-black text-slate-500 uppercase ml-1">Địa chỉ trụ sở *</label>
+                <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBAddress} onChange={e => setPartyBAddress(e.target.value)} required />
               </div>
             </div>
 
@@ -332,10 +354,6 @@ function CustomerCreateContractPage() {
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-500 uppercase ml-1">Tại ngân hàng</label>
                   <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBBankName} onChange={e => setPartyBBankName(e.target.value)} placeholder="Techcombank" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-500 uppercase ml-1">Địa chỉ ngân hàng</label>
-                  <input className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all" value={partyBBankAddress} onChange={e => setPartyBBankAddress(e.target.value)} placeholder="Chi nhánh ngân hàng..." />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-xs font-black text-slate-500 uppercase ml-1 flex items-center gap-1">
@@ -541,18 +559,18 @@ function CustomerCreateContractPage() {
             </div>
 
             {/* Total summary */}
-            <div className="bg-slate-50 rounded-2xl p-4 flex flex-col gap-2 border border-slate-100">
+            <div className="bg-slate-50 rounded-2xl p-4 flex flex-col gap-3 mt-4 border border-slate-200">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-500">CỘNG TIỀN HÀNG (TRƯỚC THUẾ):</span>
+                <span className="text-xs font-bold text-slate-500">TỔNG GIÁ TRỊ HỢP ĐỒNG TẠM TÍNH (CHƯA VAT):</span>
                 <span className="text-sm font-bold text-slate-600">{totalValue.toLocaleString('vi-VN')} VNĐ</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-500">THUẾ SUẤT GTGT (8%):</span>
+                <span className="text-xs font-bold text-slate-500">THUẾ GTGT (VAT {totalValue >= 5000000 ? '8%' : '0%'}):</span>
                 <span className="text-sm font-bold text-slate-600">{(totalValue >= 5000000 ? totalValue * 0.08 : 0).toLocaleString('vi-VN')} VNĐ</span>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                <span className="text-sm font-bold text-slate-600">TỔNG GIÁ TRỊ HỢP ĐỒNG (SAU THUẾ):</span>
-                <span className="text-base font-black text-blue-600">{(totalValue >= 5000000 ? totalValue * 1.08 : totalValue).toLocaleString('vi-VN')} VNĐ</span>
+              <div className="flex justify-between items-center pt-3 border-t border-slate-200">
+                <span className="text-sm font-black text-slate-800">TỔNG CỘNG (ĐÃ BAO GỒM VAT):</span>
+                <span className="text-lg font-black text-blue-600">{(totalValue >= 5000000 ? totalValue * 1.08 : totalValue).toLocaleString('vi-VN')} VNĐ</span>
               </div>
             </div>
 
@@ -631,7 +649,7 @@ function CustomerCreateContractPage() {
                 </div>
 
                 <div style={{ textAlign: 'center', marginBottom: 30 }}>
-                  <div style={{ fontWeight: 900, fontSize: 20, color: '#003399', textTransform: 'uppercase', letterSpacing: '0.5px' }}>HỢP ĐỒNG NGUYÊN TẮC MUA BÁN SƠN</div>
+                  <div style={{ fontWeight: 900, fontSize: 20, color: '#003399', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title.toUpperCase()}</div>
                   <div style={{ fontStyle: 'italic', color: '#666', marginTop: 5 }}>Mã số (Smart Contract ID): {contractId}</div>
                 </div>
 
@@ -690,20 +708,20 @@ function CustomerCreateContractPage() {
                     </tbody>
                     <tfoot>
                       <tr style={{ background: '#f8faff', fontWeight: 'bold' }}>
-                        <td colSpan={4} style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>Cộng tiền hàng:</td>
+                        <td colSpan={4} style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>Cộng tiền hàng (chưa VAT):</td>
                         <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right', color: '#003399' }}>
                           {totalValue.toLocaleString('vi-VN')}đ
                         </td>
                       </tr>
                       <tr style={{ background: '#f8faff', fontWeight: 'bold' }}>
-                        <td colSpan={4} style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>Thuế suất GTGT (8%):</td>
+                        <td colSpan={4} style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>Thuế GTGT (VAT {totalValue >= 5000000 ? '8%' : '0%'}):</td>
                         <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right', color: '#003399' }}>
                           {(totalValue >= 5000000 ? totalValue * 0.08 : 0).toLocaleString('vi-VN')}đ
                         </td>
                       </tr>
                       <tr style={{ background: '#f8faff', fontWeight: 'bold' }}>
-                        <td colSpan={4} style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>Tổng cộng tiền thanh toán:</td>
-                        <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right', color: '#003399' }}>
+                        <td colSpan={4} style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>Tổng thanh toán (đã có VAT):</td>
+                        <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right', color: '#003399', fontSize: 14 }}>
                           {(totalValue >= 5000000 ? totalValue * 1.08 : totalValue).toLocaleString('vi-VN')}đ
                         </td>
                       </tr>
@@ -746,7 +764,7 @@ function CustomerCreateContractPage() {
 
             {submitSuccess && (
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 text-xs font-bold text-emerald-600">
-                ✅ Tạo hợp đồng thành công! Đang chuyển hướng đến trang ký số...
+                ✅ Tạo hợp đồng thành công! Đang chuyển hướng...
               </div>
             )}
 
@@ -820,7 +838,7 @@ function CustomerCreateContractPage() {
 export default function Page() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-blue-600" size={32} /></div>}>
-      <CustomerCreateContractPage />
+      <AdminCreateContractPage />
     </Suspense>
   );
 }

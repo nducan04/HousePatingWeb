@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Eye,
@@ -88,6 +89,7 @@ const DEFAULT_ARTICLES = {
 };
 
 export default function ContractsPage() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const isAdminOrEmployee = user?.role === "Admin" || user?.role === "NhanVien";
 
@@ -506,7 +508,7 @@ export default function ContractsPage() {
             </button>
             {isAdminOrEmployee && (
               <button
-                onClick={openForm}
+                onClick={() => router.push('/hop-dong-pha-che/new')}
                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30"
               >
                 <Plus size={18} /> Soạn Hợp Đồng

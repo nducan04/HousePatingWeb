@@ -1893,7 +1893,7 @@ const getChatbotResponse = async (req, res) => {
 // @route   GET /api/chatbot/history/:sessionId
 const getChatHistory = async (req, res) => {
   try {
-    const session = await ChatSession.findOne({ sessionId: req.params.sessionId });
+    const session = await AiChatSession.findOne({ sessionId: req.params.sessionId });
     res.status(200).json({ success: true, data: session?.messages || [] });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Lỗi server' });

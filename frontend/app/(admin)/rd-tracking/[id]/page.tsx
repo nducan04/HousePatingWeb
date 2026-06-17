@@ -224,9 +224,9 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         setNewVersion({ parameters: '', feedback: '', inputWeight: '', outputWeight: '', nhietDo: '', curingTime: '', maxHumidity: '', deltaE: '', hieuSuat: '', result: 'pending', components: [{ materialId: '', quantity: 0 }], imageCid: '', imageUrl: '' });
         alert('✅ Đã cập nhật phiên bản test mới!');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to add version:', err);
-      alert('❌ Lỗi khi thêm phiên bản mới');
+      alert(err.response?.data?.message || '❌ Lỗi khi thêm phiên bản mới');
     }
   };
 
@@ -251,7 +251,7 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         totalWeight: s.quantity * s.unitWeight
       }));
       const payload = {
-        RDLogID: id,
+        RDLogID: request.testMauId || request._id,
         ContractID: request.ContractID?._id || request.ContractID,
         PackagingSpecs: specs,
         PackagingMaterial: packagingMaterial,
@@ -1295,8 +1295,8 @@ export default function RDDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* Packaging Section (Only visible if signed/approved) */}
-      {isSigned && !isCustomer && (
+      {/* Packaging Section (Only visible if signed/approved and part of a contract) */}
+      {isSigned && !isCustomer && request.ContractID && (
         <div className="mt-8 p-6 rounded-2xl bg-blue-50/50 border border-blue-100 shadow-sm transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <div>

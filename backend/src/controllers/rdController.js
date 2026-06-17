@@ -83,6 +83,7 @@ exports.getRDLogById = async (req, res) => {
     log.LichSuPhienBan = testMau ? testMau.LichSuPhienBan : [];
     log.signedBy = testMau ? testMau.signedBy : null;
     log.signedAt = testMau ? testMau.signedAt : null;
+    log.testMauId = testMau ? testMau._id : null;
 
     // RBAC check
     if (req.user && (req.user.VaiTro === 'KhachHangB2C' || req.user.VaiTro === 'KhachHangB2B')) {
@@ -194,7 +195,10 @@ exports.addVersion = async (req, res) => {
 
       const materialsToUpdate = [];
       for (const [materialId, qty] of Object.entries(grouped)) {
-        const material = await NguyenVatLieu.findOne({ MaNVL: materialId });
+        const isObjId = /^[0-9a-fA-F]{24}$/.test(materialId);
+        const material = isObjId 
+          ? await NguyenVatLieu.findById(materialId)
+          : await NguyenVatLieu.findOne({ MaNVL: materialId });
         if (!material) {
           return res.status(404).json({ success: false, message: `Nguyên vật liệu ${materialId} không tồn tại trong hệ thống.` });
         }

@@ -69,3 +69,35 @@ exports.remove = async (req, res) => {
     res.status(400).json({ success: false, error: error.message });
   }
 };
+
+// @desc    Tăng lượt xem bài viết
+// @route   PATCH /api/tin-tuc/:id/view
+exports.incrementView = async (req, res) => {
+  try {
+    const item = await TinTuc.findByIdAndUpdate(
+      req.params.id, 
+      { $inc: { views: 1 } },
+      { new: true }
+    );
+    if (!item) return res.status(404).json({ success: false, error: 'Không tìm thấy bài viết' });
+    res.status(200).json({ success: true, data: item });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Tăng lượt like bài viết
+// @route   PATCH /api/tin-tuc/:id/like
+exports.toggleLike = async (req, res) => {
+  try {
+    const item = await TinTuc.findByIdAndUpdate(
+      req.params.id, 
+      { $inc: { likes: 1 } },
+      { new: true }
+    );
+    if (!item) return res.status(404).json({ success: false, error: 'Không tìm thấy bài viết' });
+    res.status(200).json({ success: true, data: item });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};

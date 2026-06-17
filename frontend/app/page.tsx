@@ -40,6 +40,7 @@ import {
   Trash2,
   AlertCircle,
   HeartHandshake,
+  Heart
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -111,6 +112,7 @@ export default function HomePage() {
   const [forgotError, setForgotError] = useState<string | null>(null);
   const [forgotSuccess, setForgotSuccess] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
 
   // Trending Color Modal state
   const [selectedTrendingColor, setSelectedTrendingColor] = useState<
@@ -120,6 +122,31 @@ export default function HomePage() {
   // News detail modal state
   const [selectedNews, setSelectedNews] = useState<any | null>(null);
   const [isNewsOpen, setIsNewsOpen] = useState(false);
+
+  const handleViewNews = async (n: any) => {
+    setSelectedNews(n);
+    setIsNewsOpen(true);
+    try {
+      await api.patch(`/tin-tuc/${n._id}/view`);
+      setNews(prev => prev.map(item => item._id === n._id ? { ...item, views: (item.views || 0) + 1 } : item));
+      setSelectedNews((prev: any) => prev ? { ...prev, views: (prev.views || 0) + 1 } : prev);
+    } catch (e) {
+      console.log('Error incrementing view', e);
+    }
+  };
+
+  const handleLikeNews = async (n: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await api.patch(`/tin-tuc/${n._id}/like`);
+      setNews(prev => prev.map(item => item._id === n._id ? { ...item, likes: (item.likes || 0) + 1 } : item));
+      if (selectedNews && selectedNews._id === n._id) {
+        setSelectedNews((prev: any) => prev ? { ...prev, likes: (prev.likes || 0) + 1 } : prev);
+      }
+    } catch (e) {
+      console.log('Error liking news', e);
+    }
+  };
 
 
   // Cart quantity state
@@ -891,10 +918,7 @@ export default function HomePage() {
                 <div
                   key={item._id}
                   className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-lg transition-all group cursor-pointer"
-                  onClick={() => {
-                    setSelectedNews(item);
-                    setIsNewsOpen(true);
-                  }}
+                  onClick={() => handleViewNews(item)}
                 >
                   <div className="h-56 overflow-hidden relative">
                     <img
@@ -916,9 +940,19 @@ export default function HomePage() {
                     <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-2 font-medium">
                       {item.Abstract || "Thông tin kỹ thuật mới nhất..."}
                     </p>
-                    <button className="text-blue-600 font-bold text-xs flex items-center gap-2 hover:gap-3 transition-all uppercase tracking-widest">
-                      Chi tiết <ArrowRight size={16} />
-                    </button>
+                    <div className="flex items-center justify-between mt-auto">
+                      <div className="flex items-center gap-4 text-slate-400">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold">
+                          <Eye size={16} /> {item.views || 0}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-xs font-semibold hover:text-red-500 transition-colors" onClick={(e) => handleLikeNews(item, e)}>
+                          <Heart size={16} className={item.likes > 0 ? 'fill-red-500 text-red-500' : ''} /> {item.likes || 0}
+                        </span>
+                      </div>
+                      <button className="text-blue-600 font-bold text-xs flex items-center gap-2 hover:gap-3 transition-all uppercase tracking-widest">
+                        Chi tiết <ArrowRight size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -1573,7 +1607,7 @@ export default function HomePage() {
                   )}
                 </div>
 
-                <div className="pt-10 border-t border-slate-100 flex items-center justify-between">
+                <div className="pt-10 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
                       V
@@ -1587,12 +1621,21 @@ export default function HomePage() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setIsNewsOpen(false)}
-                    className="px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-sm transition-all cursor-pointer border-none"
-                  >
-                    Đóng bài viết
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={(e) => handleLikeNews(selectedNews, e)}
+                      className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold text-sm transition-all cursor-pointer border-none flex items-center gap-2 shadow-sm"
+                    >
+                      <Heart size={18} className={selectedNews.likes > 0 ? 'fill-red-500' : ''} />
+                      {selectedNews.likes > 0 ? `${selectedNews.likes} Lượt thích` : 'Thích bài viết'}
+                    </button>
+                    <button
+                      onClick={() => setIsNewsOpen(false)}
+                      className="px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-sm transition-all cursor-pointer border-none shadow-sm"
+                    >
+                      Đóng bài viết
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
