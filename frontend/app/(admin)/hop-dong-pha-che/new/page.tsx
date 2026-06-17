@@ -567,12 +567,12 @@ function AdminCreateContractPage() {
                 <span className="text-sm font-bold text-slate-600">{totalValue.toLocaleString('vi-VN')} VNĐ</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-500">THUẾ GTGT (VAT {totalValue >= 5000000 ? '8%' : '0%'}):</span>
-                <span className="text-sm font-bold text-slate-600">{(totalValue >= 5000000 ? totalValue * 0.08 : 0).toLocaleString('vi-VN')} VNĐ</span>
+                <span className="text-xs font-bold text-slate-500">THUẾ SUẤT GTGT (10%):</span>
+                <span className="text-sm font-bold text-slate-600">{(totalValue >= 5000000 ? totalValue * 0.1 : 0).toLocaleString('vi-VN')} VNĐ</span>
               </div>
               <div className="flex justify-between items-center pt-3 border-t border-slate-200">
                 <span className="text-sm font-black text-slate-800">TỔNG CỘNG (ĐÃ BAO GỒM VAT):</span>
-                <span className="text-lg font-black text-blue-600">{(totalValue >= 5000000 ? totalValue * 1.08 : totalValue).toLocaleString('vi-VN')} VNĐ</span>
+                <span className="text-lg font-black text-blue-600">{(totalValue >= 5000000 ? totalValue * 1.1 : totalValue).toLocaleString('vi-VN')} VNĐ</span>
               </div>
             </div>
 
@@ -716,15 +716,15 @@ function AdminCreateContractPage() {
                         </td>
                       </tr>
                       <tr style={{ background: '#f8faff', fontWeight: 'bold' }}>
-                        <td colSpan={4} style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>Thuế GTGT (VAT {totalValue >= 5000000 ? '8%' : '0%'}):</td>
+                        <td colSpan={4} style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>Thuế suất GTGT (10%):</td>
                         <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right', color: '#003399' }}>
-                          {(totalValue >= 5000000 ? totalValue * 0.08 : 0).toLocaleString('vi-VN')}đ
+                          {(totalValue >= 5000000 ? totalValue * 0.1 : 0).toLocaleString('vi-VN')}đ
                         </td>
                       </tr>
                       <tr style={{ background: '#f8faff', fontWeight: 'bold' }}>
                         <td colSpan={4} style={{ border: '1px solid #003399', padding: 8, textAlign: 'right' }}>Tổng thanh toán (đã có VAT):</td>
                         <td style={{ border: '1px solid #003399', padding: 8, textAlign: 'right', color: '#003399', fontSize: 14 }}>
-                          {(totalValue >= 5000000 ? totalValue * 1.08 : totalValue).toLocaleString('vi-VN')}đ
+                          {(totalValue >= 5000000 ? totalValue * 1.1 : totalValue).toLocaleString('vi-VN')}đ
                         </td>
                       </tr>
                     </tfoot>

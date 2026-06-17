@@ -197,7 +197,9 @@ export default function CheckoutPage() {
   );
   const shippingFee = 0; // Free shipping
   const discountAmount = discountInfo?.DiscountAmount || 0;
-  const finalTotal = Math.max(0, subTotal + shippingFee - discountAmount);
+  const finalSubtotal = Math.max(0, subTotal - discountAmount);
+  const taxAmount = finalSubtotal * 0.1;
+  const finalTotal = finalSubtotal + taxAmount + shippingFee;
 
   const handleApplyVoucher = async () => {
     if (!discountCode) return;
@@ -765,6 +767,12 @@ export default function CheckoutPage() {
                     {shippingFee.toLocaleString()} ₫
                   </span>
                 </div>
+                <div className="flex justify-between items-center text-sm mt-3">
+                  <span className="text-slate-500">Thuế GTGT (10%)</span>
+                  <span className="font-bold text-slate-800">
+                    {taxAmount.toLocaleString()} ₫
+                  </span>
+                </div>
                 <div className="flex justify-between items-center pt-3 border-t border-slate-100 mt-3">
                   <span className="text-sm font-black text-slate-800">
                     Tổng cộng
@@ -774,7 +782,7 @@ export default function CheckoutPage() {
                   </span>
                 </div>
                 <div className="text-[10px] text-slate-400 text-right italic">
-                  (Đã bao gồm VAT nếu có)
+                  (Đã bao gồm VAT)
                 </div>
               </div>
             </div>
