@@ -384,11 +384,11 @@ exports.createContract = async (req, res) => {
       details = JSON.parse(chiTietHopDong);
     }
 
-    // Auto-tính tổng giá trị từ chi tiết (có thêm thuế 8% nếu >= 5,000,000đ)
+    // Auto-tính tổng giá trị từ chi tiết (có thêm thuế 10% nếu >= 5,000,000đ)
     const subtotal = Array.isArray(details)
       ? details.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
       : 0;
-    const value = subtotal >= 5000000 ? subtotal * 1.08 : subtotal;
+    const value = subtotal >= 5000000 ? subtotal * 1.1 : subtotal;
 
     // Parse terms nếu cần
     let parsedTerms = terms;
