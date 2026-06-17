@@ -51,7 +51,7 @@ exports.createPackagingSlip = async (req, res) => {
     
     // 1. Validate RD Log
     const rdLog = await NhatKyTestMau.findById(RDLogID);
-    if (!rdLog || rdLog.TrangThai !== 'approved') {
+    if (!rdLog || !['approved', 'complete', 'completed'].includes(rdLog.TrangThai)) {
       return res.status(400).json({ success: false, message: 'Log R&D chưa được KCS phê duyệt hoặc không tồn tại.' });
     }
 

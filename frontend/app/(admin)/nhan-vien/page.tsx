@@ -15,6 +15,7 @@ import {
 import api from "@/lib/utils/axiosAuth";
 import { toast, confirm } from "@/lib/utils/notification";
 import * as XLSX from "xlsx";
+import { exportToExcelVTSC } from "@/lib/utils/excelExportVTSC";
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
 
 const API_URL = "/staff";
@@ -140,32 +141,52 @@ export default function NhanVienPage() {
     return matchSearch && matchFilter;
   });
 
-  const exportToExcel = () => {
-    const dataToExport = filteredData.map((nv) => ({
-      "Mã NV": nv.MaNV,
-      "Họ Tên": nv.HoTen,
-      "Bộ Phận": nv.BoPhan,
-      "Chức Vụ": nv.ChucVu,
-      Email: nv.Email || "",
-      SĐT: nv.SDT || "",
-      "Trạng Thái": nv.TrangThai || "Đang làm",
-      "Hiệu suất Công tác":
-        nv.BoPhan === "Kho / Logistics"
+  const exportToExcel = async () => {
+    const headers = [
+      "STT",
+      "Mã NV",
+      "Họ Tên",
+      "Bộ Phận",
+      "Chức Vụ",
+      "Email",
+      "SĐT",
+      "Trạng Thái",
+      "Hiệu Suất Công Tác"
+    ];
+
+    const rows = filteredData.map((nv, i) => [
+      i + 1,
+      nv.MaNV,
+      nv.HoTen,
+      nv.BoPhan,
+      nv.ChucVu || "",
+      nv.Email || "",
+      nv.SDT || "",
+      nv.TrangThai || "Đang làm",
+      nv.BoPhan === "Kho / Logistics"
           ? `${nv.deliveries || 0} Chuyến`
           : nv.BoPhan === "R&D Kỹ Thuật Máy"
             ? `${nv.tests || 0} Lô hàng`
             : nv.BoPhan === "CSKH Bảo Hành"
               ? `${nv.customers || 0} Khách hàng`
-              : `${nv.orders || 0} Đơn hàng`,
-    }));
+              : `${nv.orders || 0} Đơn hàng`
+    ]);
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Nhan-Vien");
-    XLSX.writeFile(
-      workbook,
-      `VTSC_Danh_Sach_Nhan_Vien_${new Date().toLocaleDateString()}.xlsx`,
-    );
+    const activeCount = filteredData.filter(x => x.TrangThai === "Đang làm").length;
+
+    const summaryData = [
+      { label: "Tổng Số Nhân Viên", value: filteredData.length },
+      { label: "Nhân Viên Đang Làm", value: activeCount },
+      { label: "Nhân Viên Nghỉ Việc", value: filteredData.length - activeCount },
+    ];
+
+    await exportToExcelVTSC({
+      filename: `VTSC_Danh_Sach_Nhan_Vien_${new Date().getTime()}`,
+      title: "BÁO CÁO DANH SÁCH NHÂN VIÊN",
+      headers,
+      data: rows,
+      summaryData,
+    });
   };
 
   const openForm = (nv?: NhanVien) => {

@@ -281,9 +281,21 @@ function NewRDRequestPage() {
   // CID trả về từ IPFS sau khi upload thành công
   const [imageCid, setImageCid] = useState<string>("");
 
+  const [allCustomers, setAllCustomers] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.get('/khach-hang')
+      .then(res => {
+        if (res.data.success) {
+          setAllCustomers(res.data.data);
+        }
+      })
+      .catch(err => console.error("Error fetching customers:", err));
+  }, []);
+
   const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
   const colorDropdownRef = useRef<HTMLDivElement>(null);
-  
+
   // Custom hex color resolved by AI
   const [customHex, setCustomHex] = useState<string>("");
   const [isResolvingColor, setIsResolvingColor] = useState(false);
@@ -311,7 +323,7 @@ function NewRDRequestPage() {
       setCustomHex("");
       return;
     }
-    
+
     // Check if it's already in the standard palette
     const existing = paintColors.find(c => c.code.toLowerCase() === colorInput.toLowerCase() || c.name.toLowerCase() === colorInput.toLowerCase());
     if (existing) {
@@ -445,12 +457,11 @@ function NewRDRequestPage() {
                   }
                 >
                   <option value="">Chọn khách hàng</option>
-                  <option value="NCC Aluminium">NCC Aluminium</option>
-                  <option value="VPIC Steel">VPIC Steel</option>
-                  <option value="Daikin Vietnam">Daikin Vietnam</option>
-                  <option value="Huihoang Interior">Huihoang Interior</option>
-                  <option value="Eurowindow">Eurowindow</option>
-                  <option value="Austdoor Group">Austdoor Group</option>
+                  {allCustomers.map((c: any) => (
+                    <option key={c._id} value={c.TenKhachHang || c.name || c.HoTen}>
+                      {c.TenKhachHang || c.name || c.HoTen}
+                    </option>
+                  ))}
                 </select>
               )}
             </div>
@@ -480,16 +491,16 @@ function NewRDRequestPage() {
                     ) : (
                       <div className="relative overflow-hidden w-6 h-6 rounded-full border border-slate-200 shadow-sm shrink-0 cursor-pointer hover:scale-110 transition-transform">
                         <input
-                           type="color"
-                           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 cursor-pointer opacity-0"
-                           value={paintColors.find(c => c.code === formData.colorCode)?.hex || (/^#[0-9A-F]{6}$/i.test(formData.colorCode) ? formData.colorCode : '#e2e8f0')}
-                           onChange={(e) => {
-                             const hex = e.target.value;
-                             setCustomHex(hex);
-                             setFormData((p) => ({ ...p, colorCode: hex, colorName: hex }));
-                             setIsColorDropdownOpen(false);
-                           }}
-                           title="Chọn màu bằng bảng màu"
+                          type="color"
+                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 cursor-pointer opacity-0"
+                          value={paintColors.find(c => c.code === formData.colorCode)?.hex || (/^#[0-9A-F]{6}$/i.test(formData.colorCode) ? formData.colorCode : '#e2e8f0')}
+                          onChange={(e) => {
+                            const hex = e.target.value;
+                            setCustomHex(hex);
+                            setFormData((p) => ({ ...p, colorCode: hex, colorName: hex }));
+                            setIsColorDropdownOpen(false);
+                          }}
+                          title="Chọn màu bằng bảng màu"
                         />
                         <div
                           className="w-full h-full pointer-events-none"
@@ -636,7 +647,7 @@ function NewRDRequestPage() {
                 }
               />
             </div>
-            
+
             {/* Môi trường sử dụng */}
             <div className="space-y-2">
               <label className="text-[13px] font-bold text-slate-400 uppercase ml-1">

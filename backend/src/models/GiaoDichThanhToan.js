@@ -31,7 +31,7 @@ const giaoDichThanhToanSchema = new mongoose.Schema({
   },
   PhuongThucThanhToan: {
     type: String,
-    enum: ['COD', 'MOMO', 'GHINO'],
+    enum: ['COD', 'MOMO', 'GHINO', 'Chuyển khoản', 'Tiền mặt', 'Crypto Token', 'CARD'],
     required: true
   },
   TrangThai: {

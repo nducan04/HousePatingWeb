@@ -1,13 +1,15 @@
 const express = require('express');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const {
-  getAll, create, update, remove
+  getAll, create, update, remove, incrementView, toggleLike
 } = require('../controllers/tinTucController');
 
 const router = express.Router();
 
 // Public route to view news articles
 router.get('/', getAll);
+router.patch('/:id/view', incrementView);
+router.patch('/:id/like', toggleLike);
 
 // Protected routes to write news articles
 router.post('/', protect, authorize('Admin', 'NhanVien'), create);

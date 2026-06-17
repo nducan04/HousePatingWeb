@@ -25,6 +25,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
 import * as XLSX from "xlsx";
+import { exportToExcelVTSC } from "@/lib/utils/excelExportVTSC";
 import IPFSImage from "@/lib/components/IPFSImage";
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
 import { paintColors } from "@/lib/data/colors-data";
@@ -510,25 +511,50 @@ export default function SanPhamPage() {
     return [];
   };
 
-  const exportToExcel = () => {
-    const dataToExport = sanPhams.map((sp) => ({
-      "Mã SP": sp.MaSanPham,
-      "Tên Dòng Sơn": sp.TenDongSon,
-      "Thương Hiệu": sp.ThuongHieu,
-      "Phân Loại": sp.PhanLoai,
-      "Đơn Giá": sp.DonGiaCoSo,
-      "Tồn Kho Tổng": sp.TongTonKho || 0,
-      "Đơn Vị Tính": sp.DonViTinh || "Thùng",
-      "Số Lượng SKU": sp.DanhSachMaMau?.length || 0,
-    }));
+  const exportToExcel = async () => {
+    const headers = [
+      "STT",
+      "Mã SP",
+      "Tên Dòng Sơn",
+      "Thương Hiệu",
+      "Phân Loại",
+      "Đơn Vị Tính",
+      "Số Lượng SKU (Màu)",
+      "Đơn Giá Tối Thiểu (VNĐ)",
+      "Tồn Kho Tổng (Thùng)",
+      "Ước Tính Giá Trị Tồn (VNĐ)",
+    ];
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "San-Pham");
-    XLSX.writeFile(
-      workbook,
-      `VTSC_Danh_Sach_San_Pham_${new Date().toLocaleDateString().replace(/\//g, "_")}.xlsx`,
-    );
+    const rows = sanPhams.map((sp, i) => [
+      i + 1,
+      sp.MaSanPham,
+      sp.TenDongSon,
+      sp.ThuongHieu || "VTSC",
+      sp.PhanLoai || "—",
+      sp.DonViTinh || "Thùng",
+      sp.DanhSachMaMau?.length || 0,
+      sp.DonGiaCoSo || 0,
+      sp.TongTonKho || 0,
+      (sp.TongTonKho || 0) * (sp.DonGiaCoSo || 0),
+    ]);
+
+    const tongTon = sanPhams.reduce((s, x) => s + (x.TongTonKho || 0), 0);
+    const tongGT = sanPhams.reduce((s, x) => s + (x.TongTonKho || 0) * (x.DonGiaCoSo || 0), 0);
+
+    const summaryData = [
+      { label: "Tổng Số Dòng Sơn", value: sanPhams.length },
+      { label: "Tổng Tồn Kho", value: tongTon },
+      { label: "Ước Tính Giá Trị (VNĐ)", value: tongGT },
+    ];
+
+    await exportToExcelVTSC({
+      filename: `VTSC_Danh_Sach_San_Pham_${new Date().getTime()}`,
+      title: "BÁO CÁO DANH MỤC SẢN PHẨM SƠN",
+      headers,
+      data: rows,
+      summaryData,
+      totals: ["TỔNG CỘNG", "", "", "", "", "", "", "", tongTon, tongGT],
+    });
   };
 
   const dataSource = allSanPhams.length ? allSanPhams : sanPhams;

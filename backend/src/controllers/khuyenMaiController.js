@@ -115,3 +115,32 @@ exports.deleteKhuyenMai = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+exports.validateKhuyenMai = async (req, res) => {
+  try {
+    const { code, cartTotal } = req.body;
+    if (!code) return res.status(400).json({ success: false, message: 'Vui lòng nhập mã khuyến mãi' });
+    
+    const KhuyenMai = require('../models/KhuyenMai');
+    const voucher = await KhuyenMai.findOne({ MaKhuyenMai: { $regex: new RegExp(`^${code}$`, 'i') } });
+    if (!voucher) return res.status(404).json({ success: false, message: 'Mã khuyến mãi không tồn tại' });
+    
+    if (voucher.TrangThai !== 'Đang diễn ra') return res.status(400).json({ success: false, message: 'Mã khuyến mãi không hoạt động' });
+    
+    const now = new Date();
+    if (now < new Date(voucher.NgayBatDau)) return res.status(400).json({ success: false, message: 'Mã khuyến mãi chưa bắt đầu' });
+    if (now > new Date(voucher.NgayKetThuc)) return res.status(400).json({ success: false, message: 'Mã khuyến mãi đã hết hạn' });
+    
+    const discountAmount = Math.floor((cartTotal * voucher.PhanTramGiam) / 100);
+
+    const responseData = {
+        ...voucher.toObject(),
+        MaVoucher: voucher.MaKhuyenMai,
+        DiscountAmount: discountAmount
+    };
+
+    res.status(200).json({ success: true, data: responseData });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

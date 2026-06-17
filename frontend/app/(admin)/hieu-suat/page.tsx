@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Search, Filter, Calendar, Users, Target, Award, SignalHigh,
     TrendingUp, Star, AlertCircle, ChevronRight, User, Briefcase,
-    CheckCircle, BarChart3, Radar as RadarIcon, Download, TrendingDown, Truck
+    CheckCircle, BarChart3, Radar as RadarIcon, Download, TrendingDown, Truck, Activity
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LabelList,
@@ -16,14 +16,13 @@ import { resolveImageUrl } from '@/lib/utils/imageUrl';
 
 const TABS = [
     { id: 'overview', label: 'Tổng quan', icon: BarChart3 },
-    { id: 'staff', label: 'Nhân sự', icon: Users },
-    { id: 'performance', label: 'Hiệu suất', icon: SignalHigh },
+    { id: 'performance', label: 'Hiệu suất chi tiết', icon: Activity },
 ];
 
-const CHART_COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981'];
+const CHART_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#14b8a6', '#f59e0b'];
 
 export default function PerformanceDashboard() {
-    const [activeTab, setActiveTab] = useState('performance');
+    const [activeTab, setActiveTab] = useState('overview');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDept, setSelectedDept] = useState('Tất cả bộ phận');
     const [loading, setLoading] = useState(true);
@@ -50,9 +49,13 @@ export default function PerformanceDashboard() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 font-light">
-                <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-                <p>Đang đồng bộ dữ liệu hiệu suất...</p>
+            <div className="flex flex-col items-center justify-center min-h-[70vh] bg-slate-50/50">
+                <div className="relative w-16 h-16 flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+                    <div className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
+                    <Activity size={24} className="text-indigo-600 animate-pulse" />
+                </div>
+                <p className="mt-4 text-slate-500 font-medium tracking-wide">Đang đồng bộ dữ liệu hiệu suất...</p>
             </div>
         );
     }
@@ -66,10 +69,6 @@ export default function PerformanceDashboard() {
         (selectedDept === 'Tất cả bộ phận' || s.dept === selectedDept)
     );
 
-    const top3Staff = [...liveStaff]
-        .sort((a, b) => (b.revenue + (b.deliveries || 0) * 1000000 + (b.tests || 0) * 500000) - (a.revenue + (a.deliveries || 0) * 1000000 + (a.tests || 0) * 500000))
-        .slice(0, 3);
-
     const topSalesData = charts.topSales.map((item: any, idx: number) => ({
         ...item,
         color: CHART_COLORS[idx % CHART_COLORS.length]
@@ -78,7 +77,6 @@ export default function PerformanceDashboard() {
     const exportToExcel = () => {
         if (!liveStaff || liveStaff.length === 0) return;
 
-        // Chuẩn bị dữ liệu để xuất
         const exportData = liveStaff.map((staff: any) => ({
             'Mã Nhân Viên': staff.maNV || staff.id,
             'Họ Tên': staff.name,
@@ -97,7 +95,6 @@ export default function PerformanceDashboard() {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Hiệu Suất Nhân Sự");
 
-        // Tự động điều chỉnh độ rộng cột
         const colWidths = [
             { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 18 },
             { wch: 15 }, { wch: 20 }, { wch: 18 }, { wch: 20 }, { wch: 10 }, { wch: 12 }
@@ -108,128 +105,158 @@ export default function PerformanceDashboard() {
     };
 
     return (
-        <div className="p-6 md:p-8 flex flex-col gap-8 bg-slate-50/30 min-h-screen">
-            {/* Header & Title */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 className="text-2xl font-light tracking-wide text-slate-800">
-                        Phân Tích Hiệu Suất <span className="font-medium text-blue-600">Quý II/2026</span>
-                    </h2>
-                    <p className="text-sm text-slate-500 font-light mt-1">Dữ liệu được cập nhật theo thời gian thực từ VTSC PaintPro</p>
-                </div>
-                <button 
-                    onClick={exportToExcel}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm font-light"
-                >
-                    <Download size={16} />
-                    Xuất Báo Cáo
-                </button>
-            </div>
-
-            {/* Navigation Tabs */}
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-slate-200">
-                {TABS.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-5 py-3 text-sm transition-all relative whitespace-nowrap font-light ${activeTab === tab.id
-                                ? 'text-blue-600 font-medium'
-                                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-t-lg'
-                            }`}
+        <div className="p-4 md:p-8 flex flex-col gap-8 bg-[#f8fafc] min-h-screen font-sans text-slate-800">
+            {/* Beautiful Header */}
+            <div className="relative overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-sm p-8">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-60 -translate-y-1/2 translate-x-1/3"></div>
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-60 translate-y-1/2 -translate-x-1/3"></div>
+                
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-semibold uppercase tracking-wider mb-3">
+                            <Activity size={14} /> Báo Cáo Nội Bộ
+                        </div>
+                        <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+                            Phân Tích Hiệu Suất <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Q2/2026</span>
+                        </h2>
+                        <p className="text-slate-500 font-medium mt-2">Theo dõi và đánh giá năng lực nhân sự theo thời gian thực</p>
+                    </div>
+                    <button 
+                        onClick={exportToExcel}
+                        className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 hover:shadow-md transition-all shadow-sm"
                     >
-                        <tab.icon size={16} className={activeTab === tab.id ? "text-blue-600" : "text-slate-400"} />
-                        {tab.label}
-                        {activeTab === tab.id && (
-                            <span className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 rounded-t-full"></span>
-                        )}
+                        <Download size={18} />
+                        Xuất Báo Cáo
                     </button>
-                ))}
+                </div>
             </div>
 
-            {/* TAB CONTENT: OVERVIEW (TỔNG QUAN) */}
+            {/* Premium Pill Tabs */}
+            <div className="flex justify-center">
+                <div className="inline-flex p-1.5 bg-white border border-slate-200/80 shadow-sm rounded-2xl gap-1">
+                    {TABS.map(tab => {
+                        const isActive = activeTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${isActive
+                                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                                    }`}
+                            >
+                                <tab.icon size={18} className={isActive ? "text-white" : "text-slate-400"} />
+                                {tab.label}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* TAB CONTENT: OVERVIEW */}
             {activeTab === 'overview' && (
-                <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col gap-8 animate-in fade-in zoom-in-95 duration-500">
                     {/* KPI Metric Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Outstanding Employee Card */}
-                        <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm p-6 relative overflow-hidden group hover:shadow-md transition-all">
-                            <div className="absolute -right-6 -top-6 opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-                                <Award size={140} />
-                            </div>
-                            <div className="flex items-center gap-5 relative z-10">
-                                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-400 to-orange-500 p-[2px] shadow-sm">
-                                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                                        {summary.bestStaff?.avatar ? (
-                                            <img src={getAvatarUrl(summary.bestStaff.avatar)} alt="best" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <User size={24} className="text-amber-500" />
-                                        )}
-                                    </div>
+                        <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl shadow-lg shadow-orange-500/20 p-1 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                            <div className="bg-white/95 backdrop-blur-xl h-full rounded-[22px] p-6 relative overflow-hidden">
+                                <div className="absolute -right-8 -top-8 text-amber-500/10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
+                                    <Award size={160} />
                                 </div>
-                                <div>
-                                    <div className="text-[10px] font-semibold text-amber-500 tracking-wider uppercase mb-1">Nhân viên xuất sắc</div>
-                                    <div className="text-xl font-medium text-slate-800">{summary.bestStaff?.name || 'N/A'}</div>
-                                    <div className="text-xs text-slate-500 font-light">{summary.bestStaff?.dept || 'N/A'}</div>
+                                <div className="flex items-center gap-5 relative z-10">
+                                    <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 to-orange-500 p-[3px] shadow-md relative">
+                                        <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                                            {summary.bestStaff?.avatar ? (
+                                                <img src={getAvatarUrl(summary.bestStaff.avatar)} alt="best" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <User size={32} className="text-amber-500" />
+                                            )}
+                                        </div>
+                                        <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1.5 shadow-sm">
+                                            <Award size={18} className="text-amber-500" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="text-xs font-bold text-amber-600 tracking-wider uppercase mb-1">Cá Nhân Xuất Sắc</div>
+                                        <div className="text-2xl font-bold text-slate-800">{summary.bestStaff?.name || 'N/A'}</div>
+                                        <div className="text-sm text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+                                            <Briefcase size={14} /> {summary.bestStaff?.dept || 'N/A'}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Total Revenue Card */}
-                        <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm p-6 relative overflow-hidden group hover:shadow-md transition-all">
-                            <div className="flex flex-col h-full justify-between relative z-10">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="text-[10px] font-semibold text-blue-500 tracking-wider uppercase flex items-center gap-1.5">
-                                        <SignalHigh size={14} /> Doanh số công ty
+                        <div className="bg-gradient-to-br from-indigo-500 to-blue-600 rounded-3xl shadow-lg shadow-indigo-500/20 p-1 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                            <div className="bg-white/95 backdrop-blur-xl h-full rounded-[22px] p-6 flex flex-col justify-between relative overflow-hidden">
+                                <div className="absolute -right-4 -bottom-4 text-indigo-500/5 group-hover:scale-110 transition-transform duration-700">
+                                    <TrendingUp size={140} />
+                                </div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="text-xs font-bold text-indigo-600 tracking-wider uppercase flex items-center gap-1.5">
+                                            <SignalHigh size={16} /> Doanh Số Toàn Cty
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="text-3xl font-light text-slate-800 tracking-tight">
-                                    {(summary.totalRevenue || 0).toLocaleString()} <span className="text-lg text-slate-400">₫</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-xs text-emerald-500 font-light mt-3 bg-emerald-50 w-fit px-2 py-1 rounded-md">
-                                    <TrendingUp size={12} /> Đang tăng trưởng tốt
+                                    <div className="flex items-end gap-2">
+                                        <div className="text-4xl font-bold text-slate-900 tracking-tight">
+                                            {(summary.totalRevenue || 0).toLocaleString()}
+                                        </div>
+                                        <div className="text-xl font-medium text-slate-400 mb-1">VNĐ</div>
+                                    </div>
+                                    <div className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-semibold mt-4 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+                                        <TrendingUp size={16} /> Vượt 12% so với quý trước
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Paint Error Rate Card */}
-                        <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm p-6 relative overflow-hidden group hover:shadow-md transition-all">
-                            <div className="text-[10px] font-semibold text-rose-500 tracking-wider uppercase flex items-center gap-1.5 mb-4">
-                                <AlertCircle size={14} /> Hiệu suất pha chế (R&D)
-                            </div>
-                            <div className="flex items-end justify-between">
-                                <div>
-                                    <div className="text-3xl font-light text-slate-800">{summary.passRate}%</div>
-                                    <div className="text-xs text-emerald-500 font-light mt-1 flex items-center gap-1"><CheckCircle size={12} /> Tỷ lệ đạt</div>
+                        <div className="bg-gradient-to-br from-rose-500 to-pink-600 rounded-3xl shadow-lg shadow-rose-500/20 p-1 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                            <div className="bg-white/95 backdrop-blur-xl h-full rounded-[22px] p-6 relative overflow-hidden flex flex-col justify-between">
+                                <div className="relative z-10">
+                                    <div className="text-xs font-bold text-rose-600 tracking-wider uppercase flex items-center gap-1.5 mb-5">
+                                        <Target size={16} /> Chỉ Số KCS Pha Chế
+                                    </div>
+                                    <div className="flex items-end justify-between">
+                                        <div>
+                                            <div className="text-4xl font-bold text-slate-900">{summary.passRate}%</div>
+                                            <div className="text-sm font-semibold text-emerald-600 mt-1 flex items-center gap-1.5"><CheckCircle size={16} /> Tỷ lệ đạt</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-2xl font-bold text-rose-500">{summary.errorRate}%</div>
+                                            <div className="text-sm font-semibold text-rose-500 mt-1 flex items-center justify-end gap-1.5"><AlertCircle size={16} /> Lỗi</div>
+                                        </div>
+                                    </div>
+                                    <div className="h-2 w-full bg-slate-100 rounded-full mt-5 overflow-hidden flex shadow-inner">
+                                        <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${summary.passRate}%` }}></div>
+                                        <div className="h-full bg-rose-500 transition-all duration-1000" style={{ width: `${summary.errorRate}%` }}></div>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <div className="text-xl font-light text-rose-500">{summary.errorRate}%</div>
-                                    <div className="text-xs text-rose-400 font-light mt-1 flex items-center justify-end gap-1"><TrendingDown size={12} /> Tỷ lệ lỗi</div>
-                                </div>
-                            </div>
-                            <div className="h-1.5 w-full bg-slate-100 rounded-full mt-4 overflow-hidden flex">
-                                <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${summary.passRate}%` }}></div>
-                                <div className="h-full bg-rose-500 transition-all duration-1000" style={{ width: `${summary.errorRate}%` }}></div>
                             </div>
                         </div>
                     </div>
 
                     {/* Chart Cards */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm p-6 h-[400px]">
-                            <div className="flex flex-col mb-6">
-                                <h3 className="text-sm font-medium text-slate-800 flex items-center gap-2">
-                                    <BarChart3 size={16} className="text-blue-500" /> Doanh Số Kinh Doanh
+                        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-7">
+                            <div className="flex flex-col mb-8">
+                                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                    <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><BarChart3 size={20} /></div>
+                                    Top Doanh Số
                                 </h3>
-                                <span className="text-xs text-slate-400 font-light mt-1">Top 5 nhân viên kinh doanh (Triệu VNĐ)</span>
+                                <span className="text-sm text-slate-500 font-medium mt-1">5 nhân viên có doanh số cao nhất (Triệu VNĐ)</span>
                             </div>
-                            <ResponsiveContainer width="100%" height={300}>
+                            <ResponsiveContainer width="100%" height={320}>
                                 <BarChart data={topSalesData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 300 }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 300 }} />
-                                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '13px', fontWeight: 300 }} />
-                                    <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
-                                        <LabelList dataKey="value" position="top" fill="#64748b" fontSize={11} fontWeight={500} formatter={(v: any) => `${v}tr`} />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 13, fontWeight: 500 }} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }} />
+                                    <Tooltip cursor={{ fill: '#f8fafc', rx: 10 }} contentStyle={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }} />
+                                    <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={48}>
+                                        <LabelList dataKey="value" position="top" fill="#475569" fontSize={13} fontWeight={600} formatter={(v: any) => `${v}tr`} />
                                         {topSalesData.map((entry: any, index: number) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
@@ -238,25 +265,26 @@ export default function PerformanceDashboard() {
                             </ResponsiveContainer>
                         </div>
 
-                        <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm p-6 h-[400px]">
-                            <div className="flex flex-col mb-6">
-                                <h3 className="text-sm font-medium text-slate-800 flex items-center gap-2">
-                                    <Target size={16} className="text-rose-500" /> Chất Lượng Pha Chế
+                        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-7">
+                            <div className="flex flex-col mb-8">
+                                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                    <div className="p-2 bg-rose-50 rounded-lg text-rose-500"><Target size={20} /></div>
+                                    Chất Lượng Pha Chế
                                 </h3>
-                                <span className="text-xs text-slate-400 font-light mt-1">Phân tích kết quả test mẫu theo chuyên viên R&D</span>
+                                <span className="text-sm text-slate-500 font-medium mt-1">Kết quả test mẫu R&D theo chuyên viên</span>
                             </div>
-                            <ResponsiveContainer width="100%" height={300}>
+                            <ResponsiveContainer width="100%" height={320}>
                                 <BarChart data={charts.mixingStats} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 300 }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 300 }} />
-                                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '13px', fontWeight: 300 }} />
-                                    <Legend wrapperStyle={{ fontSize: '12px', fontWeight: 300, paddingTop: '10px' }} iconType="circle" iconSize={8} />
-                                    <Bar dataKey="pass" name="Đạt Chuẩn (Pass)" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32}>
-                                        <LabelList dataKey="pass" position="top" fill="#10b981" fontSize={11} fontWeight={600} />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 13, fontWeight: 500 }} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }} />
+                                    <Tooltip cursor={{ fill: '#f8fafc', rx: 10 }} contentStyle={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }} />
+                                    <Legend wrapperStyle={{ fontSize: '13px', fontWeight: 500, paddingTop: '15px' }} iconType="circle" iconSize={10} />
+                                    <Bar dataKey="pass" name="Đạt Chuẩn (Pass)" fill="#14b8a6" radius={[6, 6, 0, 0]} barSize={36}>
+                                        <LabelList dataKey="pass" position="top" fill="#14b8a6" fontSize={12} fontWeight={700} />
                                     </Bar>
-                                    <Bar dataKey="fail" name="Lỗi (Fail)" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={32}>
-                                        <LabelList dataKey="fail" position="top" fill="#f43f5e" fontSize={11} fontWeight={600} formatter={(v: any) => v > 0 ? v : ''} />
+                                    <Bar dataKey="fail" name="Lỗi (Fail)" fill="#f43f5e" radius={[6, 6, 0, 0]} barSize={36}>
+                                        <LabelList dataKey="fail" position="top" fill="#f43f5e" fontSize={12} fontWeight={700} formatter={(v: any) => v > 0 ? v : ''} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
@@ -267,40 +295,42 @@ export default function PerformanceDashboard() {
 
             {/* TAB CONTENT: PERFORMANCE (HIỆU SUẤT ĐỒ THỊ CHI TIẾT) */}
             {activeTab === 'performance' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm p-6 h-[450px]">
-                        <div className="flex flex-col mb-6">
-                            <h3 className="text-sm font-medium text-slate-800 flex items-center gap-2">
-                                <RadarIcon className="text-purple-500" size={16} /> Chỉ Số Năng Lực Cốt Lõi
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-7 h-[500px]">
+                        <div className="flex flex-col mb-4">
+                            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <div className="p-2 bg-violet-50 rounded-lg text-violet-600"><RadarIcon size={20} /></div>
+                                Năng Lực Cốt Lõi
                             </h3>
-                            <span className="text-xs text-slate-400 font-light mt-1">Đánh giá các khía cạnh năng lực của phòng ban</span>
+                            <span className="text-sm text-slate-500 font-medium mt-1">Đánh giá cân bằng các khía cạnh năng lực toàn diện</span>
                         </div>
-                        <ResponsiveContainer width="100%" height={360}>
+                        <ResponsiveContainer width="100%" height={380}>
                             <RadarChart cx="50%" cy="50%" outerRadius="70%" data={charts.radar || []}>
                                 <PolarGrid stroke="#e2e8f0" />
-                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 300 }} />
+                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 13, fontWeight: 600 }} />
                                 <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
-                                <Radar name="Trung bình" dataKey="A" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.4} />
-                                <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '13px', fontWeight: 300 }} />
+                                <Radar name="Chỉ số trung bình" dataKey="A" stroke="#8b5cf6" strokeWidth={3} fill="#8b5cf6" fillOpacity={0.3} />
+                                <Tooltip contentStyle={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', fontWeight: 500 }} />
                             </RadarChart>
                         </ResponsiveContainer>
                     </div>
 
-                    <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm p-6 h-[450px]">
-                        <div className="flex flex-col mb-6">
-                            <h3 className="text-sm font-medium text-slate-800 flex items-center gap-2">
-                                <BarChart3 size={16} className="text-blue-500" /> Chi Tiết Doanh Số Kinh Doanh
+                    <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-7 h-[500px]">
+                        <div className="flex flex-col mb-4">
+                            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><BarChart3 size={20} /></div>
+                                Doanh Thu Chi Tiết
                             </h3>
-                            <span className="text-xs text-slate-400 font-light mt-1">Phân tích chuyên sâu top 5 nhân sự kinh doanh (Triệu VNĐ)</span>
+                            <span className="text-sm text-slate-500 font-medium mt-1">Theo dõi đóng góp của từng cá nhân vào mục tiêu</span>
                         </div>
-                        <ResponsiveContainer width="100%" height={360}>
+                        <ResponsiveContainer width="100%" height={380}>
                             <BarChart data={topSalesData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 300 }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 300 }} />
-                                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '13px', fontWeight: 300 }} />
-                                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={48}>
-                                    <LabelList dataKey="value" position="top" fill="#64748b" fontSize={11} fontWeight={500} formatter={(v: any) => `${v}tr`} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 13, fontWeight: 500 }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }} />
+                                <Tooltip cursor={{ fill: '#f8fafc', rx: 10 }} contentStyle={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={52}>
+                                    <LabelList dataKey="value" position="top" fill="#475569" fontSize={13} fontWeight={600} formatter={(v: any) => `${v}tr`} />
                                     {topSalesData.map((entry: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
@@ -308,51 +338,28 @@ export default function PerformanceDashboard() {
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
-
-                    <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm p-6 h-[450px]">
-                        <div className="flex flex-col mb-6">
-                            <h3 className="text-sm font-medium text-slate-800 flex items-center gap-2">
-                                <Target size={16} className="text-rose-500" /> Chi Tiết Chất Lượng Pha Chế
-                            </h3>
-                            <span className="text-xs text-slate-400 font-light mt-1">Phân tích kết quả kiểm định KCS R&D theo nhân sự</span>
-                        </div>
-                        <ResponsiveContainer width="100%" height={360}>
-                            <BarChart data={charts.mixingStats} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 300 }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 300 }} />
-                                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '13px', fontWeight: 300 }} />
-                                <Legend wrapperStyle={{ fontSize: '12px', fontWeight: 300, paddingTop: '10px' }} iconType="circle" iconSize={8} />
-                                <Bar dataKey="pass" name="Đạt Chuẩn (Pass)" fill="#10b981" radius={[4, 4, 0, 0]} barSize={36}>
-                                    <LabelList dataKey="pass" position="top" fill="#10b981" fontSize={11} fontWeight={600} />
-                                </Bar>
-                                <Bar dataKey="fail" name="Lỗi (Fail)" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={36}>
-                                    <LabelList dataKey="fail" position="top" fill="#f43f5e" fontSize={11} fontWeight={600} formatter={(v: any) => v > 0 ? v : ''} />
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
                 </div>
             )}
 
-            {/* TAB CONTENT: STAFF (DANH SÁCH NHÂN SỰ & KPI BẢNG BIỂU) */}
+            {/* TAB CONTENT: STAFF */}
             {activeTab === 'staff' && (
-                <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-500">
                     {/* Filters */}
-                    <div className="flex flex-col sm:flex-row gap-4 mb-2">
-                        <div className="relative w-full sm:w-64">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <div className="flex flex-col sm:flex-row gap-4 p-5 bg-white border border-slate-100 rounded-3xl shadow-sm">
+                        <div className="relative flex-1">
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
-                                className="w-full bg-white border border-slate-200/60 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-light shadow-sm"
-                                placeholder="Tìm nhân viên..."
+                                className="w-full bg-slate-50 border-none rounded-2xl pl-12 pr-4 py-3.5 text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                placeholder="Tìm kiếm nhân sự..."
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
 
                         <select
-                            className="w-full sm:w-48 bg-white border border-slate-200/60 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-light shadow-sm cursor-pointer"
+                            className="w-full sm:w-64 bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer appearance-none"
+                            style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}
                             value={selectedDept}
                             onChange={e => setSelectedDept(e.target.value)}
                         >
@@ -365,24 +372,29 @@ export default function PerformanceDashboard() {
                     </div>
 
                     {/* Table Container */}
-                    <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm whitespace-nowrap">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-100">
-                                        <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Nhân viên</th>
-                                        <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Bộ phận</th>
-                                        <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider text-center">Năng suất</th>
-                                        <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider text-right">Doanh thu</th>
-                                        <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider text-center">Điểm KPI</th>
-                                        <th className="px-6 py-4 font-medium text-slate-500 text-xs uppercase tracking-wider text-right">Đánh giá</th>
+                                        <th className="px-6 py-5 font-bold text-slate-500 text-xs uppercase tracking-wider">Hồ sơ Nhân viên</th>
+                                        <th className="px-6 py-5 font-bold text-slate-500 text-xs uppercase tracking-wider">Phòng ban</th>
+                                        <th className="px-6 py-5 font-bold text-slate-500 text-xs uppercase tracking-wider text-center">Năng suất</th>
+                                        <th className="px-6 py-5 font-bold text-slate-500 text-xs uppercase tracking-wider text-right">Doanh thu</th>
+                                        <th className="px-6 py-5 font-bold text-slate-500 text-xs uppercase tracking-wider text-center">Điểm KPI</th>
+                                        <th className="px-6 py-5 font-bold text-slate-500 text-xs uppercase tracking-wider text-right">Đánh giá chung</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
                                     {filteredStaff.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-light">
-                                                Không tìm thấy nhân sự phù hợp với bộ lọc hiện tại.
+                                            <td colSpan={6} className="px-6 py-16 text-center text-slate-400">
+                                                <div className="flex flex-col items-center justify-center gap-3">
+                                                    <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center">
+                                                        <Search size={24} className="text-slate-300" />
+                                                    </div>
+                                                    <p className="font-medium">Không tìm thấy nhân sự phù hợp.</p>
+                                                </div>
                                             </td>
                                         </tr>
                                     ) : filteredStaff.map((s: any) => {
@@ -399,10 +411,10 @@ export default function PerformanceDashboard() {
                                                     : `${s.customers || 0} yêu cầu`;
 
                                         return (
-                                            <tr key={s.id} className="hover:bg-slate-50/50 transition-colors group">
+                                            <tr key={s.id} className="hover:bg-slate-50 transition-colors group">
                                                 <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-200/50">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-11 h-11 rounded-full bg-indigo-50 flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-white shadow-sm ring-2 ring-transparent group-hover:ring-indigo-100 transition-all">
                                                             {s.avatar ? (
                                                                 <img
                                                                     src={getAvatarUrl(s.avatar)}
@@ -413,52 +425,52 @@ export default function PerformanceDashboard() {
                                                                         target.style.display = 'none';
                                                                         const parent = target.parentElement;
                                                                         if (parent) {
-                                                                            parent.innerHTML = `<span class="text-sm font-medium text-slate-500">${s.name.split(' ').slice(-1)[0][0]}</span>`;
+                                                                            parent.innerHTML = `<span class="text-sm font-bold text-indigo-600">${s.name.split(' ').slice(-1)[0][0]}</span>`;
                                                                         }
                                                                     }}
                                                                 />
                                                             ) : (
-                                                                <span className="text-sm font-medium text-slate-500">
+                                                                <span className="text-sm font-bold text-indigo-600">
                                                                     {s.name.split(' ').slice(-1)[0][0]}
                                                                 </span>
                                                             )}
                                                         </div>
                                                         <div>
-                                                            <div className="font-medium text-slate-700">{s.name}</div>
-                                                            <div className="text-[11px] text-slate-400 font-light mt-0.5">{s.role || 'Nhân viên'}</div>
+                                                            <div className="font-bold text-slate-800">{s.name}</div>
+                                                            <div className="text-xs text-slate-500 font-medium mt-0.5">{s.role || 'Nhân viên'}</div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-slate-600 font-light">
-                                                    <div className="flex items-center gap-1.5 text-[13px]">
-                                                        {isTech ? <Target size={14} className="text-rose-400" /> : isSale ? <TrendingUp size={14} className="text-blue-400" /> : isLogistic ? <Truck size={14} className="text-amber-500" /> : <Briefcase size={14} className="text-slate-400" />}
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2 text-sm font-medium text-slate-700 bg-slate-50 px-3 py-1.5 rounded-lg w-fit border border-slate-100">
+                                                        {isTech ? <Target size={16} className="text-rose-500" /> : isSale ? <TrendingUp size={16} className="text-blue-500" /> : isLogistic ? <Truck size={16} className="text-amber-500" /> : <Briefcase size={16} className="text-slate-400" />}
                                                         {s.dept}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-light bg-slate-100 text-slate-600 border border-slate-200/50">
+                                                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold bg-white text-slate-700 shadow-sm border border-slate-200/60">
                                                         {completedWorkText}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <div className="font-medium text-slate-700">
-                                                        {s.revenue ? `${s.revenue.toLocaleString()} ₫` : <span className="text-slate-300 font-light">—</span>}
+                                                    <div className="font-bold text-slate-800 text-base">
+                                                        {s.revenue ? `${s.revenue.toLocaleString()} ₫` : <span className="text-slate-300 font-medium">—</span>}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <div className="flex items-center justify-center gap-1.5">
-                                                        <Star size={14} className="text-amber-400 fill-amber-400" />
-                                                        <span className="font-medium text-slate-700">{s.satisfaction}</span>
+                                                    <div className="flex items-center justify-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-lg w-fit mx-auto border border-amber-100">
+                                                        <Star size={16} className="text-amber-500 fill-amber-500" />
+                                                        <span className="font-bold text-amber-700">{s.satisfaction}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <span className={`inline-flex items-center px-2 py-1 rounded text-[11px] font-medium tracking-wide border ${s.level === 'Excellent'
-                                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                    <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide border ${s.level === 'Excellent'
+                                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm shadow-emerald-100/50'
                                                             : s.level === 'Good'
-                                                                ? 'bg-blue-50 text-blue-600 border-blue-100'
+                                                                ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm shadow-blue-100/50'
                                                                 : s.level === 'Average'
-                                                                    ? 'bg-amber-50 text-amber-600 border-amber-100'
-                                                                    : 'bg-rose-50 text-rose-600 border-rose-100'
+                                                                    ? 'bg-amber-50 text-amber-600 border-amber-200 shadow-sm shadow-amber-100/50'
+                                                                    : 'bg-rose-50 text-rose-600 border-rose-200 shadow-sm shadow-rose-100/50'
                                                         }`}>
                                                         {s.level === 'Excellent' ? 'XUẤT SẮC' : s.level === 'Good' ? 'TỐT' : s.level === 'Average' ? 'ĐẠT' : 'CHƯA ĐẠT'}
                                                     </span>
@@ -472,8 +484,6 @@ export default function PerformanceDashboard() {
                     </div>
                 </div>
             )}
-
-            {/* TAB CONTENT: REWARDS (KHEN THƯỞNG) REMOVED AS PER REQUEST */}
         </div>
     );
 }

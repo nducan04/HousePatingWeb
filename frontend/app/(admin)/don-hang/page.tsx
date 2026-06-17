@@ -1030,14 +1030,14 @@ export default function OrderManagementPage() {
                 spacing: { line: 280 },
                 children: [
                   new TextRun({ text: "Họ tên người mua hàng: " }),
-                  new TextRun({ text: customerName, bold: true }),
+                  new TextRun({ text: (selectedOrder.KhachHang as any)?.NguoiDaiDien || customerName, bold: true }),
                 ],
               }),
               new Paragraph({
                 spacing: { line: 280 },
                 children: [
                   new TextRun({
-                    text: `Tên đơn vị (nếu có): ${selectedOrder.KhachHang?.PhanLoai === "DOANH_NGHIEP" ? selectedOrder.KhachHang?.TenKhachHang : "...................................................................."}`,
+                    text: `Tên đơn vị (nếu có): ${selectedOrder.KhachHang?.PhanLoai !== "B2C" && selectedOrder.KhachHang?.TenKhachHang ? selectedOrder.KhachHang?.TenKhachHang : "...................................................................."}`,
                   }),
                 ],
               }),
@@ -1045,7 +1045,7 @@ export default function OrderManagementPage() {
                 spacing: { line: 280 },
                 children: [
                   new TextRun({
-                    text: "Mã số thuế (nếu có): ....................................................................",
+                    text: `Mã số thuế (nếu có): ${(selectedOrder.KhachHang as any)?.MaSoThue || (selectedOrder.KhachHang as any)?.MaSoThueCaNhan || "...................................................................."}`,
                   }),
                 ],
               }),
@@ -2344,7 +2344,18 @@ export default function OrderManagementPage() {
                             </button>
                           )
                         )}
-                        {(order.TrangThai === "DANG_XU_LY" || order.TrangThai === "DA_XU_LY_XONG") && (
+                        {order.TrangThai === "DANG_XU_LY" && (
+                          <button
+                            onClick={() =>
+                              handleUpdateStatus(order._id, "DA_XU_LY_XONG")
+                            }
+                            className="inline-flex items-center px-3 py-1.5 rounded-md font-bold text-[11px] bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-all cursor-pointer border-none"
+                            title="Xác nhận hàng đã chuẩn bị xong"
+                          >
+                            ĐÃ CHUẨN BỊ XONG
+                          </button>
+                        )}
+                        {order.TrangThai === "DA_XU_LY_XONG" && (
                           <button
                             onClick={() =>
                               handleUpdateStatus(order._id, "DANG_GIAO")

@@ -16,7 +16,62 @@ interface Permission {
   };
 }
 
-const mockPermissions: Permission[] = [];
+const mockPermissions: Permission[] = [
+  {
+    id: "dashboard",
+    module: "Bảng điều khiển (Dashboard)",
+    description: "Xem tổng quan số liệu doanh thu, đơn hàng, thống kê.",
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: false, KhachHangB2C: false }
+  },
+  {
+    id: "orders",
+    module: "Quản lý Đơn hàng",
+    description: "Tạo, duyệt, và theo dõi trạng thái các đơn hàng bán lẻ và sỉ.",
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: true }
+  },
+  {
+    id: "contracts",
+    module: "Hợp đồng B2B",
+    description: "Quản lý hợp đồng cung cấp sơn tĩnh điện số lượng lớn cho đối tác doanh nghiệp.",
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: true, KhachHangB2C: false }
+  },
+  {
+    id: "products",
+    module: "Danh mục Sản phẩm & Màu",
+    description: "Thêm, sửa, xóa các dòng sơn tĩnh điện, cập nhật thư viện mã màu RAL.",
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: false, KhachHangB2C: false }
+  },
+  {
+    id: "production",
+    module: "Quy trình Pha chế",
+    description: "Theo dõi, tạo lệnh pha chế và R&D các mẫu thử.",
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: false, KhachHangB2C: false }
+  },
+  {
+    id: "inventory",
+    module: "Quản lý Kho bãi",
+    description: "Theo dõi tồn kho thành phẩm và nguyên vật liệu (Nhựa, Bột màu, Phụ gia...).",
+    roles: { Admin: true, NhanVien: false, KhachHangB2B: false, KhachHangB2C: false }
+  },
+  {
+    id: "chatbot",
+    module: "AI Chatbot & Hỗ trợ",
+    description: "Cấu hình AI, tra cứu lịch sử tư vấn, phản hồi ticket khiếu nại khách hàng.",
+    roles: { Admin: true, NhanVien: true, KhachHangB2B: false, KhachHangB2C: false }
+  },
+  {
+    id: "hr_kpi",
+    module: "Nhân sự & Hiệu suất",
+    description: "Xem KPI nhân viên, thống kê lượng khách hàng và chốt sale từng nhân sự.",
+    roles: { Admin: true, NhanVien: false, KhachHangB2B: false, KhachHangB2C: false }
+  },
+  {
+    id: "permissions",
+    module: "Thiết lập Phân quyền",
+    description: "Cấp phát quyền hạn truy cập cho từng nhóm tài khoản trên hệ thống.",
+    roles: { Admin: true, NhanVien: false, KhachHangB2B: false, KhachHangB2C: false }
+  }
+];
 
 const ROLES = [
   {

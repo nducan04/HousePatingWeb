@@ -1123,14 +1123,7 @@ function CustomerServiceDashboard({ data }: { data: any }) {
           color="rose"
           note="Tổng số tiền hệ thống đã giảm giá/chiết khấu"
         />
-        <KpiCard
-          title="Doanh thu từ khuyến mãi"
-          value={`${(loyalty.totalVoucherRevenue || 0).toLocaleString('vi-VN')} VNĐ`}
-          valueColor="text-emerald-500"
-          icon={<TrendingUp />}
-          color="emerald"
-          note="Tổng giá trị đơn hàng có áp dụng mã"
-        />
+
         <KpiCard
           title="Tổng lượt sử dụng"
           value={`${loyalty.totalVouchersUsed > 0 ? loyalty.totalVouchersUsed.toLocaleString('vi-VN') : "0"} lượt`}

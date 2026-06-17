@@ -39,6 +39,7 @@ import {
 } from "recharts";
 import api from "@/lib/utils/axiosAuth";
 import * as XLSX from "xlsx";
+import { exportToExcelVTSC } from "@/lib/utils/excelExportVTSC";
 import { paintColors } from "@/lib/data/colors-data";
 import { useAuthStore } from "@/lib/store/authStore";
 import toast from "react-hot-toast";
@@ -138,6 +139,8 @@ interface BestSellerItem {
 }
 
 export default function QLKhoPage() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "Admin";
   const [activeTab, setActiveTab] = useState<string>("kho");
   const [data, setData] = useState<KhoItem[]>([]);
   const [phieuData, setPhieuData] = useState<PhieuKiemKe[]>([]);
@@ -811,97 +814,18 @@ export default function QLKhoPage() {
     }
   };
 
-  const exportToExcel = () => {
-    const now = new Date();
-    const kyBaoCao = `${(now.getMonth() + 1).toString().padStart(2, "0")}/${now.getFullYear()}`;
-    const ngayXuat = now.toLocaleDateString("vi-VN");
-
-    const buildSheet = (
-      title: string,
-      headers: string[],
-      rows: any[][],
-      totalRow: any[],
-    ): XLSX.WorkSheet => {
-      const N = headers.length;
-      const aoa: any[][] = [
-        ["Đơn vị:", "Công ty CP TM và DV VOSCO", ...Array(N - 2).fill("")],
-        [
-          "Địa chỉ:",
-          "215 Lạch Tray, Gia Viên, Hải Phòng",
-          ...Array(N - 2).fill(""),
-        ],
-        ["Mã số thuế:", "0200387895", ...Array(N - 2).fill("")],
-        Array(N).fill(""),
-        [title, ...Array(N - 1).fill("")],
-        [`Kỳ kế toán: ${kyBaoCao}`, ...Array(N - 1).fill("")],
-        [`Ngày xuất báo cáo: ${ngayXuat}`, ...Array(N - 1).fill("")],
-        Array(N).fill(""),
-        headers,
-        ...rows,
-        totalRow,
-        Array(N).fill(""),
-        [
-          "Người lập phiếu",
-          "",
-          "",
-          "Thủ kho",
-          "",
-          "",
-          "Kế toán trưởng",
-          "",
-          "",
-          "Giám đốc",
-        ],
-        [
-          "(Ký, họ tên)",
-          "",
-          "",
-          "(Ký, họ tên)",
-          "",
-          "",
-          "(Ký, họ tên)",
-          "",
-          "",
-          "(Ký, họ tên)",
-        ],
-      ];
-      const ws = XLSX.utils.aoa_to_sheet(aoa);
-      const sigR1 = 9 + rows.length + 2;
-      const sigR2 = sigR1 + 1;
-      ws["!merges"] = [
-        { s: { r: 0, c: 1 }, e: { r: 0, c: N - 1 } },
-        { s: { r: 1, c: 1 }, e: { r: 1, c: N - 1 } },
-        { s: { r: 2, c: 1 }, e: { r: 2, c: N - 1 } },
-        { s: { r: 4, c: 0 }, e: { r: 4, c: N - 1 } },
-        { s: { r: 5, c: 0 }, e: { r: 5, c: N - 1 } },
-        { s: { r: 6, c: 0 }, e: { r: 6, c: N - 1 } },
-        { s: { r: sigR1, c: 0 }, e: { r: sigR1, c: 2 } },
-        { s: { r: sigR1, c: 3 }, e: { r: sigR1, c: 5 } },
-        { s: { r: sigR1, c: 6 }, e: { r: sigR1, c: 8 } },
-        { s: { r: sigR2, c: 0 }, e: { r: sigR2, c: 2 } },
-        { s: { r: sigR2, c: 3 }, e: { r: sigR2, c: 5 } },
-        { s: { r: sigR2, c: 6 }, e: { r: sigR2, c: 8 } },
-      ];
-      ws["!cols"] = headers.map((_, i) => ({
-        wch: i === 0 ? 5 : i === 2 ? 34 : i === 1 ? 16 : 16,
-      }));
-      return ws;
-    };
-
-    let ws: XLSX.WorkSheet;
-    let fileName = "";
-
+  const exportToExcel = async () => {
     if (activeTab === "kho") {
       if (data.length === 0) return toast.error("Không có dữ liệu để xuất!");
       const headers = [
         "STT",
-        "Mã hàng",
-        "Tên dòng sơn",
+        "Mã Hàng",
+        "Tên Dòng Sơn",
         "ĐVT",
-        "Phân loại",
-        "Tồn kho",
-        "Đơn giá",
-        "Thành tiền",
+        "Phân Loại",
+        "Tồn Kho",
+        "Đơn Giá",
+        "Thành Tiền",
       ];
       const rows = data.map((item, i) => [
         i + 1,
@@ -914,33 +838,33 @@ export default function QLKhoPage() {
         (item.TongTonKho || 0) * (item.DonGiaCoSo || 0),
       ]);
       const tongTon = data.reduce((s, x) => s + (x.TongTonKho || 0), 0);
-      const tongTT = data.reduce(
-        (s, x) => s + (x.TongTonKho || 0) * (x.DonGiaCoSo || 0),
-        0,
-      );
-      ws = buildSheet("BÁO CÁO TỒN KHO", headers, rows, [
-        "TỔNG CỘNG",
-        "",
-        "",
-        "",
-        "",
-        tongTon,
-        "",
-        tongTT,
-      ]);
-      fileName = "Bao_Cao_Ton_Kho";
+      const tongTT = data.reduce((s, x) => s + (x.TongTonKho || 0) * (x.DonGiaCoSo || 0), 0);
+      const summaryData = [
+        { label: "Tổng Mặt Hàng Sơn", value: data.length },
+        { label: "Tổng Lượng Tồn Kho", value: tongTon },
+        { label: "Tổng Giá Trị Tồn Kho (VNĐ)", value: tongTT },
+      ];
+
+      await exportToExcelVTSC({
+        filename: `VTSC_Bao_Cao_Ton_Kho_${new Date().getTime()}`,
+        title: "BÁO CÁO TỒN KHO THÀNH PHẨM SƠN",
+        headers,
+        data: rows,
+        summaryData,
+        totals: ["TỔNG CỘNG", "", "", "", "", tongTon, "", tongTT],
+      });
     } else if (activeTab === "nvl") {
       if (nvlData.length === 0) return toast.error("Không có dữ liệu để xuất!");
       const headers = [
         "STT",
         "Mã NVL",
-        "Tên nguyên vật liệu",
-        "Phân loại",
-        "Nhà cung cấp",
+        "Tên Nguyên Vật Liệu",
+        "Phân Loại",
+        "Nhà Cung Cấp",
         "ĐVT",
-        "Tồn kho",
-        "Đơn giá",
-        "Thành tiền",
+        "Tồn Kho",
+        "Đơn Giá",
+        "Thành Tiền",
       ];
       const rows = nvlData.map((item, i) => [
         i + 1,
@@ -954,74 +878,68 @@ export default function QLKhoPage() {
         (item.TonKho || 0) * (item.DonGia || 0),
       ]);
       const tongTon = nvlData.reduce((s, x) => s + (x.TonKho || 0), 0);
-      const tongTT = nvlData.reduce(
-        (s, x) => s + (x.TonKho || 0) * (x.DonGia || 0),
-        0,
-      );
-      ws = buildSheet("BÁO CÁO TỒN KHO NGUYÊN VẬT LIỆU", headers, rows, [
-        "TỔNG CỘNG",
-        "",
-        "",
-        "",
-        "",
-        "",
-        tongTon,
-        "",
-        tongTT,
-      ]);
-      fileName = "Bao_Cao_Nguyen_Vat_Lieu";
+      const tongTT = nvlData.reduce((s, x) => s + (x.TonKho || 0) * (x.DonGia || 0), 0);
+      const summaryData = [
+        { label: "Tổng Mục Nguyên Vật Liệu", value: nvlData.length },
+        { label: "Tổng Lượng Tồn Kho", value: tongTon },
+        { label: "Tổng Giá Trị (VNĐ)", value: tongTT },
+      ];
+
+      await exportToExcelVTSC({
+        filename: `VTSC_Bao_Cao_Nguyen_Vat_Lieu_${new Date().getTime()}`,
+        title: "BÁO CÁO TỒN KHO NGUYÊN VẬT LIỆU",
+        headers,
+        data: rows,
+        summaryData,
+        totals: ["TỔNG CỘNG", "", "", "", "", "", tongTon, "", tongTT],
+      });
     } else if (activeTab === "nhapxuat") {
-      if (phieuNXData.length === 0)
-        return toast.error("Không có dữ liệu để xuất!");
+      if (phieuNXData.length === 0) return toast.error("Không có dữ liệu để xuất!");
       const headers = [
         "STT",
-        "Mã phiếu",
-        "Tên phiếu",
-        "Loại hàng",
-        "Trạng thái",
-        "Người lập",
-        "Mô tả",
-        "Tổng tiền (VNĐ)",
-        "Ngày lập",
+        "Mã Phiếu",
+        "Tên Phiếu",
+        "Loại Phiếu",
+        "Loại Hàng",
+        "Trạng Thái",
+        "Người Lập",
+        "Mô Tả",
+        "Tổng Tiền (VNĐ)",
+        "Ngày Lập",
       ];
       const rows = phieuNXData.map((item, i) => [
         i + 1,
         item.MaPhieu,
         item.LoaiPhieu === "NHAP" ? "Phiếu nhập kho" : "Phiếu xuất kho",
+        item.LoaiPhieu === "NHAP" ? "NHẬP" : "XUẤT",
         item.LoaiHang === "SAN_PHAM" ? "Thành phẩm" : "Nguyên vật liệu",
-        item.TrangThai === "DA_DUYET"
-          ? "Đã duyệt"
-          : item.TrangThai === "TU_CHOI"
-            ? "Từ chối"
-            : "Chờ duyệt",
+        item.TrangThai === "DA_DUYET" ? "Đã duyệt" : item.TrangThai === "TU_CHOI" ? "Từ chối" : "Chờ duyệt",
         item.TenNguoiLap || "—",
         item.MoTa || "",
         item.TongTien || 0,
         new Date(item.createdAt).toLocaleString("vi-VN"),
       ]);
       const tongTien = phieuNXData.reduce((s, x) => s + (x.TongTien || 0), 0);
-      ws = buildSheet("BÁO CÁO NHẬP XUẤT KHO", headers, rows, [
-        "TỔNG CỘNG",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        tongTien,
-        "",
-      ]);
-      fileName = "Bao_Cao_Nhap_Xuat_Kho";
+      const slNhap = phieuNXData.filter((x) => x.LoaiPhieu === "NHAP").length;
+      const slXuat = phieuNXData.filter((x) => x.LoaiPhieu === "XUAT").length;
+      const summaryData = [
+        { label: "Tổng Số Lượng Phiếu", value: phieuNXData.length },
+        { label: "Số Phiếu Nhập", value: slNhap },
+        { label: "Số Phiếu Xuất", value: slXuat },
+        { label: "Tổng Giá Trị (VNĐ)", value: tongTien },
+      ];
+
+      await exportToExcelVTSC({
+        filename: `VTSC_Bao_Cao_Nhap_Xuat_Kho_${new Date().getTime()}`,
+        title: "BÁO CÁO LỊCH SỬ NHẬP XUẤT KHO",
+        headers,
+        data: rows,
+        summaryData,
+        totals: ["TỔNG CỘNG", "", "", "", "", "", "", "", tongTien, ""],
+      });
     } else {
       return toast.error("Không có dữ liệu để xuất!");
     }
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "BaoCao");
-    XLSX.writeFile(
-      wb,
-      `VOSCO_${fileName}_${ngayXuat.replace(/\//g, "_")}.xlsx`,
-    );
   };
 
   return (
@@ -1087,8 +1005,8 @@ export default function QLKhoPage() {
         <div className="flex flex-wrap gap-3 mb-8 bg-white p-2 rounded-lg border border-slate-100 shadow-sm w-fit">
           <button
             className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kho"
-                ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                : "bg-transparent text-slate-500 hover:bg-slate-50"
+              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+              : "bg-transparent text-slate-500 hover:bg-slate-50"
               }`}
             onClick={() => setActiveTab("kho")}
           >
@@ -1096,8 +1014,8 @@ export default function QLKhoPage() {
           </button>
           <button
             className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nvl"
-                ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                : "bg-transparent text-slate-500 hover:bg-slate-50"
+              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+              : "bg-transparent text-slate-500 hover:bg-slate-50"
               }`}
             onClick={() => setActiveTab("nvl")}
           >
@@ -1105,8 +1023,8 @@ export default function QLKhoPage() {
           </button>
           <button
             className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "nhapxuat"
-                ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                : "bg-transparent text-slate-500 hover:bg-slate-50"
+              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+              : "bg-transparent text-slate-500 hover:bg-slate-50"
               }`}
             onClick={() => setActiveTab("nhapxuat")}
           >
@@ -1114,8 +1032,8 @@ export default function QLKhoPage() {
           </button>
           <button
             className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 cursor-pointer border-none no-underline ${activeTab === "kiemke"
-                ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                : "bg-transparent text-slate-500 hover:bg-slate-50"
+              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+              : "bg-transparent text-slate-500 hover:bg-slate-50"
               }`}
             onClick={() => setActiveTab("kiemke")}
           >
@@ -1139,12 +1057,14 @@ export default function QLKhoPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <button
-                onClick={exportToExcel}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 w-full sm:w-auto"
-              >
-                <Download size={18} /> Xuất báo cáo
-              </button>
+              <div className="flex gap-3 w-full sm:w-auto">
+                <button
+                  onClick={exportToExcel}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border-none bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white shadow-sm w-full sm:w-auto"
+                >
+                  <Download size={18} /> Xuất báo cáo
+                </button>
+              </div>
             </div>
 
             <div className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden">
@@ -1218,10 +1138,10 @@ export default function QLKhoPage() {
                                   <div className="flex-1 h-1.5 bg-slate-100 rounded-md overflow-hidden shadow-inner max-w-[80px]">
                                     <div
                                       className={`h-full rounded-md transition-all duration-1000 shadow-sm ${tk >= 200
-                                          ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                                          : tk > 0
-                                            ? "bg-gradient-to-r from-amber-400 to-amber-500"
-                                            : "bg-gradient-to-r from-rose-400 to-rose-500"
+                                        ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                                        : tk > 0
+                                          ? "bg-gradient-to-r from-amber-400 to-amber-500"
+                                          : "bg-gradient-to-r from-rose-400 to-rose-500"
                                         }`}
                                       style={{ width: `${pct}%` }}
                                     />
@@ -1284,7 +1204,7 @@ export default function QLKhoPage() {
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button
                   onClick={exportToExcel}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 w-full sm:w-auto"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border-none bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white shadow-sm w-full sm:w-auto"
                 >
                   <Download size={18} /> Xuất báo cáo
                 </button>
@@ -1385,20 +1305,24 @@ export default function QLKhoPage() {
                           </td>
                           <td className="px-6 py-4 text-right">
                             <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => openEditNVL(item)}
-                                className="w-8 h-8 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
-                                title="Sửa"
-                              >
-                                <Edit size={14} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteNVL(item._id)}
-                                className="w-8 h-8 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-colors"
-                                title="Xóa"
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                              {isAdmin && (
+                                <>
+                                  <button
+                                    onClick={() => openEditNVL(item)}
+                                    className="w-8 h-8 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
+                                    title="Sửa"
+                                  >
+                                    <Edit size={14} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteNVL(item._id)}
+                                    className="w-8 h-8 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-colors"
+                                    title="Xóa"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1425,9 +1349,9 @@ export default function QLKhoPage() {
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button
                   onClick={exportToExcel}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 w-full sm:w-auto"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer border-none bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white shadow-sm w-full sm:w-auto"
                 >
-                  <Download size={18} /> Xuất Báo Cáo
+                  <Download size={18} /> Xuất báo cáo
                 </button>
                 <button
                   onClick={() => openCreateNXModal()}
@@ -1568,10 +1492,10 @@ export default function QLKhoPage() {
                         <td className="px-6 py-4 text-center">
                           <span
                             className={`inline-flex items-center px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-tight ${item.TrangThai === "DA_DUYET"
-                                ? "bg-green-50 text-green-600"
-                                : item.TrangThai === "TU_CHOI"
-                                  ? "bg-red-50 text-red-600"
-                                  : "bg-amber-50 text-amber-600"
+                              ? "bg-green-50 text-green-600"
+                              : item.TrangThai === "TU_CHOI"
+                                ? "bg-red-50 text-red-600"
+                                : "bg-amber-50 text-amber-600"
                               }`}
                           >
                             {item.TrangThai === "DA_DUYET"
@@ -1626,29 +1550,38 @@ export default function QLKhoPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-1.5 flex-wrap">
-                            {/* Nút DUYỆT + TỪ CHỐI — Chỉ hiện khi CHO_DUYET */}
-                            {item.TrangThai === "CHO_DUYET" && (
-                              <>
-                                <button
-                                  onClick={() => handleDuyetPhieu(item._id)}
-                                  disabled={processingIds.has(item._id)}
-                                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${processingIds.has(item._id)
+                            {item.TrangThai === "CHO_DUYET" ? (
+                              isAdmin && (
+                                <>
+                                  <button
+                                    onClick={() => handleDuyetPhieu(item._id)}
+                                    disabled={processingIds.has(item._id)}
+                                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${processingIds.has(item._id)
                                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                       : "bg-green-50 text-green-600 hover:bg-green-600 hover:text-white"
-                                    }`}
-                                  title="Duyệt phiếu"
-                                >
-                                  {processingIds.has(item._id)
-                                    ? "Đang xử lý..."
-                                    : "✓ Duyệt"}
-                                </button>
-                                <button
-                                  onClick={() => handleTuChoiPhieu(item._id)}
-                                  className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-red-50 text-red-500 hover:bg-red-600 hover:text-white transition-colors"
-                                  title="Từ chối phiếu"
-                                >
-                                  ✕ Từ chối
-                                </button>
+                                      }`}
+                                    title="Duyệt phiếu"
+                                  >
+                                    {processingIds.has(item._id)
+                                      ? "Đang xử lý..."
+                                      : "✓ Duyệt"}
+                                  </button>
+                                  <button
+                                    onClick={() => handleTuChoiPhieu(item._id)}
+                                    className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-red-50 text-red-500 hover:bg-red-600 hover:text-white transition-colors"
+                                    title="Từ chối phiếu"
+                                  >
+                                    ✕ Từ chối
+                                  </button>
+                                </>
+                              )
+                            ) : (
+                              <span className="text-[11px] text-slate-300 italic">
+                                Đã xử lý
+                              </span>
+                            )}
+                            {isAdmin && (
+                              <>
                                 <button
                                   onClick={() => openEditNXModal(item)}
                                   className="w-8 h-8 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
@@ -1664,11 +1597,6 @@ export default function QLKhoPage() {
                                   <Trash2 size={14} />
                                 </button>
                               </>
-                            )}
-                            {item.TrangThai !== "CHO_DUYET" && (
-                              <span className="text-[11px] text-slate-300 italic">
-                                Đã xử lý
-                              </span>
                             )}
                           </div>
                         </td>
@@ -1785,7 +1713,7 @@ export default function QLKhoPage() {
                             >
                               <Eye size={14} />
                             </button>
-                            {item.TrangThai !== "HOAN_THANH" && (
+                            {item.TrangThai !== "HOAN_THANH" && isAdmin && (
                               <button
                                 onClick={() => hoanThanhPhiếu(item.MaPhieu)}
                                 className="inline-flex items-center px-3 h-8 rounded-md bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition-colors shadow-sm"
@@ -2110,12 +2038,12 @@ export default function QLKhoPage() {
                           onChange={(e) => {
                             const poId = e.target.value;
                             setNxForm({ ...nxForm, PhieuDatHangID: poId });
-                            
+
                             // Auto-fill form from PO if selected
                             if (poId) {
                               const po = poList.find(p => p._id === poId);
                               if (po) {
-                                setNxForm(prev => ({...prev, NhaCungCapID: po.SupplierID?._id || po.SupplierID || ""}));
+                                setNxForm(prev => ({ ...prev, NhaCungCapID: po.SupplierID?._id || po.SupplierID || "" }));
                                 if (po.ChiTiet && po.ChiTiet.length > 0) {
                                   const formattedItems = po.ChiTiet.map((item: any) => {
                                     const nvl = nvlData.find((n: any) => n.MaNVL === item.MaItem);
@@ -2347,8 +2275,8 @@ export default function QLKhoPage() {
                                                 setOpenColorDropdownIdx(null);
                                               }}
                                               className={`flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-all border-b border-slate-50/50 last:border-b-0 ${isSelected
-                                                  ? "bg-blue-50/70 border-blue-100/50 hover:bg-blue-50"
-                                                  : "hover:bg-slate-50"
+                                                ? "bg-blue-50/70 border-blue-100/50 hover:bg-blue-50"
+                                                : "hover:bg-slate-50"
                                                 }`}
                                             >
                                               {currentSpColor?.HinhAnh ? (

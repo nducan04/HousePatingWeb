@@ -16,14 +16,14 @@ export default function AlertOverride() {
         let title = 'Thông báo hệ thống';
         let confirmButtonColor = '#2563eb'; // Blue
 
-        if (msgStr.includes('thành công') || msgStr.includes('đã lưu') || msgStr.includes('thêm') || msgStr.includes('đã xóa') || msgStr.includes('đã duyệt') || msgStr.includes('🎉')) {
+        if (msgStr.includes('lỗi') || msgStr.includes('thất bại') || msgStr.includes('không thể') || msgStr.includes('vui lòng') || msgStr.includes('không tìm thấy') || msgStr.includes('chưa') || msgStr.includes('❌')) {
+          icon = 'error';
+          title = 'Có lỗi xảy ra';
+          confirmButtonColor = '#e11d48'; // Rose
+        } else if (msgStr.includes('thành công') || msgStr.includes('đã lưu') || msgStr.includes('thêm') || msgStr.includes('đã xóa') || msgStr.includes('đã duyệt') || msgStr.includes('🎉') || msgStr.includes('✅')) {
           icon = 'success';
           title = 'Hoàn tất thao tác';
           confirmButtonColor = '#059669'; // Emerald
-        } else if (msgStr.includes('lỗi') || msgStr.includes('thất bại') || msgStr.includes('không thể') || msgStr.includes('vui lòng') || msgStr.includes('không tìm thấy') || msgStr.includes('chưa')) {
-          icon = 'warning';
-          title = 'Lưu ý';
-          confirmButtonColor = '#e11d48'; // Rose
         }
 
         Swal.fire({

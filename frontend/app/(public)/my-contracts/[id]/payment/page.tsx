@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, ShieldCheck, Wallet, Landmark, Copy, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ShieldCheck, Wallet, Landmark, Copy, AlertCircle, CreditCard } from 'lucide-react';
 import api from '@/lib/utils/axiosAuth';
 import { toast } from '@/lib/utils/notification';
 
@@ -33,9 +33,48 @@ export default function PaymentPage() {
   
   // "FULL" or term._id
   const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<string>('FULL');
-  // "MOMO" or "BANK"
-  const [paymentMethod, setPaymentMethod] = useState<'MOMO' | 'BANK'>('MOMO');
+  // "MOMO" or "CARD"
+  const [paymentMethod, setPaymentMethod] = useState<'MOMO' | 'CARD'>('MOMO');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Card Form State
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCVC, setCardCVC] = useState('');
+
+  // Voucher state
+  const [discountCode, setDiscountCode] = useState('');
+  const [discountInfo, setDiscountInfo] = useState<any>(null);
+
+  const handleCardPayment = async () => {
+    if (!cardNumber || !cardName || !cardExpiry || !cardCVC) {
+      toast.error('Vui lòng điền đầy đủ thông tin thẻ');
+      return;
+    }
+    
+    setIsProcessing(true);
+    try {
+      const response = await api.post('/thanh-toan/card-payment', {
+        contractId: id,
+        termId: selectedPaymentTerm === 'FULL' ? null : selectedPaymentTerm,
+        amount: finalAmount,
+        discountCode: discountInfo?.MaVoucher,
+        discountAmount: discountInfo?.DiscountAmount
+      });
+
+      if (response.data.success) {
+        toast.success('Thanh toán thẻ thành công!');
+        router.push('/my-payments'); 
+      } else {
+        toast.error(response.data.message || 'Có lỗi xảy ra khi thanh toán');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Lỗi kết nối máy chủ');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   useEffect(() => {
     if (id) fetchContract();
@@ -70,6 +109,27 @@ export default function PaymentPage() {
     }
   }
 
+  // Calculate final amount after voucher
+  const discountAmount = discountInfo?.DiscountAmount || 0;
+  const finalAmount = Math.max(0, selectedAmount - discountAmount);
+
+  const handleApplyVoucher = async () => {
+    if (!discountCode) return;
+    try {
+      const res = await api.post("/promotions/validate", {
+        code: discountCode,
+        cartTotal: selectedAmount,
+      });
+      if (res.data.success) {
+        setDiscountInfo(res.data.data);
+        toast.success("Áp dụng mã giảm giá thành công!");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Mã không hợp lệ hoặc không đủ điều kiện");
+      setDiscountInfo(null);
+    }
+  };
+
   const handleMomoPayment = async () => {
     if (!contract || selectedAmount <= 0) return;
     
@@ -82,7 +142,9 @@ export default function PaymentPage() {
       const res = await api.post('/thanh-toan/momo/create', {
         type,
         id: paymentId,
-        amount: selectedAmount,
+        amount: finalAmount,
+        discountCode: discountInfo?.MaVoucher,
+        discountAmount: discountInfo?.DiscountAmount
       });
 
       if (res.data.success && res.data.payUrl) {
@@ -253,17 +315,48 @@ export default function PaymentPage() {
                       <Wallet size={16} /> Qua Ví MoMo
                     </button>
                     <button 
-                      onClick={() => setPaymentMethod('BANK')}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${paymentMethod === 'BANK' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                      onClick={() => setPaymentMethod('CARD')}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${paymentMethod === 'CARD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                      <Landmark size={16} /> Chuyển khoản
+                      <CreditCard size={16} /> Thẻ Tín Dụng
                     </button>
                   </div>
 
-                  <div className="p-5 bg-slate-50 rounded-2xl mb-6">
-                    <div className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2 text-center">Tổng tiền cần thanh toán</div>
-                    <div className="text-3xl font-black text-blue-600 text-center">{selectedAmount.toLocaleString()} ₫</div>
-                    <div className="text-sm font-medium text-slate-500 text-center mt-2">Cho: {selectedTermName}</div>
+                  <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Mã khuyến mãi</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={discountCode}
+                        onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                        placeholder="Nhập mã giảm giá..."
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                      />
+                      <button 
+                        onClick={handleApplyVoucher}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold rounded-lg transition-all"
+                      >
+                        Áp dụng
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-5 bg-slate-50 rounded-2xl mb-6 flex flex-col gap-3">
+                    <div className="flex justify-between items-center text-sm font-bold text-slate-500">
+                      <span>Cần thanh toán:</span>
+                      <span className="text-slate-700">{selectedAmount.toLocaleString()} ₫</span>
+                    </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between items-center text-sm font-bold text-emerald-600">
+                        <span>Giảm giá (Voucher):</span>
+                        <span>- {discountAmount.toLocaleString()} ₫</span>
+                      </div>
+                    )}
+                    <div className="pt-3 border-t border-slate-200">
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 text-center">Tổng tiền thanh toán cuối</div>
+                      <div className="text-3xl font-black text-blue-600 text-center">{finalAmount.toLocaleString()} ₫</div>
+                      <div className="text-sm font-medium text-slate-500 text-center mt-2">Cho: {selectedTermName}</div>
+                    </div>
                   </div>
 
                   {paymentMethod === 'MOMO' && (
@@ -288,45 +381,108 @@ export default function PaymentPage() {
                     </div>
                   )}
 
-                  {paymentMethod === 'BANK' && (
+                  {paymentMethod === 'CARD' && (
                     <div className="animate-in fade-in zoom-in-95 duration-300">
-                      <div className="space-y-4">
-                        <div>
-                          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Ngân hàng hưởng thụ</div>
-                          <div className="font-bold text-slate-800 text-lg">Ngân hàng TMCP Quân Đội (MB Bank)</div>
-                        </div>
-
-                        <div>
-                          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Số tài khoản</div>
-                          <div className="flex items-center gap-2">
-                            <div className="font-black text-blue-600 text-2xl tracking-wider">1234 5678 9999</div>
-                            <button onClick={() => copyToClipboard('123456789999', 'Số tài khoản')} className="p-2 text-slate-400 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 rounded-lg transition-colors">
-                              <Copy size={16} />
-                            </button>
+                      
+                      {/* Thẻ ảo UI */}
+                      <div className="w-full h-48 rounded-2xl bg-gradient-to-tr from-slate-900 via-indigo-900 to-slate-800 p-6 shadow-xl mb-6 relative overflow-hidden flex flex-col justify-between">
+                        <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+                        <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                        
+                        <div className="flex justify-between items-start relative z-10">
+                          <div className="text-white/60 font-medium tracking-widest text-xs uppercase">Thẻ thanh toán</div>
+                          <div className="flex gap-1.5">
+                            <div className="w-6 h-6 rounded-full bg-rose-500/80"></div>
+                            <div className="w-6 h-6 rounded-full bg-amber-500/80 -ml-3"></div>
                           </div>
                         </div>
 
-                        <div>
-                          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Chủ tài khoản</div>
-                          <div className="font-bold text-slate-800">CÔNG TY CP TM & DV VOSCO</div>
-                        </div>
-
-                        <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 mt-2">
-                          <div className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Nội dung chuyển khoản (Bắt buộc)</div>
-                          <div className="flex items-start gap-2">
-                            <div className="font-black text-amber-800 flex-1 break-all bg-white px-3 py-2 rounded-lg border border-amber-200">
-                              HD {contract.contractId} TT {selectedPaymentTerm === 'FULL' ? 'TOAN BO' : 'DOT'}
+                        <div className="relative z-10">
+                          <div className="text-white font-mono text-xl tracking-[0.2em] mb-2 shadow-sm">
+                            {cardNumber ? cardNumber.replace(/(\d{4})/g, '$1 ').trim() : '**** **** **** ****'}
+                          </div>
+                          <div className="flex justify-between items-end">
+                            <div>
+                              <div className="text-white/50 text-[10px] uppercase font-bold tracking-wider mb-0.5">Tên chủ thẻ</div>
+                              <div className="text-white font-bold uppercase tracking-wide text-sm truncate max-w-[150px]">
+                                {cardName || 'NGUYEN VAN A'}
+                              </div>
                             </div>
-                            <button 
-                              onClick={() => copyToClipboard(`HD ${contract.contractId} TT ${selectedPaymentTerm === 'FULL' ? 'TOAN BO' : 'DOT'}`, 'Nội dung CK')} 
-                              className="p-2.5 text-amber-600 hover:text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors shrink-0"
-                            >
-                              <Copy size={16} />
-                            </button>
+                            <div className="text-right">
+                              <div className="text-white/50 text-[10px] uppercase font-bold tracking-wider mb-0.5">Hết hạn</div>
+                              <div className="text-white font-mono text-sm">
+                                {cardExpiry || 'MM/YY'}
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-xs text-amber-700 font-medium mt-3">Lưu ý: Quý khách vui lòng nhập chính xác nội dung chuyển khoản để Kế toán VTSC đối soát. Quá trình duyệt có thể mất từ 1-2 ngày làm việc.</p>
                         </div>
                       </div>
+
+                      {/* Form nhập */}
+                      <div className="space-y-4 mb-6">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Số thẻ</label>
+                          <input 
+                            type="text" 
+                            maxLength={16}
+                            value={cardNumber}
+                            onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ''))}
+                            placeholder="Nhập 16 số trên thẻ"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tên in trên thẻ</label>
+                          <input 
+                            type="text" 
+                            value={cardName}
+                            onChange={(e) => setCardName(e.target.value.toUpperCase())}
+                            placeholder="VD: NGUYEN VAN A"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400 uppercase"
+                          />
+                        </div>
+                        <div className="flex gap-4">
+                          <div className="flex-1">
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Ngày hết hạn</label>
+                            <input 
+                              type="text" 
+                              maxLength={5}
+                              value={cardExpiry}
+                              onChange={(e) => {
+                                let val = e.target.value.replace(/\D/g, '');
+                                if (val.length >= 2) val = val.slice(0,2) + '/' + val.slice(2);
+                                setCardExpiry(val);
+                              }}
+                              placeholder="MM/YY"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">CVC/CVV</label>
+                            <input 
+                              type="password" 
+                              maxLength={3}
+                              value={cardCVC}
+                              onChange={(e) => setCardCVC(e.target.value.replace(/\D/g, ''))}
+                              placeholder="123"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <button 
+                        disabled={isProcessing}
+                        onClick={handleCardPayment}
+                        className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {isProcessing ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                          <CreditCard size={20} />
+                        )}
+                        Thanh toán ngay
+                      </button>
                     </div>
                   )}
                 </>

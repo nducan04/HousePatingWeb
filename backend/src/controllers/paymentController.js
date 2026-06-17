@@ -1,5 +1,55 @@
 const DonHang = require('../models/DonHang');
 const HopDong = require('../models/HopDong');
+const GiaoDichThanhToan = require('../models/GiaoDichThanhToan');
+const KhuyenMai = require('../models/KhuyenMai');
+
+// Utility to apply voucher tracking
+async function recordVoucherUsage(discountCode, discountAmount, targetId) {
+    if (!discountCode) return;
+    try {
+        const voucher = await KhuyenMai.findOne({ MaKhuyenMai: { $regex: new RegExp(`^${discountCode}$`, 'i') } });
+        if (voucher) {
+            voucher.DanhSachApDung.push({
+                MaKhachHang: targetId || 'Unknown',
+                NgayApDung: new Date(),
+                SoTienGiam: discountAmount || 0
+            });
+            await voucher.save();
+        }
+    } catch (err) {
+        console.error('Lỗi khi ghi nhận mã khuyến mãi:', err);
+    }
+}
+
+// Helper function to check and apply 10% late fee
+const applyLatePenaltyToContracts = async (contracts) => {
+    const now = new Date();
+    for (let contract of contracts) {
+        if (!contract.paymentTerms) continue;
+        let isUpdated = false;
+        let penaltyAmount = 0;
+
+        for (let term of contract.paymentTerms) {
+            // Overdue if paidAmount < amount and now > dueDate + 10 days
+            if (!term.lateFeeApplied && (term.paidAmount || 0) < term.amount) {
+                const dueDate = new Date(term.dueDate);
+                const tenDaysInMs = 10 * 24 * 60 * 60 * 1000;
+                if (now.getTime() > dueDate.getTime() + tenDaysInMs) {
+                    const penalty = term.amount * 0.10; // 10% penalty
+                    term.amount += penalty;
+                    term.lateFeeApplied = true;
+                    penaltyAmount += penalty;
+                    isUpdated = true;
+                }
+            }
+        }
+
+        if (isUpdated) {
+            contract.TongGiaTri += penaltyAmount;
+            await contract.save();
+        }
+    }
+};
 
 // @desc    Get all financial records (Orders + Contracts) for payment management
 // @route   GET /api/thanh-toan/all
@@ -9,6 +59,8 @@ exports.getAllFinancialRecords = async (req, res) => {
             DonHang.find({}).populate('KhachHang', 'MaKH TenKhachHang PhanLoai').sort({ createdAt: -1 }),
             HopDong.find({}).populate('CustomerID', 'MaKH TenKhachHang PhanLoai').sort({ createdAt: -1 })
         ]);
+
+        await applyLatePenaltyToContracts(contracts);
 
         // Normalize Orders (filter out B2B orders since they are tracked under Contracts)
         const normalizedOrders = orders
@@ -91,6 +143,8 @@ exports.getMyFinancialRecords = async (req, res) => {
             HopDong.find({ CustomerID: customerId }).populate('CustomerID', 'MaKH TenKhachHang PhanLoai').sort({ createdAt: -1 })
         ]);
 
+        await applyLatePenaltyToContracts(contracts);
+
         // Normalize Orders (filter out B2B orders since they are tracked under Contracts)
         const normalizedOrders = orders
             .filter(o => o.KhachHang?.PhanLoai !== 'B2B')
@@ -166,7 +220,7 @@ exports.updateContractPayment = async (req, res) => {
 // @route   POST /api/thanh-toan/momo/create
 exports.createMomoPayment = async (req, res) => {
     try {
-        const { type, id, amount } = req.body;
+        const { type, id, amount, discountCode, discountAmount } = req.body;
 
         if (!type || !id || !amount) {
             return res.status(400).json({ success: false, message: 'Thiếu thông tin loại thanh toán, ID hoặc số tiền' });
@@ -206,7 +260,7 @@ exports.createMomoPayment = async (req, res) => {
         const ipnUrl = `${backendUrl}/api/thanh-toan/momo/ipn`;
 
         // encode extraData
-        const extraDataObj = { type, id, amount: Number(amount) };
+        const extraDataObj = { type, id, amount: Number(amount), discountCode, discountAmount: Number(discountAmount || 0) };
         const extraData = Buffer.from(JSON.stringify(extraDataObj)).toString('base64');
 
         const requestType = 'captureWallet';
@@ -328,7 +382,10 @@ exports.momoIPN = async (req, res) => {
         if (resultCode === 0) {
             // Giải mã extraData
             const decodedExtraData = JSON.parse(Buffer.from(extraData, 'base64').toString('ascii'));
-            const { type, id, amount: paidVal } = decodedExtraData;
+            const { type, id, amount: paidVal, discountCode, discountAmount } = decodedExtraData;
+            
+            // Số tiền thực trả cộng số tiền khuyến mãi bằng số tiền được ghi nhận hoàn thành
+            const effectivePaidVal = Number(paidVal) + Number(discountAmount || 0);
 
             console.log(`Payment confirmed! Type: ${type}, ID: ${id}, Amount: ${paidVal}`);
 
@@ -354,12 +411,12 @@ exports.momoIPN = async (req, res) => {
                     if (termId && contract.paymentTerms && contract.paymentTerms.length > 0) {
                         const term = contract.paymentTerms.id(termId);
                         if (term) {
-                            term.paidAmount = (term.paidAmount || 0) + Number(paidVal);
+                            term.paidAmount = (term.paidAmount || 0) + effectivePaidVal;
                             term.paidDate = new Date();
                         }
                     }
 
-                    contract.DaThanhToan = (contract.DaThanhToan || 0) + Number(paidVal);
+                    contract.DaThanhToan = (contract.DaThanhToan || 0) + effectivePaidVal;
                     
                     // Recalculate based on terms to be safe
                     if (contract.paymentTerms && contract.paymentTerms.length > 0) {
@@ -374,6 +431,11 @@ exports.momoIPN = async (req, res) => {
                     }
                     await contract.save();
                     console.log(`Contract ${contract.MaHopDong} paid amount updated to ${contract.DaThanhToan}.`);
+
+                    // Record voucher usage
+                    if (discountCode) {
+                        await recordVoucherUsage(discountCode, discountAmount, contract.CustomerID?.toString() || contractId);
+                    }
                 }
             }
         } else {
@@ -404,7 +466,9 @@ exports.momoConfirm = async (req, res) => {
 
         // Giải mã extraData
         const decodedExtraData = JSON.parse(Buffer.from(extraData, 'base64').toString('utf8'));
-        const { type, id, amount: paidVal } = decodedExtraData;
+        const { type, id, amount: paidVal, discountCode, discountAmount } = decodedExtraData;
+
+        const effectivePaidVal = Number(paidVal) + Number(discountAmount || 0);
 
         console.log(`[MoMo Confirm] Client-side confirm - Type: ${type}, ID: ${id}, Amount: ${paidVal}`);
 
@@ -430,12 +494,12 @@ exports.momoConfirm = async (req, res) => {
                 if (termId && contract.paymentTerms && contract.paymentTerms.length > 0) {
                     const term = contract.paymentTerms.id(termId);
                     if (term) {
-                        term.paidAmount = (term.paidAmount || 0) + Number(paidVal);
+                        term.paidAmount = (term.paidAmount || 0) + effectivePaidVal;
                         term.paidDate = new Date();
                     }
                 }
 
-                contract.DaThanhToan = (contract.DaThanhToan || 0) + Number(paidVal);
+                contract.DaThanhToan = (contract.DaThanhToan || 0) + effectivePaidVal;
                 
                 // Recalculate based on terms to be safe
                 if (contract.paymentTerms && contract.paymentTerms.length > 0) {
@@ -456,6 +520,187 @@ exports.momoConfirm = async (req, res) => {
         return res.status(200).json({ success: true, message: 'Cập nhật thanh toán thành công' });
     } catch (error) {
         console.error('MoMo Confirm Error:', error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get contract debt info
+// @route   GET /api/thanh-toan/contracts/:id/debt
+exports.getContractDebt = async (req, res) => {
+    try {
+        const contractId = req.params.id;
+        const contract = await HopDong.findById(contractId);
+        if (!contract) return res.status(404).json({ success: false, message: 'Không tìm thấy hợp đồng' });
+
+        const payments = await GiaoDichThanhToan.find({ HopDong: contractId, TrangThai: 'SUCCESS' }).sort({ createdAt: -1 });
+
+        const totalPaid = payments.reduce((sum, p) => sum + p.SoTien, 0);
+        const totalValue = contract.TongGiaTri || 0;
+        const remainingDebt = Math.max(totalValue - totalPaid, 0);
+
+        return res.status(200).json({
+            success: true,
+            tong_gia_tri: totalValue,
+            da_thanh_toan: totalPaid,
+            cong_no_con_lai: remainingDebt,
+            lich_su: payments
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Create new manual payment transaction
+// @route   POST /api/thanh-toan
+exports.createPayment = async (req, res) => {
+    try {
+        const { Hopdong_id, so_tien, phuong_thuc_thanh_toan } = req.body;
+        
+        const contract = await HopDong.findById(Hopdong_id);
+        if (!contract) return res.status(404).json({ success: false, message: 'Hợp đồng không tồn tại' });
+
+        // Tạo giao dịch
+        const payment = new GiaoDichThanhToan({
+            MaGiaoDich: `TXN_${Date.now()}`,
+            HopDong: Hopdong_id,
+            SoTien: so_tien,
+            PhuongThucThanhToan: phuong_thuc_thanh_toan,
+            TrangThai: 'SUCCESS' // Duyệt ngay cho demo
+        });
+        await payment.save();
+
+        // Cập nhật hợp đồng
+        const payments = await GiaoDichThanhToan.find({ HopDong: Hopdong_id, TrangThai: 'SUCCESS' });
+        const totalPaidSum = payments.reduce((sum, p) => sum + p.SoTien, 0);
+        
+        contract.DaThanhToan = totalPaidSum;
+        const newDebt = (contract.TongGiaTri || 0) - totalPaidSum;
+
+        if (newDebt <= 0) {
+            contract.TrangThai = 'completed';
+        } else if (contract.contractType === 'pha-che' && contract.TrangThai === 'draft') {
+            contract.TrangThai = 'delivering'; // Kích hoạt khi có cọc
+        }
+        await contract.save();
+
+        return res.status(201).json({ success: true, data: payment, cong_no_moi: Math.max(newDebt, 0) });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Verify Blockchain Transaction
+// @route   PUT /api/thanh-toan/verify-blockchain
+exports.verifyBlockchain = async (req, res) => {
+    try {
+        const { Hopdong_id, transaction_hash, chu_ky_vtsc } = req.body;
+        
+        const contract = await HopDong.findById(Hopdong_id);
+        if (!contract) return res.status(404).json({ success: false, message: 'Hợp đồng không tồn tại' });
+
+        contract.TransactionHash = transaction_hash;
+        contract.vtscSignature = chu_ky_vtsc;
+        await contract.save();
+
+        return res.status(200).json({ success: true, message: 'Đã lưu chứng từ blockchain' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Handle Card Payment logic directly
+// @route   POST /api/thanh-toan/card-payment
+exports.cardPayment = async (req, res) => {
+    try {
+        const { id, type, amount, contractId, termId, discountCode, discountAmount } = req.body;
+        
+        // Compatible with older param `contractId`
+        const targetId = id || contractId;
+        const targetType = type || 'CONTRACT';
+
+        if (!targetId || !amount) {
+            return res.status(400).json({ success: false, message: 'Thiếu thông tin đối tượng hoặc số tiền' });
+        }
+
+        if (targetType === 'ORDER') {
+            const order = await DonHang.findById(targetId);
+            if (!order) return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
+            
+            order.TrangThaiThanhToan = 'DA_THANH_TOAN';
+            // Mark full payment, DaCoc or whatever fields needed
+            if (typeof order.DaCoc !== 'undefined') order.DaCoc = amount;
+            await order.save();
+
+            // Create transaction history
+            await GiaoDichThanhToan.create({
+                MaGiaoDich: `CARD_${Date.now()}`,
+                DonHang: targetId,
+                SoTien: amount,
+                PhuongThucThanhToan: 'CARD',
+                TrangThai: 'SUCCESS'
+            });
+
+            return res.status(200).json({ success: true, message: 'Thanh toán đơn hàng thành công' });
+        } else {
+            const contract = await HopDong.findById(targetId);
+            if (!contract) return res.status(404).json({ success: false, message: 'Hợp đồng không tồn tại' });
+
+            // Apply late penalty just in case before paying
+            await applyLatePenaltyToContracts([contract]);
+
+            // The actual value applied to debt is amount + discountAmount
+            const effectivePaidVal = Number(amount) + Number(discountAmount || 0);
+
+            // Update exact term
+            if (termId && contract.paymentTerms && contract.paymentTerms.length > 0) {
+                const term = contract.paymentTerms.id(termId);
+                if (term) {
+                    term.paidAmount = (term.paidAmount || 0) + effectivePaidVal;
+                    term.paidDate = new Date();
+                }
+            } else {
+                // Determine which term to pay or update the overall contract paid amount
+                let remainingAmount = effectivePaidVal;
+                if (contract.paymentTerms && contract.paymentTerms.length > 0) {
+                    for (let term of contract.paymentTerms) {
+                        const unpaid = term.amount - (term.paidAmount || 0);
+                        if (unpaid > 0 && remainingAmount > 0) {
+                            const pay = Math.min(unpaid, remainingAmount);
+                            term.paidAmount = (term.paidAmount || 0) + pay;
+                            term.paidDate = new Date();
+                            remainingAmount -= pay;
+                        }
+                    }
+                }
+                contract.DaThanhToan = (contract.DaThanhToan || 0) + effectivePaidVal;
+            }
+
+            // Recalculate global DaThanhToan
+            if (contract.paymentTerms && contract.paymentTerms.length > 0) {
+                contract.DaThanhToan = contract.paymentTerms.reduce((sum, t) => sum + (t.paidAmount || 0), 0);
+            }
+
+            if (contract.DaThanhToan >= contract.TongGiaTri) {
+                contract.DaThanhToan = contract.TongGiaTri;
+                if (contract.TrangThai === 'delivering') {
+                    contract.TrangThai = 'completed';
+                }
+            }
+            await contract.save();
+
+            // Create transaction history
+            await GiaoDichThanhToan.create({
+                MaGiaoDich: `CARD_${Date.now()}`,
+                HopDong: targetId,
+                SoTien: amount,
+                PhuongThucThanhToan: 'CARD',
+                TrangThai: 'SUCCESS'
+            });
+
+            return res.status(200).json({ success: true, message: 'Thanh toán thẻ hợp đồng thành công', contract });
+        }
+    } catch (error) {
+        console.error('Card Payment Error:', error);
         return res.status(500).json({ success: false, message: error.message });
     }
 };

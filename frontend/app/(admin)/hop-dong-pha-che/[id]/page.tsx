@@ -86,11 +86,11 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
       } else {
         if (!contract.clientAddress && missingClientAddress) {
           await fetchContractById(id);
-      if (contract?.contractType === 'pha-che') {
-        setTimeout(() => {
-          router.push('/rd-tracking');
-        }, 1500);
-      }
+        }
+        if ((contract as any)?.contractType === 'pha-che') {
+          setTimeout(() => {
+            router.push('/rd-tracking');
+          }, 1500);
         }
       }
     } catch (err: any) {
@@ -204,9 +204,26 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
                 <span className="text-sm text-slate-500 font-medium">Đối tác</span>
                 <span className="text-sm text-slate-800 font-semibold">{contract.customer?.name || 'N/A'}</span>
               </div>
-              <div className="flex justify-between py-2.5 border-b border-slate-200 last:border-b-0">
-                <span className="text-sm text-slate-500 font-medium">Giá trị</span>
-                <span className="text-sm text-slate-800 font-semibold" style={{ color: '#d97706' }}>{contract.value?.toLocaleString('vi-VN')} VNĐ</span>
+              <div className="flex flex-col py-2.5 border-b border-slate-200 last:border-b-0 gap-1.5">
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-500 font-medium">Giá trị tạm tính</span>
+                  <span className="text-sm text-slate-800 font-semibold">{(() => {
+                    const subtotal = contract.chiTietHopDong?.reduce((sum: number, item: any) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0) || 0;
+                    return subtotal.toLocaleString('vi-VN');
+                  })()} VNĐ</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-500 font-medium">Thuế GTGT (VAT)</span>
+                  <span className="text-sm text-slate-800 font-semibold">{(() => {
+                    const subtotal = contract.chiTietHopDong?.reduce((sum: number, item: any) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0) || 0;
+                    const vat = (contract.value || 0) - subtotal;
+                    return vat > 0 ? vat.toLocaleString('vi-VN') + ' VNĐ (8%)' : '0 VNĐ';
+                  })()}</span>
+                </div>
+                <div className="flex justify-between mt-1 pt-2 border-t border-slate-100">
+                  <span className="text-sm text-slate-700 font-bold">Tổng thanh toán</span>
+                  <span className="text-sm font-bold" style={{ color: '#d97706' }}>{contract.value?.toLocaleString('vi-VN')} VNĐ</span>
+                </div>
               </div>
               {contract.terms?.sla && (
                 <div className="flex justify-between py-2.5 border-b border-slate-200 last:border-b-0">
@@ -265,6 +282,33 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot>
+                    <tr className="border-t border-slate-200 bg-slate-50/50">
+                      <td colSpan={4} className="py-3 px-4 text-right font-medium text-slate-600">Cộng tiền hàng (chưa VAT):</td>
+                      <td className="py-3 px-4 font-semibold text-slate-800">
+                        {(() => {
+                          const subtotal = contract.chiTietHopDong?.reduce((sum: number, item: any) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0) || 0;
+                          return subtotal.toLocaleString('vi-VN');
+                        })()}
+                      </td>
+                    </tr>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <td colSpan={4} className="py-3 px-4 text-right font-medium text-slate-600">Thuế GTGT (VAT):</td>
+                      <td className="py-3 px-4 font-semibold text-slate-800">
+                        {(() => {
+                          const subtotal = contract.chiTietHopDong?.reduce((sum: number, item: any) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0) || 0;
+                          const vat = (contract.value || 0) - subtotal;
+                          return vat > 0 ? vat.toLocaleString('vi-VN') : '0';
+                        })()}
+                      </td>
+                    </tr>
+                    <tr className="bg-slate-50">
+                      <td colSpan={4} className="py-3 px-4 text-right font-bold text-slate-800">Tổng thanh toán (đã có VAT):</td>
+                      <td className="py-3 px-4 font-bold" style={{ color: '#d97706', fontSize: '1.05rem' }}>
+                        {contract.value?.toLocaleString('vi-VN')}
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </div>
@@ -412,7 +456,6 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
               </div>
             )}
           </div>
-
 
         </div>
       </div>
