@@ -247,13 +247,12 @@ export default function DoiTacPage() {
               </div>
               <div
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300
-                ${
-                  kpi.color === "indigo"
+                ${kpi.color === "indigo"
                     ? "bg-indigo-50 text-indigo-600"
                     : kpi.color === "blue"
                       ? "bg-blue-50 text-blue-600"
                       : "bg-amber-50 text-amber-600"
-                }`}
+                  }`}
               >
                 <kpi.icon size={24} />
               </div>
@@ -379,11 +378,10 @@ export default function DoiTacPage() {
                     <td className="px-6 py-5">
                       <span
                         className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-tight
-                        ${
-                          item.PhanLoai === "B2B"
+                        ${item.PhanLoai === "B2B"
                             ? "bg-blue-50 text-blue-600"
                             : "bg-amber-50 text-amber-600"
-                        }`}
+                          }`}
                       >
                         {item.PhanLoai}
                       </span>
@@ -604,27 +602,6 @@ export default function DoiTacPage() {
                   </div>
                 </div>
               </div>
-
-              {formData.PhanLoai === "B2B" && (
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">
-                    Mã số thuế / Giấy phép KD
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
-                    placeholder="Nhập MST đối tác..."
-                    value={formData.MaSoThueCaNhan || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        MaSoThueCaNhan: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              )}
-
               {formData.PhanLoai === "B2B" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                   <div className="space-y-2">

@@ -190,6 +190,12 @@ export default function ShopPage() {
     ? products.filter((p) => p.PhanLoai === selectedCategory)
     : products;
 
+  const getDisplayPrice = (basePrice: number) => {
+    if (!basePrice) return 0;
+    const multiplier = user?.role === 'KhachHangB2B' ? 1.2 : 1.3;
+    return basePrice * multiplier;
+  };
+
   return (
     <>
       <div
@@ -303,7 +309,7 @@ export default function ShopPage() {
                           <div className="flex justify-between items-end mb-3">
                             <div className="flex flex-col">
                               <span className="text-emerald-400 font-bold text-xl">
-                                {sp.DonGiaCoSo?.toLocaleString() || 0} ₫
+                                {getDisplayPrice(sp.DonGiaCoSo).toLocaleString()} ₫
                               </span>
                               <span className="text-xs text-slate-400 font-medium">
                                 / {sp.DonViTinh || "Thùng"}
