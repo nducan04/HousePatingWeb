@@ -5,6 +5,7 @@ import { X, Star, ShoppingCart, Loader2, ChevronLeft, ChevronRight, CheckCircle2
 import { resolveImageUrl } from "@/lib/utils/imageUrl";
 import { QRCodeCanvas } from "qrcode.react";
 import { paintColors } from "@/lib/data/colors-data";
+import { useAuthStore } from "@/lib/store/authStore";
 
 interface CustomerProductModalProps {
   product: any;
@@ -25,6 +26,13 @@ export default function CustomerProductModal({
   const [quantity, setQuantity] = useState(1);
   const [successMsg, setSuccessMsg] = useState("");
   const [selectedColorCode, setSelectedColorCode] = useState<string>("");
+
+  const { user } = useAuthStore();
+  const getDisplayPrice = (basePrice: number) => {
+    if (!basePrice) return 0;
+    const multiplier = user?.role === 'KhachHangB2B' ? 1.2 : 1.3;
+    return basePrice * multiplier;
+  };
 
   React.useEffect(() => {
     setSelectedColorCode("");
@@ -170,7 +178,7 @@ export default function CustomerProductModal({
           </div>
 
           <div className="mb-6">
-            <span className="text-3xl font-extrabold text-emerald-600">{(product.DonGiaCoSo || 0).toLocaleString()} ₫</span>
+            <span className="text-3xl font-extrabold text-emerald-600">{getDisplayPrice(product.DonGiaCoSo).toLocaleString()} ₫</span>
             <span className="text-slate-500 ml-2 text-sm">/ {product.DonViTinh || "Thùng"}</span>
           </div>
           
