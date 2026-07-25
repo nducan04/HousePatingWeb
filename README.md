@@ -1,105 +1,145 @@
-# 🏭 VTSC PaintPro - Hệ thống Quản lý Kinh doanh & ERP Sơn Tĩnh Điện
+# VTSC PaintPro - Enterprise Resource Planning & Paint Customization Platform
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![Node](https://img.shields.io/badge/node-%3E%3D%2018.0.0-brightgreen.svg)
-![Next.js](https://img.shields.io/badge/Next.js-14.x-black)
-![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-success)
+## Introduction
 
-> **Đồ án Tốt nghiệp Kỹ sư Công nghệ Thông tin - Trường Đại học Hàng Hải Việt Nam**
-> 
-> *Đơn vị nghiên cứu thực tiễn: Công ty Cổ phần Thương mại và Dịch vụ VOSCO (VTSC).*
+Welcome to **VTSC PaintPro**! This project is a comprehensive enterprise platform designed to digitalize the operational workflow of VOSCO (VTSC), a major paint distribution company. By replacing traditional manual processes with a decentralized and automated architecture, this platform optimizes custom paint mixing (R&D), real-time inventory tracking, and B2B contract management. 
 
-## 📖 Giới thiệu Dự án
-**VTSC PaintPro** là một nền tảng quản trị doanh nghiệp (ERP) thu nhỏ áp dụng kiến trúc phân tán (Decoupled Architecture). Hệ thống được thiết kế chuyên biệt để số hóa toàn bộ vòng đời kinh doanh vật liệu phủ tĩnh điện: từ khâu phân phối bán lẻ (B2C), quản lý hợp đồng pha chế theo mẫu (B2B), kiểm soát tồn kho theo thời gian thực, cho đến việc giám sát hiệu suất nhân sự (KPI) và tích hợp hợp đồng điện tử trên chuỗi khối (Blockchain).
+Developed as a **Graduation Project (Đồ án Tốt nghiệp)** at Vietnam Maritime University, this application aims to provide a robust, secure, and practical solution for modern paint business and supply chain management.
 
-## ✨ Tính năng Cốt lõi (Key Features)
+---
 
-### 🔐 1. Xác thực & Phân quyền (Auth & RBAC)
-* Phân quyền chặt chẽ 4 nhóm tác nhân: `Admin`, `Nhân viên`, `Khách hàng B2B`, và `Khách hàng B2C`.
-* Bảo mật tối đa với cơ chế **Token Kép** (Access Token sống ngắn hạn & Refresh Token lưu trong HttpOnly Cookie).
-* Bảo mật 2 lớp qua Middleware của Next.js (Frontend) và JWT Authorization của Node.js (Backend).
+## Features
 
-### 📦 2. Quản lý Sản phẩm & Kho hàng (WMS)
-* Lưu trữ cơ sở dữ liệu phi quan hệ (NoSQL) với kỹ thuật **Embedded Document**, quản lý tồn kho đến từng biến thể màu sắc (SKU).
-* Phân tách logic **Tồn kho khả dụng** và **Tồn kho tạm giữ** (Reserved Stock) để chống vượt hạn mức bán.
-* Tự động cảnh báo khi tồn kho xuống dưới ngưỡng an toàn (Safety Stock).
-* Tích hợp upload IPFS (Pinata) lưu trữ chứng từ và tự động sinh mã QR truy xuất nguồn gốc.
+* **Advanced Inventory Management (WMS):** Tracks inventory at the SKU level (Available vs. Reserved stock) with automated safety-stock alerts to prevent overselling.
+* **Custom Paint Mixing (R&D) Workflow:** Digitalizes the entire lab process for custom paint orders, tracking formulas, testing history, and automating material deduction upon completion.
+* **Performance Tracking (KPI):** Provides a real-time dashboard to evaluate staff and departmental performance based on sales, successful R&D batches, and delivery metrics.
+* **Web3 B2B Contracts & Traceability:** Hashes and stores B2B agreements on the blockchain for immutable proof[cite: 7]. Utilizes **IPFS** to store manufacturing documents and generates dynamic QR codes for product traceability[cite: 7].
+* **Secure Authentication:** Implements a highly secure dual-token JWT mechanism (Access & Refresh Tokens) with strict Role-Based Access Control (Admin, Staff, Client).
 
-### 📈 3. Theo dõi Hiệu suất (Performance Tracking)
-* Bảng điều khiển (Dashboard) trực quan hóa dữ liệu bằng Recharts (Radar, Bar, Pie charts).
-* Tự động chấm điểm KPI nhân sự dựa trên: Số đơn hàng, số mẫu test R&D thành công, số chuyến vận chuyển và doanh thu mang lại.
+---
 
-### 🔗 4. Tích hợp Blockchain & Thanh toán
-* Lưu trữ và mã băm (Hash) Hợp đồng nguyên tắc B2B lên mạng lưới phi tập trung (Sepolia Testnet).
-* Tích hợp cổng thanh toán điện tử MoMo tự động sinh mã QR giao dịch.
-* AI Chatbot hỗ trợ tư vấn khách hàng tự động.
+## Technologies Used
 
-## 🛠️ Công nghệ Sử dụng (Tech Stack)
+* **Blockchain & Smart Contracts:** Solidity, Sepolia Testnet[cite: 7]
+* **Frontend:** Next.js, React.js, Tailwind CSS, Zustand[cite: 7]
+* **Backend:** Node.js, Express.js[cite: 7]
+* **Database:** MongoDB Atlas (NoSQL)[cite: 7]
+* **Decentralized Storage:** IPFS (via Pinata Cloud)[cite: 7]
 
-### 💻 Frontend
-* **Framework:** Next.js, React
-* **Language:** TypeScript
-* **Styling:** Tailwind CSS
-* **State Management:** Zustand
-* **Data Fetching/HTTP:** Axios (cấu hình Interceptors tự động renew token)
-* **Charts:** Recharts
+---
 
-### ⚙️ Backend
-* **Environment:** Node.js
-* **Framework:** Express.js
-* **Authentication:** JSON Web Tokens (JWT), Bcrypt
-* **Database:** MongoDB (Mongoose ODM)
-* **File Storage:** IPFS (via Pinata API)
-
-### ⛓️ Blockchain
-* **Smart Contracts:** Solidity
-* **Network:** Ethereum (Sepolia Testnet)
-
-## 📂 Cấu trúc Thư mục (Project Structure)
-
-Dự án được cấu trúc theo mô hình Monorepo chứa các dịch vụ độc lập:
+## Folder Structure
 
 ```text
-📦 VTSC-PaintPro
- ┣ 📂 backend/       # API Server, Controllers, Models, Routes, Middlewares
- ┣ 📂 frontend/      # Next.js UI, Components, Pages, Stores, Utils
- ┣ 📂 blockchain/    # Solidity Smart Contracts & Deploy scripts
- ┣ 📂 plans/         # Tài liệu phân tích thiết kế, Database Schema (ERD), Data flow
- ┣ 📜 .gitattributes
- ┣ 📜 .gitignore
- ┣ 📜 implementation_plan.md
- ┣ 📜 task.md
- ┗ 📜 walkthrough.md
+VTSC-PaintPro
+├── blockchain/           # Smart Contracts (Solidity) and deployment scripts
+├── frontend/             # Frontend (Next.js, React, UI Components, Stores)
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── ...
+├── backend/              # Backend (Node.js, Express, MongoDB connection)
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   └── jobs/
+├── plans/                # System architecture, ERD, and Data flow diagrams
+├── .gitignore
+├── implementation_plan.md
+└── README.md
 ```
 
-🚀 Hướng dẫn Cài đặt (Getting Started)
-Yêu cầu hệ thống
-Node.js >= 18.x
+Installation and Setup
+Prerequisites
+Before running the project, ensure you have the following installed:
 
-MongoDB Local hoặc MongoDB Atlas URI
+Node.js (v18.x or higher)
 
-Bước 1: Cài đặt Backend
+MetaMask Extension installed in your browser (configured for the Sepolia Testnet).
+
+A MongoDB Atlas account (or local MongoDB).
+
+A Pinata Cloud account (for IPFS API Keys).
+
+Step-by-Step Guide
+1. Clone the Repository:
+
+Bash
+git clone [https://github.com/nducan04/VTSC-PaintPro.git](https://github.com/nducan04/VTSC-PaintPro.git)
+cd VTSC-PaintPro
+2. Install Dependencies:
+You need to install dependencies for all main directories:
+
+Bash
+# In the root directory, open three terminal tabs:
+cd frontend && npm install
+cd backend && npm install
+cd blockchain && npm install
+3. Configure Environment Variables:
+You must create .env files in both the frontend and backend directories.
+
+For frontend/: Create a .env file:
+
+Đoạn mã
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_CONTRACT_ADDRESS=your_deployed_contract_address
+For backend/: Create a .env file based on .env.example:
+
+Đoạn mã
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
+JWT_REFRESH_SECRET=your_jwt_refresh_secret_key
+PINATA_API_KEY=your_pinata_api_key
+PINATA_SECRET_KEY=your_pinata_secret_key
+SEPOLIA_RPC_URL=your_alchemy_or_infura_url
+4. Run the Application:
+To run the full system, start both the backend and frontend simultaneously.
+
+Start the Backend:
+
 Bash
 cd backend
-npm install
-Tạo file .env dựa trên backend/.env.example và điền các thông số: PORT, MONGO_URI, JWT_SECRET, PINATA_API_KEY, MOMO_SECRET_KEY,...
+npm run dev
+Start the Frontend:
 
 Bash
-npm run dev # Server chạy tại http://localhost:5000
-Bước 2: Cài đặt Frontend
-Bash
-cd ../frontend
-npm install
-Tạo file .env cho Frontend:
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+cd frontend
+npm run dev
+The application will be available at http://localhost:3000.
 
-Bash
-npm run dev # Giao diện chạy tại http://localhost:3000
-👥 Nhóm Tác giả (Contributors)
-Nguyễn Đức An - System Analyst, Database Architect & Backend Developer - @nducan04
+📖 Usage
+Secure Login: Authenticate using your assigned Role (Admin/Staff/Client). The system will grant access based on JWT verification.
 
-Trần Hữu Phước - Blockchain, AI Chatbot & R&D Logic Module
+Manage Inventory: Access the WMS dashboard to view SKU-level stock, update materials, and monitor safety alerts[cite: 7].
 
-Phí Minh Thành - Frontend UI/UX, B2C Workflow & Reporting Module
+Process Custom Paint (R&D): Create a new mixing request, input lab test results (temperature, adhesion, deltaE), and approve the final formula[cite: 7].
 
-Dự án được xây dựng với mục đích học thuật và nghiên cứu thực tiễn tại VOSCO. Mọi tài nguyên thuộc bản quyền của Nhóm phát triển KPM63ĐH.
+E-Contract & Blockchain: Generate a B2B agreement. The system will hash the document and store the transaction securely on the Sepolia Testnet[cite: 7].
+
+Traceability: Scan the generated QR code on any product batch to view manufacturing details and IPFS-stored invoices[cite: 7].
+
+👨‍💻 Author
+Nguyễn Đức An
+
+[cite: 7]
+
+Role: System Analyst & Backend Developer
+
+Responsibilities: Entire NoSQL database architecture, Backend APIs, dual-token JWT authentication, SKU-level inventory logic, and system deployment.
+
+This project was researched and developed collaboratively as a Graduation Project with team members Trần Hữu Phước and Phí Minh Thành.
+
+[cite: 7]
+
+📜 License
+This project is licensed under the MIT License. See the LICENSE file for more details.
+
+📬 Contact
+For any questions, feedback, or collaboration inquiries, please contact:
+
+Email: nducan08@gmail.com
+
+GitHub: https://github.com/nducan04
+
+Thank you for exploring VTSC PaintPro!
