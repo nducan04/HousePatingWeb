@@ -27,14 +27,22 @@ app.use(compression({
   }
 }));
 
-// Performance Tracking Middleware: Adds X-Response-Time header
+// Performance Tracking Middleware: Adds X-Response-Time header safely before sending headers
 app.use((req, res, next) => {
   const start = process.hrtime();
-  res.on('finish', () => {
-    const diff = process.hrtime(start);
-    const timeInMs = (diff[0] * 1e3 + diff[1] * 1e-6).toFixed(2);
-    res.setHeader('X-Response-Time', `${timeInMs}ms`);
-  });
+  const originalWriteHead = res.writeHead;
+  res.writeHead = function (...args) {
+    if (!res.headersSent) {
+      const diff = process.hrtime(start);
+      const timeInMs = (diff[0] * 1e3 + diff[1] * 1e-6).toFixed(2);
+      try {
+        res.setHeader('X-Response-Time', `${timeInMs}ms`);
+      } catch (e) {
+        // Safely ignore if already sent
+      }
+    }
+    return originalWriteHead.apply(res, args);
+  };
   next();
 });
 
