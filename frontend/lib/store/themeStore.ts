@@ -13,17 +13,23 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     if (typeof window === "undefined") return;
     try {
       const savedTheme = localStorage.getItem("vtsc_theme") as "light" | "dark" | null;
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const initialTheme = savedTheme || (prefersDark ? "dark" : "light");
+      let activeTheme: "light" | "dark";
+      if (savedTheme === "dark" || savedTheme === "light") {
+        activeTheme = savedTheme;
+      } else if (document.documentElement.classList.contains("dark")) {
+        activeTheme = "dark";
+      } else {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        activeTheme = prefersDark ? "dark" : "light";
+      }
       
-      if (initialTheme === "dark") {
+      if (activeTheme === "dark") {
         document.documentElement.classList.add("dark");
       } else {
         document.documentElement.classList.remove("dark");
       }
-      set({ theme: initialTheme });
+      set({ theme: activeTheme });
     } catch (e) {
-      // Fallback light
       set({ theme: "light" });
     }
   },
@@ -41,7 +47,10 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     set({ theme });
   },
   toggleTheme: () => {
-    const nextTheme = get().theme === "dark" ? "light" : "dark";
+    const isCurrentlyDark = typeof document !== "undefined"
+      ? document.documentElement.classList.contains("dark")
+      : get().theme === "dark";
+    const nextTheme = isCurrentlyDark ? "light" : "dark";
     get().setTheme(nextTheme);
   },
 }));
