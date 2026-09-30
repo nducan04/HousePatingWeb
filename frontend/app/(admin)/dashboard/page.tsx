@@ -459,69 +459,97 @@ export default function DashboardPage() {
         {/* ── KPI Cards ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Card 1: Tổng Doanh Thu */}
-          <div className="relative overflow-hidden rounded-[24px] p-6 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow-2xl shadow-blue-600/25 border border-white/10 hover:-translate-y-2 transition-all duration-500 group cursor-default">
+          <div className="relative overflow-hidden rounded-[24px] p-6 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow-2xl shadow-blue-600/25 border border-white/10 hover:-translate-y-1.5 transition-all duration-300 group cursor-default">
             <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-2xl group-hover:scale-[2] transition-transform duration-700" />
             <div className="absolute -left-4 -bottom-4 w-20 h-20 rounded-full bg-white/5 blur-xl" />
-            <div className="flex items-center justify-between mb-5 relative z-10">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Tổng Doanh Thu</p>
-              <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner">
-                <DollarSign size={20} />
+            <div className="flex items-center justify-between mb-4 relative z-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Tổng Doanh Thu</p>
+              <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner">
+                <DollarSign size={18} />
               </div>
             </div>
-            <p className="text-[40px] font-black leading-none tracking-tight relative z-10 mb-1">
+            <p className="text-[34px] xl:text-[38px] font-black leading-none tracking-tight relative z-10 mb-2">
               {totalRevenue.toLocaleString("vi-VN")}
-              <span className="text-base font-bold text-white/50 ml-2">Tr.Đ</span>
+              <span className="text-sm font-bold text-white/70 ml-2">Tr.Đ</span>
             </p>
-            <p className="text-[11px] font-medium text-white/50 relative z-10 mt-2">Từ đơn hàng & hợp đồng</p>
+            <div className="flex items-center justify-between relative z-10 mt-3 pt-2 border-t border-white/10">
+              <span className="text-[11px] font-medium text-white/70">Đơn hàng & hợp đồng</span>
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-extrabold backdrop-blur-sm">
+                <TrendingUp size={11} />
+                <span>{stats?.kpi?.totalRevenue?.change >= 0 ? `+${stats?.kpi?.totalRevenue?.change}%` : `${stats?.kpi?.totalRevenue?.change}%`}</span>
+              </div>
+            </div>
           </div>
 
           {/* Card 2: Đơn Đặt Hàng */}
-          <div className="relative overflow-hidden rounded-[24px] p-6 bg-white border border-slate-100 shadow-xl shadow-slate-200/40 hover:-translate-y-2 hover:shadow-2xl hover:border-violet-200 transition-all duration-500 group cursor-default">
+          <div className="relative overflow-hidden rounded-[24px] p-6 bg-white border border-slate-100 shadow-xl shadow-slate-200/40 hover:-translate-y-1.5 hover:shadow-2xl hover:border-violet-200 transition-all duration-300 group cursor-default">
             <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-violet-100 opacity-0 group-hover:opacity-60 blur-2xl group-hover:scale-[2] transition-all duration-700" />
-            <div className="flex items-center justify-between mb-5 relative z-10">
+            <div className="flex items-center justify-between mb-4 relative z-10">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Đơn Đặt Hàng</p>
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 flex items-center justify-center shadow-sm text-violet-600">
-                <FileSpreadsheet size={20} />
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 flex items-center justify-center shadow-sm text-violet-600">
+                <FileSpreadsheet size={18} />
               </div>
             </div>
-            <p className="text-[40px] font-black leading-none tracking-tight text-slate-900 relative z-10 mb-1">
+            <p className="text-[34px] xl:text-[38px] font-black leading-none tracking-tight text-slate-900 relative z-10 mb-2">
               {stats?.kpi?.orderCount?.value ?? 0}
-              <span className="text-base font-bold text-slate-300 ml-2">đơn</span>
+              <span className="text-sm font-bold text-slate-400 ml-2">đơn</span>
             </p>
-            <p className="text-[11px] font-medium text-slate-400 relative z-10 mt-2">Đơn hàng & hợp đồng KH</p>
+            <div className="flex items-center justify-between relative z-10 mt-3 pt-2 border-t border-slate-100">
+              <span className="text-[11px] font-medium text-slate-400">Đơn hàng & hợp đồng KH</span>
+              <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                (stats?.kpi?.orderCount?.change ?? 0) >= 0 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'
+              }`}>
+                <TrendingUp size={11} />
+                <span>{(stats?.kpi?.orderCount?.change ?? 0) >= 0 ? `+${stats?.kpi?.orderCount?.change}%` : `${stats?.kpi?.orderCount?.change}%`}</span>
+              </div>
+            </div>
           </div>
 
           {/* Card 3: Số Khách Hàng */}
-          <div className="relative overflow-hidden rounded-[24px] p-6 bg-white border border-slate-100 shadow-xl shadow-slate-200/40 hover:-translate-y-2 hover:shadow-2xl hover:border-emerald-200 transition-all duration-500 group cursor-default">
+          <div className="relative overflow-hidden rounded-[24px] p-6 bg-white border border-slate-100 shadow-xl shadow-slate-200/40 hover:-translate-y-1.5 hover:shadow-2xl hover:border-emerald-200 transition-all duration-300 group cursor-default">
             <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-emerald-100 opacity-0 group-hover:opacity-60 blur-2xl group-hover:scale-[2] transition-all duration-700" />
-            <div className="flex items-center justify-between mb-5 relative z-10">
+            <div className="flex items-center justify-between mb-4 relative z-10">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Số Khách Hàng</p>
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 flex items-center justify-center shadow-sm text-emerald-600">
-                <Users size={20} />
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 flex items-center justify-center shadow-sm text-emerald-600">
+                <Users size={18} />
               </div>
             </div>
-            <p className="text-[40px] font-black leading-none tracking-tight text-slate-900 relative z-10 mb-1">
+            <p className="text-[34px] xl:text-[38px] font-black leading-none tracking-tight text-slate-900 relative z-10 mb-2">
               {stats?.kpi?.customerCount?.value ?? 0}
-              <span className="text-base font-bold text-slate-300 ml-2">khách</span>
+              <span className="text-sm font-bold text-slate-400 ml-2">khách</span>
             </p>
-            <p className="text-[11px] font-medium text-slate-400 relative z-10 mt-2">Khách hàng đã giao dịch</p>
+            <div className="flex items-center justify-between relative z-10 mt-3 pt-2 border-t border-slate-100">
+              <span className="text-[11px] font-medium text-slate-400">Khách hàng đã giao dịch</span>
+              <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                (stats?.kpi?.customerCount?.change ?? 0) >= 0 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'
+              }`}>
+                <TrendingUp size={11} />
+                <span>{(stats?.kpi?.customerCount?.change ?? 0) >= 0 ? `+${stats?.kpi?.customerCount?.change}%` : `${stats?.kpi?.customerCount?.change}%`}</span>
+              </div>
+            </div>
           </div>
 
           {/* Card 4: Sản Lượng Bán */}
-          <div className="relative overflow-hidden rounded-[24px] p-6 bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white shadow-2xl shadow-orange-500/25 border border-white/10 hover:-translate-y-2 transition-all duration-500 group cursor-default">
+          <div className="relative overflow-hidden rounded-[24px] p-6 bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white shadow-2xl shadow-orange-500/25 border border-white/10 hover:-translate-y-1.5 transition-all duration-300 group cursor-default">
             <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-2xl group-hover:scale-[2] transition-transform duration-700" />
             <div className="absolute -left-4 -bottom-4 w-20 h-20 rounded-full bg-white/5 blur-xl" />
-            <div className="flex items-center justify-between mb-5 relative z-10">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Sản Lượng Bán</p>
-              <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner">
-                <Package size={20} />
+            <div className="flex items-center justify-between mb-4 relative z-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Sản Lượng Bán</p>
+              <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner">
+                <Package size={18} />
               </div>
             </div>
-            <p className="text-[40px] font-black leading-none tracking-tight relative z-10 mb-1">
+            <p className="text-[34px] xl:text-[38px] font-black leading-none tracking-tight relative z-10 mb-2">
               {(stats?.kpi?.totalProduction?.value ?? 0).toLocaleString("vi-VN")}
-              <span className="text-base font-bold text-white/50 ml-2">Thùng</span>
+              <span className="text-sm font-bold text-white/70 ml-2">Thùng</span>
             </p>
-            <p className="text-[11px] font-medium text-white/50 relative z-10 mt-2">Thống kê sản lượng bán hàng</p>
+            <div className="flex items-center justify-between relative z-10 mt-3 pt-2 border-t border-white/10">
+              <span className="text-[11px] font-medium text-white/70">Tổng sản lượng xuất bán</span>
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-extrabold backdrop-blur-sm">
+                <TrendingUp size={11} />
+                <span>{stats?.kpi?.totalProduction?.change >= 0 ? `+${stats?.kpi?.totalProduction?.change}%` : `${stats?.kpi?.totalProduction?.change}%`}</span>
+              </div>
+            </div>
           </div>
         </div>
         {/* Revenue Chart */}

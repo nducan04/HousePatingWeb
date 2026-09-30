@@ -53,4 +53,8 @@ const vanChuyenSchema = new mongoose.Schema({
   timestamps: true
 });
 
+vanChuyenSchema.index({ DonHang: 1 });
+vanChuyenSchema.index({ TrangThaiTongQuat: 1 });
+vanChuyenSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('VanChuyen', vanChuyenSchema, 'VanChuyens');

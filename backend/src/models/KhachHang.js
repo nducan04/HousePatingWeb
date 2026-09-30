@@ -85,5 +85,7 @@ const khachHangSchema = new mongoose.Schema({
 
 
 khachHangSchema.index({ Email: 1 }, { unique: true, sparse: true });
+khachHangSchema.index({ createdAt: -1 });
+khachHangSchema.index({ PhanLoai: 1 });
 
 module.exports = mongoose.model('KhachHang', khachHangSchema, 'KhachHangs');

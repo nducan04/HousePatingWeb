@@ -144,4 +144,11 @@ const hopDongSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Performance Indexes for high-volume contract queries
+hopDongSchema.index({ createdAt: -1 });
+hopDongSchema.index({ CustomerID: 1, createdAt: -1 });
+hopDongSchema.index({ TrangThai: 1, createdAt: -1 });
+hopDongSchema.index({ EmployeeID: 1 });
+hopDongSchema.index({ TongGiaTri: -1 });
+
 module.exports = mongoose.model('HopDong', hopDongSchema, 'HopDongs');

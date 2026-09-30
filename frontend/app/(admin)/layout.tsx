@@ -37,16 +37,16 @@ import {
   Shield,
   Droplets,
   Home,
+  Menu,
+  X,
+  Search,
+  CheckCircle2,
+  Sparkles,
+  Layers,
+  Activity,
+  Bot
 } from "lucide-react";
 
-/**
- * Ma trận phân quyền Sidebar theo BRD:
- * ───────────────────────────────────────
- * Admin:        Tài khoản, Toàn bộ menu
- * NhanVien:     Tài khoản, Dashboard, R&D, Hợp đồng, Nhập dữ liệu, Tra cứu, QR, AI
- * KhachHangB2B: Tài khoản, Hợp đồng B2B, Tra cứu Mã Màu, AI Hỗ trợ, Tra cứu
- * KhachHangB2C: Tài khoản, Tra cứu Mã Màu, QR Tracking, AI Hỗ trợ,
- */
 interface NavItem {
   href: string;
   label: string;
@@ -65,13 +65,15 @@ const allNavItems: NavSection[] = [
     items: [
       {
         href: "/dashboard",
-        label: "Dashboard",
+        label: "Dashboard Điều hành",
         roles: ["Admin", "Director"],
+        icon: BarChart3,
       },
       {
         href: "/dashboard",
         label: "Dashboard nghiệp vụ",
         roles: ["NhanVien"],
+        icon: Activity,
       },
     ],
   },
@@ -82,6 +84,7 @@ const allNavItems: NavSection[] = [
         href: "/taikhoan",
         label: "Quản lý tài khoản",
         roles: ["Admin"],
+        icon: Users,
       },
       {
         href: "/thongtin",
@@ -93,11 +96,13 @@ const allNavItems: NavSection[] = [
           "KhachHangB2C",
           "NhaCungCap",
         ],
+        icon: User,
       },
       {
         href: "/phanquyen",
         label: "Quản lý phân quyền",
         roles: ["Admin"],
+        icon: Shield,
       },
     ],
   },
@@ -108,116 +113,136 @@ const allNavItems: NavSection[] = [
         href: "/quan-ly-san-pham",
         label: "Quản lý sản phẩm",
         roles: ["Admin", "NhanVien"],
+        icon: Package,
       },
       {
         href: "/gia-thanh",
         label: "Quản lý giá thành",
         roles: ["Admin"],
+        icon: DollarSign,
       },
       {
         href: "/kho",
-        label: "Quản lý kho",
+        label: "Quản lý kho (WMS)",
         roles: ["Admin", "NhanVien"],
+        icon: PackageOpen,
       },
       {
         href: "/nhan-vien",
         label: "Quản lý nhân viên",
         roles: ["Admin"],
+        icon: ClipboardList,
       },
       {
         href: "/doi-tac",
         label: "Quản lý khách hàng",
         roles: ["Admin", "NhanVien"],
+        icon: Users,
       },
       {
         href: "/nha-cung-cap",
-        label: "Quản lý nhà cung cấp",
+        label: "Nhà cung cấp",
         roles: ["Admin", "NhanVien"],
+        icon: PanelsRightBottom,
       },
       {
         href: "/colors",
         label: "Tra cứu mã màu",
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
+        icon: Palette,
       },
     ],
   },
   {
-    section: "Quản lý kinh doanh sơn",
+    section: "Kinh doanh & Vận hành",
     items: [
       {
         href: "/tin-tuc",
-        label: "Quảng bá sản phẩm",
+        label: "Quảng bá & Tin tức",
         roles: ["Admin", "NhanVien"],
+        icon: Sparkles,
       },
       {
         href: "/don-hang",
         label: "Quản lý đơn hàng",
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
+        icon: ShoppingCart,
       },
       {
         href: "/quan-ly-thanh-toan",
         label: "Quản lý thanh toán",
         roles: ["Admin", "NhanVien"],
+        icon: ReceiptRussianRuble,
       },
       {
         href: "/van-chuyen",
         label: "Theo dõi vận chuyển",
         roles: ["Admin", "NhanVien", "KhachHangB2C", "KhachHangB2B"],
+        icon: TrainFront,
       },
       {
         href: "/hieu-suat",
         label: "Theo dõi hiệu suất",
         roles: ["Admin", "NhanVien"],
+        icon: SignalHigh,
       },
       {
         href: "/khuyen-mai",
-        label: "Quản lý khuyến mãi",
+        label: "Chính sách ưu đãi",
         roles: ["Admin", "NhanVien"],
+        icon: Layers,
       },
       {
         href: "/chatbot",
-        label: "AI hỗ trợ khách hàng",
+        label: "Trợ lý AI hỗ trợ",
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
+        icon: Bot,
       },
     ],
   },
   {
-    section: "Quy trình pha chế sơn",
+    section: "Pha chế & R&D",
     items: [
       {
         href: "/hop-dong-pha-che",
-        label: "Quản lý hợp đồng B2B",
+        label: "Hợp đồng B2B Web3",
         roles: ["Admin", "NhanVien", "KhachHangB2B"],
+        icon: FileSignature,
       },
       {
         href: "/rd-tracking",
         label: "Theo dõi pha chế sơn",
         roles: ["Admin", "NhanVien"],
+        icon: FlaskConical,
       },
       {
         href: "/rd-tracking/new",
-        label: "Yêu cầu mẫu thử",
+        label: "Yêu cầu mẫu thử R&D",
         roles: ["Admin", "NhanVien", "KhachHangB2B", "KhachHangB2C"],
+        icon: Droplets,
       },
       {
         href: "/thanh-toan-hd",
-        label: "Thanh toán và công nợ HĐ",
+        label: "Thanh toán & Công nợ HĐ",
         roles: ["Admin", "NhanVien", "KhachHangB2B"],
+        icon: DollarSign,
       },
     ],
   },
   {
-    section: "BÁO CÁO & THỐNG KÊ",
+    section: "Báo cáo & Phân tích",
     items: [
       {
         href: "/bao-cao",
-        label: "Báo cáo",
+        label: "Báo cáo tổng hợp",
         roles: ["Admin", "Director"],
+        icon: FileUp,
       },
       {
         href: "/thong-ke",
-        label: "Thống kê",
+        label: "Thống kê chuyên sâu",
         roles: ["Admin", "Director"],
+        icon: BarChart3,
       },
     ],
   },
@@ -231,49 +256,21 @@ export default function AdminLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading, logoutState } = useAuthStore();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const userRole = user?.role || "NhanVien";
   const isCustomer = userRole === "KhachHangB2B" || userRole === "KhachHangB2C";
 
-  // Khởi tạo state để mở tab có chứa trang hiện tại
-  const [expandedSections, setExpandedSections] = useState<
-    Record<string, boolean>
-  >(() => {
-    const initialState: Record<string, boolean> = {};
-    allNavItems.forEach((section) => {
-      if (typeof window !== "undefined") {
-        const hasActive = section.items.some(
-          (item) =>
-            window.location.pathname === item.href ||
-            window.location.pathname.startsWith(item.href + "/"),
-        );
-        if (hasActive) initialState[section.section] = true;
-      }
-    });
-    return initialState;
-  });
-
-  const toggleSection = (sectionName: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [sectionName]: !prev[sectionName],
-    }));
-  };
-
-  // Chặn truy cập trái phép ở cấp giao diện dựa trên allNavItems và dashboard
-  React.useEffect(() => {
+  // Check permissions
+  useEffect(() => {
     if (isLoading || !user) return;
 
-    // Phân quyền cho trang Dashboard
-    if (pathname === "/dashboard") {
-      if (isCustomer) {
-        router.push("/");
-        return;
-      }
+    if (pathname === "/dashboard" && isCustomer) {
+      router.push("/");
       return;
     }
 
-    // Ngoại lệ: Khách hàng được phép truy cập trang chi tiết R&D (layout không block, để cho page tự xử lý API backend)
     if (
       isCustomer &&
       pathname.startsWith("/rd-tracking/") &&
@@ -282,7 +279,6 @@ export default function AdminLayout({
       return;
     }
 
-    // Tìm tất cả items khớp với pathname hiện tại
     const matchedItems: any[] = [];
     allNavItems.forEach((section) => {
       section.items.forEach((item) => {
@@ -296,18 +292,11 @@ export default function AdminLayout({
     });
 
     if (matchedItems.length > 0) {
-      // Lọc các items khớp có độ dài href lớn nhất
-      const maxLength = Math.max(
-        ...matchedItems.map((item) => item.href.length),
-      );
+      const maxLength = Math.max(...matchedItems.map((item) => item.href.length));
       const bestMatches = matchedItems.filter(
-        (item) => item.href.length === maxLength,
+        (item) => item.href.length === maxLength
       );
-
-      // Cho phép truy cập nếu có bất kỳ item nào chứa vai trò của user
-      const isAllowed = bestMatches.some((item) =>
-        item.roles.includes(userRole),
-      );
+      const isAllowed = bestMatches.some((item) => item.roles.includes(userRole));
       if (!isAllowed) {
         if (isCustomer) {
           router.push("/");
@@ -318,40 +307,46 @@ export default function AdminLayout({
     }
   }, [pathname, user, userRole, isLoading, router, isCustomer]);
 
-  // Lọc menu theo vai trò người dùng
+  // Filter navigation items by role
   const filteredNav = allNavItems
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => item.roles.includes(userRole)),
+      items: section.items.filter((item) => {
+        const matchesRole = item.roles.includes(userRole);
+        const matchesSearch = searchQuery
+          ? item.label.toLowerCase().includes(searchQuery.toLowerCase())
+          : true;
+        return matchesRole && matchesSearch;
+      }),
     }))
     .filter((section) => section.items.length > 0);
 
-  // Xử lý đăng xuất
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout");
     } catch (e) {
-      // Bỏ qua lỗi — xóa state là đủ
+      // Ignored
     }
     logoutState();
     router.push("/login");
   };
 
-  // Lấy thông tin hiển thị từ profile
   const displayName =
     user?.profile?.HoTen ||
     user?.profile?.TenKhachHang ||
     user?.username ||
     "Người dùng";
+
   const displayRole =
     userRole === "Admin"
       ? "Quản trị viên"
       : userRole === "Director"
-        ? "Giám đốc hệ thống"
-        : userRole === "NhanVien"
-          ? "Nhân viên công ty"
-          : user?.profile?.ChucVu ||
-            (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
+      ? "Giám đốc hệ thống"
+      : userRole === "NhanVien"
+      ? "Chuyên viên vận hành"
+      : user?.profile?.ChucVu ||
+        (userRole === "KhachHangB2B" ? "Đối tác B2B" : "Khách hàng");
+
   const initials = displayName
     .split(" ")
     .map((w: string) => w[0])
@@ -359,29 +354,176 @@ export default function AdminLayout({
     .slice(-3)
     .toUpperCase();
 
-  // Map pathname to page title
   const getPageTitle = () => {
     if (pathname === "/dashboard") {
-      return userRole === "NhanVien" ? "📦 Quản lý nghiệp vụ" : "📊 Dashboard";
+      return userRole === "NhanVien" ? "Bảng tin tác nghiệp" : "Bảng điều hành thông minh";
     }
-    if (pathname?.startsWith("/quan-ly-san-pham"))
-      return "📦 Quản lý sản phẩm sơn";
-    if (pathname?.startsWith("/kho")) return "🏭 Quản lý kho";
-    if (pathname?.startsWith("/doi-tac")) return "🤝 Quản lý khách hàng";
-    if (pathname?.startsWith("/nhan-vien")) return "👥 Quản lý nhân sự";
-    if (pathname?.startsWith("/production")) return "🏭 Hệ thống MES";
-    if (pathname?.startsWith("/rd-tracking")) return "🔬 Theo dõi pha chế sơn";
-    if (pathname?.startsWith("/hop-dong-pha-che"))
-      return "📝 Hợp đồng nguyên tắc mua bán & pha chế";
-    if (pathname === "/colors") return "🎨 Tra cứu mã màu";
-    if (pathname === "/van-chuyen") return "📦 Quản lý vận chuyển";
-    if (pathname === "/don-hang") return "📋 Quản lý đơn hàng";
-    if (pathname === "/chatbot") return "🤖 AI Hỗ trợ khách hàng";
-    if (pathname === "/quan-ly-thanh-toan") return "💳 Quản lý thanh toán";
-    if (pathname === "/hieu-suat") return "📈 Theo dõi hiệu suất";
-    if (pathname === "/khuyen-mai") return "🏷️ Quản lý khuyến mãi";
-    return "Quản lý nghiệp vụ";
+    if (pathname?.startsWith("/quan-ly-san-pham")) return "Quản lý sản phẩm sơn";
+    if (pathname?.startsWith("/kho")) return "Quản lý kho hàng & WMS";
+    if (pathname?.startsWith("/doi-tac")) return "Quản lý đối tác khách hàng";
+    if (pathname?.startsWith("/nhan-vien")) return "Quản trị nhân sự";
+    if (pathname?.startsWith("/production")) return "Hệ thống sản xuất MES";
+    if (pathname?.startsWith("/rd-tracking")) return "Theo dõi công thức & R&D";
+    if (pathname?.startsWith("/hop-dong-pha-che")) return "Hợp đồng B2B & Chuỗi khối";
+    if (pathname === "/colors") return "Tra cứu thư viện màu";
+    if (pathname === "/van-chuyen") return "Giám sát lộ trình vận chuyển";
+    if (pathname === "/don-hang") return "Quản lý đơn hàng & giao dịch";
+    if (pathname === "/chatbot") return "Trợ lý AI VTSC Copilot";
+    if (pathname === "/quan-ly-thanh-toan") return "Sổ cái thanh toán";
+    if (pathname === "/hieu-suat") return "Đo lường hiệu suất & KPI";
+    if (pathname === "/khuyen-mai") return "Chính sách chiết khấu & ưu đãi";
+    if (pathname === "/bao-cao") return "Báo cáo quản trị doanh nghiệp";
+    if (pathname === "/thong-ke") return "Thống kê phân tích dữ liệu";
+    return "Hệ thống quản lý VTSC";
   };
+
+  const renderSidebarContent = () => (
+    <div className="flex flex-col h-full bg-white select-none">
+      {/* Brand Header */}
+      <div className="p-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+        <Link
+          href="/"
+          className="flex items-center gap-3.5 no-underline group"
+        >
+          <div className="w-11 h-11 bg-gradient-to-tr from-slate-900 via-blue-950 to-blue-900 rounded-2xl flex items-center justify-center p-2 shadow-md shadow-blue-950/20 transition-transform duration-300 group-hover:scale-105">
+            <img
+              src="/vtsc.png"
+              alt="VTSC Logo"
+              className="w-full h-full object-contain brightness-125"
+            />
+          </div>
+          <div>
+            <div className="text-[17px] font-black text-slate-900 tracking-tight leading-none flex items-center gap-1.5">
+              VTSC <span className="text-blue-600 font-extrabold text-xs bg-blue-50 px-1.5 py-0.5 rounded-md border border-blue-100">ERP</span>
+            </div>
+            <div className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
+              <span>PaintPro System</span>
+            </div>
+          </div>
+        </Link>
+        <button
+          onClick={() => setMobileSidebarOpen(false)}
+          className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      {/* Quick Search inside menu */}
+      <div className="px-4 py-3 border-b border-slate-100/60">
+        <div className="relative">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tìm nhanh module..."
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200/80 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white text-slate-700 placeholder-slate-400 transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Navigation Links */}
+      <nav className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6 custom-scrollbar">
+        {filteredNav.map((section) => (
+          <div key={section.section} className="space-y-1">
+            <div className="px-3 mb-1.5 flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                {section.section}
+              </span>
+              <div className="h-[1px] flex-1 bg-slate-100 ml-2.5"></div>
+            </div>
+
+            <div className="space-y-1">
+              {section.items.map((item) => {
+                const Icon = item.icon || Activity;
+                const isActive =
+                  pathname === item.href ||
+                  (pathname?.startsWith(item.href + "/") &&
+                    !section.items.some(
+                      (otherItem) =>
+                        otherItem.href !== item.href &&
+                        pathname.startsWith(otherItem.href)
+                    ));
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group no-underline relative ${
+                      isActive
+                        ? "bg-blue-50/80 text-blue-700 font-semibold shadow-sm shadow-blue-500/5 border border-blue-100/70"
+                        : "text-slate-600 hover:bg-slate-50/90 hover:text-slate-900"
+                    }`}
+                  >
+                    <div
+                      className={`p-1.5 rounded-lg transition-all duration-200 ${
+                        isActive
+                          ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30 scale-105"
+                          : "text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50/60"
+                      }`}
+                    >
+                      <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                    </div>
+                    <span className="truncate flex-1">{item.label}</span>
+                    {isActive && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.8)] animate-pulse"></span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {/* Network & Node Status Badge */}
+      <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between text-[11px] text-slate-500">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <span className="font-semibold text-slate-700">Sepolia Web3</span>
+          </div>
+          <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200">
+            ONLINE
+          </span>
+        </div>
+      </div>
+
+      {/* User Card & Logout */}
+      <div className="p-3 border-t border-slate-100 bg-white">
+        <div className="flex items-center gap-3 p-2 rounded-xl border border-slate-100 bg-slate-50/40 hover:bg-slate-50 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-[12px] font-bold text-white shadow-sm shadow-blue-600/20 flex-shrink-0">
+            {initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-bold text-slate-800 truncate leading-tight">
+              {displayName}
+            </div>
+            <div className="text-[11px] font-medium text-slate-400 truncate mt-0.5">
+              {displayRole}
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+            title="Đăng xuất khỏi hệ thống"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <ProtectedRoute
@@ -393,153 +535,100 @@ export default function AdminLayout({
         "KhachHangB2C",
       ]}
     >
-      <div className="flex h-screen bg-[#F8FAFC] font-sans">
-        {/* ═══════ Sidebar ═══════ */}
+      <div className="flex h-screen bg-[#F8FAFC] font-sans antialiased text-slate-900">
+        {/* Desktop Sidebar */}
         {!isCustomer && (
-          <aside className="w-[280px] flex-shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-            {/* Logo Area */}
-            <div className="px-8 py-7">
-              <Link
-                href="/"
-                className="flex items-center gap-4 no-underline group"
-              >
-                <div className="w-12 h-12 bg-[#1A1A40] rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-blue-900/10 transition-transform group-hover:scale-105">
-                  <img
-                    src="/vtsc.png"
-                    alt="Logo"
-                    className="w-full h-full object-contain brightness-110"
-                  />
-                </div>
-                <div>
-                  <div className="text-[17px] font-black text-[#1A1A40] tracking-tight leading-none">
-                    VTSC
-                  </div>
-                  <div className="text-[11px] text-blue-500 font-bold uppercase tracking-wider mt-1">
-                    PaintPro
-                  </div>
-                </div>
-              </Link>
-            </div>
-
-            {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-6">
-              {filteredNav
-                .filter((s) => s.section !== "Hệ thống")
-                .map((section) => (
-                  <div key={section.section} className="space-y-1.5">
-                    {/* Section Title */}
-                    <div className="px-4 mb-2 flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-slate-400">
-                        {section.section}
-                      </span>
-                      <div className="h-[1px] flex-1 bg-slate-50 ml-3 opacity-50"></div>
-                    </div>
-
-                    {/* Nav Items */}
-                    <div className="space-y-1">
-                      {section.items.map((item) => {
-                        const Icon = item.icon;
-                        const isActive =
-                          pathname === item.href ||
-                          (pathname?.startsWith(item.href + "/") &&
-                            !section.items.some(
-                              (otherItem) =>
-                                otherItem.href !== item.href &&
-                                pathname.startsWith(otherItem.href),
-                            ));
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[14px] font-semibold transition-all duration-200 group no-underline ${
-                              isActive
-                                ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-500/5"
-                                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                            }`}
-                          >
-                            {Icon && (
-                              <div
-                                className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-blue-600" : "text-slate-400"}`}
-                              >
-                                <Icon
-                                  size={20}
-                                  strokeWidth={isActive ? 2.5 : 2}
-                                />
-                              </div>
-                            )}
-                            <span className="truncate">{item.label}</span>
-                            {isActive && (
-                              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.6)]"></div>
-                            )}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-            </nav>
-
-            {/* Sidebar Footer */}
-            <div className="p-4 border-t border-slate-50 mt-auto bg-slate-50/30">
-              <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-[12px] font-bold text-white shadow-md">
-                  {initials}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
-                    Tài Khoản
-                  </div>
-                  <div className="text-[14px] font-black text-slate-800 truncate">
-                    {displayName}
-                  </div>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all rounded-xl cursor-pointer"
-                  title="Đăng xuất"
-                >
-                  <LogOut size={18} />
-                </button>
-              </div>
-            </div>
+          <aside className="hidden md:flex w-[275px] flex-shrink-0 border-r border-slate-200/80 flex-col overflow-hidden shadow-[2px_0_12px_rgba(0,0,0,0.02)] z-20">
+            {renderSidebarContent()}
           </aside>
         )}
 
-        {/* ═══════ Main Content ═══════ */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Top Bar */}
-          <header className="h-[88px] flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-10">
-            <div className="flex items-center gap-4">
+        {/* Mobile Drawer Backdrop */}
+        {mobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden animate-fade-in"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+
+        {/* Mobile Drawer */}
+        <div
+          className={`fixed top-0 bottom-0 left-0 w-[285px] z-50 transform transition-transform duration-300 md:hidden shadow-2xl ${
+            mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          {renderSidebarContent()}
+        </div>
+
+        {/* Main Content Viewport */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Header */}
+          <header className="h-[74px] flex-shrink-0 bg-white/90 backdrop-blur-md border-b border-slate-200/70 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-10 shadow-[0_1px_4px_rgba(0,0,0,0.02)]">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
+                title="Mở menu"
+              >
+                <Menu size={22} />
+              </button>
               <div>
-                <h1 className="text-[22px] font-black text-slate-900 tracking-tight">
+                <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  <Link href="/dashboard" className="hover:text-blue-600 transition-colors">
+                    Hệ thống
+                  </Link>
+                  <ChevronRight size={12} className="text-slate-300" />
+                  <span className="text-blue-600 font-bold">VTSC PaintPro</span>
+                </div>
+                <h1 className="text-[19px] lg:text-[21px] font-black text-slate-900 tracking-tight leading-tight mt-0.5">
                   {getPageTitle()}
                 </h1>
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
-              <div className="h-10 w-[1px] bg-slate-100"></div>
+            {/* Header Right Actions */}
+            <div className="flex items-center gap-4">
+              {/* Quick Status Pill */}
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200/70 text-slate-600 text-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span className="font-semibold text-slate-700">Trực tuyến</span>
+                <span className="text-slate-300">|</span>
+                <span className="text-[11px] text-slate-500">v2.4 Pro</span>
+              </div>
+
+              {/* Notification Bell */}
+              <div className="relative">
+                <button
+                  className="p-2.5 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50/70 transition-colors relative"
+                  title="Thông báo hệ thống"
+                >
+                  <Bell size={18} />
+                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+                </button>
+              </div>
+
+              <div className="h-7 w-[1px] bg-slate-200/80"></div>
+
+              {/* User profile avatar pill */}
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
-                  <div className="text-[10px] font-extrabold text-blue-600 uppercase tracking-[0.2em] leading-none mb-1 opacity-70">
-                    Tài Khoản
-                  </div>
-                  <div className="text-[15px] font-black text-slate-900 leading-tight">
+                  <div className="text-[13px] font-bold text-slate-800 leading-none">
                     {displayName}
                   </div>
-                </div>
-                <div className="w-11 h-11 rounded-2xl border-2 border-white shadow-md shadow-slate-200 overflow-hidden bg-slate-100">
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm">
-                    {initials}
+                  <div className="text-[11px] font-semibold text-blue-600 mt-1">
+                    {displayRole}
                   </div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-md shadow-blue-600/20 border-2 border-white">
+                  {initials}
                 </div>
               </div>
             </div>
           </header>
 
-          {/* Page Content */}
-          <main className="flex-1 overflow-y-auto p-10 bg-[#F8FAFC]">
-            <div className="max-w-[1600px] mx-auto">{children}</div>
+          {/* Page Content Body */}
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#F8FAFC]">
+            <div className="max-w-[1680px] mx-auto animate-fade-in">{children}</div>
           </main>
         </div>
       </div>

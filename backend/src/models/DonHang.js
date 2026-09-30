@@ -109,4 +109,11 @@ const donHangSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Performance Indexes for fast filtering and reporting
+donHangSchema.index({ createdAt: -1 });
+donHangSchema.index({ TrangThai: 1, createdAt: -1 });
+donHangSchema.index({ KhachHang: 1, createdAt: -1 });
+donHangSchema.index({ NhanVienPhuTrach: 1, createdAt: -1 });
+donHangSchema.index({ TrangThaiThanhToan: 1 });
+
 module.exports = mongoose.model('DonHang', donHangSchema, 'DonHangs');

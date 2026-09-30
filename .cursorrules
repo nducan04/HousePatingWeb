@@ -1,0 +1,63 @@
+# VTSC PaintPro — Architecture & Development Rules
+
+## 1. System Overview & Technology Stack
+- **Backend:** Node.js, Express.js (v4), MongoDB Atlas (Mongoose v8), Socket.io (v4), Ethers.js (v6).
+- **Frontend:** Next.js 14 (App Router), React 18, Tailwind CSS v4, Zustand v5, Lucide React, Recharts v3.
+- **Web3 & Storage:** Solidity Smart Contracts (Sepolia Testnet), IPFS via Pinata Cloud SDK.
+
+---
+
+## 2. Backend Engineering Rules
+
+### 2.1 Database & Query Performance
+- **Always use `.lean()` on read-only queries**:
+  Avoid overhead of Mongoose document instances when reading documents that will only be serialized to JSON.
+- **Index All Filtered and Sorted Keys**:
+  Ensure compound indexes exist for fields used in `$match`, `$sort`, and queries (e.g. `createdAt`, `TrangThai`, `KhachHang`, `SanPham`).
+- **Eliminate N+1 Aggregations**:
+  Never execute database queries inside iterative loops (`for`, `map`, `forEach`). Group data across the whole interval using MongoDB `$group` or `$facet`, then map into in-memory bins.
+- **Parallelize Independent Operations**:
+  Use `Promise.all([op1, op2, op3])` instead of serial `await` statements for independent collections or KPI counters.
+- **In-Memory Caching (`utils/cache.js`)**:
+  Cache aggregate reports, KPI summaries, and semi-static catalogs (paint colors, categories) with appropriate TTLs (15–60s) to keep CPU utilization under 10%.
+
+### 2.2 API Response Standards
+- All responses must strictly follow the standard JSON contract:
+  ```json
+  {
+    "success": true,
+    "data": {},
+    "message": "Optional descriptive status"
+  }
+  ```
+- Fast compression is enabled via `compression` middleware with Gzip/Brotli filtering.
+- Header `X-Response-Time` is injected into every response to track latency.
+
+---
+
+## 3. Frontend UI/UX Design System Rules
+
+### 3.1 Design Tokens & Theming
+- **Color Palette:**
+  - Primary Brand: Royal Navy Blue (`#1e40af`, `#2563eb`, `#1A1A40`)
+  - Accent / Web3: Indigo Violet (`#6366f1`, `#8b5cf6`)
+  - Success / Active: Emerald Green (`#10b981`)
+  - Alert / Warning: Amber Orange (`#f59e0b`)
+  - Surface Background: Neutral Slate `#F8FAFC`, card surface `#ffffff`
+- **Component Styling:**
+  - Glassmorphic panels with `glass-panel` and `glass-card` classes.
+  - Border radius standard: `rounded-2xl` (16px) for cards, `rounded-xl` (12px) for inputs/buttons, `rounded-lg` for badges.
+  - Interactive elements must include smooth hover transitions (`hover:-translate-y-1`, `transition-all duration-200`).
+  - Tables must feature sticky header rows, subtle zebra stripes, and responsive wrappers.
+
+### 3.2 Navigation & Layout
+- Always render appropriate Lucide icons for every item in `allNavItems`.
+- Sidebar must support responsive drawer collapse on mobile/tablet viewports (< 768px).
+- Provide breadcrumb tracking and a quick module search.
+
+---
+
+## 4. Web3 & Smart Contract Rules
+- Use Ethers v6 standard syntax (`ethers.BrowserProvider`, `contract.getFunction(...)`).
+- Always handle user wallet disconnects and chain mismatches gracefully with feedback toasts.
+- Document SHA-256 hashes must be verified against IPFS CID and Sepolia on-chain hash before concluding B2B contract signatures.
