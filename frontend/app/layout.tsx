@@ -24,11 +24,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi" className={inter.className}>
+    <html lang="vi" className={inter.className} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              try {
+                var saved = localStorage.getItem('vtsc_theme');
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (saved === 'dark' || (!saved && prefersDark)) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (e) {}
+
               window.addEventListener('error', function(event) {
                 if (event.message && String(event.message).includes('MetaMask')) {
                   event.preventDefault();
