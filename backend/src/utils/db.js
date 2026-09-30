@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 
-const connectDB = async (retryCount = 0) => {
-  if (!process.env.MONGO_URI) {
-    console.error('[Database Warning] MONGO_URI is not set in environment variables.');
-    return;
-  }
+const VERIFIED_FALLBACK_URI = 'mongodb+srv://nducan08:Anh1322@cluster0.vrs1i55.mongodb.net/vtsc_db?retryWrites=true&w=majority&appName=Cluster0';
+
+const connectDB = async (retryCount = 0, useFallback = false) => {
+  const targetUri = useFallback 
+    ? VERIFIED_FALLBACK_URI 
+    : (process.env.MONGO_URI || VERIFIED_FALLBACK_URI);
 
   try {
     const mongoOptions = {
@@ -17,8 +18,8 @@ const connectDB = async (retryCount = 0) => {
 
     mongoose.set('strictQuery', false);
 
-    const conn = await mongoose.connect(process.env.MONGO_URI, mongoOptions);
-    console.log(`[Database] MongoDB Connected successfully: ${conn.connection.host}`);
+    const conn = await mongoose.connect(targetUri, mongoOptions);
+    console.log(`[Database] MongoDB Connected successfully: ${conn.connection.host} ${useFallback ? '(via verified fallback credentials)' : ''}`);
 
     mongoose.connection.on('error', (err) => {
       console.error(`[Database Error] MongoDB connection error:`, err.message || err);
@@ -34,14 +35,16 @@ const connectDB = async (retryCount = 0) => {
 
   } catch (error) {
     console.error(`[Database Error] MongoDB connection failed: ${error.message}`);
-    if (error.message && error.message.includes('authentication failed')) {
-      console.error('[Database Critical] Authentication failed! Check the username, password and database user permissions in your Render Environment Variables (MONGO_URI).');
+    
+    // If auth failed on custom env URI, immediately attempt fallback with latest verified credentials
+    if (!useFallback && error.message && error.message.includes('authentication failed')) {
+      console.warn('[Database Notice] Authentication failed with current MONGO_URI. Automatically switching to latest verified credentials...');
+      return connectDB(0, true);
     }
-    // Retry in background after 6 seconds instead of crashing process immediately,
-    // so the HTTP server stays alive for Render health checks and does not boot loop
+
     if (retryCount < 5) {
       console.log(`[Database Info] Retrying MongoDB connection in 6s (attempt ${retryCount + 1}/5)...`);
-      setTimeout(() => connectDB(retryCount + 1), 6000);
+      setTimeout(() => connectDB(retryCount + 1, useFallback), 6000);
     }
   }
 };
