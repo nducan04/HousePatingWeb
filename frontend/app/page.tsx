@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthNav from "@/lib/components/AuthNav";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   Search,
   QrCode,
@@ -489,94 +490,97 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900 antialiased">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-[#0B0F19] font-sans text-slate-900 dark:text-slate-100 antialiased transition-colors duration-300">
       {/* ═══════ HEADER / NAVBAR ═══════ */}
-      <header className="sticky top-0 z-[100] bg-white/70 backdrop-blur-xl border-b border-slate-200/40 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-        <div className="max-w-[1400px] mx-auto px-8 py-5 flex items-center justify-between">
+      <header className="sticky top-0 z-[100] bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-colors duration-300">
+        <div className="max-w-[1400px] mx-auto px-6 sm:px-8 py-4 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-3.5 no-underline group"
+            className="flex items-center gap-3 no-underline group py-1"
           >
-            <div className="w-[180px] h-[60px] rounded-[16px] bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transition-transform group-hover:scale-110 px-3">
-              <img
-                src="/vtsc.png"
-                alt="VTSC Logo"
-                className="w-full h-full object-contain"
-              />
-            </div>
+            <img
+              src="/vtsc.png"
+              alt="VTSC Logo"
+              className="h-10 md:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            />
           </Link>
 
-          <nav className="hidden xl:flex items-center gap-0.5">
+          <nav className="hidden xl:flex items-center gap-1">
             <Link
               href="/"
-              className="text-[13px] font-bold text-blue-600 no-underline px-3 py-2 rounded-xl bg-blue-50 whitespace-nowrap"
+              className="text-[13px] font-bold text-blue-600 dark:text-blue-400 no-underline px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 whitespace-nowrap"
             >
               Trang chủ
             </Link>
             <Link
               href="/shop"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Sản phẩm
             </Link>
             <Link
               href="#bang-mau"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Bảng màu
             </Link>
             <Link
               href="/tracking"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Theo dõi & Tra cứu
             </Link>
             <Link
               href="#quy-trinh"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Quy trình
             </Link>
             <Link
               href="#tin-tuc"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Tin tức
             </Link>
             <Link
               href="#footer"
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
+              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
             >
               Liên hệ
             </Link>
           </nav>
 
           <div className="flex items-center gap-3">
-            <div className="relative flex items-center w-[220px] bg-slate-100 rounded-2xl px-4 h-10 border border-slate-200/50">
-              <Search size={18} className="text-slate-400" />
+            <div className="relative hidden md:flex items-center w-[180px] xl:w-[220px] bg-slate-100 dark:bg-slate-800/80 rounded-2xl px-4 h-10 border border-slate-200/50 dark:border-slate-700/80">
+              <Search size={18} className="text-slate-400 dark:text-slate-500" />
               <input
                 type="text"
                 placeholder="Tìm sản phẩm, màu sơn..."
-                className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 ml-3 w-full placeholder:text-slate-400"
+                className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 dark:text-slate-100 ml-3 w-full placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <Link
               href="/cart"
-              className="relative group cursor-pointer no-underline"
+              className="relative group cursor-pointer no-underline p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+              title="Giỏ hàng"
             >
               <ShoppingCart
                 size={22}
-                className="transition-colors text-slate-400 group-hover:text-blue-600"
+                className="transition-colors text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400"
               />
               {cartItemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white">
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">
                   {cartItemCount}
                 </span>
               )}
             </Link>
-            <div className="h-6 w-px bg-slate-200"></div>
+            
+            {/* Dark / Light Mode Switcher */}
+            <ThemeToggle />
+
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
             <AuthNav onOpenLogin={() => setIsLoginOpen(true)} />
           </div>
         </div>
@@ -626,16 +630,16 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ DỊCH VỤ & THẾ MẠNH (Uniform Typography) ═══════ */}
-      <section id="dich-vu" className="px-6 py-20 bg-white">
+      <section id="dich-vu" className="px-6 py-20 bg-white dark:bg-[#0B0F19] transition-colors duration-300">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Settings className="text-blue-600" size={28} />
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight uppercase">
+              <Settings className="text-blue-600 dark:text-blue-400" size={28} />
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight uppercase">
                 Dịch vụ & Thế mạnh của VTSC
               </h2>
             </div>
-            <p className="text-slate-500 max-w-2xl mx-auto font-medium text-base">
+            <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto font-medium text-base">
               Cam kết chất lượng và sự hài lòng tuyệt đối cho mọi khách hàng.
             </p>
           </div>
@@ -698,21 +702,21 @@ export default function HomePage() {
       {/* ═══════ QUY TRÌNH PHA CHẾ SƠN (Mới) ═══════ */}
       <section
         id="quy-trinh"
-        className="px-8 py-24 bg-slate-50 scroll-mt-[25px]"
+        className="px-8 py-24 bg-slate-50 dark:bg-[#111827] scroll-mt-[25px] transition-colors duration-300"
       >
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
-              <Beaker size={18} className="text-blue-600" />
-              <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-950/60 rounded-full mb-6">
+              <Beaker size={18} className="text-blue-600 dark:text-blue-400" />
+              <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">
                 Tiêu chuẩn AkzoNobel
               </span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight uppercase mb-6">
-              Quy trình <span className="text-blue-600">Pha chế mẫu</span>{" "}
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight uppercase mb-6">
+              Quy trình <span className="text-blue-600 dark:text-blue-400">Pha chế mẫu</span>{" "}
               chuyên nghiệp
             </h2>
-            <p className="text-slate-500 max-w-2xl mx-auto font-medium text-lg">
+            <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto font-medium text-lg">
               Giải pháp R&D hàng đầu giúp hiện thực hóa mọi ý tưởng màu sắc cho
               công trình của bạn.
             </p>
@@ -804,25 +808,25 @@ export default function HomePage() {
       {/* ═══════ BẢNG MÀU XU HƯỚNG ═══════ */}
       <section
         id="bang-mau"
-        className="px-8 py-20 bg-slate-50 scroll-mt-[40px]"
+        className="px-8 py-20 bg-slate-50 dark:bg-[#0B0F19] scroll-mt-[40px] transition-colors duration-300"
       >
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <Palette className="text-blue-600" size={28} />
-                <h2 className="text-3xl font-bold text-slate-900 tracking-tight uppercase">
+                <Palette className="text-blue-600 dark:text-blue-400" size={28} />
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight uppercase">
                   Bảng Màu Xu Hướng
                 </h2>
               </div>
-              <p className="text-slate-500 max-w-md font-medium text-base">
+              <p className="text-slate-500 dark:text-slate-400 max-w-md font-medium text-base">
                 Khám phá các mã màu thịnh hành nhất cho bề mặt kim loại và kiến
                 trúc.
               </p>
             </div>
             <Link
               href="/colors"
-              className="text-blue-600 font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline"
+              className="text-blue-600 dark:text-blue-400 font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-3 transition-all no-underline"
             >
               Tra Cứu Toàn Bộ <ArrowRight size={18} />
             </Link>
@@ -836,17 +840,17 @@ export default function HomePage() {
                 className="group flex flex-col items-center no-underline cursor-pointer"
               >
                 <div
-                  className="w-full aspect-square rounded-3xl shadow-sm border border-slate-200 mb-5 transition-transform duration-300 group-hover:-translate-y-2 group-hover:shadow-xl"
+                  className="w-full aspect-square rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700/80 mb-5 transition-transform duration-300 group-hover:-translate-y-2 group-hover:shadow-xl"
                   style={{ backgroundColor: color.hex }}
                 ></div>
                 <div className="text-center w-full">
-                  <div className="text-[15px] font-bold text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                  <div className="text-[15px] font-bold text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {color.name}
                   </div>
-                  <div className="text-[13px] font-bold text-slate-400 mt-1">
+                  <div className="text-[13px] font-bold text-slate-400 dark:text-slate-500 mt-1">
                     {color.code}
                   </div>
-                  <div className="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-widest">
+                  <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest">
                     {color.hex}
                   </div>
                 </div>
@@ -912,16 +916,16 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ TIN TỨC & KHUYẾN MÃI (Uniform) ═══════ */}
-      <section id="tin-tuc" className="px-8 py-20 bg-slate-50 scroll-mt-[40px]">
+      <section id="tin-tuc" className="px-8 py-20 bg-slate-50 dark:bg-[#111827] scroll-mt-[40px] transition-colors duration-300">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Newspaper className="text-blue-600" size={28} />
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight uppercase">
+              <Newspaper className="text-blue-600 dark:text-blue-400" size={28} />
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight uppercase">
                 Bản tin & Quảng bá sản phẩm
               </h2>
             </div>
-            <p className="text-slate-500 max-w-lg mx-auto font-medium text-base">
+            <p className="text-slate-500 dark:text-slate-400 max-w-lg mx-auto font-medium text-base">
               Cập nhật xu hướng công nghệ sơn, dự án mới và các sản phẩm nổi bật
               từ VTSC.
             </p>
@@ -932,11 +936,11 @@ export default function HomePage() {
               Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={i}
-                  className="animate-pulse bg-slate-50 rounded-3xl h-[400px]"
+                  className="animate-pulse bg-slate-200 dark:bg-slate-800 rounded-3xl h-[400px]"
                 ></div>
               ))
             ) : news.length === 0 ? (
-              <div className="col-span-full p-8 text-center bg-red-50 text-red-600 font-bold rounded-xl border border-red-100">
+              <div className="col-span-full p-8 text-center bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold rounded-xl border border-red-100 dark:border-red-900/50">
                 Không thể tải danh sách tin tức. Lỗi:{" "}
                 {fetchError || "API trả về mảng rỗng hoặc undefined!"}
               </div>
@@ -944,7 +948,7 @@ export default function HomePage() {
               news.map((item) => (
                 <div
                   key={item._id}
-                  className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-lg transition-all group cursor-pointer"
+                  className="bg-white dark:bg-slate-800/90 rounded-3xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700/80 hover:shadow-lg transition-all group cursor-pointer"
                   onClick={() => handleViewNews(item)}
                 >
                   <div className="h-56 overflow-hidden relative">
@@ -961,14 +965,14 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="p-8">
-                    <h3 className="text-lg font-bold text-slate-900 mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {item.TieuDe}
                     </h3>
-                    <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-2 font-medium">
+                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6 line-clamp-2 font-medium">
                       {item.Abstract || "Thông tin kỹ thuật mới nhất..."}
                     </p>
                     <div className="flex items-center justify-between mt-auto">
-                      <div className="flex items-center gap-4 text-slate-400">
+                      <div className="flex items-center gap-4 text-slate-400 dark:text-slate-500">
                         <span className="flex items-center gap-1.5 text-xs font-semibold">
                           <Eye size={16} /> {item.views || 0}
                         </span>
@@ -976,7 +980,7 @@ export default function HomePage() {
                           <Heart size={16} className={item.likes > 0 ? 'fill-red-500 text-red-500' : ''} /> {item.likes || 0}
                         </span>
                       </div>
-                      <button className="text-blue-600 font-bold text-xs flex items-center gap-2 hover:gap-3 transition-all uppercase tracking-widest">
+                      <button className="text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center gap-2 hover:gap-3 transition-all uppercase tracking-widest">
                         Chi tiết <ArrowRight size={16} />
                       </button>
                     </div>
@@ -1001,13 +1005,11 @@ export default function HomePage() {
             {/* Column 1: Company Info */}
             <div className="lg:col-span-5">
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-[200px] h-[68px] flex-shrink-0 rounded-[16px] bg-white flex items-center justify-center shadow-lg shadow-black/20 overflow-hidden px-4">
-                  <img
-                    src="/vtsc.png"
-                    alt="VTSC Logo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+                <img
+                  src="/vtsc.png"
+                  alt="VTSC Logo"
+                  className="h-14 w-auto object-contain drop-shadow"
+                />
                 <span className="font-bold text-xl tracking-tight uppercase text-white">
                   CÔNG TY CP TMDV VOSCO (VTSC)
                 </span>
@@ -1714,14 +1716,14 @@ function ServiceCard({
   onClick,
 }: any) {
   const CardContent = (
-    <div className="flex flex-col bg-white p-10 rounded-3xl border border-slate-100 no-underline text-inherit transition-all duration-300 hover:shadow-xl hover:border-blue-100 h-full">
+    <div className="flex flex-col bg-white dark:bg-slate-800/90 p-10 rounded-3xl border border-slate-100 dark:border-slate-700/80 no-underline text-inherit transition-all duration-300 hover:shadow-xl hover:border-blue-100 dark:hover:border-blue-500/40 h-full">
       <div
         className={`w-14 h-14 ${iconBg} ${iconColor} rounded-xl flex items-center justify-center mb-8 flex-shrink-0 transition-all duration-300`}
       >
         {icon}
       </div>
-      <h3 className="text-xl font-bold text-slate-900 mb-4">{title}</h3>
-      <p className="text-sm text-slate-500 font-medium leading-relaxed mb-8 flex-1">
+      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{title}</h3>
+      <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-8 flex-1">
         {desc}
       </p>
       <span
@@ -1752,7 +1754,7 @@ function SocialLink({ icon, href }: any) {
   return (
     <Link
       href={href}
-      className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm"
+      className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm"
     >
       {icon}
     </Link>
@@ -1763,7 +1765,7 @@ function ContactItem({ icon, text }: any) {
   return (
     <div className="flex items-start gap-4">
       <div className="mt-1 flex-shrink-0">{icon}</div>
-      <p className="text-slate-500 font-medium text-base leading-relaxed">
+      <p className="text-slate-400 font-medium text-base leading-relaxed">
         {text}
       </p>
     </div>
@@ -1772,9 +1774,9 @@ function ContactItem({ icon, text }: any) {
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-center text-sm border-b border-slate-200/50 pb-3 last:border-0 last:pb-0 pt-3 first:pt-0">
-      <span className="font-semibold text-slate-500">{label}</span>
-      <span className="font-bold text-slate-900 text-right">{value}</span>
+    <div className="flex justify-between items-center text-sm border-b border-slate-200/50 dark:border-slate-700/50 pb-3 last:border-0 last:pb-0 pt-3 first:pt-0">
+      <span className="font-semibold text-slate-500 dark:text-slate-400">{label}</span>
+      <span className="font-bold text-slate-900 dark:text-white text-right">{value}</span>
     </div>
   );
 }
