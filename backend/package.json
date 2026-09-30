@@ -12,6 +12,7 @@
     "@pinata/sdk": "^2.1.0",
     "axios": "^1.16.1",
     "bcryptjs": "^3.0.3",
+    "compression": "^1.8.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "crypto-js": "^4.2.0",

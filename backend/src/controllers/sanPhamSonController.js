@@ -26,11 +26,14 @@ const buildQuery = (queryParams) => {
 exports.getAll = async (req, res) => {
   try {
     const { filter, page, limit, sort } = buildQuery(req.query);
-    const total = await SanPhamSon.countDocuments(filter);
-    const data = await SanPhamSon.find(filter)
-      .sort(sort)
-      .skip((page - 1) * limit)
-      .limit(limit);
+    const [total, data] = await Promise.all([
+      SanPhamSon.countDocuments(filter),
+      SanPhamSon.find(filter)
+        .sort(sort)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean()
+    ]);
 
     res.status(200).json({
       success: true,

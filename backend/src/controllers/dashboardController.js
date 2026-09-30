@@ -11,6 +11,7 @@ const PhanHoiHoTro = require('../models/PhanHoiHoTro');
 const DoiTra = require('../models/DoiTra');
 const NhanVien = require('../models/NhanVien');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 // Helper giải quyết khoảng thời gian động dựa trên tham số period từ frontend
 const resolvePeriodDates = (period) => {
@@ -67,95 +68,85 @@ const resolvePeriodDates = (period) => {
 exports.getDashboardStats = async (req, res) => {
   try {
     const { period } = req.query;
-    const now = new Date();
+    const cacheKey = `dashboard_stats_${period || 'default'}`;
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({ success: true, data: cachedData, fromCache: true });
+    }
+
     const { queryYear, startDate, endDate, prevStartDate, prevEndDate, granularity, bins } = resolvePeriodDates(period);
 
-    // 1. KPI: Customer Count (Filtered by period)
-    const totalCustomers = await KhachHang.countDocuments({
-      createdAt: { $lte: endDate }
-    });
-    const prevCustomers = await KhachHang.countDocuments({
-      createdAt: { $lte: startDate }
-    });
-    const customerChange = prevCustomers === 0 ? 100 : Math.round(((totalCustomers - prevCustomers) / prevCustomers) * 100);
-
-    // 1b. KPI: Order Count (Filtered by period)
-    const totalOrders = await DonHang.countDocuments({
-      TrangThai: { $ne: 'DA_HUY' },
-      createdAt: { $gte: startDate, $lte: endDate }
-    });
-    const prevOrders = await DonHang.countDocuments({
-      TrangThai: { $ne: 'DA_HUY' },
-      createdAt: { $gte: prevStartDate, $lte: prevEndDate }
-    });
-    const orderChange = prevOrders === 0 ? 100 : Math.round(((totalOrders - prevOrders) / prevOrders) * 100);
-
-    // 2. KPI: Revenue & Volume (Filtered by period)
+    // Optimized batch helper for calculating range totals
     const getStatsForRange = async (start, end) => {
-      const orders = await DonHang.aggregate([
-        { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: start, $lte: end } } },
-        { $lookup: {
-          from: 'KhachHangs',
-          localField: 'KhachHang',
-          foreignField: '_id',
-          as: 'customer'
-        }},
-        { $unwind: '$customer' },
-        { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
-        { $group: {
-          _id: null,
-          totalRevenue: { 
-            $sum: { 
-              $cond: [
-                { $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, 
-                '$TongTien', 
-                { $ifNull: ['$DaCoc', 0] } 
-              ]
-            }
-          },
-          totalVolume: { $sum: { $sum: '$Items.SoLuong' } }
-        }}
+      const [orders, contracts] = await Promise.all([
+        DonHang.aggregate([
+          { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: start, $lte: end } } },
+          { $lookup: {
+            from: 'KhachHangs',
+            localField: 'KhachHang',
+            foreignField: '_id',
+            as: 'customer'
+          }},
+          { $unwind: '$customer' },
+          { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
+          { $group: {
+            _id: null,
+            totalRevenue: { 
+              $sum: { 
+                $cond: [
+                  { $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, 
+                  '$TongTien', 
+                  { $ifNull: ['$DaCoc', 0] } 
+                ]
+              }
+            },
+            totalVolume: { $sum: { $sum: '$Items.SoLuong' } }
+          }}
+        ]),
+        HopDong.aggregate([
+          { $match: { createdAt: { $gte: start, $lte: end } } },
+          { $group: {
+            _id: null,
+            totalRevenue: { $sum: { $ifNull: ['$DaThanhToan', 0] } },
+            totalVolume: { $sum: { $sum: '$ChiTietHopDong.quantity' } }
+          }}
+        ])
       ]);
-      const contracts = await HopDong.aggregate([
-        { $match: { createdAt: { $gte: start, $lte: end } } },
-        { $group: {
-          _id: null,
-          totalRevenue: { $sum: { $ifNull: ['$DaThanhToan', 0] } },
-          totalVolume: { $sum: { $sum: '$ChiTietHopDong.quantity' } }
-        }}
-      ]);
+
       return {
         revenue: (orders[0]?.totalRevenue || 0) + (contracts[0]?.totalRevenue || 0),
         volume: (orders[0]?.totalVolume || 0) + (contracts[0]?.totalVolume || 0)
       };
     };
 
-    const currentStats = await getStatsForRange(startDate, endDate);
-    const prevStats = await getStatsForRange(prevStartDate, prevEndDate);
+    // Parallelize all independent database operations at once
+    const dhGroup = granularity === 'day'
+      ? { day: { $dayOfMonth: '$createdAt' }, month: { $month: '$createdAt' }, year: { $year: '$createdAt' } }
+      : { month: { $month: '$createdAt' }, year: { $year: '$createdAt' } };
 
-    const globalRevenue = currentStats.revenue;
-    const globalVolume = currentStats.volume;
-
-    // Fetch all revenue and production targets for the query year at once to avoid query inside loop
-    const allRevTargets = await RevenueTarget.find({ type: 'month', year: queryYear });
-    const allProdTargets = await ProductionTarget.find({ type: 'month', year: queryYear });
-
-    // 3. Monthly/Daily Series for Charts (Adjusted by period bins)
-    const monthlySeries = [];
-
-    for (const bin of bins) {
-      let binStart, binEnd;
-      if (granularity === 'day') {
-        binStart = new Date(bin.year, bin.month - 1, bin.day);
-        binEnd = new Date(bin.year, bin.month - 1, bin.day, 23, 59, 59);
-      } else {
-        binStart = new Date(bin.year, bin.month - 1, 1);
-        binEnd = new Date(bin.year, bin.month, 0, 23, 59, 59);
-      }
-
-      // Revenue for this bin (Based on actual payments)
-      const ordersM = await DonHang.aggregate([
-        { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } },
+    const [
+      totalCustomers,
+      prevCustomers,
+      totalOrders,
+      prevOrders,
+      currentStats,
+      prevStats,
+      allRevTargets,
+      allProdTargets,
+      dhSeriesAgg,
+      hdSeriesAgg,
+      topCustomerStats
+    ] = await Promise.all([
+      KhachHang.countDocuments({ createdAt: { $lte: endDate } }),
+      KhachHang.countDocuments({ createdAt: { $lte: startDate } }),
+      DonHang.countDocuments({ TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } }),
+      DonHang.countDocuments({ TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: prevStartDate, $lte: prevEndDate } }),
+      getStatsForRange(startDate, endDate),
+      getStatsForRange(prevStartDate, prevEndDate),
+      RevenueTarget.find({ type: 'month', year: queryYear }).lean(),
+      ProductionTarget.find({ type: 'month', year: queryYear }).lean(),
+      DonHang.aggregate([
+        { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } } },
         { $lookup: {
           from: 'KhachHangs',
           localField: 'KhachHang',
@@ -164,71 +155,94 @@ exports.getDashboardStats = async (req, res) => {
         }},
         { $unwind: '$customer' },
         { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
-        { $group: { _id: null, total: { $sum: { $cond: [{ $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, '$TongTien', { $ifNull: ['$DaCoc', 0] }] } } } }
-      ]);
-      const contractsM = await HopDong.aggregate([{ $match: { createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $ifNull: ['$DaThanhToan', 0] } } } }]);
-      
-      // Target matching for this bin
+        { $group: {
+          _id: dhGroup,
+          revenue: { $sum: { $cond: [{ $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, '$TongTien', { $ifNull: ['$DaCoc', 0] }] } },
+          volume: { $sum: { $sum: '$Items.SoLuong' } }
+        }}
+      ]),
+      HopDong.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $group: {
+          _id: dhGroup,
+          revenue: { $sum: { $ifNull: ['$DaThanhToan', 0] } },
+          volume: { $sum: { $sum: '$ChiTietHopDong.quantity' } }
+        }}
+      ]),
+      DonHang.aggregate([
+        { $match: { TrangThai: { $ne: 'DA_HUY' } } },
+        { $group: {
+          _id: '$KhachHang',
+          volume: { $sum: { $sum: '$Items.SoLuong' } },
+          revenue: { $sum: '$TongTien' }
+        }},
+        { $sort: { volume: -1 } },
+        { $limit: 10 },
+        { $lookup: {
+          from: 'KhachHangs',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'customerInfo'
+        }},
+        { $unwind: '$customerInfo' }
+      ])
+    ]);
+
+    const customerChange = prevCustomers === 0 ? 100 : Math.round(((totalCustomers - prevCustomers) / prevCustomers) * 100);
+    const orderChange = prevOrders === 0 ? 100 : Math.round(((totalOrders - prevOrders) / prevOrders) * 100);
+    const globalRevenue = currentStats.revenue;
+    const globalVolume = currentStats.volume;
+
+    // Fast in-memory lookup maps for charts series
+    const dhMap = new Map();
+    for (const item of dhSeriesAgg) {
+      const key = granularity === 'day' 
+        ? `${item._id.year}-${item._id.month}-${item._id.day}` 
+        : `${item._id.year}-${item._id.month}`;
+      dhMap.set(key, item);
+    }
+
+    const hdMap = new Map();
+    for (const item of hdSeriesAgg) {
+      const key = granularity === 'day' 
+        ? `${item._id.year}-${item._id.month}-${item._id.day}` 
+        : `${item._id.year}-${item._id.month}`;
+      hdMap.set(key, item);
+    }
+
+    const monthlySeries = bins.map(bin => {
+      const key = granularity === 'day' 
+        ? `${bin.year}-${bin.month}-${bin.day}` 
+        : `${bin.year}-${bin.month}`;
+
       const matchedRevTarget = allRevTargets.find(t => t.month === bin.month);
       const matchedProdTarget = allProdTargets.find(t => t.month === bin.month);
       const targetRevVal = matchedRevTarget ? matchedRevTarget.targetAmount : 500000000;
       const targetProdVal = matchedProdTarget ? matchedProdTarget.targetAmount : 2000;
 
-      // Volume for this bin
-      const ordersVolM = await DonHang.aggregate([
-        { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: binStart, $lte: binEnd } } },
-        { $lookup: {
-          from: 'KhachHangs',
-          localField: 'KhachHang',
-          foreignField: '_id',
-          as: 'customer'
-        }},
-        { $unwind: '$customer' },
-        { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
-        { $group: { _id: null, total: { $sum: { $sum: '$Items.SoLuong' } } } }
-      ]);
-      const contractsVolM = await HopDong.aggregate([{ $match: { createdAt: { $gte: binStart, $lte: binEnd } } }, { $group: { _id: null, total: { $sum: { $sum: '$ChiTietHopDong.quantity' } } } }]);
+      const dhData = dhMap.get(key);
+      const hdData = hdMap.get(key);
 
-      const revActual = ((ordersM[0]?.total || 0) + (contractsM[0]?.total || 0)) / 1000000; // In Millions
-      const volActual = (ordersVolM[0]?.total || 0) + (contractsVolM[0]?.total || 0);
+      const revActual = (((dhData?.revenue || 0) + (hdData?.revenue || 0))) / 1000000;
+      const volActual = (dhData?.volume || 0) + (hdData?.volume || 0);
 
-      monthlySeries.push({
+      return {
         month: bin.label,
         revenueActual: Math.round(revActual),
-        revenuePlan: Math.round(targetRevVal / 1000000 / (granularity === 'day' ? 30 : 1)), 
+        revenuePlan: Math.round(targetRevVal / 1000000 / (granularity === 'day' ? 30 : 1)),
         prodActual: Math.round(volActual),
         prodPlan: Math.round(targetProdVal / (granularity === 'day' ? 30 : 1))
-      });
-    }
-
-    // 4. Top Customers
-    const topCustomerStats = await DonHang.aggregate([
-      { $match: { TrangThai: { $ne: 'DA_HUY' } } },
-      { $group: {
-        _id: '$KhachHang',
-        volume: { $sum: { $sum: '$Items.SoLuong' } },
-        revenue: { $sum: '$TongTien' }
-      }},
-      { $sort: { volume: -1 } },
-      { $limit: 10 },
-      { $lookup: {
-        from: 'KhachHangs',
-        localField: '_id',
-        foreignField: '_id',
-        as: 'customerInfo'
-      }},
-      { $unwind: '$customerInfo' }
-    ]);
+      };
+    });
 
     const formattedTopCustomers = topCustomerStats.map(c => ({
       name: c.customerInfo.TenKhachHang,
       segment: c.customerInfo.PhanLoai,
       volume: c.volume,
-      target: 2500, // Default target or fetch from SalesTarget if exists
+      target: 2500,
       revenue: c.revenue
     }));
 
-    // Calculate real growth compared to last period
     const revChange = prevStats.revenue > 0 
       ? Math.round(((currentStats.revenue - prevStats.revenue) / prevStats.revenue) * 100) 
       : 0;
@@ -237,19 +251,24 @@ exports.getDashboardStats = async (req, res) => {
       ? Math.round(((currentStats.volume - prevStats.volume) / prevStats.volume) * 100) 
       : 0;
 
+    const resultData = {
+      kpi: {
+        totalRevenue: { value: Math.round(globalRevenue / 1000000), unit: 'Tr VNĐ', change: revChange, label: 'Tổng Doanh Thu' },
+        totalProduction: { value: globalVolume, unit: 'thùng', change: volChange, label: 'Tổng Sản Lượng' },
+        customerCount: { value: totalCustomers, unit: 'Đối tác', change: customerChange, label: 'Tổng Khách Hàng' },
+        orderCount: { value: totalOrders, unit: 'đơn', change: orderChange, label: 'Đơn đặt hàng' },
+        avgOrderValue: { value: Math.round(globalRevenue / (totalCustomers || 1) / 1000000), unit: 'Tr/Khách', change: 0, label: 'Giá trị Trung bình' }
+      },
+      monthlyTrends: monthlySeries,
+      topCustomers: formattedTopCustomers
+    };
+
+    // Cache result for 15 seconds to prevent repeated query load
+    cache.set(cacheKey, resultData, 15);
+
     res.status(200).json({
       success: true,
-      data: {
-        kpi: {
-          totalRevenue: { value: Math.round(globalRevenue / 1000000), unit: 'Tr VNĐ', change: revChange, label: 'Tổng Doanh Thu' },
-          totalProduction: { value: globalVolume, unit: 'thùng', change: volChange, label: 'Tổng Sản Lượng' },
-          customerCount: { value: totalCustomers, unit: 'Đối tác', change: customerChange, label: 'Tổng Khách Hàng' },
-          orderCount: { value: totalOrders, unit: 'đơn', change: orderChange, label: 'Đơn đặt hàng' },
-          avgOrderValue: { value: Math.round(globalRevenue / (totalCustomers || 1) / 1000000), unit: 'Tr/Khách', change: 0, label: 'Giá trị Trung bình' }
-        },
-        monthlyTrends: monthlySeries,
-        topCustomers: formattedTopCustomers
-      }
+      data: resultData
     });
 
   } catch (error) {
@@ -262,96 +281,181 @@ exports.getDashboardStats = async (req, res) => {
 exports.getDetailedStats = async (req, res) => {
   try {
     const { period } = req.query;
+    const cacheKey = `dashboard_detailed_${period || 'default'}`;
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({ success: true, data: cachedData, fromCache: true });
+    }
+
     const { startDate, endDate } = resolvePeriodDates(period);
 
-    // 1. Order Status Distribution
-    const orderStatusDist = await DonHang.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-      { $group: { _id: '$TrangThai', count: { $sum: 1 } } }
-    ]);
-
-    // 2. Revenue by Product Category (Unified from Orders & Contracts)
-    const dhRevenueByCat = await DonHang.aggregate([
-      { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } } },
-      { $lookup: {
-        from: 'KhachHangs',
-        localField: 'KhachHang',
-        foreignField: '_id',
-        as: 'customer'
-      }},
-      { $unwind: '$customer' },
-      { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
-      { $unwind: '$Items' },
-      { $lookup: {
-        from: 'SanPhamSons',
-        localField: 'Items.SanPham',
-        foreignField: '_id',
-        as: 'product'
-      }},
-      { $unwind: '$product' },
-      { $group: {
-        _id: '$product.PhanLoai',
-        revenue: { $sum: { $multiply: ['$Items.DonGia', '$Items.SoLuong'] } },
-        volume: { $sum: '$Items.SoLuong' }
-      }}
-    ]);
-
-    const hdRevenueByCat = await HopDong.aggregate([
-      { $match: { TrangThai: { $nin: ['cancelled', 'draft'] }, createdAt: { $gte: startDate, $lte: endDate } } },
-      { $unwind: '$ChiTietHopDong' },
-      { $group: {
-        _id: 'Dự án B2B',
-        revenue: { $sum: { $multiply: ['$ChiTietHopDong.unitPrice', '$ChiTietHopDong.quantity'] } },
-        volume: { $sum: '$ChiTietHopDong.quantity' }
-      }}
+    // Parallelize all analytics queries
+    const [
+      orderStatusDist,
+      dhRevenueByCat,
+      hdRevenueByCat,
+      rdStats,
+      contractStats,
+      dhProductStats,
+      hdProductStats,
+      largeContracts,
+      highValueOrders,
+      dhColorStats,
+      hdColorStats,
+      dhSalesStats,
+      hdSalesStats
+    ] = await Promise.all([
+      // 1. Order Status Distribution
+      DonHang.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $group: { _id: '$TrangThai', count: { $sum: 1 } } }
+      ]),
+      // 2. Revenue by Product Category (DonHang)
+      DonHang.aggregate([
+        { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } } },
+        { $lookup: {
+          from: 'KhachHangs',
+          localField: 'KhachHang',
+          foreignField: '_id',
+          as: 'customer'
+        }},
+        { $unwind: '$customer' },
+        { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
+        { $unwind: '$Items' },
+        { $lookup: {
+          from: 'SanPhamSons',
+          localField: 'Items.SanPham',
+          foreignField: '_id',
+          as: 'product'
+        }},
+        { $unwind: '$product' },
+        { $group: {
+          _id: '$product.PhanLoai',
+          revenue: { $sum: { $multiply: ['$Items.DonGia', '$Items.SoLuong'] } },
+          volume: { $sum: '$Items.SoLuong' }
+        }}
+      ]),
+      // 2b. Revenue by Product Category (HopDong)
+      HopDong.aggregate([
+        { $match: { TrangThai: { $nin: ['cancelled', 'draft'] }, createdAt: { $gte: startDate, $lte: endDate } } },
+        { $unwind: '$ChiTietHopDong' },
+        { $group: {
+          _id: 'Dự án B2B',
+          revenue: { $sum: { $multiply: ['$ChiTietHopDong.unitPrice', '$ChiTietHopDong.quantity'] } },
+          volume: { $sum: '$ChiTietHopDong.quantity' }
+        }}
+      ]),
+      // 3. R&D Performance
+      NhatKyTestMau.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $group: { _id: '$TrangThai', count: { $sum: 1 } } }
+      ]),
+      // 4. Contract Status
+      HopDong.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $group: { _id: '$TrangThai', count: { $sum: 1 } } }
+      ]),
+      // 5. Unified Top Products (DonHang)
+      DonHang.aggregate([
+        { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } } },
+        { $lookup: {
+          from: 'KhachHangs',
+          localField: 'KhachHang',
+          foreignField: '_id',
+          as: 'customer'
+        }},
+        { $unwind: '$customer' },
+        { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
+        { $unwind: '$Items' },
+        { $group: {
+          _id: '$Items.TenSanPham', 
+          totalSold: { $sum: '$Items.SoLuong' },
+          popularity: { $sum: 1 },
+          revenue: { $sum: { $multiply: ['$Items.DonGia', '$Items.SoLuong'] } }
+        }}
+      ]),
+      // 5b. Unified Top Products (HopDong)
+      HopDong.aggregate([
+        { $match: { TrangThai: { $nin: ['cancelled', 'draft'] }, createdAt: { $gte: startDate, $lte: endDate } } },
+        { $unwind: '$ChiTietHopDong' },
+        { $group: {
+          _id: '$ChiTietHopDong.productName',
+          totalSold: { $sum: '$ChiTietHopDong.quantity' },
+          popularity: { $sum: 1 },
+          revenue: { $sum: { $multiply: ['$ChiTietHopDong.unitPrice', '$ChiTietHopDong.quantity'] } }
+        }}
+      ]),
+      // 6. Recent Large Contracts (> 100M)
+      HopDong.find({ 
+        TongGiaTri: { $gte: 100000000 },
+        createdAt: { $gte: startDate, $lte: endDate }
+      })
+        .populate('CustomerID', 'TenKhachHang PhanLoai')
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+      // 7. Recent High Value Orders (> 5M)
+      DonHang.find({ 
+        TongTien: { $gte: 5000000 },
+        createdAt: { $gte: startDate, $lte: endDate }
+      })
+        .populate('KhachHang', 'TenKhachHang PhanLoai')
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+      // 8. Top Popular Colors (DonHang)
+      DonHang.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $lookup: {
+          from: 'KhachHangs',
+          localField: 'KhachHang',
+          foreignField: '_id',
+          as: 'customer'
+        }},
+        { $unwind: '$customer' },
+        { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
+        { $unwind: '$Items' },
+        { $match: { 'Items.MaMau': { $exists: true, $ne: '' } } },
+        { $group: { _id: '$Items.MaMau', count: { $sum: 1 } } }
+      ]),
+      // 8b. Top Popular Colors (HopDong)
+      HopDong.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $unwind: '$ChiTietHopDong' },
+        { $match: { 'ChiTietHopDong.colorCode': { $exists: true, $ne: '' } } },
+        { $group: { _id: '$ChiTietHopDong.colorCode', count: { $sum: 1 } } }
+      ]),
+      // 9. Top Sales Staff Performance (DonHang)
+      DonHang.aggregate([
+        { $match: { TrangThai: { $ne: 'DA_HUY' }, NhanVienPhuTrach: { $exists: true, $ne: null }, createdAt: { $gte: startDate, $lte: endDate } } },
+        { $group: {
+          _id: '$NhanVienPhuTrach',
+          revenue: { 
+            $sum: { 
+              $cond: [
+                { $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, 
+                '$TongTien', 
+                { $ifNull: ['$DaCoc', 0] } 
+              ]
+            } 
+          },
+          orderCount: { $sum: 1 }
+        }}
+      ]),
+      // 9b. Top Sales Staff Performance (HopDong)
+      HopDong.aggregate([
+        { $match: { TrangThai: { $nin: ['cancelled', 'draft'] }, EmployeeID: { $exists: true, $ne: null }, createdAt: { $gte: startDate, $lte: endDate } } },
+        { $group: {
+          _id: '$EmployeeID',
+          revenue: { $sum: { $ifNull: ['$DaThanhToan', 0] } },
+          contractCount: { $sum: 1 }
+        }}
+      ])
     ]);
 
     const revenueByCategory = [...dhRevenueByCat, ...hdRevenueByCat];
 
-    // 3. R&D Performance
-    const rdStats = await NhatKyTestMau.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-      { $group: { _id: '$TrangThai', count: { $sum: 1 } } }
-    ]);
-
-    // 4. Contract Status
-    const contractStats = await HopDong.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-      { $group: { _id: '$TrangThai', count: { $sum: 1 } } }
-    ]);
-
-    // 5. Unified Top 5 Products (Combined from DonHang & HopDong)
-    const dhProductStats = await DonHang.aggregate([
-      { $match: { TrangThai: { $ne: 'DA_HUY' }, createdAt: { $gte: startDate, $lte: endDate } } },
-      { $lookup: {
-        from: 'KhachHangs',
-        localField: 'KhachHang',
-        foreignField: '_id',
-        as: 'customer'
-      }},
-      { $unwind: '$customer' },
-      { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
-      { $unwind: '$Items' },
-      { $group: {
-        _id: '$Items.TenSanPham', 
-        totalSold: { $sum: '$Items.SoLuong' },
-        popularity: { $sum: 1 },
-        revenue: { $sum: { $multiply: ['$Items.DonGia', '$Items.SoLuong'] } }
-      }}
-    ]);
-
-    const hdProductStats = await HopDong.aggregate([
-      { $match: { TrangThai: { $nin: ['cancelled', 'draft'] }, createdAt: { $gte: startDate, $lte: endDate } } },
-      { $unwind: '$ChiTietHopDong' },
-      { $group: {
-        _id: '$ChiTietHopDong.productName',
-        totalSold: { $sum: '$ChiTietHopDong.quantity' },
-        popularity: { $sum: 1 },
-        revenue: { $sum: { $multiply: ['$ChiTietHopDong.unitPrice', '$ChiTietHopDong.quantity'] } }
-      }}
-    ]);
-
-    // Step 5c: Merge results
+    // Merge product results in memory
     const productMergeMap = {};
     [...dhProductStats, ...hdProductStats].forEach(p => {
       const name = p._id;
@@ -367,47 +471,7 @@ exports.getDetailedStats = async (req, res) => {
       .sort((a, b) => b.sold - a.sold)
       .slice(0, 5);
 
-    // 6. Recent Large Contracts (> 100M)
-    const largeContracts = await HopDong.find({ 
-      TongGiaTri: { $gte: 100000000 },
-      createdAt: { $gte: startDate, $lte: endDate }
-    })
-      .populate('CustomerID', 'TenKhachHang PhanLoai')
-      .sort({ createdAt: -1 })
-      .limit(5);
-
-    // 7. Recent High Value Orders (> 5M)
-    const highValueOrders = await DonHang.find({ 
-      TongTien: { $gte: 5000000 },
-      createdAt: { $gte: startDate, $lte: endDate }
-    })
-      .populate('KhachHang', 'TenKhachHang PhanLoai')
-      .sort({ createdAt: -1 })
-      .limit(5);
-
-    // 8. Top Popular Colors (Combined from DonHang & HopDong)
-    const dhColorStats = await DonHang.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-      { $lookup: {
-        from: 'KhachHangs',
-        localField: 'KhachHang',
-        foreignField: '_id',
-        as: 'customer'
-      }},
-      { $unwind: '$customer' },
-      { $match: { 'customer.PhanLoai': { $ne: 'B2B' } } },
-      { $unwind: '$Items' },
-      { $match: { 'Items.MaMau': { $exists: true, $ne: '' } } },
-      { $group: { _id: '$Items.MaMau', count: { $sum: 1 } } }
-    ]);
-    const hdColorStats = await HopDong.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-      { $unwind: '$ChiTietHopDong' },
-      { $match: { 'ChiTietHopDong.colorCode': { $exists: true, $ne: '' } } },
-      { $group: { _id: '$ChiTietHopDong.colorCode', count: { $sum: 1 } } }
-    ]);
-
-    // Merge and sort in memory
+    // Merge colors in memory
     const colorMap = {};
     [...dhColorStats, ...hdColorStats].forEach(c => {
       colorMap[c._id] = (colorMap[c._id] || 0) + c.count;
@@ -418,34 +482,7 @@ exports.getDetailedStats = async (req, res) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // 9. Top Sales Staff Performance (Revenue vs Count based on payments)
-    const dhSalesStats = await DonHang.aggregate([
-      { $match: { TrangThai: { $ne: 'DA_HUY' }, NhanVienPhuTrach: { $exists: true, $ne: null }, createdAt: { $gte: startDate, $lte: endDate } } },
-      { $group: {
-        _id: '$NhanVienPhuTrach',
-        revenue: { 
-          $sum: { 
-            $cond: [
-              { $eq: ['$TrangThaiThanhToan', 'DA_THANH_TOAN'] }, 
-              '$TongTien', 
-              { $ifNull: ['$DaCoc', 0] } 
-            ]
-          } 
-        },
-        orderCount: { $sum: 1 }
-      }}
-    ]);
-
-    const hdSalesStats = await HopDong.aggregate([
-      { $match: { TrangThai: { $nin: ['cancelled', 'draft'] }, EmployeeID: { $exists: true, $ne: null }, createdAt: { $gte: startDate, $lte: endDate } } },
-      { $group: {
-        _id: '$EmployeeID',
-        revenue: { $sum: { $ifNull: ['$DaThanhToan', 0] } },
-        contractCount: { $sum: 1 }
-      }}
-    ]);
-
-    // 9c. Merge and Lookup NhanVien info
+    // Merge sales staff in memory
     const salesStaffMap = {};
     dhSalesStats.forEach(s => {
       if (s._id) {
@@ -475,34 +512,38 @@ exports.getDetailedStats = async (req, res) => {
       count: salesStaffMap[info._id.toString()]?.orderCount || 0
     })).sort((a, b) => b.revenue - a.revenue);
 
+    const resultData = {
+      orderStatusDist,
+      revenueByCategory,
+      rdStats,
+      contractStats,
+      topProducts,
+      topSalesStaff,
+      largeContracts: largeContracts.map(c => ({
+        id: c._id,
+        code: c.MaHopDong,
+        customer: c.CustomerID?.TenKhachHang || 'N/A',
+        type: c.CustomerID?.PhanLoai || 'B2B',
+        value: c.TongGiaTri,
+        status: c.TrangThai,
+        date: c.createdAt
+      })),
+      highValueOrders: highValueOrders.map(o => ({
+        id: o._id,
+        code: o.MaDonHang,
+        customer: o.KhachHang?.TenKhachHang || 'N/A',
+        value: o.TongTien,
+        status: o.TrangThai,
+        date: o.createdAt
+      })),
+      topColors
+    };
+
+    cache.set(cacheKey, resultData, 15);
+
     res.status(200).json({
       success: true,
-      data: {
-        orderStatusDist,
-        revenueByCategory,
-        rdStats,
-        contractStats,
-        topProducts,
-        topSalesStaff,
-        largeContracts: largeContracts.map(c => ({
-          id: c._id,
-          code: c.MaHopDong,
-          customer: c.CustomerID?.TenKhachHang || 'N/A',
-          type: c.CustomerID?.PhanLoai || 'B2B',
-          value: c.TongGiaTri,
-          status: c.TrangThai,
-          date: c.createdAt
-        })),
-        highValueOrders: highValueOrders.map(o => ({
-          id: o._id,
-          code: o.MaDonHang,
-          customer: o.KhachHang?.TenKhachHang || 'N/A',
-          value: o.TongTien,
-          status: o.TrangThai,
-          date: o.createdAt
-        })),
-        topColors
-      }
+      data: resultData
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -514,40 +555,82 @@ exports.getDetailedStats = async (req, res) => {
 exports.getInventoryStats = async (req, res) => {
   try {
     const { period } = req.query;
+    const cacheKey = `dashboard_inventory_${period || 'default'}`;
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({ success: true, data: cachedData, fromCache: true });
+    }
+
     const { startDate, endDate } = resolvePeriodDates(period);
-
-    const products = await SanPhamSon.find();
-    
-    // 1. Basic Stats
-    const totalSKUs = products.length;
-    const lowStockItems = products.filter(p => {
-      const stock = (p.TongTonKho > 0) ? p.TongTonKho : (p.TonKho || 0);
-      return stock < 10;
-    }).length;
-    
-    const totalStockValue = products.reduce((sum, p) => {
-      const stock = (p.TongTonKho > 0) ? p.TongTonKho : (p.TonKho || 0);
-      return sum + (stock * (p.DonGiaCoSo || 0));
-    }, 0);
-    
-    // 2. Stock by Category
-    const categoryDist = await SanPhamSon.aggregate([
-      { $group: { 
-        _id: '$PhanLoai', 
-        count: { $sum: 1 }, 
-        totalStock: { $sum: { $cond: [{ $gt: ['$TongTonKho', 0] }, '$TongTonKho', { $ifNull: ['$TonKho', 0] }] } } 
-      }}
-    ]);
-
-    // 3. Recent Transactions (Filtered by period)
     const PhieuNhapXuatKho = require('../models/PhieuNhapXuatKho');
-    const recentMovements = await PhieuNhapXuatKho.find({
-      createdAt: { $gte: startDate, $lte: endDate }
-    })
-      .sort({ createdAt: -1 })
-      .limit(10);
+
+    // Run inventory queries in parallel
+    const [products, categoryDist, recentMovements, bestSellers] = await Promise.all([
+      SanPhamSon.find().select('TongTonKho TonKho DonGiaCoSo PhanLoai').lean(),
+      SanPhamSon.aggregate([
+        { $group: { 
+          _id: '$PhanLoai', 
+          count: { $sum: 1 }, 
+          totalStock: { $sum: { $cond: [{ $gt: ['$TongTonKho', 0] }, '$TongTonKho', { $ifNull: ['$TonKho', 0] }] } } 
+        }}
+      ]),
+      PhieuNhapXuatKho.find({ createdAt: { $gte: startDate, $lte: endDate } })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean(),
+      DonHang.aggregate([
+        {
+          $match: {
+            TrangThai: { $ne: 'DA_HUY' },
+            createdAt: { $gte: startDate, $lte: endDate }
+          }
+        },
+        { $unwind: "$Items" },
+        {
+          $group: {
+            _id: "$Items.SanPham",
+            SoLuongBan: { $sum: "$Items.SoLuong" },
+            TongDoanhThu: { $sum: "$Items.ThanhTien" }
+          }
+        },
+        {
+          $lookup: {
+            from: "SanPhamSons",
+            localField: "_id",
+            foreignField: "_id",
+            as: "SanPhamInfo"
+          }
+        },
+        { $unwind: "$SanPhamInfo" },
+        {
+          $project: {
+            _id: 1,
+            MaSanPham: "$SanPhamInfo.MaSanPham",
+            TenDongSon: "$SanPhamInfo.TenDongSon",
+            HinhAnh: { $arrayElemAt: ["$SanPhamInfo.HinhAnh", 0] },
+            SoLuongBan: 1,
+            TongDoanhThu: 1
+          }
+        },
+        { $sort: { SoLuongBan: -1 } },
+        { $limit: 10 }
+      ])
+    ]);
     
-    // Map TenNguoiLap if NguoiLapPhieu isn't populated
+    // 1. Basic Stats Calculation
+    const totalSKUs = products.length;
+    let lowStockItems = 0;
+    let totalStockValue = 0;
+    let totalKg = 0;
+
+    for (let i = 0; i < products.length; i++) {
+      const p = products[i];
+      const stock = (p.TongTonKho > 0) ? p.TongTonKho : (p.TonKho || 0);
+      if (stock < 10) lowStockItems++;
+      totalStockValue += stock * (p.DonGiaCoSo || 0);
+      totalKg += stock;
+    }
+
     const formattedMovements = recentMovements.map(m => ({
       _id: m._id,
       MaPhieu: m.MaPhieu,
@@ -556,57 +639,23 @@ exports.getInventoryStats = async (req, res) => {
       NhanVien: { HoTen: m.TenNguoiLap || 'Hệ thống' }
     }));
 
-    const bestSellers = await DonHang.aggregate([
-      {
-        $match: {
-          TrangThai: { $ne: 'DA_HUY' },
-          createdAt: { $gte: startDate, $lte: endDate }
-        }
+    const resultData = {
+      summary: {
+        totalSKUs,
+        lowStockItems,
+        totalStockValue,
+        totalKg
       },
-      { $unwind: "$Items" },
-      {
-        $group: {
-          _id: "$Items.SanPham",
-          SoLuongBan: { $sum: "$Items.SoLuong" },
-          TongDoanhThu: { $sum: "$Items.ThanhTien" }
-        }
-      },
-      {
-        $lookup: {
-          from: "SanPhamSons",
-          localField: "_id",
-          foreignField: "_id",
-          as: "SanPhamInfo"
-        }
-      },
-      { $unwind: "$SanPhamInfo" },
-      {
-        $project: {
-          _id: 1,
-          MaSanPham: "$SanPhamInfo.MaSanPham",
-          TenDongSon: "$SanPhamInfo.TenDongSon",
-          HinhAnh: { $arrayElemAt: ["$SanPhamInfo.HinhAnh", 0] },
-          SoLuongBan: 1,
-          TongDoanhThu: 1
-        }
-      },
-      { $sort: { SoLuongBan: -1 } },
-      { $limit: 10 }
-    ]);
+      categoryDist,
+      recentMovements: formattedMovements,
+      bestSellers
+    };
+
+    cache.set(cacheKey, resultData, 15);
 
     res.status(200).json({
       success: true,
-      data: {
-        summary: {
-          totalSKUs,
-          lowStockItems,
-          totalStockValue,
-          totalKg: products.reduce((sum, p) => sum + ((p.TongTonKho > 0) ? p.TongTonKho : (p.TonKho || 0)), 0)
-        },
-        categoryDist,
-        recentMovements: formattedMovements,
-        bestSellers
-      }
+      data: resultData
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -618,19 +667,30 @@ exports.getInventoryStats = async (req, res) => {
 exports.getProductionStats = async (req, res) => {
   try {
     const { period } = req.query;
-    const { startDate, endDate, granularity, bins } = resolvePeriodDates(period);
+    const cacheKey = `dashboard_production_${period || 'default'}`;
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({ success: true, data: cachedData, fromCache: true });
+    }
 
+    const { startDate, endDate, granularity, bins } = resolvePeriodDates(period);
     const LenhSanXuat = require('../models/LenhSanXuat');
     
-    // 1. Production Volume
-    const productionTrendsRaw = await LenhSanXuat.aggregate([
-      { $match: { TrangThai: 'completed', CompletionTime: { $gte: startDate, $lte: endDate } } },
-      { $group: {
-        _id: granularity === 'day' 
-          ? { day: { $dayOfMonth: '$CompletionTime' }, month: { $month: '$CompletionTime' }, year: { $year: '$CompletionTime' } }
-          : { month: { $month: '$CompletionTime' }, year: { $year: '$CompletionTime' } },
-        totalKg: { $sum: '$TargetWeight' }
-      }}
+    // Parallelize Production Trends and R&D Performance
+    const [productionTrendsRaw, rdPerformance] = await Promise.all([
+      LenhSanXuat.aggregate([
+        { $match: { TrangThai: 'completed', CompletionTime: { $gte: startDate, $lte: endDate } } },
+        { $group: {
+          _id: granularity === 'day' 
+            ? { day: { $dayOfMonth: '$CompletionTime' }, month: { $month: '$CompletionTime' }, year: { $year: '$CompletionTime' } }
+            : { month: { $month: '$CompletionTime' }, year: { $year: '$CompletionTime' } },
+          totalKg: { $sum: '$TargetWeight' }
+        }}
+      ]),
+      NhatKyTestMau.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $group: { _id: '$TrangThai', count: { $sum: 1 } } }
+      ])
     ]);
 
     const productionTrends = bins.map(bin => {
@@ -644,25 +704,22 @@ exports.getProductionStats = async (req, res) => {
       };
     });
 
-    // 2. R&D Stats (Filtered by period)
-    const rdPerformance = await NhatKyTestMau.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-      { $group: { _id: '$TrangThai', count: { $sum: 1 } } }
-    ]);
-
-    // 3. Efficiency
     const completedRd = rdPerformance.find(p => ['completed', 'DAT', 'DaTest'].includes(p._id))?.count || 0;
     const totalRd = rdPerformance.reduce((s, c) => s + c.count, 0);
     const rdSuccessRate = totalRd > 0 ? Math.round((completedRd / totalRd) * 100) : 0;
 
+    const resultData = {
+      productionTrends,
+      rdPerformance,
+      efficiency: 98,
+      rdSuccessRate
+    };
+
+    cache.set(cacheKey, resultData, 15);
+
     res.status(200).json({
       success: true,
-      data: {
-        productionTrends,
-        rdPerformance,
-        efficiency: 98,
-        rdSuccessRate
-      }
+      data: resultData
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

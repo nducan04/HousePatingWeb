@@ -16,6 +16,28 @@ connectDB();
 
 const app = express();
 
+// High-speed response compression (Gzip / Brotli)
+const compression = require('compression');
+app.use(compression({
+  threshold: 1024, // Compress responses above 1KB
+  level: 6,
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  }
+}));
+
+// Performance Tracking Middleware: Adds X-Response-Time header
+app.use((req, res, next) => {
+  const start = process.hrtime();
+  res.on('finish', () => {
+    const diff = process.hrtime(start);
+    const timeInMs = (diff[0] * 1e3 + diff[1] * 1e-6).toFixed(2);
+    res.setHeader('X-Response-Time', `${timeInMs}ms`);
+  });
+  next();
+});
+
 // Middleware
 const allowedOrigins = [
   'http://localhost:3000',
@@ -41,7 +63,8 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Serve static files from 'uploads' directory

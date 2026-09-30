@@ -80,4 +80,7 @@ sanPhamSonSchema.pre('save', function(next) {
 });
 
 sanPhamSonSchema.index({ TenDongSon: 'text', MaSanPham: 'text', ThuongHieu: 'text' });
+sanPhamSonSchema.index({ PhanLoai: 1 });
+sanPhamSonSchema.index({ TongTonKho: 1 });
+sanPhamSonSchema.index({ createdAt: -1 });
 module.exports = mongoose.model('SanPhamSon', sanPhamSonSchema, 'SanPhamSons');
