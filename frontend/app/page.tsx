@@ -6,8 +6,8 @@ import remarkGfm from "remark-gfm";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import AuthNav from "@/lib/components/AuthNav";
-import ThemeToggle from "@/components/ThemeToggle";
+import PublicNavbar from "@/components/PublicNavbar";
+import PublicFooter from "@/components/PublicFooter";
 import {
   Search,
   QrCode,
@@ -59,19 +59,6 @@ export default function HomePage() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingNews, setLoadingNews] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-
-  // Achievement slider state
-  const [activeAchievement, setActiveAchievement] = useState(0);
-  const achievements = [
-    { title: "Tòa nhà hành chính mới Hải Phòng", img: "/images/tthanhchinh" },
-    { title: "Phố Nam", img: "/images/phonam.jpg" },
-    {
-      title: "Trung tâm tổ chức tiệc cưới và sự kiện Pandora",
-      img: "/images/pandora.jpg",
-    },
-    { title: "Phố Bắc", img: "/images/phobac.jpg" },
-    { title: "Dự án tương lai", img: "/images/gemini.jpg" },
-  ];
 
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -156,14 +143,6 @@ export default function HomePage() {
   const [productQuantities, setProductQuantities] = useState<
     Record<string, number>
   >({});
-
-  // Auto-slide achievements every 5s
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveAchievement((prev) => (prev + 1) % achievements.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [achievements.length]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -492,99 +471,12 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-[#0B0F19] font-sans text-slate-900 dark:text-slate-100 antialiased transition-colors duration-300">
       {/* ═══════ HEADER / NAVBAR ═══════ */}
-      <header className="sticky top-0 z-[100] bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-colors duration-300">
-        <div className="max-w-[1400px] mx-auto px-6 sm:px-8 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-3 no-underline group py-1"
-          >
-            <img
-              src="/vtsc.png"
-              alt="VTSC Logo"
-              className="h-10 md:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-            />
-          </Link>
-
-          <nav className="hidden xl:flex items-center gap-1">
-            <Link
-              href="/"
-              className="text-[13px] font-bold text-blue-600 dark:text-blue-400 no-underline px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 whitespace-nowrap"
-            >
-              Trang chủ
-            </Link>
-            <Link
-              href="/shop"
-              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
-            >
-              Sản phẩm
-            </Link>
-            <Link
-              href="#bang-mau"
-              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
-            >
-              Bảng màu
-            </Link>
-            <Link
-              href="/tracking"
-              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-2 xl:px-2.5 2xl:px-3 py-2 rounded-xl whitespace-nowrap"
-            >
-              Theo dõi & Tra cứu
-            </Link>
-            <Link
-              href="#quy-trinh"
-              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
-            >
-              Quy trình
-            </Link>
-            <Link
-              href="#tin-tuc"
-              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
-            >
-              Tin tức
-            </Link>
-            <Link
-              href="#footer"
-              className="text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all no-underline px-3 py-2 rounded-xl whitespace-nowrap"
-            >
-              Liên hệ
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <div className="relative hidden md:flex items-center w-[180px] xl:w-[220px] bg-slate-100 dark:bg-slate-800/80 rounded-2xl px-4 h-10 border border-slate-200/50 dark:border-slate-700/80">
-              <Search size={18} className="text-slate-400 dark:text-slate-500" />
-              <input
-                type="text"
-                placeholder="Tìm sản phẩm, màu sơn..."
-                className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 dark:text-slate-100 ml-3 w-full placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Link
-              href="/cart"
-              className="relative group cursor-pointer no-underline p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
-              title="Giỏ hàng"
-            >
-              <ShoppingCart
-                size={22}
-                className="transition-colors text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400"
-              />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">
-                  {cartItemCount}
-                </span>
-              )}
-            </Link>
-            
-            {/* Dark / Light Mode Switcher */}
-            <ThemeToggle />
-
-            <div className="h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
-            <AuthNav onOpenLogin={() => setIsLoginOpen(true)} />
-          </div>
-        </div>
-      </header>
+      <PublicNavbar
+        activeRoute="/"
+        onOpenLogin={() => setIsLoginOpen(true)}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
 
       {/* ═══════ HERO BANNER (Balanced Fonts) ═══════ */}
       <section className="relative h-[550px] sm:h-[650px] w-full overflow-hidden">
@@ -860,61 +752,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ THÀNH TỰU NỔI BẬT (SLIDER) ═══════ */}
-      <section
-        id="thanh-tuu"
-        className="relative w-full h-[80vh] min-h-[500px] overflow-hidden bg-slate-900 group"
-      >
-        {achievements.map((project, idx) => (
-          <div
-            key={idx}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeAchievement === idx
-                ? "opacity-100 z-10"
-                : "opacity-0 z-0 pointer-events-none"
-              }`}
-          >
-            <div className="absolute inset-0 bg-black/40 z-10"></div>
-            <img
-              src={project.img}
-              alt={project.title}
-              className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-linear ${activeAchievement === idx ? "scale-110" : "scale-100"
-                }`}
-            />
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-20 text-center px-4">
-              <h2
-                className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-5 uppercase tracking-wide"
-                style={{ textShadow: "2px 4px 8px rgba(0,0,0,0.6)" }}
-              >
-                {project.title}
-              </h2>
-              <p
-                className="text-base md:text-lg text-white font-medium max-w-2xl mb-10 tracking-wide"
-                style={{ textShadow: "1px 2px 4px rgba(0,0,0,0.8)" }}
-              >
-                Nơi Nghệ Thuật Giao Thoa Cùng Chất Lượng Vượt Trội
-              </p>
-              <button className="px-8 py-3.5 bg-[#c49a45] hover:bg-[#b0883b] text-white font-bold text-sm uppercase tracking-wider shadow-[0_4px_14px_rgba(0,0,0,0.3)] transition-all hover:scale-105 cursor-pointer">
-                Khám phá ngay
-              </button>
-            </div>
-          </div>
-        ))}
-
-        {/* Pagination Dots */}
-        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 z-30">
-          {achievements.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveAchievement(idx)}
-              className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${activeAchievement === idx
-                  ? "w-8 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"
-                  : "w-4 bg-white/40 hover:bg-white/80"
-                }`}
-            />
-          ))}
-        </div>
-      </section>
-
       {/* ═══════ TIN TỨC & KHUYẾN MÃI (Uniform) ═══════ */}
       <section id="tin-tuc" className="px-8 py-20 bg-slate-50 dark:bg-[#111827] scroll-mt-[40px] transition-colors duration-300">
         <div className="max-w-[1300px] mx-auto">
@@ -993,145 +830,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ FOOTER ═══════ */}
-      <footer
-        id="footer"
-        className="relative text-white pt-20 pb-10 scroll-mt-[40px] bg-cover bg-center overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.94)), url('/login-illustration.png')`,
-        }}
-      >
-        <div className="max-w-[1300px] mx-auto px-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-16">
-            {/* Column 1: Company Info */}
-            <div className="lg:col-span-5">
-              <div className="flex items-center gap-4 mb-8">
-                <img
-                  src="/vtsc.png"
-                  alt="VTSC Logo"
-                  className="h-14 w-auto object-contain drop-shadow"
-                />
-                <span className="font-bold text-xl tracking-tight uppercase text-white">
-                  CÔNG TY CP TMDV VOSCO (VTSC)
-                </span>
-              </div>
-              <div className="space-y-5">
-                <ContactItem
-                  icon={<MapPin size={20} className="text-blue-400" />}
-                  text="215 Lạch Tray, Phường Gia Viên, Thành phố Hải Phòng"
-                />
-                <ContactItem
-                  icon={<Phone size={20} className="text-blue-400" />}
-                  text="0225.3842.160 - 0225.3747.226"
-                />
-                <ContactItem
-                  icon={<Mail size={20} className="text-blue-400" />}
-                  text="vtsc@vtschp.vn"
-                />
-              </div>
-              <div className="flex gap-4 mt-10">
-                <SocialLink
-                  icon={<Facebook size={20} />}
-                  href="https://www.facebook.com/VOSCO.VTSC"
-                />
-                <SocialLink icon={<Twitter size={20} />} href="#" />
-                <SocialLink icon={<Instagram size={20} />} href="#" />
-              </div>
-            </div>
-
-            {/* Column 2: Policies */}
-            <div className="lg:col-span-3">
-              <h4 className="text-sm font-bold mb-8 uppercase tracking-widest text-slate-400">
-                CHÍNH SÁCH
-              </h4>
-              <ul className="space-y-4 text-slate-300 font-medium text-sm">
-                <li>
-                  <Link
-                    href="/policies?type=return"
-                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
-                  >
-                    - Chính sách đổi trả
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/policies?type=warranty"
-                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
-                  >
-                    - Chính sách bảo hành
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/policies?type=shipping"
-                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
-                  >
-                    - Chính sách vận chuyển
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/policies?type=aftersale"
-                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
-                  >
-                    - Chính sách hậu mãi
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 3: Quick Links */}
-            <div className="lg:col-span-4">
-              <h4 className="text-sm font-bold mb-8 uppercase tracking-widest text-slate-400">
-                LIÊN KẾT NHANH
-              </h4>
-              <ul className="space-y-4 text-slate-300 font-medium text-sm">
-                <li>
-                  <Link
-                    href="/theo-doi-don-hang"
-                    className="hover:text-blue-400 transition-colors no-underline text-slate-300"
-                  >
-                    - Theo dõi đơn hàng
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/my-contracts"
-                    className="hover:text-blue-400 transition-colors no-underline text-slate-300"
-                  >
-                    - Tra cứu hợp đồng
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/admin/rd-tracking"
-                    className="hover:text-blue-400 transition-colors no-underline text-slate-300"
-                  >
-                    - Gửi yêu cầu R&D
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-white/10 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-slate-500 text-xs font-medium">
-            <p>© 2026 VTSC. Bản quyền thuộc về Nhóm dự án.</p>
-            <div className="flex gap-8">
-              <Link
-                href="#"
-                className="hover:text-white transition-colors no-underline text-slate-500"
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                href="#"
-                className="hover:text-white transition-colors no-underline text-slate-500"
-              >
-                Terms of Service
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
 
       {isViewOpen && selectedProduct && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
@@ -1755,28 +1454,6 @@ function ServiceCard({
     <Link href={href || "#"} className="no-underline text-inherit h-full block">
       {CardContent}
     </Link>
-  );
-}
-
-function SocialLink({ icon, href }: any) {
-  return (
-    <Link
-      href={href}
-      className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm"
-    >
-      {icon}
-    </Link>
-  );
-}
-
-function ContactItem({ icon, text }: any) {
-  return (
-    <div className="flex items-start gap-4">
-      <div className="mt-1 flex-shrink-0">{icon}</div>
-      <p className="text-slate-400 font-medium text-base leading-relaxed">
-        {text}
-      </p>
-    </div>
   );
 }
 

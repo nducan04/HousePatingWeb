@@ -10,6 +10,8 @@ import {
   MessageSquare, Image as ImageIcon, Sparkles, LogIn, ChevronRight, XCircle, Camera, Circle, QrCode
 } from 'lucide-react';
 import Link from 'next/link';
+import PublicNavbar from '@/components/PublicNavbar';
+import PublicFooter from '@/components/PublicFooter';
 import { useAuthStore } from '@/lib/store/authStore';
 import { toast } from '@/lib/utils/notification';
 import api from '@/lib/utils/axiosAuth';
@@ -387,40 +389,44 @@ export default function TrackingPage() {
   });
 
   return (
-    <div className="w-full max-w-[1300px] mx-auto px-6 md:px-12 xl:px-20 py-8 animate-in fade-in duration-700 relative">
-      {/* Back Button */}
-      <button
-        onClick={() => router.back()}
-        className="absolute top-8 left-4 lg:left-8 flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all z-10 shadow-sm cursor-pointer"
-      >
-        <ArrowLeft size={16} /> Quay lại
-      </button>
-
-      {/* ═══════ NAV TABS SECTION ═══════ */}
-      <div className="flex justify-center mb-10 mt-14 lg:mt-0">
-        <div className="flex p-1.5 bg-slate-100 rounded-3xl border border-slate-200/50 shadow-inner">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
+      <PublicNavbar activeRoute="/tracking" />
+      <main className="flex-1 w-full max-w-[1300px] mx-auto px-4 sm:px-6 md:px-12 py-8 animate-in fade-in duration-700 relative">
+        {/* Back Button */}
+        <div className="mb-6">
           <button
-            onClick={() => setActiveTab('shipment')}
-            className={`px-8 py-3.5 rounded-2xl text-[14px] font-bold tracking-tight transition-all duration-300 flex items-center gap-2.5 border-none cursor-pointer ${activeTab === 'shipment'
-              ? 'bg-white text-blue-600 shadow-lg shadow-blue-100/50'
-              : 'text-slate-500 hover:text-slate-800'
-              }`}
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm cursor-pointer"
           >
-            <Package size={18} />
-            Theo dõi Đơn Hàng
-          </button>
-          <button
-            onClick={() => setActiveTab('samples')}
-            className={`px-8 py-3.5 rounded-2xl text-[14px] font-bold tracking-tight transition-all duration-300 flex items-center gap-2.5 border-none cursor-pointer ${activeTab === 'samples'
-              ? 'bg-white text-purple-600 shadow-lg shadow-purple-100/50'
-              : 'text-slate-500 hover:text-slate-800'
-              }`}
-          >
-            <FlaskConical size={18} />
-            Theo dõi Pha Chế R&D
+            <ArrowLeft size={16} /> Quay lại
           </button>
         </div>
-      </div>
+
+        {/* ═══════ NAV TABS SECTION ═══════ */}
+        <div className="flex justify-center mb-10">
+          <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 shadow-inner">
+            <button
+              onClick={() => setActiveTab('shipment')}
+              className={`px-8 py-3.5 rounded-2xl text-[14px] font-bold tracking-tight transition-all duration-300 flex items-center gap-2.5 border-none cursor-pointer ${activeTab === 'shipment'
+                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-lg shadow-blue-100/50 dark:shadow-none'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+            >
+              <Package size={18} />
+              Theo dõi Đơn Hàng
+            </button>
+            <button
+              onClick={() => setActiveTab('samples')}
+              className={`px-8 py-3.5 rounded-2xl text-[14px] font-bold tracking-tight transition-all duration-300 flex items-center gap-2.5 border-none cursor-pointer ${activeTab === 'samples'
+                ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-lg shadow-purple-100/50 dark:shadow-none'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+            >
+              <FlaskConical size={18} />
+              Theo dõi Pha Chế R&D
+            </button>
+          </div>
+        </div>
 
       {/* ═══════ TAB 1: SHIPMENT TRACKING ═══════ */}
       {activeTab === 'shipment' && (
@@ -892,6 +898,8 @@ export default function TrackingPage() {
           </div>
         </div>
       )}
+      </main>
+      <PublicFooter />
     </div>
   );
 }
