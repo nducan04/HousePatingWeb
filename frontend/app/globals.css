@@ -21,7 +21,7 @@ body {
 }
 
 html.dark body {
-  background-color: #0b0f19;
+  background-color: #161e2e;
   color: #f1f5f9;
 }
 
@@ -34,8 +34,8 @@ html.dark body {
 }
 
 html.dark .glass-panel {
-  background: rgba(17, 24, 39, 0.85);
-  border: 1px solid rgba(55, 65, 81, 0.8);
+  background: rgba(26, 34, 52, 0.88);
+  border: 1px solid rgba(59, 72, 102, 0.8);
 }
 
 .glass-card {
@@ -46,9 +46,9 @@ html.dark .glass-panel {
 }
 
 html.dark .glass-card {
-  background: #111827;
-  border: 1px solid rgba(55, 65, 81, 0.8);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+  background: #1e273a;
+  border: 1px solid rgba(59, 72, 102, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.25);
 }
 
 .glass-card:hover {

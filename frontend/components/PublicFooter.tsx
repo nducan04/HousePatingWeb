@@ -8,7 +8,7 @@ export default function PublicFooter() {
   return (
     <footer
       id="footer"
-      className="relative bg-slate-950 text-white pt-16 pb-12 border-t border-slate-800/80 transition-colors duration-300"
+      className="relative bg-[#131b2e] text-slate-100 pt-16 pb-12 border-t border-slate-800/60 transition-colors duration-300"
     >
       <div className="max-w-[1300px] mx-auto px-6 sm:px-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-16 mb-16">

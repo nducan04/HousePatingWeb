@@ -13,14 +13,11 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     if (typeof window === "undefined") return;
     try {
       const savedTheme = localStorage.getItem("vtsc_theme") as "light" | "dark" | null;
-      let activeTheme: "light" | "dark";
-      if (savedTheme === "dark" || savedTheme === "light") {
-        activeTheme = savedTheme;
-      } else if (document.documentElement.classList.contains("dark")) {
+      let activeTheme: "light" | "dark" = "light";
+      if (savedTheme === "dark") {
         activeTheme = "dark";
       } else {
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        activeTheme = prefersDark ? "dark" : "light";
+        activeTheme = "light";
       }
       
       if (activeTheme === "dark") {

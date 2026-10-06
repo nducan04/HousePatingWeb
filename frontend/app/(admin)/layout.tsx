@@ -537,7 +537,7 @@ export default function AdminLayout({
         "KhachHangB2C",
       ]}
     >
-      <div className="flex h-screen bg-[#F8FAFC] dark:bg-[#0B0F19] font-sans antialiased text-slate-900 dark:text-slate-100 transition-colors duration-300">
+      <div className="flex h-screen bg-[#F8FAFC] dark:bg-[#161e2e] font-sans antialiased text-slate-900 dark:text-slate-100 transition-colors duration-300">
         {/* Desktop Sidebar */}
         {!isCustomer && (
           <aside className="hidden md:flex w-[275px] flex-shrink-0 border-r border-slate-200/80 dark:border-slate-800 flex-col overflow-hidden shadow-[2px_0_12px_rgba(0,0,0,0.02)] z-20">
@@ -632,7 +632,7 @@ export default function AdminLayout({
           </header>
 
           {/* Page Content Body */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#F8FAFC] dark:bg-[#0B0F19] transition-colors duration-300">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#F8FAFC] dark:bg-[#161e2e] transition-colors duration-300">
             <div className="max-w-[1680px] mx-auto animate-fade-in">{children}</div>
           </main>
         </div>

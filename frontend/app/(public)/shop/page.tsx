@@ -137,7 +137,7 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-[#161e2e] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
       {/* Universal Public Header */}
       <PublicNavbar
         activeRoute="/shop"

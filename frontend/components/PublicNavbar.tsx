@@ -47,7 +47,7 @@ export default function PublicNavbar({
   ];
 
   return (
-    <header className="sticky top-0 z-[100] bg-white/85 dark:bg-[#0B0F19]/90 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-colors duration-300">
+    <header className="sticky top-0 z-[100] bg-white/90 dark:bg-[#161e2e]/90 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-700/60 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-colors duration-300">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
         {/* Brand Logo */}
         <Link
@@ -142,7 +142,7 @@ export default function PublicNavbar({
 
       {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="xl:hidden border-t border-slate-200/60 dark:border-slate-800/80 bg-white/95 dark:bg-[#0B0F19]/95 backdrop-blur-2xl px-6 py-4 space-y-2 animate-in slide-in-from-top-3 duration-200">
+        <div className="xl:hidden border-t border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-[#161e2e]/95 backdrop-blur-2xl px-6 py-4 space-y-2 animate-in slide-in-from-top-3 duration-200">
           <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full bg-slate-100 dark:bg-slate-800/90 rounded-2xl px-4 h-11 border border-slate-200 dark:border-slate-700 mb-3">
             <Search size={18} className="text-slate-400" />
             <input
