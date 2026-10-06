@@ -360,11 +360,19 @@ export default function SignInPage() {
                     className="w-full h-14 bg-[#2563eb] text-white rounded-xl font-bold text-[15px] flex items-center justify-center shadow-lg shadow-blue-600/20 hover:bg-[#1d4ed8] hover:-translate-y-0.5 transition-all disabled:opacity-50 border-none cursor-pointer"
                   >
                     {isLoggingIn ? (
-                      <Loader2 className="animate-spin" size={20} />
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="animate-spin" size={20} />
+                        <span>Đang xử lý đăng nhập...</span>
+                      </div>
                     ) : (
                       "Đăng Nhập"
                     )}
                   </button>
+                  {isLoggingIn && (
+                    <p className="text-[12px] text-amber-600 dark:text-amber-400 font-medium text-center mt-2 animate-pulse">
+                      ⚡ Đang kết nối máy chủ (nếu mở sau thời gian nghỉ, hệ thống sẽ mất 10-20 giây để khởi động)...
+                    </p>
+                  )}
                 </div>
 
                 <div className="text-center pt-4">

@@ -6,6 +6,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true, // Quan trọng để gửi HttpOnly Cookie
+  timeout: 15000, // 15 giây timeout thay vì treo vô tận
 });
 
 let isRefreshing = false;
@@ -59,7 +60,7 @@ api.interceptors.response.use(
 
       try {
         // Gửi request lấy token mới thông qua Refresh Token Cookie ngầm
-        const res = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+        const res = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true, timeout: 5000 });
         
         if (res.data.success) {
           const newAccessToken = res.data.accessToken;

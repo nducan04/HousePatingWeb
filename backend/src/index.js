@@ -190,9 +190,43 @@ app.get('/', (req, res) => {
   res.send('VTSC PaintPro Backend API is running...');
 });
 
+// Lightweight Health Check & Ping endpoint for uptime monitors & client warm-up
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'VTSC PaintPro Backend API',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
 // Start Cron Jobs
 const startRiskAlertJob = require('./jobs/riskAlertJob');
 startRiskAlertJob();
+
+// Auto Keep-Alive for Free Tier (Prevents Render spin-down by self-pinging every 12 mins)
+const keepAliveUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL;
+if (keepAliveUrl && !keepAliveUrl.includes('localhost')) {
+  const https = require(keepAliveUrl.startsWith('https') ? 'https' : 'http');
+  const PING_INTERVAL = 12 * 60 * 1000; // 12 minutes
+  setInterval(() => {
+    try {
+      const pingEndpoint = `${keepAliveUrl.replace(/\/$/, '')}/api/health`;
+      https.get(pingEndpoint, (res) => {
+        console.log(`[Keep-Alive] Pinged ${pingEndpoint} - Status: ${res.statusCode}`);
+      }).on('error', (err) => {
+        console.log(`[Keep-Alive] Ping failed:`, err.message);
+      });
+    } catch (e) {
+      console.log(`[Keep-Alive] Ping error:`, e.message);
+    }
+  }, PING_INTERVAL);
+  console.log(`[Keep-Alive] Self-ping scheduled every 12 mins for: ${keepAliveUrl}`);
+}
 
 const PORT = process.env.PORT || 5000;
 
