@@ -37,11 +37,6 @@ export default function AuthNav({ onOpenLogin }: AuthNavProps) {
     router.push("/");
   };
 
-  if (isLoading) {
-    return <div className="w-24 h-8 bg-slate-100 animate-pulse rounded-lg"></div>;
-  }
-
-
   if (isAuthenticated && user) {
     return (
       <div className="flex items-center gap-2 sm:gap-4 ml-1 sm:ml-2">
@@ -130,16 +125,25 @@ export default function AuthNav({ onOpenLogin }: AuthNavProps) {
   }
 
   return (
-    <>
-      <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4">
+      {onOpenLogin ? (
+        <button
+          onClick={onOpenLogin}
+          type="button"
+          className="flex items-center gap-2 text-[14px] font-bold text-white bg-blue-600 px-5 sm:px-6 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all cursor-pointer border-none"
+        >
+          <LogIn className="w-4 h-4" />
+          <span>Đăng nhập</span>
+        </button>
+      ) : (
         <Link
           href="/sign-in"
-          className="flex items-center gap-2 text-[14px] font-bold text-white bg-blue-600 px-6 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all cursor-pointer border-none no-underline"
+          className="flex items-center gap-2 text-[14px] font-bold text-white bg-blue-600 px-5 sm:px-6 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all cursor-pointer border-none no-underline"
         >
           <LogIn className="w-4 h-4" />
           <span>Đăng nhập</span>
         </Link>
-      </div>
-    </>
+      )}
+    </div>
   );
 }

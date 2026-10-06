@@ -10,29 +10,39 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const { setLoading, loginState, accessToken, setAccessToken } = useAuthStore();
 
   useEffect(() => {
+    // 1. Gửi ping đánh thức backend ngay khi mở web (non-blocking, không chặn UI)
+    const wakeUpServer = () => {
+      try {
+        fetch(`${API_URL}/health`, { method: 'GET', keepalive: true }).catch(() => {});
+      } catch (e) {}
+    };
+    wakeUpServer();
+
+    // 2. Thử đăng nhập im lặng với timeout ngắn (3.5s) để không bao giờ làm treo UI
     const attemptSilentLogin = async () => {
       try {
-        // Bước 1: Gọi /refresh để lấy Access Token mới từ HttpOnly Cookie
-        const refreshRes = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+        // Bước 1: Gọi /refresh với timeout 3.5s
+        const refreshRes = await axios.post(
+          `${API_URL}/auth/refresh`,
+          {},
+          { withCredentials: true, timeout: 3500 }
+        );
         
-        if (refreshRes.data.success) {
+        if (refreshRes.data?.success) {
           const newAccessToken = refreshRes.data.accessToken;
 
-          // Bước 2: Gọi /me với token mới để lấy đầy đủ thông tin user + profile
+          // Bước 2: Gọi /me với token mới (timeout 3.5s)
           const meRes = await axios.get(`${API_URL}/auth/me`, {
             headers: { Authorization: `Bearer ${newAccessToken}` },
+            timeout: 3500,
           });
 
-          if (meRes.data.success) {
+          if (meRes.data?.success) {
             loginState(meRes.data.user, newAccessToken);
           }
-        } else {
-          // Cookie hết hạn hoặc chưa đăng nhập → chấp nhận trạng thái khách
-          console.log('Chưa đăng nhập hoặc phiên đã hết hạn');
         }
       } catch (error) {
-        // Cookie hết hạn hoặc chưa đăng nhập → chấp nhận trạng thái khách
-        console.log('Chưa đăng nhập hoặc phiên đã hết hạn');
+        // Phiên hết hạn, chưa đăng nhập hoặc server đang khởi động
       } finally {
         setLoading(false);
       }

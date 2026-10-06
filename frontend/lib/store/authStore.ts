@@ -22,7 +22,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   accessToken: null,
   isAuthenticated: false,
-  isLoading: true, // loading initially to resolve silent auth
+  isLoading: false,
 
   loginState: (user, accessToken) =>
     set({ user, accessToken, isAuthenticated: true, isLoading: false }),
