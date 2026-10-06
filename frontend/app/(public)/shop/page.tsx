@@ -1,70 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Search,
   ShoppingCart,
-  ArrowRight,
   Filter,
   Loader2,
   Package,
   Plus,
   Star,
-  Facebook,
-  Twitter,
-  Instagram,
-  MapPin,
-  Phone,
-  Mail,
-  ShieldCheck,
-  Truck,
-  HeartHandshake,
-  AlertCircle,
-  X
+  ChevronRight,
+  SlidersHorizontal,
+  Sparkles,
+  ArrowUpDown
 } from "lucide-react";
 import api from "@/lib/utils/axiosAuth";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useCartStore, getGuestSessionId } from "@/lib/store/cartStore";
-import { resolveImageUrl } from "@/lib/utils/imageUrl";
 import CustomerProductModal from "@/components/CustomerProductModal";
 import ProductImageCarousel from "@/components/ProductImageCarousel";
-
-const ContactItem = ({
-  icon,
-  text,
-}: {
-  icon: React.ReactNode;
-  text: string;
-}) => (
-  <div className="flex items-start gap-4 group">
-    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-900 group-hover:scale-110 transition-all duration-300">
-      {icon}
-    </div>
-    <span className="text-slate-300 font-medium text-sm pt-2 group-hover:text-blue-400 transition-colors">
-      {text}
-    </span>
-  </div>
-);
-
-const SocialLink = ({
-  icon,
-  href,
-}: {
-  icon: React.ReactNode;
-  href: string;
-}) => (
-  <Link
-    href={href}
-    className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white hover:-translate-y-1 transition-all duration-300"
-  >
-    {icon}
-  </Link>
-);
+import PublicNavbar from "@/components/PublicNavbar";
+import PublicFooter from "@/components/PublicFooter";
 
 export default function ShopPage() {
   const router = useRouter();
@@ -72,61 +30,14 @@ export default function ShopPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"default" | "price-asc" | "price-desc" | "name">("default");
 
-  // Basic cart state mapping
+  // Cart Store state
   const { cartItems, addToCart: addToCartStore } = useCartStore();
   const [cartLoading, setCartLoading] = useState("");
   const [cartMessage, setCartMessage] = useState({ id: "", text: "" });
-  const [productQuantities, setProductQuantities] = useState<
-    Record<string, number>
-  >({});
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-
-  const updateQuantity = (id: string, delta: number, maxQuantity?: number) => {
-    setProductQuantities((prev) => {
-      const current = prev[id] || 1;
-      let next = Math.max(1, current + delta);
-      if (maxQuantity !== undefined && next > maxQuantity) {
-        next = maxQuantity;
-      }
-      return { ...prev, [id]: next };
-    });
-  };
-
-
-
-  const handleQuantityChange = (
-    id: string,
-    value: string,
-    maxQuantity?: number,
-  ) => {
-    const val = parseInt(value);
-    if (!isNaN(val) && val > 0) {
-      let finalVal = val;
-      if (maxQuantity !== undefined && finalVal > maxQuantity) {
-        finalVal = maxQuantity;
-      }
-      setProductQuantities((prev) => ({ ...prev, [id]: finalVal }));
-    } else if (value === "") {
-      setProductQuantities((prev) => ({
-        ...prev,
-        [id]: "" as unknown as number,
-      }));
-    }
-  };
-
-  const handleQuantityBlur = (id: string) => {
-    if (!productQuantities[id]) {
-      setProductQuantities((prev) => ({ ...prev, [id]: 1 }));
-    }
-  };
-
-  const getImageUrl = (path: any) => {
-    return resolveImageUrl(
-      path,
-      "https://ui-avatars.com/api/?name=VTSC+Product&background=random",
-    );
-  };
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -146,15 +57,14 @@ export default function ShopPage() {
 
   const addToCart = async (sp: any, colorCode?: string) => {
     if (!isAuthenticated) {
-      alert("Vui lòng đăng nhập để mua hàng");
+      router.push("/sign-in");
       return false;
     }
-    const qtyToAdd = productQuantities[sp._id] || 1;
 
-    if (qtyToAdd > (sp.TongTonKho || 0)) {
+    if ((sp.TongTonKho || 0) <= 0) {
       setCartMessage({
         id: sp._id,
-        text: `Kho chỉ còn ${sp.TongTonKho || 0}!`,
+        text: "Hết hàng!",
       });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 3000);
       return false;
@@ -166,10 +76,10 @@ export default function ShopPage() {
       await addToCartStore(
         sessionId,
         sp._id,
-        qtyToAdd,
+        1,
         colorCode || sp.DanhSachMaMau?.[0]?.MaMau || "",
       );
-      setCartMessage({ id: sp._id, text: "Đã thêm vào giỏ!" });
+      setCartMessage({ id: sp._id, text: "Đã thêm!" });
       setTimeout(() => setCartMessage({ id: "", text: "" }), 2000);
       return true;
     } catch (err: any) {
@@ -182,153 +92,310 @@ export default function ShopPage() {
     }
   };
 
-  const categories = Array.from(
-    new Set(products.map((p) => p.PhanLoai)),
-  ).filter(Boolean);
+  const categories = useMemo(() => {
+    return Array.from(new Set(products.map((p) => p.PhanLoai))).filter(Boolean);
+  }, [products]);
 
-  const filteredProducts = selectedCategory
-    ? products.filter((p) => p.PhanLoai === selectedCategory)
-    : products;
+  const filteredAndSortedProducts = useMemo(() => {
+    let result = [...products];
+
+    // Category filter
+    if (selectedCategory) {
+      result = result.filter((p) => p.PhanLoai === selectedCategory);
+    }
+
+    // Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (p) =>
+          p.TenDongSon?.toLowerCase().includes(q) ||
+          p.PhanLoai?.toLowerCase().includes(q) ||
+          p.ThuongHieu?.toLowerCase().includes(q) ||
+          p.DanhSachMaMau?.some((m: any) =>
+            m.MaMau?.toLowerCase().includes(q) || m.TenMau?.toLowerCase().includes(q)
+          )
+      );
+    }
+
+    // Sorting
+    if (sortBy === "price-asc") {
+      result.sort((a, b) => (a.DonGiaCoSo || 0) - (b.DonGiaCoSo || 0));
+    } else if (sortBy === "price-desc") {
+      result.sort((a, b) => (b.DonGiaCoSo || 0) - (a.DonGiaCoSo || 0));
+    } else if (sortBy === "name") {
+      result.sort((a, b) => (a.TenDongSon || "").localeCompare(b.TenDongSon || ""));
+    }
+
+    return result;
+  }, [products, selectedCategory, searchQuery, sortBy]);
 
   const getDisplayPrice = (basePrice: number) => {
     if (!basePrice) return 0;
-    const multiplier = user?.role === 'KhachHangB2B' ? 1.2 : 1.3;
+    const multiplier = user?.role === "KhachHangB2B" ? 1.2 : 1.3;
     return basePrice * multiplier;
   };
 
   return (
-    <>
-      <div
-        className="min-h-screen bg-transparent font-sans relative pb-20 text-white"
-        style={{
-          backgroundImage: 'url("/login-illustration.png")',
-          backgroundSize: 'cover',
-          backgroundAttachment: 'fixed',
-          backgroundPosition: 'center',
-        }}
-      >
-        {/* Header Space for floating effect */}
-        <div className="pt-24 px-4 sm:px-8 max-w-[1500px] mx-auto">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
+      {/* Universal Public Header */}
+      <PublicNavbar
+        activeRoute="/shop"
+        searchTerm={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
-          {/* Navigation Back & Cart */}
-          <div className="mb-6 flex justify-between items-center">
-            <Link href="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-lg font-bold text-blue-400 shadow-sm border border-white/20 hover:bg-white/20 hover:text-blue-300 transition-all no-underline">
-              ← Quay lại trang chủ
+      {/* Breadcrumb & Hero Header */}
+      <div className="bg-white dark:bg-slate-900/80 border-b border-slate-200/80 dark:border-slate-800/80 py-8 transition-colors">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex items-center gap-2 text-xs font-semibold text-slate-400 dark:text-slate-500 mb-3">
+            <Link href="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors no-underline">
+              Trang chủ
             </Link>
-            <Link href="/cart" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 rounded-lg font-bold text-white shadow-lg hover:bg-blue-500 transition-all no-underline">
-              <ShoppingCart size={20} />
-              <span> {cartItems?.length > 0 && `(${cartItems.length})`}</span>
-            </Link>
+            <ChevronRight size={14} />
+            <span className="text-slate-700 dark:text-slate-300">Sản phẩm sơn tĩnh điện</span>
+          </nav>
+
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 text-xs font-bold mb-2">
+                <Sparkles size={14} /> Tiêu chuẩn AkzoNobel Interpon
+              </div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">
+                Danh Mục Sản Phẩm Sơn Tĩnh Điện
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-2xl">
+                Cung cấp đầy đủ các dòng sơn sấy nhiệt, sơn ngoài trời kháng thời tiết, sơn cát, sơn nhăn và giải pháp phủ màng bảo vệ kim loại công nghiệp cao cấp.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Hiển thị <span className="font-bold text-blue-600 dark:text-blue-400">{filteredAndSortedProducts.length}</span> sản phẩm
+              </span>
+            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-6 sm:p-8 min-h-[80vh] flex flex-col md:flex-row gap-10">
-
-            {/* Sidebar */}
-            <aside className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-white/10 pb-8 md:pb-0 md:pr-8">
-              <h2 className="text-xl font-bold text-white mb-6 uppercase tracking-wider flex items-center gap-2">
-                <Filter size={20} className="text-blue-400" /> Danh mục
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          {/* Sidebar / Filter Pane */}
+          <aside className="w-full lg:w-64 flex-shrink-0 bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                <Filter size={16} className="text-blue-600 dark:text-blue-400" />
+                Phân loại sơn
               </h2>
-              <div className="space-y-2 flex flex-row md:flex-col overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-none">
+              {selectedCategory && (
                 <button
                   onClick={() => setSelectedCategory(null)}
-                  className={`flex-shrink-0 w-auto md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm transition-all border border-transparent ${!selectedCategory ? 'bg-blue-600 text-white shadow-lg border-blue-500/50' : 'text-slate-300 hover:bg-white/5 hover:border-white/10'}`}
+                  className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline bg-transparent border-none cursor-pointer"
                 >
-                  Tất cả sản phẩm
+                  Xóa lọc
                 </button>
-                {categories.map((cat: any) => (
+              )}
+            </div>
+
+            <div className="flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scrollbar-none">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`flex-shrink-0 w-auto lg:w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border border-transparent cursor-pointer ${
+                  !selectedCategory
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                Tất cả sản phẩm ({products.length})
+              </button>
+              {categories.map((cat: any) => {
+                const count = products.filter((p) => p.PhanLoai === cat).length;
+                return (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`flex-shrink-0 w-auto md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm transition-all border border-transparent ${selectedCategory === cat ? 'bg-blue-600 text-white shadow-lg border-blue-500/50' : 'text-slate-300 hover:bg-white/5 hover:border-white/10'}`}
+                    className={`flex-shrink-0 w-auto lg:w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border border-transparent cursor-pointer flex items-center justify-between ${
+                      selectedCategory === cat
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+                    }`}
                   >
-                    {cat}
+                    <span>{cat}</span>
+                    <span className={`text-xs ml-2 ${selectedCategory === cat ? 'text-blue-100' : 'text-slate-400'}`}>({count})</span>
                   </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* Product Grid & Controls */}
+          <section className="flex-1 w-full">
+            {/* Top Toolbar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors">
+              <div className="relative w-full sm:w-72">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Lọc tên sơn, mã màu..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-10 pl-10 pr-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100 outline-none border border-transparent focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <ArrowUpDown size={14} /> Sắp xếp:
+                </span>
+                <select
+                  value={sortBy}
+                  onChange={(e: any) => setSortBy(e.target.value)}
+                  className="h-10 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 border border-transparent outline-none cursor-pointer focus:border-blue-500"
+                >
+                  <option value="default">Mặc định</option>
+                  <option value="price-asc">Giá: Thấp đến Cao</option>
+                  <option value="price-desc">Giá: Cao đến Thấp</option>
+                  <option value="name">Tên sản phẩm A-Z</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Products List State */}
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-96 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 animate-pulse p-4"
+                  />
                 ))}
               </div>
-            </aside>
-
-            {/* Main Content */}
-            <div className="flex-1">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-white/10 gap-4">
-                <h1 className="text-2xl sm:text-3xl font-bold text-blue-400 uppercase tracking-tight">SẢN PHẨM NỔI BẬT</h1>
-                <div className="text-sm font-bold text-slate-300 bg-white/10 px-4 py-2 rounded-xl">
-                  Hiển thị {filteredProducts.length} sản phẩm
-                </div>
+            ) : filteredAndSortedProducts.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-8">
+                <Package size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Không tìm thấy sản phẩm phù hợp</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                  Hãy thử điều chỉnh từ khóa tìm kiếm hoặc chọn danh mục khác để xem thêm kết quả.
+                </p>
+                <button
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    setSearchQuery("");
+                  }}
+                  className="mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-blue-700 transition-all border-none cursor-pointer"
+                >
+                  Xóa bộ lọc
+                </button>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredAndSortedProducts.map((sp) => {
+                  const ratings = sp.DanhGia || [];
+                  const avgRating =
+                    ratings.length > 0
+                      ? Number(
+                          (
+                            ratings.reduce((acc: number, r: any) => acc + (r.SoSao || 0), 0) /
+                            ratings.length
+                          ).toFixed(1)
+                        )
+                      : 0;
 
-              {loading ? (
-                <div className="flex justify-center items-center h-64">
-                  <Loader2 size={40} className="text-blue-600 animate-spin" />
-                </div>
-              ) : filteredProducts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                  <Package size={64} className="mb-4 opacity-50" />
-                  <p className="text-lg font-bold">Không tìm thấy sản phẩm nào</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredProducts.map((sp) => (
-                    <div key={sp._id} className="bg-slate-800/60 rounded-xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 border border-white/10 group flex flex-col h-full">
+                  return (
+                    <div
+                      key={sp._id}
+                      className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-xl transition-all duration-300 border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-500/50 group flex flex-col h-full"
+                    >
+                      {/* Product Image Carousel / Thumbnail */}
                       <div
-                        className="relative aspect-square w-full rounded-lg overflow-hidden mb-4 bg-slate-900/50 cursor-pointer"
+                        className="relative aspect-square w-full rounded-xl overflow-hidden mb-4 bg-slate-100 dark:bg-slate-800 cursor-pointer"
                         onClick={() => setSelectedProduct(sp)}
                       >
                         <ProductImageCarousel product={sp} />
-                        <div className="absolute top-3 left-3">
-                          <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm ${sp.TongTonKho > 0 ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
-                            {sp.TongTonKho > 0 ? 'Còn hàng' : 'Hết hàng'}
+                        <div className="absolute top-3 left-3 z-10">
+                          <span
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider shadow-sm ${
+                              (sp.TongTonKho || 0) > 0
+                                ? "bg-emerald-500 text-white"
+                                : "bg-rose-500 text-white"
+                            }`}
+                          >
+                            {(sp.TongTonKho || 0) > 0 ? "Còn hàng" : "Hết hàng"}
                           </span>
                         </div>
                       </div>
-                      <div className="flex flex-col flex-1 px-1">
-                        <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">{sp.PhanLoai}</div>
+
+                      {/* Product Info */}
+                      <div className="flex flex-col flex-1">
+                        <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">
+                          {sp.PhanLoai}
+                        </div>
                         <h3
-                          className="font-bold text-white text-base mb-1 line-clamp-1 hover:text-blue-400 transition-colors cursor-pointer"
+                          className="font-bold text-slate-900 dark:text-white text-base mb-1.5 line-clamp-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
                           onClick={() => setSelectedProduct(sp)}
+                          title={sp.TenDongSon}
                         >
                           {sp.TenDongSon}
                         </h3>
-                        {/* Bắt đầu phần Rating */}
-                        {(() => {
-                          const ratings = sp.DanhGia || [];
-                          const avgRating = ratings.length > 0 ? Number((ratings.reduce((acc: number, r: any) => acc + (r.SoSao || 0), 0) / ratings.length).toFixed(1)) : 0;
-                          return (
-                            <div className="flex items-center gap-1 mb-2">
-                              <Star size={14} className={avgRating > 0 ? "text-amber-400 fill-amber-400" : "text-slate-600"} />
-                              <span className="text-[11px] text-slate-300 font-bold">{avgRating > 0 ? `${avgRating} (${ratings.length} đánh giá)` : "Chưa có đánh giá"}</span>
-                            </div>
-                          );
-                        })()}
-                        <p className="text-[11px] text-slate-400 font-bold mb-1 uppercase tracking-widest mt-1">
-                          {sp.ThuongHieu}
+
+                        {/* Rating */}
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Star
+                            size={14}
+                            className={avgRating > 0 ? "text-amber-400 fill-amber-400" : "text-slate-300 dark:text-slate-600"}
+                          />
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold">
+                            {avgRating > 0 ? `${avgRating} (${ratings.length} đánh giá)` : "Chưa có đánh giá"}
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mb-1">
+                          {sp.ThuongHieu || "AkzoNobel Interpon"}
                         </p>
-                        <p className="text-[12px] text-slate-300 font-medium mb-4">
-                          Tồn kho: <span className="font-bold text-white">{sp.TongTonKho}</span> {sp.DonViTinh || "Thùng"}
+
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4">
+                          Tồn kho:{" "}
+                          <span className="font-bold text-slate-900 dark:text-slate-100">
+                            {sp.TongTonKho || 0}
+                          </span>{" "}
+                          {sp.DonViTinh || "Thùng"}
                         </p>
-                        <div className="mt-auto">
-                          <div className="flex justify-between items-end mb-3">
-                            <div className="flex flex-col">
-                              <span className="text-emerald-400 font-bold text-xl">
-                                {getDisplayPrice(sp.DonGiaCoSo).toLocaleString()} ₫
-                              </span>
-                              <span className="text-xs text-slate-400 font-medium">
-                                / {sp.DonViTinh || "Thùng"}
-                              </span>
-                            </div>
+
+                        {/* Price & Action Button */}
+                        <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800">
+                          <div className="flex items-baseline justify-between mb-3">
+                            <span className="text-blue-600 dark:text-blue-400 font-black text-xl">
+                              {getDisplayPrice(sp.DonGiaCoSo).toLocaleString()} ₫
+                            </span>
+                            <span className="text-xs text-slate-400">
+                              / {sp.DonViTinh || "Thùng"}
+                            </span>
                           </div>
+
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => (sp.DanhSachMaMau?.length > 0 ? setSelectedProduct(sp) : addToCart(sp))}
-                              disabled={cartLoading === sp._id}
-                              className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md font-bold text-[13px] cursor-pointer ${cartMessage.id === sp._id ? (cartMessage.text === "Đã thêm vào giỏ!" ? "bg-emerald-500 text-white" : "bg-red-500 text-white text-[10px]") : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}
+                              onClick={() =>
+                                sp.DanhSachMaMau?.length > 0
+                                  ? setSelectedProduct(sp)
+                                  : addToCart(sp)
+                              }
+                              disabled={cartLoading === sp._id || (sp.TongTonKho || 0) <= 0}
+                              className={`w-full h-10 rounded-xl flex items-center justify-center gap-2 transition-all font-bold text-xs sm:text-sm cursor-pointer border-none shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                                cartMessage.id === sp._id
+                                  ? cartMessage.text === "Đã thêm!"
+                                    ? "bg-emerald-500 text-white"
+                                    : "bg-rose-500 text-white"
+                                  : "bg-blue-600 hover:bg-blue-700 text-white active:scale-98"
+                              }`}
                             >
                               {cartLoading === sp._id ? (
                                 <Loader2 size={16} className="animate-spin" />
                               ) : cartMessage.id === sp._id ? (
-                                cartMessage.text === "Đã thêm vào giỏ!" ? <ShoppingCart size={16} /> : <span>{cartMessage.text}</span>
+                                <span>{cartMessage.text}</span>
                               ) : (
                                 <>
-                                  <Plus size={16} /> Thêm
+                                  <Plus size={16} /> Thêm vào giỏ
                                 </>
                               )}
                             </button>
@@ -336,165 +403,27 @@ export default function ShopPage() {
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </div>
+      </main>
 
-        <CustomerProductModal
-          product={selectedProduct}
-          isOpen={!!selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          onAddToCart={(sp, qty, colorCode) => {
-            handleQuantityChange(sp._id, qty.toString(), sp.TongTonKho);
-            addToCart(sp, colorCode);
-          }}
-          cartLoading={cartLoading}
-        />
-      </div>
-
-      <footer
-        id="footer"
-        className="bg-slate-900 text-white pt-20 pb-10 scroll-mt-20 relative overflow-hidden"
-        style={{
-          backgroundImage: "url('/login-illustration.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed",
+      {/* Product Detail Modal */}
+      <CustomerProductModal
+        product={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        cartLoading={cartLoading}
+        onAddToCart={(sp, qty, colorCode) => {
+          addToCart(sp, colorCode);
         }}
-      >
-        <div className="absolute inset-0 bg-slate-900/90 z-0"></div>
-        <div className="max-w-[1300px] mx-auto px-10 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-16">
-            {/* Column 1: Company Info */}
-            <div className="lg:col-span-5">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-[200px] h-[68px] flex-shrink-0 rounded-[16px] bg-white flex items-center justify-center shadow-lg shadow-black/20 overflow-hidden px-4">
-                  <img src="/vtsc.png" alt="VTSC Logo" className="w-full h-full object-contain" />
-                </div>
-                <span className="font-bold text-xl tracking-tight uppercase text-white">
-                  CÔNG TY CP TMDV VOSCO (VTSC)
-                </span>
-              </div>
-              <div className="space-y-5">
-                <ContactItem
-                  icon={<MapPin size={20} className="text-blue-400" />}
-                  text="215 Lạch Tray, Phường Gia Viên, Thành phố Hải Phòng"
-                />
-                <ContactItem
-                  icon={<Phone size={20} className="text-blue-400" />}
-                  text="+84 (028) 3888 9999"
-                />
-                <ContactItem
-                  icon={<Mail size={20} className="text-blue-400" />}
-                  text="contact@vtscpaint.com"
-                />
-              </div>
-              <div className="flex gap-4 mt-10">
-                <SocialLink icon={<Facebook size={20} />} href="#" />
-                <SocialLink icon={<Twitter size={20} />} href="#" />
-                <SocialLink icon={<Instagram size={20} />} href="#" />
-              </div>
-            </div>
+      />
 
-            {/* Column 2: Policies */}
-            <div className="lg:col-span-3">
-              <h4 className="text-sm font-bold mb-8 uppercase tracking-widest text-slate-400">
-                CHÍNH SÁCH
-              </h4>
-              <ul className="space-y-4 text-slate-300 font-medium text-sm">
-                <li>
-                  <Link
-                    href="/policies?type=return"
-                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
-                  >
-                    - Chính sách đổi trả
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/policies?type=warranty"
-                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
-                  >
-                    - Chính sách bảo hành
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/policies?type=shipping"
-                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
-                  >
-                    - Chính sách vận chuyển
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/policies?type=aftersale"
-                    className="hover:text-blue-400 transition-colors text-slate-300 no-underline"
-                  >
-                    - Chính sách hậu mãi
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 3: Quick Links */}
-            <div className="lg:col-span-4">
-              <h4 className="text-sm font-bold mb-8 uppercase tracking-widest text-slate-400">
-                LIÊN KẾT NHANH
-              </h4>
-              <ul className="space-y-4 text-slate-300 font-medium text-sm">
-                <li>
-                  <Link
-                    href="/theo-doi-don-hang"
-                    className="hover:text-blue-400 transition-colors no-underline text-slate-300"
-                  >
-                    - Theo dõi đơn hàng
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/admin/contracts"
-                    className="hover:text-blue-400 transition-colors no-underline text-slate-300"
-                  >
-                    - Tra cứu hợp đồng
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/admin/rd-tracking"
-                    className="hover:text-blue-400 transition-colors no-underline text-slate-300"
-                  >
-                    - Gửi yêu cầu R&D
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-white/10 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-slate-500 text-xs font-medium">
-            <p>© 2026 VTSC. Bản quyền thuộc về Nhóm dự án.</p>
-            <div className="flex gap-8">
-              <Link
-                href="#"
-                className="hover:text-white transition-colors no-underline text-slate-500"
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                href="#"
-                className="hover:text-white transition-colors no-underline text-slate-500"
-              >
-                Terms of Service
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-
-    </>
+      {/* Universal Public Footer */}
+      <PublicFooter />
+    </div>
   );
 }
