@@ -469,7 +469,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#0B0F19] font-sans text-slate-900 dark:text-slate-100 antialiased transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-[#161e2e] font-sans text-slate-900 dark:text-slate-100 antialiased transition-colors duration-300">
       {/* ═══════ HEADER / NAVBAR ═══════ */}
       <PublicNavbar
         activeRoute="/"
@@ -522,7 +522,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ DỊCH VỤ & THẾ MẠNH (Uniform Typography) ═══════ */}
-      <section id="dich-vu" className="px-6 py-20 bg-white dark:bg-[#0B0F19] transition-colors duration-300">
+      <section id="dich-vu" className="px-6 py-20 bg-white dark:bg-[#1a2234] transition-colors duration-300">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -594,7 +594,7 @@ export default function HomePage() {
       {/* ═══════ QUY TRÌNH PHA CHẾ SƠN (Mới) ═══════ */}
       <section
         id="quy-trinh"
-        className="px-8 py-24 bg-slate-50 dark:bg-[#111827] scroll-mt-[25px] transition-colors duration-300"
+        className="px-8 py-24 bg-[#F8FAFC] dark:bg-[#161e2e] scroll-mt-[25px] transition-colors duration-300"
       >
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-20">
@@ -700,7 +700,7 @@ export default function HomePage() {
       {/* ═══════ BẢNG MÀU XU HƯỚNG ═══════ */}
       <section
         id="bang-mau"
-        className="px-8 py-20 bg-slate-50 dark:bg-[#0B0F19] scroll-mt-[40px] transition-colors duration-300"
+        className="px-8 py-20 bg-white dark:bg-[#1a2234] scroll-mt-[40px] transition-colors duration-300"
       >
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-16">
@@ -753,7 +753,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ TIN TỨC & KHUYẾN MÃI (Uniform) ═══════ */}
-      <section id="tin-tuc" className="px-8 py-20 bg-slate-50 dark:bg-[#111827] scroll-mt-[40px] transition-colors duration-300">
+      <section id="tin-tuc" className="px-8 py-20 bg-[#F8FAFC] dark:bg-[#161e2e] scroll-mt-[40px] transition-colors duration-300">
         <div className="max-w-[1300px] mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">

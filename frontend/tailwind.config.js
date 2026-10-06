@@ -33,10 +33,10 @@ module.exports = {
           950: '#0a0c18',
         },
         dark: {
-          bg: '#0B0F19',
-          surface: '#111827',
-          card: '#1F2937',
-          border: '#374151',
+          bg: '#161e2e',
+          surface: '#1e273a',
+          card: '#243048',
+          border: '#3b4866',
           text: '#F9FAFB',
           muted: '#9CA3AF'
         }
